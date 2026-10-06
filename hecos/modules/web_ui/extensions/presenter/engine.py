@@ -27,6 +27,8 @@ class PresenterEngine:
             bus.subscribe("persona_switched", self._on_persona_switched)
             bus.subscribe("new_chat", self._on_new_chat)
             bus.subscribe("message_exchange", self._on_message_exchange)
+            bus.subscribe("user_message_sent", self._on_user_message_sent)
+            bus.subscribe("assistant_response", self._on_assistant_response)
             bus.subscribe("hpm:package_installed", self._on_package_event)
             bus.subscribe("hpm:package_uninstalled", self._on_package_event)
             logger.info("[Presenter] Engine started. Subscribed to events.")
@@ -55,12 +57,26 @@ class PresenterEngine:
         # We temporarily overwrite the system prompt in the config to force the persona
         if 'ai' not in merged_cfg:
             merged_cfg['ai'] = {}
+            
+        # 1. Merge instructions from the selected Global Preset (if any)
+        preset_instructions = merged_cfg['ai'].get('custom_instructions', '').strip()
+        if preset_instructions:
+            system_prompt += f"\n\n[GLOBAL PRESET DIRECTIVES]:\n{preset_instructions}"
+            
+        # 2. Merge Presenter-specific custom instructions (from module config)
+        custom_instructions = getattr(cfg, "custom_instructions", "").strip()
+        if custom_instructions:
+            system_prompt += f"\n\n[PRESENTER MODULE CUSTOM INSTRUCTIONS]:\n{custom_instructions}"
+            
         merged_cfg['ai']['special_instructions'] = system_prompt
         
         # Override tokens if configured
         btype = merged_cfg.get('backend', {}).get('type', 'ollama')
         if btype in merged_cfg.get('backend', {}):
             merged_cfg['backend'][btype]['max_tokens'] = cfg.voice.max_tokens
+
+        logger.info(f"[Presenter] Final sys_prompt length: {len(system_prompt)}. Preview: {system_prompt[:200]}...")
+        logger.info(f"[Presenter] Final user_prompt length: {len(user_prompt)}. Preview: {user_prompt[:200]}...")
 
         def _task():
             try:
@@ -102,7 +118,9 @@ class PresenterEngine:
         payload = event.get("payload", {})
         persona_name = payload.get("new_persona", "Unknown")
         
-        sys_prompt = "You are the Hecos System Presenter. Provide a brief, punchy, 1-sentence introduction or commentary about the newly activated AI persona. Use the language of the system."
+        sys_prompt = (
+            "You are the Hecos System Presenter. Provide a brief, punchy, 1-sentence introduction or commentary about the newly activated AI persona. Use the language of the system."
+        )
         user_prompt = f"The user has just switched the AI persona to '{persona_name}'. Introduce them briefly."
         
         self._generate_commentary("persona_switched", sys_prompt, user_prompt)
@@ -115,7 +133,9 @@ class PresenterEngine:
             logger.info("[Presenter] Skipped: disabled or briefing_on_new_chat=False")
             return
         
-        sys_prompt = "You are the Hecos System Presenter. Greet the user in 1 short sentence indicating that a new session has started."
+        sys_prompt = (
+            "You are the Hecos System Presenter. Greet the user in 1 short sentence indicating that a new session has started."
+        )
         user_prompt = "A new chat session was just started. Acknowledge it."
         
         self._generate_commentary("new_chat", sys_prompt, user_prompt)
@@ -137,12 +157,68 @@ class PresenterEngine:
         
         add_feed_entry("package_event", text, persist=self.cfg.feed.persist)
 
-    def _on_message_exchange(self, event: Dict[str, Any]):
-        """Generates commentary on the user-AI exchange if enabled."""
+    # ── Full Commentary Mode handlers ────────────────────────────────
+    
+    def _on_user_message_sent(self, event: Dict[str, Any]):
+        """Comment on the user's message as soon as they send it (full mode only)."""
         if not self._running: return
         
         cfg = self.cfg
-        if not cfg.enabled or not getattr(cfg, 'commentary_on_messages', False):
+        if not cfg.enabled or not cfg.commentary_on_messages:
+            return
+        if getattr(cfg, 'commentary_mode', 'full') != 'full':
+            return
+            
+        payload = event.get("payload", {})
+        user_msg = payload.get("user_message", "")
+        if not user_msg or len(user_msg.strip()) < 3:
+            return
+        
+        sys_prompt = (
+            "You are the Hecos System Presenter, a witty third-party sports commentator for this AI system. "
+            "The Admin (user) has just sent a message to the AI. "
+            "Write a brief, punchy 1-sentence commentary about what the user is asking or doing. "
+            "Be like a sports commentator narrating a play as it happens. Keep it under 20 words. "
+            "Do NOT answer the question yourself — you are the observer, not the AI."
+        )
+        user_prompt = f"Admin says: {user_msg[:300]}"
+        self._generate_commentary("user_comment", sys_prompt, user_prompt)
+
+    def _on_assistant_response(self, event: Dict[str, Any]):
+        """Comment on the AI's response after it arrives (full mode only)."""
+        if not self._running: return
+        
+        cfg = self.cfg
+        if not cfg.enabled or not cfg.commentary_on_messages:
+            return
+        if getattr(cfg, 'commentary_mode', 'full') != 'full':
+            return
+            
+        payload = event.get("payload", {})
+        user_msg = payload.get("user_message", "")
+        ai_msg = payload.get("assistant_message", "")
+        if not ai_msg or len(ai_msg.strip()) < 3:
+            return
+        
+        sys_prompt = (
+            "You are the Hecos System Presenter, a witty third-party sports commentator for this AI system. "
+            "The AI has just responded to the Admin's question. "
+            "Write a brief, punchy 1-sentence commentary about the quality, style, or content of the AI's response. "
+            "Be sarcastic, funny, or impressed depending on the context. Keep it under 20 words. "
+            "Do NOT repeat the response — you are the observer."
+        )
+        user_prompt = f"Admin asked: {user_msg[:200]}\nAI responded: {ai_msg[:300]}"
+        self._generate_commentary("ai_comment", sys_prompt, user_prompt)
+
+    def _on_message_exchange(self, event: Dict[str, Any]):
+        """Legacy: generates commentary on the full exchange (exchange mode only)."""
+        if not self._running: return
+        
+        cfg = self.cfg
+        if not cfg.enabled or not cfg.commentary_on_messages:
+            return
+        # In 'full' mode, user_message_sent + assistant_response handle this
+        if getattr(cfg, 'commentary_mode', 'full') == 'full':
             return
             
         payload = event.get("payload", {})
@@ -167,4 +243,3 @@ def get_engine() -> PresenterEngine:
     if _engine_instance is None:
         _engine_instance = PresenterEngine()
     return _engine_instance
-

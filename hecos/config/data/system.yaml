@@ -3,11 +3,14 @@ ai:
   active_personality: Urania_9800
   available_personalities:
     '1': Hecos_System_Soul
-    '2': Urania_9800
-    '3': claudia
-    '4': jun_my_little_princess
-    '5': motoko_kusanagi
-    '6': nova_x-01
+    '2': Hecos_Presenter
+    '3': Urania_9800
+    '4': Urania_Presenter
+    '5': claudia
+    '6': jun_my_little_princess
+    '7': motoko_kusanagi
+    '8': nova_x-01
+    '9': urania_9800_presenter
   save_special_instructions: true
   special_instructions: Ricorda che devi sempre parlare in italiano, non in inglese.
     Scrivi sempre e solo in lingua italiana - a meno che non si tratti della generazione
@@ -39,7 +42,7 @@ backend:
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: nandhank/qwen3.5-abliterated-truthful:9b
+    model: masska129/gemma-4-abliterated:12b-qat
     available_models:
       '1': masska129/gemma-4-abliterated:12b-qat
       '2': sorc/qwen3.5-claude-4.6-opus:4b

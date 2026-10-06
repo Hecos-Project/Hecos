@@ -139,6 +139,16 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         _chat_log.info(f"[INFERENCE] Calling AgentExecutor.run_agentic_loop...")
         t_llm_start = time.monotonic()
 
+        # Emit event for Presenter: user just sent a message (before AI responds)
+        try:
+            from hecos.core.events import emit
+            emit("user_message_sent", {
+                "session_id": session_id,
+                "user_message": user_message
+            })
+        except Exception as e:
+            _chat_log.warning(f"[INFERENCE] Could not emit user_message_sent: {e}")
+
         full_text, clean_voice = agent.run_agentic_loop(user_message, voice_status=True, images=images)
 
         t_llm_end = time.monotonic()
@@ -264,7 +274,7 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         sess["history"].append({"role": "user",      "content": user_message})
         sess["history"].append({"role": "assistant",  "content": full_text})
 
-        # Emit event for Presenter and other extensions
+        # Emit events for Presenter and other extensions
         try:
             from hecos.core.events import emit
             emit("message_exchange", {
@@ -272,8 +282,13 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
                 "user_message": user_message,
                 "assistant_message": full_text
             })
+            emit("assistant_response", {
+                "session_id": session_id,
+                "user_message": user_message,
+                "assistant_message": full_text
+            })
         except Exception as e:
-            _chat_log.warning(f"[INFERENCE] Could not emit message_exchange: {e}")
+            _chat_log.warning(f"[INFERENCE] Could not emit message events: {e}")
 
         _chat_log.info(f"[INFERENCE] Generating TTS...")
         t_tts_start = time.monotonic()

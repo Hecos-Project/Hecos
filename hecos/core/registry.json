@@ -157,6 +157,17 @@
             }
         ]
     },
+    "BUILDER": {
+        "description": "Builder Studio: Visual IDE for building and managing Hecos packages.",
+        "commands": {},
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
+    },
     "DASHBOARD": {
         "description": "plugin_dashboard_desc",
         "commands": {

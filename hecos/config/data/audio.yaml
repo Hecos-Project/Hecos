@@ -9,13 +9,13 @@ sentence_silence: 0.2
 piper_timeout: 180
 kokoro:
   speed: 1.0
-  voice: CLONE
+  voice: Brenda Stern
   sentence_silence: 0.0
   model_path: ''
 xtts:
   speed: 1.4
   language: it
-  speaker: CLONE
+  speaker: Brenda Stern
   gpu_acceleration: gpu
   chunk_sentences: true
   speaker_wav: ''

@@ -444,14 +444,18 @@
         });
     }
 
-    // Run init
-    init();
-
     // Expose globally for palette button and programmatic use
     window.HecosCmd = {
         open: _openSpotlight,
         close: _hideSpotlight,
         reload: () => _fetchCommands().then(c => { _allCommands = c; }),
     };
+
+    // Run init when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 
 })();

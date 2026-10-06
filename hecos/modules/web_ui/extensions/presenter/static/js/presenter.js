@@ -22,18 +22,21 @@
 
     // ── Icon Catalog ─────────────────────────────────────────────────
     const TYPE_META = {
-        system_info:     { icon: 'fas fa-info-circle',          color: '#6cb4ee' },
-        system_status:   { icon: 'fas fa-circle',               color: '#4caf50', iconSize: '9px' },
-        system_warning:  { icon: 'fas fa-exclamation-triangle', color: '#ffa726' },
-        action_confirm:  { icon: 'fas fa-check-circle',         color: '#66bb6a' },
-        tip:             { icon: 'fas fa-lightbulb',            color: '#ffd54f' },
-        package_event:   { icon: 'fas fa-box-open',             color: '#ab47bc' },
-        log_important:   { icon: 'fas fa-clipboard-list',       color: '#ef5350' },
-        persona_switched:{ icon: 'fas fa-user-astronaut',       color: '#e040fb' },
-        new_chat:        { icon: 'fas fa-comments',             color: '#29b6f6' },
-        test:            { icon: 'fas fa-flask',                color: '#26c6da' },
-        briefing:        { icon: 'fas fa-satellite-dish',       color: '#ff7043' },
-        default:         { icon: 'fas fa-bullhorn',             color: '#ff512f' }
+        system_info:     { icon: 'fas fa-info-circle',          color: '#6cb4ee', tooltip: 'System Information' },
+        system_status:   { icon: 'fas fa-circle',               color: '#4caf50', iconSize: '9px', tooltip: 'System Status' },
+        system_warning:  { icon: 'fas fa-exclamation-triangle', color: '#ffa726', tooltip: 'System Warning' },
+        action_confirm:  { icon: 'fas fa-check-circle',         color: '#66bb6a', tooltip: 'Action Confirmed' },
+        tip:             { icon: 'fas fa-lightbulb',            color: '#ffd54f', tooltip: 'Helpful Tip' },
+        package_event:   { icon: 'fas fa-box-open',             color: '#ab47bc', tooltip: 'Package Event' },
+        log_important:   { icon: 'fas fa-clipboard-list',       color: '#ef5350', tooltip: 'Important Log' },
+        persona_switched:{ icon: 'fas fa-user-astronaut',       color: '#e040fb', tooltip: 'Persona Switched' },
+        new_chat:        { icon: 'fas fa-comments',             color: '#29b6f6', tooltip: 'New Chat Session' },
+        user_comment:    { icon: 'fas fa-user',                 color: '#42a5f5', tooltip: "Comment on User's Message" },
+        ai_comment:      { icon: 'fas fa-robot',                color: '#ab47bc', tooltip: "Comment on AI's Response" },
+        message_exchange:{ icon: 'fas fa-exchange-alt',         color: '#78909c', tooltip: 'Comment on Chat Exchange' },
+        test:            { icon: 'fas fa-flask',                color: '#26c6da', tooltip: 'Test Event' },
+        briefing:        { icon: 'fas fa-satellite-dish',       color: '#ff7043', tooltip: 'System Briefing' },
+        default:         { icon: 'fas fa-bullhorn',             color: '#ff512f', tooltip: 'Notification' }
     };
 
     // ── State ────────────────────────────────────────────────────────
@@ -56,10 +59,26 @@
         return TYPE_META[type] || TYPE_META.default;
     }
 
-    function _formatMessage(type, text) {
+    function _formatMessage(type, text, thinkText) {
         const m = _resolveMeta(type);
         const sizeAttr = m.iconSize ? ` style="font-size:${m.iconSize}"` : '';
-        return `<span style="color:${m.color}; margin-right:6px;"><i class="${m.icon}"${sizeAttr}></i></span>${text}`;
+        const tooltipStr = m.tooltip ? ` title="${m.tooltip}"` : ` title="${type}"`;
+        
+        let html = '';
+        if (thinkText) {
+            html += `
+                <div style="margin-bottom: 6px; margin-top: 2px;">
+                    <div style="cursor: pointer; color: #ffd54f; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.innerHTML = this.nextElementSibling.style.display === 'none' ? '<i class=\\'fas fa-lightbulb\\'></i> Show Reasoning' : '<i class=\\'fas fa-lightbulb\\'></i> Hide Reasoning';">
+                        <i class="fas fa-lightbulb"></i> Show Reasoning
+                    </div>
+                    <div class="hbs-presenter-think-block" style="display: none; margin-top: 6px; font-size: 11px; color: var(--text-muted, #999); padding: 8px 10px; border-left: 2px solid #ffd54f; background: rgba(0,0,0,0.15); border-radius: 0 4px 4px 0; white-space: pre-wrap; font-family: monospace; line-height: 1.4;">${thinkText}</div>
+                </div>
+            `;
+        }
+        
+        html += `<span style="color:${m.color}; margin-right:6px;"${tooltipStr}><i class="${m.icon}"${sizeAttr}></i></span>${text}`;
+        
+        return html;
     }
 
     // ── Build HTML inside a container ────────────────────────────────
@@ -82,6 +101,7 @@
                     <div style="display:flex; align-items:center; background: rgba(0,0,0,0.2); border-radius: 4px; padding: 2px 4px; border: 1px solid var(--border-color, #333);">
                         <span style="color:var(--muted); margin-right:4px;">Max lines:</span>
                         <input type="number" id="hbs-presenter-max-lines" class="presenter-dark-input" value="${uiState.lines}" min="1" max="500" onchange="window.Presenter.saveUIState(); window.Presenter.trimFeed();" style="width: 45px; background: transparent; border: none; color: var(--text); font-size: 11px; outline: none; text-align: center;">
+                        <button onclick="window.Presenter.adaptHeight()" title="Adatta altezza alle righe visibili" style="background: rgba(255,255,255,0.1); border: none; color: var(--text); font-size: 10px; margin-left: 6px; padding: 2px 6px; border-radius: 3px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Adapt</button>
                     </div>
                 </div>
 
@@ -89,7 +109,7 @@
                     <i class="fas fa-chevron-up"></i>
                 </button>
             </div>
-            <div class="hbs-presenter-body" style="overflow-y: auto; resize: vertical; min-height: 20px; display: flex; flex-direction: column; gap: 4px; padding-bottom: 4px; ${uiState.save && uiState.height ? 'height:'+uiState.height+'px;' : ''}"></div>
+            <div class="hbs-presenter-body" style="overflow-y: auto; resize: vertical; min-height: 40px; max-height: 50vh; display: flex; flex-direction: column; gap: 4px; padding-bottom: 4px; ${uiState.save && uiState.height ? 'height:'+uiState.height+'px;' : 'height: auto;'}"></div>
             <div class="hbs-presenter-footer" style="display:none;"></div>
         `;
 
@@ -149,6 +169,7 @@
             const m = _resolveMeta(type);
             avatarEl.className = m.icon;
             avatarEl.closest('.hbs-presenter-avatar').style.background = `linear-gradient(135deg, ${m.color}99, ${m.color}55)`;
+            avatarEl.closest('.hbs-presenter-avatar').title = m.tooltip || type;
         }
 
         // Append line instead of replacing
@@ -194,21 +215,39 @@
     function _notify(opts) {
         if (!presenterEnabled) return;
         const type     = opts.type || 'system_info';
-        const text     = opts.text || '';
+        const rawText  = opts.text || '';
         const title    = opts.title || 'Presenter';
         const duration = opts.duration !== undefined ? opts.duration : 6000;
         const persist  = opts.persist !== undefined ? opts.persist : true;
 
-        const formatted = _formatMessage(type, text);
+        let thinkText = null;
+        let displayHtml = rawText;
+        
+        // Extract <think> tag if present
+        const thinkMatch = displayHtml.match(/<think>([\s\S]*?)<\/think>/i);
+        if (thinkMatch) {
+            thinkText = thinkMatch[1].trim();
+            displayHtml = displayHtml.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        } else if (displayHtml.includes('</think>')) {
+            // Bare </think> tag
+            const parts = displayHtml.split('</think>');
+            thinkText = parts[0].trim();
+            displayHtml = parts.slice(1).join('').trim();
+        }
+
+        const formatted = _formatMessage(type, displayHtml, thinkText);
         _show(formatted, title, duration, type);
 
         if (persist) {
-            _addToFeed({ timestamp: new Date().toISOString(), type, text, title });
+            // Keep the original text with tags for the feed history
+            _addToFeed({ timestamp: new Date().toISOString(), type, text: rawText, title });
         }
     }
 
     // ── System Briefing ──────────────────────────────────────────────
     async function _briefing() {
+        if (window._briefingInProgress) return;
+        window._briefingInProgress = true;
         try {
             const res = await fetch('/api/ext/presenter/briefing');
             const data = await res.json();
@@ -229,6 +268,8 @@
             }
         } catch (e) {
             console.warn('[Presenter] Briefing fetch failed:', e);
+        } finally {
+            setTimeout(() => { window._briefingInProgress = false; }, 3000);
         }
     }
 
@@ -275,9 +316,32 @@
             const msgEl = emb.querySelector('.hbs-presenter-body');
             if (!linesInput || !msgEl) return;
             
-            const maxLines = parseInt(linesInput.value) || 4;
-            while (msgEl.children.length > maxLines) {
+            // Hard limit physical DOM nodes to MAX_FEED to prevent DOM bloat
+            while (msgEl.children.length > MAX_FEED) {
                 msgEl.removeChild(msgEl.firstChild);
+            }
+            
+            const maxLines = parseInt(linesInput.value) || 4;
+            const children = Array.from(msgEl.children);
+            const total = children.length;
+            
+            children.forEach((child, index) => {
+                if (index < total - maxLines) {
+                    child.style.display = 'none';
+                } else {
+                    child.style.display = '';
+                }
+            });
+        },
+
+        setLines: function(num) {
+            const emb = _getEmbedded();
+            if (!emb) return;
+            const linesInput = emb.querySelector('#hbs-presenter-max-lines');
+            if (linesInput) {
+                linesInput.value = num;
+                this.saveUIState();
+                this.trimFeed();
             }
         },
 
@@ -330,6 +394,25 @@
             }
         },
 
+        clear: function() {
+            feedHistory.length = 0;
+            const emb = _getEmbedded();
+            if (emb) {
+                const msgEl = emb.querySelector('.hbs-presenter-body');
+                if (msgEl) msgEl.innerHTML = '';
+            }
+        },
+
+        adaptHeight: function() {
+            const emb = _getEmbedded();
+            if (!emb) return;
+            const bodyEl = emb.querySelector('.hbs-presenter-body');
+            if (bodyEl) {
+                bodyEl.style.removeProperty('height');
+                this.saveUIState();
+            }
+        },
+
         briefing: _briefing,
         getFeed: function() { return [...feedHistory]; }
     };
@@ -344,6 +427,12 @@
         // ev is the full SSE object: {type, timestamp, event_name, text}
         const text = ev.text || (ev.data && ev.data.text);
         const eventType = ev.event_name || ev.type || 'system_info';
+        
+        if (eventType === 'new_chat') {
+            Presenter.clear();
+            setTimeout(() => Presenter.briefing(), 500); // Reload briefing
+        }
+        
         if (text) {
             _notify({
                 type: eventType === 'presenter_feed' ? 'system_info' : eventType,
@@ -380,6 +469,61 @@
                 }
             })
             .catch(err => console.error("[Presenter] Load config failed", err));
+
+        // Log keyboard shortcuts to Presenter feed (after init is complete)
+        setTimeout(() => {
+            if (window.HKS_ACTIONS && window.HKS_BINDINGS) {
+                const parts = [];
+                for (const action of window.HKS_ACTIONS.getAll()) {
+                    const combo = window.HKS_BINDINGS.get(action.id);
+                    if (combo) {
+                        parts.push(`[${combo}] ${action.label}`);
+                    }
+                }
+                if (parts.length > 0) {
+                    _notify({
+                        type: 'tip',
+                        text: `⌨️ Shortcuts: ${parts.join('  •  ')}`,
+                        title: 'Presenter',
+                        duration: 0,
+                        persist: true
+                    });
+                }
+            }
+        }, 2500);
+
+        // Listen for Unified Toast events
+        if (window.hecos && window.hecos.core && window.hecos.core.events && window.hecos.core.events.bus) {
+            window.hecos.core.events.bus.addEventListener('hecos:system:toast', (e) => {
+                if (e.detail && e.detail.message) {
+                    _notify({
+                        type: 'system_info',
+                        text: e.detail.message,
+                        title: 'Presenter',
+                        duration: 0,
+                        persist: true
+                    });
+                }
+            });
+        } else {
+            // Fallback: poll until bus is ready, then attach
+            const _busInterval = setInterval(() => {
+                if (window.hecos && window.hecos.core && window.hecos.core.events && window.hecos.core.events.bus) {
+                    clearInterval(_busInterval);
+                    window.hecos.core.events.bus.addEventListener('hecos:system:toast', (e) => {
+                        if (e.detail && e.detail.message) {
+                            _notify({
+                                type: 'system_info',
+                                text: e.detail.message,
+                                title: 'Presenter',
+                                duration: 0,
+                                persist: true
+                            });
+                        }
+                    });
+                }
+            }, 500);
+        }
     }
 
     if (document.readyState === 'loading') {

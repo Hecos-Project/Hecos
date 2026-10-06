@@ -32,6 +32,8 @@ window.newChatSession = async function (mode = null) {
     // Reset Soul Forge / overrides panel (topbar quick preset, sidebar panel, etc.)
     if (window.soLoadActiveSessionState) await window.soLoadActiveSessionState();
 
+    if (window.Presenter) window.Presenter.clear();
+
     await window.loadChatSessions();
 };
 
@@ -58,6 +60,11 @@ window.activateChatSession = async function (sessionId) {
 
     if (window._clearChatDOM) window._clearChatDOM();
     else if (window.chatArea) window.chatArea.innerHTML = '';
+
+    if (window.Presenter) {
+        window.Presenter.clear();
+        setTimeout(() => { if (window.Presenter.briefing) window.Presenter.briefing(); }, 500);
+    }
 
     if (window.renderHistoryMessages) window.renderHistoryMessages(res.messages || []);
     if (window.loadChatSessions) await window.loadChatSessions();

@@ -137,10 +137,17 @@ def init_routes(app, root_dir: str = None):
 
         # 4. CDP Mode
         try:
-            cdp_enabled = config.get("plugins", {}).get("CDP", {}).get("enabled", False)
-            cdp_port = config.get("plugins", {}).get("CDP", {}).get("port", 9222)
-            if cdp_enabled:
-                items.append({"type": "system_status", "text": f"CDP Mode active — port {cdp_port}"})
+            import socket
+            def _is_port_open(port):
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    return s.connect_ex(('127.0.0.1', port)) == 0
+
+            cdp_port = int(config.get("plugins", {}).get("CDP", {}).get("port", 9222))
+            
+            if _is_port_open(cdp_port):
+                items.append({"type": "system_status", "text": f"TCP Protocol: Active — Port {cdp_port} connected (CDP Mode)"})
+            else:
+                items.append({"type": "system_warning", "text": f"TCP/CDP Mode inactive. Browser automations disabled."})
         except Exception as e:
             logger.debug(f"[Presenter] Briefing CDP error: {e}")
 
@@ -160,12 +167,12 @@ def init_routes(app, root_dir: str = None):
                 from hecos.core.global_presets.manager import get_soul
                 soul = get_soul(p_cfg.voice.preset_id)
                 if soul:
-                    items.append({"type": "system_info", "text": f"Presenter voice: {soul.meta.name}"})
+                    items.append({"type": "system_info", "text": f"Presenter Global Preset: {soul.meta.name}"})
         except Exception as e:
             logger.debug(f"[Presenter] Briefing preset error: {e}")
 
         # 7. Tips
-        items.append({"type": "tip", "text": "Use '/' for slash commands or F12 for devtools"})
+        items.append({"type": "tip", "text": "Press F12 to open the Command Palette (HDCS)"})
 
         logger.info(f"[Presenter] Briefing generated {len(items)} items")
         return jsonify({"ok": True, "items": items})

@@ -26,9 +26,12 @@ class PresenterConfig(BaseModel):
     toast_seconds: int = 5
     
     live_commentary: bool = True
-    commentary_on_messages: bool = False
+    commentary_on_messages: bool = True
+    commentary_mode: str = "full"  # "full" = comment user + AI separately, "exchange" = comment only after AI response
     verbosity: str = "normal"
     log_level: str = "warning"
+    custom_instructions: str = ""
 
     voice: PresenterVoiceConfig = Field(default_factory=PresenterVoiceConfig)
     feed: PresenterFeedConfig = Field(default_factory=PresenterFeedConfig)
+

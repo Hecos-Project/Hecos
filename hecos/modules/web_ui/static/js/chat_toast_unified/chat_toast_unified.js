@@ -80,8 +80,9 @@
      * @param {string} iconClass - (Optional) FontAwesome icon class (e.g. 'fas fa-check')
      * @param {number} duration - (Optional) Duration in ms
      * @param {string} bgColor - (Optional) Custom CSS background color
+     * @param {string} tooltip - (Optional) Tooltip string for the toast
      */
-    function show(msg, iconClass = 'fas fa-info-circle', duration = 3000, bgColor = null) {
+    function show(msg, iconClass = 'fas fa-info-circle', duration = 3000, bgColor = null, tooltip = null) {
         if (!_enabled) return;
         if (!_el) _buildElement();
 
@@ -90,6 +91,9 @@
 
         iconEl.className = iconClass;
         msgEl.textContent = msg;
+        
+        // Add tooltip
+        _el.title = tooltip || '';
 
         // Apply custom color or revert to default
         if (bgColor) {
@@ -164,20 +168,26 @@
     // Override global showToast to redirect to UnifiedToast
     window.showToast = function(msg, duration, typeOrIcon) {
         let icon = 'fas fa-info-circle';
-        if (typeOrIcon === 'error') icon = 'fas fa-exclamation-triangle';
-        else if (typeOrIcon === 'success') icon = 'fas fa-check-circle';
-        else if (typeOrIcon && typeOrIcon.startsWith('fa')) icon = typeOrIcon;
+        let tooltip = '';
+        
+        if (typeOrIcon === 'error') { icon = 'fas fa-exclamation-triangle'; tooltip = 'Error'; }
+        else if (typeOrIcon === 'success') { icon = 'fas fa-check-circle'; tooltip = 'Success'; }
+        else if (typeOrIcon === 'warning') { icon = 'fas fa-exclamation-triangle'; tooltip = 'Warning'; }
+        else if (typeOrIcon === 'info') { icon = 'fas fa-info-circle'; tooltip = 'Info'; }
+        else if (typeOrIcon && typeOrIcon.startsWith('fa')) { icon = typeOrIcon; tooltip = 'System Notification'; }
+        
         // The old showToast uses just (msg, duration), or sometimes (msg, type)
         // Some places call: showToast(msg, 'info') => duration was second arg
         // Let's normalize it:
         let dur = typeof duration === 'number' ? duration : 2500;
         let typ = typeof duration === 'string' ? duration : typeOrIcon;
         
-        if (typ === 'error') icon = 'fas fa-exclamation-triangle';
-        else if (typ === 'warning') icon = 'fas fa-exclamation-triangle';
-        else if (typ === 'success') icon = 'fas fa-check-circle';
+        if (typ === 'error') { icon = 'fas fa-exclamation-triangle'; tooltip = 'Error'; }
+        else if (typ === 'warning') { icon = 'fas fa-exclamation-triangle'; tooltip = 'Warning'; }
+        else if (typ === 'success') { icon = 'fas fa-check-circle'; tooltip = 'Success'; }
+        else if (typ === 'info') { icon = 'fas fa-info-circle'; tooltip = 'Info'; }
 
-        show(msg, icon, dur);
+        show(msg, icon, dur, null, tooltip);
     };
     
     // Also override HKS_TOAST to prevent the old one from showing
@@ -217,21 +227,8 @@
         const oldHksToast = document.getElementById('hks-toast');
         if (oldHksToast) oldHksToast.remove();
 
-        // Print shortcuts to Presenter on startup
-        setTimeout(() => {
-            if (window.HKS_ACTIONS && window.HKS_BINDINGS) {
-                const parts = [];
-                for (const action of window.HKS_ACTIONS.all()) {
-                    const combo = window.HKS_BINDINGS.getCombo(action.id);
-                    if (combo) {
-                        parts.push(`[${window.HKS_BINDINGS.formatCombo(combo)}] ${action.label}`);
-                    }
-                }
-                if (parts.length > 0) {
-                    _logToPresenter(`⌨️ Shortcuts: ${parts.join('  •  ')}`);
-                }
-            }
-        }, 1500);
+        // Shortcuts are logged directly by presenter.js after it's fully initialized.
+        // (Removed from here to fix race condition where presenter listener wasn't mounted yet.)
     }
 
     if (document.readyState === 'loading') {
