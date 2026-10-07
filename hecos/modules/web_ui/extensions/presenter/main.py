@@ -172,7 +172,19 @@ def init_routes(app, root_dir: str = None):
             logger.debug(f"[Presenter] Briefing preset error: {e}")
 
         # 7. Tips
-        items.append({"type": "tip", "text": "Press F12 to open the Command Palette (HDCS)"})
+        hdcs_key_display = "Ctrl + Space"
+        try:
+            from hecos.modules.web_ui.routes_shortcuts import _load_user_shortcuts
+            from flask_login import current_user
+            username = current_user.username if hasattr(current_user, 'username') else "admin"
+            actual_root = root_dir if root_dir else os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+            user_shortcuts = _load_user_shortcuts(actual_root, username)
+            hdcs_key = user_shortcuts["bindings"].get("ui.open_hdcs", "ctrl+space")
+            hdcs_key_display = hdcs_key.replace("+", " + ").title()
+        except Exception as e:
+            logger.debug(f"[Presenter] Could not load shortcut for tip: {e}")
+
+        items.append({"type": "tip", "text": f"Type / in chat or press {hdcs_key_display} to open the Command Palette (HDCS)"})
 
         logger.info(f"[Presenter] Briefing generated {len(items)} items")
         return jsonify({"ok": True, "items": items})

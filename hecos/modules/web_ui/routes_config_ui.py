@@ -37,6 +37,7 @@ _PANEL_MAP = {
     'packages':        'modules/config_packages.html',
     'shortcuts':       'modules/config_shortcuts.html',
     'presenter':       'modules/config_presenter.html',
+    'chat_ui':         'modules/config_chat_ui.html',
 }
 
 _PANELS_NEEDING_OPTIONS = {'backend', 'voice', 'ia', 'igen', 'media'}

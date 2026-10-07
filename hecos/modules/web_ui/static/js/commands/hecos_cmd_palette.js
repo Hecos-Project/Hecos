@@ -16,6 +16,7 @@
     let _allCommands = [];
     let _hintVisible = false;
     let _spotlightVisible = false;
+    let _spotlightSelected = 0;
     let _spotlightResults = [];
     let _lastActiveElement = null;
 
@@ -217,7 +218,7 @@
             <div id="hdcs-overlay" style="
                 position:fixed;top:0;left:0;right:0;bottom:0;
                 background:rgba(0,0,0,0.45);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
-                z-index:9999;display:none;align-items:flex-start;justify-content:center;
+                z-index:999999;display:none;align-items:flex-start;justify-content:center;
                 padding-top:14vh;opacity:0;transition:opacity 0.15s;
             ">
                 <div id="hdcs-modal" style="
@@ -235,7 +236,7 @@
                         <i class="fas fa-terminal" style="color:#00f3ff;font-size:17px;margin-right:14px;text-shadow:0 0 10px rgba(0,243,255,0.4)"></i>
                         <input id="hdcs-input" type="text" placeholder="Type a command or search…" autocomplete="off"
                             style="flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:17px;font-family:'JetBrains Mono',monospace;">
-                        <span style="color:#444;font-size:11px;margin-left:10px">Ctrl+Alt+Space</span>
+                        <span style="color:#444;font-size:11px;margin-left:10px">Ctrl+Space</span>
                     </div>
                     <div id="hdcs-results" style="max-height:380px;overflow-y:auto;padding:8px 0"></div>
                     <div style="
@@ -410,7 +411,7 @@
 
         // Global keyboard: Ctrl+Alt+Space → spotlight
         document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.altKey && e.code === 'Space') {
+            if (e.ctrlKey && !e.altKey && !e.shiftKey && e.code === 'Space') {
                 e.preventDefault();
                 if (_spotlightVisible) _hideSpotlight();
                 else _openSpotlight();
@@ -448,6 +449,10 @@
     window.HecosCmd = {
         open: _openSpotlight,
         close: _hideSpotlight,
+        toggle: () => {
+            if (_spotlightVisible) _hideSpotlight();
+            else _openSpotlight();
+        },
         reload: () => _fetchCommands().then(c => { _allCommands = c; }),
     };
 

@@ -394,7 +394,9 @@
             description: 'Open the universal command palette',
             contexts: ['global', 'chat', 'hub', 'home'],
             handler: () => {
-                if (window.HecosCmd && typeof window.HecosCmd.open === 'function') {
+                if (window.HecosCmd && typeof window.HecosCmd.toggle === 'function') {
+                    window.HecosCmd.toggle();
+                } else if (window.HecosCmd && typeof window.HecosCmd.open === 'function') {
                     window.HecosCmd.open();
                 }
             }

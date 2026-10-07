@@ -82,10 +82,8 @@ function addBubble(role, text, id, opts) {
     nameEl.textContent = window.HecosUserName || 'User';
   } else {
     // Use the persona_name frozen at write time (historical restore), else fall back to current
-    const frozenName = opts && opts.persona_name
-      ? opts.persona_name.replace(/_/g, ' ').replace(/\.yaml$/i, '')
-      : null;
-    nameEl.textContent = frozenName || window.HecosPersonaName || 'Hecos';
+    const rawName = (opts && opts.persona_name) ? opts.persona_name : (window.HecosPersonaName || 'Hecos');
+    nameEl.textContent = rawName.replace(/_/g, ' ').replace(/\.yaml$/i, '');
   }
 
   const timeEl = document.createElement('span');

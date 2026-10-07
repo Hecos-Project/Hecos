@@ -34,13 +34,13 @@
 
     // Keys that are ALWAYS intercepted even inside inputs
     const ALWAYS_CAPTURE = new Set(['Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6',
-                                    'F7', 'F8', 'F9', 'F10', 'F12']);
+                                    'F7', 'F8', 'F9', 'F10']);
 
     // Browser-reserved combos we must never steal
     const BROWSER_RESERVED = new Set([
         'ctrl+w', 'ctrl+t', 'ctrl+n', 'ctrl+shift+n', 'ctrl+shift+t',
         'ctrl+l', 'ctrl+r', 'ctrl+shift+r', 'ctrl+shift+j', 'ctrl+u', 'ctrl+s',
-        'alt+F4', 'ctrl+f5'
+        'alt+F4', 'ctrl+f5', 'f11', 'f12', 'ctrl+shift+i', 'ctrl+shift+c'
     ]);
 
     // ── Internal helpers ──────────────────────────────────────────────────────

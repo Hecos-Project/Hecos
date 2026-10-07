@@ -1,5 +1,5 @@
 /**
- * Hecos Presenter — Full Featured Extension JS
+ * Hecos Presenter — Full Featured Extension JS (Core Module)
  * ─────────────────────────────────────────────────────────────────────
  * Unified notification system: toast, briefing, live commentary, feed.
  * Container (#hbs-presenter-embedded) lives in chat.html outside chat-area
@@ -20,138 +20,22 @@
 (function() {
     'use strict';
 
-    // ── Icon Catalog ─────────────────────────────────────────────────
-    const TYPE_META = {
-        system_info:     { icon: 'fas fa-info-circle',          color: '#6cb4ee', tooltip: 'System Information' },
-        system_status:   { icon: 'fas fa-circle',               color: '#4caf50', iconSize: '9px', tooltip: 'System Status' },
-        system_warning:  { icon: 'fas fa-exclamation-triangle', color: '#ffa726', tooltip: 'System Warning' },
-        action_confirm:  { icon: 'fas fa-check-circle',         color: '#66bb6a', tooltip: 'Action Confirmed' },
-        tip:             { icon: 'fas fa-lightbulb',            color: '#ffd54f', tooltip: 'Helpful Tip' },
-        package_event:   { icon: 'fas fa-box-open',             color: '#ab47bc', tooltip: 'Package Event' },
-        log_important:   { icon: 'fas fa-clipboard-list',       color: '#ef5350', tooltip: 'Important Log' },
-        persona_switched:{ icon: 'fas fa-user-astronaut',       color: '#e040fb', tooltip: 'Persona Switched' },
-        new_chat:        { icon: 'fas fa-comments',             color: '#29b6f6', tooltip: 'New Chat Session' },
-        user_comment:    { icon: 'fas fa-user',                 color: '#42a5f5', tooltip: "Comment on User's Message" },
-        ai_comment:      { icon: 'fas fa-robot',                color: '#ab47bc', tooltip: "Comment on AI's Response" },
-        message_exchange:{ icon: 'fas fa-exchange-alt',         color: '#78909c', tooltip: 'Comment on Chat Exchange' },
-        test:            { icon: 'fas fa-flask',                color: '#26c6da', tooltip: 'Test Event' },
-        briefing:        { icon: 'fas fa-satellite-dish',       color: '#ff7043', tooltip: 'System Briefing' },
-        default:         { icon: 'fas fa-bullhorn',             color: '#ff512f', tooltip: 'Notification' }
-    };
-
-    // ── State ────────────────────────────────────────────────────────
-    let displayMode = 'collapsed';
-    let presenterEnabled = true;
-    let hideTimeout;
-    const feedHistory = [];
-    const MAX_FEED = 50;
-
-    // ── Helpers ──────────────────────────────────────────────────────
-    // Always look up the container fresh — survives DOM replacements
-    function _getEmbedded() {
-        return document.getElementById('hbs-presenter-embedded');
-    }
-    function _getOverlay() {
-        return document.getElementById('hbs-presenter-overlay');
-    }
-
-    function _resolveMeta(type) {
-        return TYPE_META[type] || TYPE_META.default;
-    }
-
-    function _formatMessage(type, text, thinkText) {
-        const m = _resolveMeta(type);
-        const sizeAttr = m.iconSize ? ` style="font-size:${m.iconSize}"` : '';
-        const tooltipStr = m.tooltip ? ` title="${m.tooltip}"` : ` title="${type}"`;
-        
-        let html = '';
-        if (thinkText) {
-            html += `
-                <div style="margin-bottom: 6px; margin-top: 2px;">
-                    <div style="cursor: pointer; color: #ffd54f; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.innerHTML = this.nextElementSibling.style.display === 'none' ? '<i class=\\'fas fa-lightbulb\\'></i> Show Reasoning' : '<i class=\\'fas fa-lightbulb\\'></i> Hide Reasoning';">
-                        <i class="fas fa-lightbulb"></i> Show Reasoning
-                    </div>
-                    <div class="hbs-presenter-think-block" style="display: none; margin-top: 6px; font-size: 11px; color: var(--text-muted, #999); padding: 8px 10px; border-left: 2px solid #ffd54f; background: rgba(0,0,0,0.15); border-radius: 0 4px 4px 0; white-space: pre-wrap; font-family: monospace; line-height: 1.4;">${thinkText}</div>
-                </div>
-            `;
-        }
-        
-        html += `<span style="color:${m.color}; margin-right:6px;"${tooltipStr}><i class="${m.icon}"${sizeAttr}></i></span>${text}`;
-        
-        return html;
-    }
-
-    // ── Build HTML inside a container ────────────────────────────────
-    function _ensureBuilt(container) {
-        if (!container || container.dataset.presenterBuilt) return;
-        container.dataset.presenterBuilt = '1';
-        
-        const uiState = JSON.parse(localStorage.getItem('hecos_presenter_ui_state') || '{"save":false, "lines":4, "height":""}');
-        
-        container.innerHTML = `
-            <div class="hbs-presenter-header">
-                <div class="hbs-presenter-avatar"><i class="fas fa-bullhorn"></i></div>
-                <div class="hbs-presenter-title">Presenter</div>
-                <div style="flex:1"></div>
-                
-                <div class="hbs-presenter-controls" style="display: flex; align-items: center; gap: 12px; margin-right: 12px; font-size: 11px;">
-                    <label style="color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:4px;" title="Remember height and max lines for next sessions">
-                        <input type="checkbox" id="hbs-presenter-remember-size" ${uiState.save ? 'checked' : ''} onchange="window.Presenter.saveUIState()"> Save UI
-                    </label>
-                    <div style="display:flex; align-items:center; background: rgba(0,0,0,0.2); border-radius: 4px; padding: 2px 4px; border: 1px solid var(--border-color, #333);">
-                        <span style="color:var(--muted); margin-right:4px;">Max lines:</span>
-                        <input type="number" id="hbs-presenter-max-lines" class="presenter-dark-input" value="${uiState.lines}" min="1" max="500" onchange="window.Presenter.saveUIState(); window.Presenter.trimFeed();" style="width: 45px; background: transparent; border: none; color: var(--text); font-size: 11px; outline: none; text-align: center;">
-                        <button onclick="window.Presenter.adaptHeight()" title="Adatta altezza alle righe visibili" style="background: rgba(255,255,255,0.1); border: none; color: var(--text); font-size: 10px; margin-left: 6px; padding: 2px 6px; border-radius: 3px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Adapt</button>
-                    </div>
-                </div>
-
-                <button id="hbs-presenter-toggle" style="background:none;border:none;color:var(--muted);cursor:pointer;" title="Collapse/Expand">
-                    <i class="fas fa-chevron-up"></i>
-                </button>
-            </div>
-            <div class="hbs-presenter-body" style="overflow-y: auto; resize: vertical; min-height: 40px; max-height: 50vh; display: flex; flex-direction: column; gap: 4px; padding-bottom: 4px; ${uiState.save && uiState.height ? 'height:'+uiState.height+'px;' : 'height: auto;'}"></div>
-            <div class="hbs-presenter-footer" style="display:none;"></div>
-        `;
-
-        // Listen for resize events using ResizeObserver
-        const bodyEl = container.querySelector('.hbs-presenter-body');
-        if (bodyEl) {
-            const ro = new ResizeObserver(() => {
-                if (document.getElementById('hbs-presenter-remember-size')?.checked) {
-                    window.Presenter.saveUIState();
-                }
-            });
-            ro.observe(bodyEl);
-        }
-    }
-
-    // ── Toggle Collapse ──────────────────────────────────────────────
-    document.addEventListener('click', (e) => {
-        const toggleBtn = e.target.closest('#hbs-presenter-toggle');
-        if (!toggleBtn) return;
-        const container = document.getElementById('hbs-presenter-embedded');
-        if (!container) return;
-        container.classList.toggle('collapsed');
-        const icon = toggleBtn.querySelector('i');
-        if (icon) {
-            icon.classList.toggle('fa-chevron-up', !container.classList.contains('collapsed'));
-            icon.classList.toggle('fa-chevron-down', container.classList.contains('collapsed'));
-        }
-    });
+    const STATE = window.HBSPresenterState;
+    const UI = window.HBSPresenterUI;
 
     // ── Core Show ────────────────────────────────────────────────────
     function _show(message, title, duration, type) {
-        if (!presenterEnabled) return;
+        if (!STATE.presenterEnabled) return;
 
         let target;
-        if (displayMode === 'overlay') {
-            target = _getOverlay();
+        if (STATE.displayMode === 'overlay') {
+            target = UI.getOverlay();
         } else {
-            target = _getEmbedded();
+            target = UI.getEmbedded();
         }
         if (!target) return;
 
-        _ensureBuilt(target);
+        UI.ensureBuilt(target);
 
         // Auto-expand when message arrives
         if (target.classList.contains('collapsed')) {
@@ -166,7 +50,7 @@
 
         if (titleEl) titleEl.innerText = title || 'Presenter';
         if (avatarEl && type) {
-            const m = _resolveMeta(type);
+            const m = UI.resolveMeta(type);
             avatarEl.className = m.icon;
             avatarEl.closest('.hbs-presenter-avatar').style.background = `linear-gradient(135deg, ${m.color}99, ${m.color}55)`;
             avatarEl.closest('.hbs-presenter-avatar').title = m.tooltip || type;
@@ -176,10 +60,16 @@
         if (msgEl) {
             const line = document.createElement('div');
             line.className = 'hbs-presenter-line';
+            line.dataset.logType = type || 'system_info';
             line.style.animation = 'presenterFadeIn 0.3s ease';
             
             const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
             line.innerHTML = `<span style="font-size: 10px; color: var(--muted); margin-right: 8px; opacity: 0.7;">[${timeStr}]</span> ${message}`;
+            
+            // Apply active filters and search
+            const hidden = STATE.presenterHiddenTypes.has(line.dataset.logType);
+            const searchHidden = STATE.presenterSearchQuery && !line.textContent.toLowerCase().includes(STATE.presenterSearchQuery.toLowerCase());
+            if (hidden || searchHidden) line.style.display = 'none';
             
             msgEl.appendChild(line);
             
@@ -192,28 +82,33 @@
             }
         }
 
-        target.classList.add('active');
+        if (localStorage.getItem('hecos_presenter_active') !== 'false' || STATE.displayMode === 'overlay') {
+            target.classList.add('active');
+            if (STATE.displayMode !== 'overlay') {
+                localStorage.setItem('hecos_presenter_active', 'true');
+            }
+        }
 
-        clearTimeout(hideTimeout);
-        if (duration > 0 && displayMode === 'overlay') {
-            hideTimeout = setTimeout(() => _hide(), duration);
+        clearTimeout(STATE.hideTimeout);
+        if (duration > 0 && STATE.displayMode === 'overlay') {
+            STATE.hideTimeout = setTimeout(() => _hide(), duration);
         }
     }
 
     function _hide() {
-        const overlay = _getOverlay();
+        const overlay = UI.getOverlay();
         if (overlay) overlay.classList.remove('active');
     }
 
     // ── Feed ─────────────────────────────────────────────────────────
     function _addToFeed(entry) {
-        feedHistory.push(entry);
-        if (feedHistory.length > MAX_FEED) feedHistory.shift();
+        STATE.feedHistory.push(entry);
+        if (STATE.feedHistory.length > STATE.MAX_FEED) STATE.feedHistory.shift();
     }
 
     // ── UNIFIED NOTIFICATION API ─────────────────────────────────────
     function _notify(opts) {
-        if (!presenterEnabled) return;
+        if (!STATE.presenterEnabled) return;
         const type     = opts.type || 'system_info';
         const rawText  = opts.text || '';
         const title    = opts.title || 'Presenter';
@@ -222,6 +117,11 @@
 
         let thinkText = null;
         let displayHtml = rawText;
+        
+        // Update stats counters
+        if (window.HBSPresenterStats) {
+            window.HBSPresenterStats.increment(type);
+        }
         
         // Extract <think> tag if present
         const thinkMatch = displayHtml.match(/<think>([\s\S]*?)<\/think>/i);
@@ -235,7 +135,7 @@
             displayHtml = parts.slice(1).join('').trim();
         }
 
-        const formatted = _formatMessage(type, displayHtml, thinkText);
+        const formatted = UI.formatMessage(type, displayHtml, thinkText);
         _show(formatted, title, duration, type);
 
         if (persist) {
@@ -279,13 +179,19 @@
         const el = document.createElement('div');
         el.id = 'hbs-presenter-overlay';
         document.body.appendChild(el);
-        _ensureBuilt(el);
+        UI.ensureBuilt(el);
     }
 
     // ── Init embedded container ──────────────────────────────────────
     function _initEmbedded() {
-        const el = _getEmbedded();
-        if (el) _ensureBuilt(el);
+        const el = UI.getEmbedded();
+        if (el) {
+            UI.ensureBuilt(el);
+            // Restore active state
+            if (localStorage.getItem('hecos_presenter_active') === 'true') {
+                el.classList.add('active');
+            }
+        }
     }
 
     // ── Public API ───────────────────────────────────────────────────
@@ -293,7 +199,7 @@
         notify: _notify,
 
         saveUIState: function() {
-            const emb = _getEmbedded();
+            const emb = UI.getEmbedded();
             if (!emb) return;
             const cb = emb.querySelector('#hbs-presenter-remember-size');
             const linesInput = emb.querySelector('#hbs-presenter-max-lines');
@@ -310,14 +216,14 @@
         },
         
         trimFeed: function() {
-            const emb = _getEmbedded();
+            const emb = UI.getEmbedded();
             if (!emb) return;
             const linesInput = emb.querySelector('#hbs-presenter-max-lines');
             const msgEl = emb.querySelector('.hbs-presenter-body');
             if (!linesInput || !msgEl) return;
             
             // Hard limit physical DOM nodes to MAX_FEED to prevent DOM bloat
-            while (msgEl.children.length > MAX_FEED) {
+            while (msgEl.children.length > STATE.MAX_FEED) {
                 msgEl.removeChild(msgEl.firstChild);
             }
             
@@ -335,7 +241,7 @@
         },
 
         setLines: function(num) {
-            const emb = _getEmbedded();
+            const emb = UI.getEmbedded();
             if (!emb) return;
             const linesInput = emb.querySelector('#hbs-presenter-max-lines');
             if (linesInput) {
@@ -363,18 +269,22 @@
         hide: _hide,
 
         setEnabled: function(enabled) {
-            presenterEnabled = enabled;
+            STATE.presenterEnabled = enabled;
+            window._presenterEnabled = enabled; // expose for toolbar check
             if (!enabled) {
                 _hide();
-                const emb = _getEmbedded();
+                const emb = UI.getEmbedded();
                 if (emb) emb.classList.remove('active');
+                UI.renderDisabledState();
+            } else {
+                UI.clearDisabledState();
             }
         },
 
         setDisplayMode: function(mode) {
-            displayMode = mode;
-            const emb = _getEmbedded();
-            const ov = _getOverlay();
+            STATE.displayMode = mode;
+            const emb = UI.getEmbedded();
+            const ov = UI.getOverlay();
 
             if (mode === 'embedded') {
                 if (emb) { emb.classList.remove('collapsed'); }
@@ -395,16 +305,19 @@
         },
 
         clear: function() {
-            feedHistory.length = 0;
-            const emb = _getEmbedded();
+            STATE.feedHistory.length = 0;
+            const emb = UI.getEmbedded();
             if (emb) {
                 const msgEl = emb.querySelector('.hbs-presenter-body');
                 if (msgEl) msgEl.innerHTML = '';
             }
+            if (window.HBSPresenterStats) {
+                window.HBSPresenterStats.clear();
+            }
         },
 
         adaptHeight: function() {
-            const emb = _getEmbedded();
+            const emb = UI.getEmbedded();
             if (!emb) return;
             const bodyEl = emb.querySelector('.hbs-presenter-body');
             if (bodyEl) {
@@ -413,8 +326,89 @@
             }
         },
 
+        toggleAdvanced: function() {
+            const panel = document.getElementById('hbs-presenter-advanced');
+            const btn = document.getElementById('hbs-presenter-advanced-toggle');
+            if (!panel) return;
+            const isOpen = panel.style.display !== 'none';
+            panel.style.display = isOpen ? 'none' : 'block';
+            if (btn) {
+                btn.style.background = isOpen ? 'rgba(255,255,255,0.07)' : 'rgba(102,252,241,0.12)';
+                btn.style.borderColor = isOpen ? 'rgba(255,255,255,0.1)' : 'rgba(102,252,241,0.3)';
+                btn.style.color = isOpen ? 'var(--muted)' : 'var(--accent, #66fcf1)';
+            }
+        },
+
+        toggleFilter: function(type, btn) {
+            const isHidden = STATE.presenterHiddenTypes.has(type);
+            if (isHidden) {
+                STATE.presenterHiddenTypes.delete(type);
+                if (btn) { btn.style.opacity = '1'; btn.style.textDecoration = 'none'; }
+            } else {
+                STATE.presenterHiddenTypes.add(type);
+                if (btn) { btn.style.opacity = '0.35'; btn.style.textDecoration = 'line-through'; }
+            }
+            UI.applyFilters();
+        },
+
+        resetFilters: function() {
+            STATE.presenterHiddenTypes.clear();
+            STATE.presenterSearchQuery = '';
+            const searchInput = document.getElementById('hbs-presenter-search');
+            if (searchInput) searchInput.value = '';
+            document.querySelectorAll('[data-filter-type]').forEach(btn => {
+                btn.style.opacity = '1';
+                btn.style.textDecoration = 'none';
+            });
+            // Reset All button state
+            const allBtn = document.getElementById('hbs-presenter-filter-all');
+            if (allBtn) {
+                allBtn.style.background = 'rgba(255,255,255,0.12)';
+                allBtn.style.color = 'var(--text)';
+                allBtn.innerHTML = '<i class="fas fa-eye" style="font-size:9px;"></i> All';
+                allBtn._allHidden = false;
+            }
+            UI.applyFilters();
+        },
+
+        toggleAllFilters: function(btn) {
+            const allHidden = btn._allHidden;
+            const allTypes = Object.keys(STATE.TYPE_META).filter(k => k !== 'default');
+            
+            if (allHidden) {
+                // Show all: clear hidden types
+                STATE.presenterHiddenTypes.clear();
+                document.querySelectorAll('[data-filter-type]').forEach(chip => {
+                    chip.style.opacity = '1';
+                    chip.style.textDecoration = 'none';
+                });
+                btn.style.background = 'rgba(255,255,255,0.12)';
+                btn.style.color = 'var(--text)';
+                btn.innerHTML = '<i class="fas fa-eye" style="font-size:9px;"></i> All';
+                btn._allHidden = false;
+            } else {
+                // Hide all: add all types to hidden
+                allTypes.forEach(t => STATE.presenterHiddenTypes.add(t));
+                document.querySelectorAll('[data-filter-type]').forEach(chip => {
+                    chip.style.opacity = '0.35';
+                    chip.style.textDecoration = 'line-through';
+                });
+                btn.style.background = 'rgba(239,68,68,0.15)';
+                btn.style.color = '#ef4444';
+                btn.innerHTML = '<i class="fas fa-eye-slash" style="font-size:9px;"></i> All';
+                btn._allHidden = true;
+            }
+            UI.applyFilters();
+        },
+
+        setSearch: function(query) {
+            STATE.presenterSearchQuery = (query || '').trim();
+            UI.applyFilters();
+        },
+
         briefing: _briefing,
-        getFeed: function() { return [...feedHistory]; }
+        getFeed: function() { return [...STATE.feedHistory]; },
+        _renderDisabledState: UI.renderDisabledState
     };
 
     window.Presenter = Presenter;
@@ -465,6 +459,9 @@
                         if (d.config.briefing_on_new_chat) {
                             setTimeout(() => Presenter.briefing(), 1500);
                         }
+                    } else {
+                        // Render the disabled notice immediately
+                        UI.renderDisabledState();
                     }
                 }
             })

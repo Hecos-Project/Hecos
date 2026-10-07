@@ -1,0 +1,23 @@
+<!-- CHAT UI PANEL -->
+<div id="tab-chat_ui" class="panel">
+  
+  <div class="card">
+    <div class="card-title"><i class="fas fa-desktop" style="margin-right:8px; color:var(--accent);"></i> Welcome Screen Behavior</div>
+    <div style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">
+        Configure how the welcome screen behaves when opening a new chat session.
+    </div>
+
+    <div class="field">
+      <label>Welcome Mode</label>
+      <select id="chatui-welcome-mode">
+        <option value="classic">Classic (Only Chips & System Logo)</option>
+        <option value="avatar">Avatar (Only 3D Flipping Card)</option>
+        <option value="hybrid">Hybrid (Chips first, flips to Avatar on click/typing)</option>
+      </select>
+      <div style="font-size:12px; color:var(--muted); margin-top:5px;">
+        <strong>Hybrid Mode:</strong> Shows the "Capability Chips" on startup. When you click the chat area or text input, they fade out to reveal the 3D Avatar card.
+      </div>
+    </div>
+  </div>
+
+</div>

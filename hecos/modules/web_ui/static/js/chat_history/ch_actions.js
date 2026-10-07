@@ -19,11 +19,6 @@ window.newChatSession = async function (mode = null) {
     window.chatHistoryState.chatModeHasMessages = false;
     localStorage.setItem('hecos_active_session_id', res.session_id);
 
-    if (window._clearChatDOM) window._clearChatDOM();
-    else if (window.clearChat) {
-        window._clearChatDOM = window.clearChat;
-        window.chatArea && (window.chatArea.innerHTML = '');
-    }
     window.chatHistoryState.isUIRendered = true;
 
     // Reset topbar dropdowns (persona, model, tts) to defaults
@@ -31,6 +26,12 @@ window.newChatSession = async function (mode = null) {
 
     // Reset Soul Forge / overrides panel (topbar quick preset, sidebar panel, etc.)
     if (window.soLoadActiveSessionState) await window.soLoadActiveSessionState();
+
+    if (window._clearChatDOM) window._clearChatDOM();
+    else if (window.clearChat) {
+        window._clearChatDOM = window.clearChat;
+        window.chatArea && (window.chatArea.innerHTML = '');
+    }
 
     if (window.Presenter) window.Presenter.clear();
 

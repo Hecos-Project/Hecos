@@ -336,6 +336,26 @@ window.sfApplySoulToUI = async function(soul) {
     if (sbGD) {
         sbGD.textContent = window.sfState.activeSoulId || 'Custom';
     }
+    
+    // ── Update chat avatar & persona globals when system default changes ──
+    // Only apply if no session override is active (session overrides take priority)
+    if (!(window.soState && window.soState.activeSoulId)) {
+        const sfPersona = soul.persona?.soul_file;
+        if (sfPersona) {
+            window.HecosPersonaName = sfPersona;
+            window._globalPersonaName = window.HecosPersonaName;
+            fetch(`/api/persona/avatar?persona=${encodeURIComponent(sfPersona)}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.ok && d.avatar_path) {
+                        window.HecosAvatar = d.avatar_path;
+                        window._globalAvatar = d.avatar_path;
+                        window.HecosAvatarType = d.avatar_type || 'image';
+                    }
+                })
+                .catch(() => {});
+        }
+    }
 };
 
 

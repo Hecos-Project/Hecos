@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
 <link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}&t=20260922">
 <link rel="stylesheet" href="/assets/css/chat.css?v={{ version }}&t=20260922b">
+<link rel="stylesheet" href="/static/css/welcome_screen.css?v={{ version }}">
 <link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}">
 <!-- GridStack.js — Widget Grid Library -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack.min.css">
@@ -30,6 +31,8 @@
 <!-- WEB_UI HBS & Presenter Extensions -->
 <link rel="stylesheet" href="/ext/hbs_common/static/css/hbs_base.css?v={{ version }}">
 <link rel="stylesheet" href="/ext/presenter/static/css/presenter.css?v={{ version }}">
+<!-- WEB_UI DCC Extension -->
+<link rel="stylesheet" href="/ext/dcc/static/css/dcc.css?v={{ version }}">
 <!-- CRITICAL: inline mobile overrides - cache-proof -->
 <style>
   /* Default: hide hamburger/mobile elements on desktop */
@@ -163,7 +166,15 @@
 <link rel="stylesheet" href="/static/css/doc_preview.css?v={{ version }}">
 <script src="/static/js/doc_preview.js?v={{ version }}"></script>
 <script src="/static/js/agent/agent_traces.js?v={{ version }}"></script>
-<!-- Refactored Chat Logic Modules -->
+<!-- DCC — Dynamic Capability Chips (must load before welcome_screen) -->
+<script src="/ext/dcc/static/js/dcc_render.js?v={{ version }}"></script>
+<script src="/ext/dcc/static/js/dcc_core.js?v={{ version }}"></script>
+<!-- Welcome Screen Module (modular replacement for chat_welcome.js) -->
+<script src="/static/js/welcome_screen/ws_chips.js?v={{ version }}"></script>
+<script src="/static/js/welcome_screen/ws_main.js?v={{ version }}"></script>
+<script src="/static/js/welcome_screen/ws_avatar.js?v={{ version }}"></script>
+<script src="/static/js/welcome_screen/ws_hybrid.js?v={{ version }}"></script>
+<script src="/static/js/welcome_screen/ws_core.js?v={{ version }}"></script>
 <script src="/static/js/chat_ui.js?v={{ version }}"></script>
 <script src="/static/js/chat_api.js?v={{ version }}"></script>
 <script src="/static/js/chat_events.js?v={{ version }}"></script>
@@ -208,6 +219,10 @@
 <script src="/ext/emoticons/static/js/emoticons.js?v={{ version }}"></script>
 <!-- WEB_UI HBS & Presenter Extensions -->
 <script src="/ext/hbs_common/static/js/hbs_utils.js?v={{ version }}"></script>
+<script src="/ext/presenter/static/js/presenter_state.js?v={{ version }}"></script>
+<script src="/ext/presenter/static/js/presenter_stats.js?v={{ version }}"></script>
+<script src="/ext/presenter/static/js/presenter_stats_ui.js?v={{ version }}"></script>
+<script src="/ext/presenter/static/js/presenter_ui.js?v={{ version }}"></script>
 <script src="/ext/presenter/static/js/presenter.js?v={{ version }}"></script>
 <!-- HDCS Command Palette (self-contained, no ES modules) -->
 <link rel="stylesheet" href="/assets/css/cmd_palette.css?v={{ version }}">

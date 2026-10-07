@@ -9,13 +9,13 @@ sentence_silence: 0.2
 piper_timeout: 180
 kokoro:
   speed: 1.0
-  voice: Brenda Stern
+  voice: Camilla Holmström
   sentence_silence: 0.0
   model_path: ''
 xtts:
   speed: 1.4
   language: it
-  speaker: Brenda Stern
+  speaker: Camilla Holmström
   gpu_acceleration: gpu
   chunk_sentences: true
   speaker_wav: ''

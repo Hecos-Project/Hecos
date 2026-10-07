@@ -192,12 +192,21 @@ window.openSoulGallery = async function(url) {
     personaName = window.HecosPersonaName;
   }
   
+  let fallbackAvatarUrl = url || '/assets/Hecos_Logo_SQR_NBG_LogoOnly.png';
+  let fallbackAvatarType = 'image';
+  
   try {
     const res = await fetch(`/api/persona/media?persona=${encodeURIComponent(personaName)}`);
     if (res.ok) {
       const data = await res.json();
-      if (data.ok && data.media && data.media.length) {
-        items = data.media; // {name, url, type, is_avatar}
+      if (data.ok) {
+        if (data.media && data.media.length) {
+          items = data.media; // {name, url, type, is_avatar}
+        }
+        if (data.avatar && data.avatar.url) {
+          fallbackAvatarUrl = data.avatar.url;
+          fallbackAvatarType = data.avatar.type || 'image';
+        }
       }
     }
   } catch (err) {
@@ -205,8 +214,13 @@ window.openSoulGallery = async function(url) {
   }
 
   if (!items.length) {
-    if (window.showToast) window.showToast('📭 No media found for this Soul.', 'info');
-    return;
+    // If no media folder files exist, still show the gallery with just the avatar!
+    items = [{
+      name: 'Avatar',
+      url: fallbackAvatarUrl,
+      type: fallbackAvatarType,
+      is_avatar: true
+    }];
   }
 
   let idx = 0;

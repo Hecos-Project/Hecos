@@ -1,0 +1,218 @@
+/**
+ * dcc.css — Dynamic Capability Chips Styles
+ * Navigational hierarchy styles.
+ */
+
+.dcc-nav-container {
+    position: relative;
+    width: 100%;
+    min-height: 40px; /* Base height for chips */
+    overflow: hidden; /* For slide animations */
+    display: flex;
+    flex-direction: column;
+}
+
+.dcc-view {
+    width: 100%;
+    flex-shrink: 0;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.dcc-exiting {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+/* Animations */
+.dcc-slide-in-right { transform: translateX(20px); opacity: 0; }
+.dcc-slide-in-left  { transform: translateX(-20px); opacity: 0; }
+.dcc-slide-out-left { transform: translateX(-20px); opacity: 0; }
+.dcc-slide-out-right{ transform: translateX(20px); opacity: 0; }
+
+/* ── L1 Chips ────────────────────────────────────────────────────────────── */
+.dcc-l1-chip {
+    padding-left: 10px !important;
+}
+
+/* ── Back Button & Header ────────────────────────────────────────────────── */
+.dcc-back-btn {
+    font-size: 12px;
+    color: var(--muted, #888);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
+    width: fit-content;
+}
+
+.dcc-back-btn:hover {
+    background: rgba(255,255,255,0.05);
+    color: var(--text, #e0e0e0);
+}
+
+.dcc-view-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text, #e0e0e0);
+    margin-bottom: 12px;
+    padding-left: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dcc-view-header i {
+    opacity: 0.7;
+}
+
+/* ── L2 Capability Chips ─────────────────────────────────────────────────── */
+.dcc-capability-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 14px !important;
+    gap: 6px;
+    background: var(--bg2, #1e1e2e);
+    border: 1px solid var(--border, rgba(255,255,255,0.07));
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.dcc-capability-chip:hover {
+    background: rgba(var(--accent-rgb, 108, 140, 255), 0.12);
+    border-color: rgba(var(--accent-rgb, 108, 140, 255), 0.3);
+    transform: translateY(-1px);
+}
+
+.dcc-cap-badge {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    color: var(--muted, #888);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.dcc-cap-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text, #e0e0e0);
+    line-height: 1.3;
+}
+
+/* ── L1 Featured Carousel (Paginated) ─────────────────────────────────────── */
+.dcc-featured-carousel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    position: relative;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.dcc-featured-viewport {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    height: 46px; /* Increased height to allow top hover transform without cutting off */
+}
+
+.dcc-carousel-arrow {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    color: var(--text, #e0e0e0);
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+    z-index: 2;
+}
+
+.dcc-carousel-arrow:hover:not(.dcc-arrow-disabled) {
+    background: rgba(255,255,255,0.12);
+    transform: scale(1.1);
+}
+
+.dcc-arrow-disabled {
+    opacity: 0.2;
+    cursor: default;
+}
+
+.dcc-featured-track {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center; /* Centers chips if there are fewer than 5 */
+    gap: 8px;
+    width: 100%;
+    position: absolute;
+    top: 5px; /* Push down to leave room at the top for hover effect */
+    left: 0;
+    transition: transform 0.25s ease-out;
+}
+
+/* 5 chips per page: (100% - 4 gaps of 8px) / 5 */
+.dcc-featured-chip {
+    flex: 0 0 calc((100% - 32px) / 5);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    padding: 8px 12px !important;
+}
+
+.dcc-featured-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Page Transition Animations */
+.dcc-page-in-right { transform: translateX(100%); }
+.dcc-page-in-left  { transform: translateX(-100%); }
+.dcc-page-out-left { transform: translateX(-100%); }
+.dcc-page-out-right{ transform: translateX(100%); }
+
+
+/* ── NEW Badge ──────────────────────────────────────────────────────────── */
+.dcc-new-badge {
+    background-color: #2196F3; /* Blue background */
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 5px;
+    border-radius: 6px;
+    margin-left: 2px;
+    text-transform: uppercase;
+    animation: dccNewVibrate 1.5s infinite;
+    box-shadow: 0 0 5px rgba(255, 235, 59, 0.5);
+}
+
+@keyframes dccNewVibrate {
+    0% { box-shadow: 0 0 0px rgba(255, 235, 59, 0); transform: scale(1); }
+    50% { box-shadow: 0 0 8px rgba(255, 235, 59, 1); transform: scale(1.05); }
+    100% { box-shadow: 0 0 0px rgba(255, 235, 59, 0); transform: scale(1); }
+}
+
+.dcc-has-new {
+    border-color: rgba(33, 150, 243, 0.4) !important;
+}

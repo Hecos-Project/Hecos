@@ -319,6 +319,10 @@ window.soApplySoulToUI = async function(soul) {
         if (window.soUpdateCloneState) window.soUpdateCloneState();
         window.soState.isDirty = false;
         
+        // Restore system default persona/avatar when override is cleared
+        if (window._globalPersonaName) window.HecosPersonaName = window._globalPersonaName;
+        if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
+        
         const topBtn = document.getElementById('so-top-save-global-btn');
         if (topBtn) {
             topBtn.innerHTML = '<i class="fas fa-save"></i> Save';
@@ -380,6 +384,24 @@ window.soApplySoulToUI = async function(soul) {
     window.soDirty();
     if (window.soUpdateCloneState) window.soUpdateCloneState();
     window.soState.isDirty = false; // reset dirty flag as we just loaded
+    
+    // ── Immediately update the chat avatar & persona name globals ─────
+    // This ensures addBubble() shows the correct soul from the first instant,
+    // instead of flashing the system default until the AI response arrives.
+    const soulPersona = soul.persona?.soul_file;
+    if (soulPersona) {
+        window.HecosPersonaName = soulPersona;
+        // Async-fetch the avatar so it's ready before the user sends a message
+        fetch(`/api/persona/avatar?persona=${encodeURIComponent(soulPersona)}`)
+            .then(r => r.json())
+            .then(d => {
+                if (d.ok && d.avatar_path) {
+                    window.HecosAvatar = d.avatar_path;
+                    window.HecosAvatarType = d.avatar_type || 'image';
+                }
+            })
+            .catch(() => {});
+    }
     
     const topBtn = document.getElementById('so-top-save-global-btn');
     if (topBtn) {

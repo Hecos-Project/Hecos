@@ -39,7 +39,8 @@ window.CONFIG_HUB = {
         { id: 'logs',      label: 'hub_mod_logs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'privacy',   label: 'hub_mod_privacy',      icon: '<i class="fas fa-user-secret"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'hpm-settings',label: 'HPM Settings',       icon: '<i class="fas fa-box-open"></i>', cat: 'SISTEMA', isCore: true },
-        { id: 'presenter', label: 'Presenter',            icon: '<i class="fas fa-bullhorn"></i>', cat: 'SISTEMA', isCore: true }
+        { id: 'presenter', label: 'Presenter',            icon: '<i class="fas fa-bullhorn"></i>', cat: 'SISTEMA', isCore: true },
+        { id: 'chat_ui',   label: 'Chat Interface',       icon: '<i class="fas fa-comment-dots"></i>', cat: 'SISTEMA', isCore: true }
     ],
 
     // Fallback Icons based on keywords (for MCP or new plugins)

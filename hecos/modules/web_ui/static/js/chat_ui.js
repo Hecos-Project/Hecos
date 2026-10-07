@@ -8,7 +8,6 @@ window.I18N = window.I18N || {};
 const chatArea   = document.getElementById('chat-area');
 const userInput  = document.getElementById('user-input');
 const sendBtn    = document.getElementById('send-btn');
-const welcome    = document.getElementById('welcome');
 
 window.chatArea = chatArea;
 window.userInput = userInput;
@@ -129,7 +128,7 @@ if (document.readyState === 'loading') {
 // ---------------------------
 
 window.hideWelcome = function() {
-  if (welcome) welcome.style.display = 'none';
+  if (window.HecosWelcome) window.HecosWelcome.hide();
 };
 
 window.autoResize = function(ta) {
@@ -145,7 +144,9 @@ window.handleKey = function(e) {
 };
 
 window.startPrompt = function(text) {
-  if (userInput) {
+  if (window.HecosWelcome) {
+    window.HecosWelcome.startPrompt(text);
+  } else if (userInput) {
     userInput.value = text;
     window.autoResize(userInput);
     if (window.sendMessage) window.sendMessage();
@@ -161,19 +162,13 @@ window.clearChat = async function() {
   // Fallback: just clear the DOM
   window.chatHistory = [];
   if (chatArea) chatArea.innerHTML = '';
-  if (welcome) {
-      chatArea.appendChild(welcome);
-      welcome.style.display = 'flex';
-  }
+  if (window.HecosWelcome) window.HecosWelcome.show();
 };
 
 window._clearChatDOM = function() {
   window.chatHistory = [];
   if (chatArea) chatArea.innerHTML = '';
-  if (welcome) {
-      chatArea.appendChild(welcome);
-      welcome.style.display = 'flex';
-  }
+  if (window.HecosWelcome) window.HecosWelcome.show();
 };
 
 window.clearInput = function() {
