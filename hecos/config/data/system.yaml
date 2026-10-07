@@ -3,15 +3,7 @@ ai:
   active_personality: Urania_9800
   available_personalities:
     '1': Hecos_System_Soul
-    '2': Hecos_Presenter
-    '3': Urania_9800
-    '4': Urania_Presenter
-    '5': claudia
-    '6': jun_my_little_princess
-    '7': motoko_kusanagi
-    '8': nova_x-01
-    '9': sebastian_pro
-    '10': urania_9800_presenter
+    '2': Urania_9800
   save_special_instructions: true
   special_instructions: Ricorda che devi sempre parlare in italiano, non in inglese.
     Scrivi sempre e solo in lingua italiana - a meno che non si tratti della generazione

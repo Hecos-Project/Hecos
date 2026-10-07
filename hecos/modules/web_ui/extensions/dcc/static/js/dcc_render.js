@@ -87,10 +87,13 @@
 
         // --- FEATURED CAPABILITIES WITH PAGINATED CAROUSEL ---
         if (_data.featured && _data.featured.length > 0) {
-            // Shuffle featured chips client-side for variety
-            const shuffled = _shuffle(_data.featured);
+            // Separate new chips (keep in order) from the rest (shuffle for variety)
+            const newChips = _data.featured.filter(m => m.is_new);
+            const otherChips = _shuffle(_data.featured.filter(m => !m.is_new));
+            const ordered = [...newChips, ...otherChips];
+
             const PAGE_SIZE = 5;
-            const totalPages = Math.ceil(shuffled.length / PAGE_SIZE);
+            const totalPages = Math.ceil(ordered.length / PAGE_SIZE);
             let currentPage = 0;
 
             // Build the carousel container
@@ -127,7 +130,15 @@
                 if (isNew) el.classList.add('dcc-has-new');
 
                 const shortText = mod.short || mod.label;
-                const tooltip = mod.prompt || `Launch ${mod.label}`;
+                const modType = mod.type || 'App';
+                const promptText = mod.prompt || `Launch ${mod.label}`;
+                
+                let tooltip = `${mod.label} (${modType}): ${promptText}`;
+                if (mod.caps) {
+                    if (mod.caps.llm > 0) tooltip += `\nLLM Tools: ${mod.caps.llm}`;
+                    if (mod.caps.cmd > 0) tooltip += `\nSlash Commands: ${mod.caps.cmd}`;
+                }
+                
                 el.title = tooltip;
                 
                 const newBadgeHtml = isNew ? `<span class="dcc-new-badge">NEW</span>` : '';
@@ -155,7 +166,7 @@
             // Render a specific page into the viewport
             function renderPage(pageIndex, direction) {
                 const start = pageIndex * PAGE_SIZE;
-                const pageItems = shuffled.slice(start, start + PAGE_SIZE);
+                const pageItems = ordered.slice(start, start + PAGE_SIZE);
 
                 const newTrack = document.createElement('div');
                 newTrack.className = 'dcc-featured-track';

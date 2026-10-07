@@ -148,9 +148,9 @@ class PresenterEngine:
         payload = event.get("payload", {})
         pkg_id = payload.get("id", "Unknown")
         
-        if "installed" in event_type:
+        if event_type == "hpm:package_installed":
             text = f"Package '{pkg_id}' installed successfully."
-        elif "uninstalled" in event_type:
+        elif event_type == "hpm:package_uninstalled":
             text = f"Package '{pkg_id}' uninstalled."
         else:
             text = f"Package event: {pkg_id}"
