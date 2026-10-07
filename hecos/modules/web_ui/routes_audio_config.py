@@ -170,6 +170,23 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 logger.error(f"[WebUI] manage_audio_config POST error: {exc}")
                 return jsonify({"ok": False, "error": str(exc)}), 500
 
+    @app.route("/api/audio/filters", methods=["GET", "POST"])
+    def manage_tts_filters():
+        """Gets or updates TTS filters config."""
+        try:
+            from hecos.core.audio.tts_filter.config import get_filter_config, save_filter_config
+            if request.method == "GET":
+                return jsonify({"ok": True, "config": get_filter_config()})
+            elif request.method == "POST":
+                data = request.get_json(force=True) or {}
+                if save_filter_config(data):
+                    return jsonify({"ok": True})
+                else:
+                    return jsonify({"ok": False, "error": "Failed to save filters"}), 500
+        except Exception as exc:
+            logger.error(f"[WebUI] manage_tts_filters error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
     # ── Audio Stop ────────────────────────────────────────────────────────────────
 
     @app.route("/api/audio/stop", methods=["POST"])

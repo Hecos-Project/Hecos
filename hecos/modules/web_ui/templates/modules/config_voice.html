@@ -397,6 +397,62 @@
     </div>
   </div>
 
+  <!-- TTS Filters Card -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-filter"></i> TTS Filters & Sanitization</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">
+      Filter out unwanted punctuation, LLM errors, or custom words before they are sent to the TTS engines.
+    </p>
+    
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <strong>Remove Punctuation & Markdown</strong>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Helpful for XTTS to avoid pronouncing asterisks or making weird pauses for dots.</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="tts-filter-punctuation" onchange="window.saveTTSFilters()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row" style="margin-top:10px;">
+      <div class="toggle-info">
+        <strong>Remove LLM Errors</strong>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Automatically removes phrases like "As an AI..." or "[Error:]" from being spoken.</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="tts-filter-llm" onchange="window.saveTTSFilters()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row" style="margin-top:10px;">
+      <div class="toggle-info">
+        <strong>XTTS Fix Periods <span class="badge" style="font-size:9px; opacity:0.8; vertical-align:middle;">XTTS Only</span></strong>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Converts periods to commas before sending to XTTS2 to prevent the model from saying "punto" aloud. This is a known XTTS v2 bug in Italian and other languages.</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="tts-filter-xtts-periods" onchange="window.saveTTSFilters()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="field" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+      <div class="card-title" style="font-size: 14px; margin-bottom: 10px;">Custom Voice Replacements</div>
+      <p style="color: var(--muted); font-size: 11px; margin-bottom: 15px;">
+        Automatically swap specific words or symbols before they are pronounced by the TTS engine. For example, replace "..." with a space to avoid weird noises.
+      </p>
+      
+      <div id="tts-custom-filters-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+          <!-- Rows added by JS -->
+      </div>
+      
+      <div style="text-align: right;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="window.HecosVoiceFilters.addPlaceholderRow()"><i class="fas fa-plus"></i> Add Replacement</button>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-title"><i class="fas fa-volume-up"></i> {{ t('webui_conf_voice_mic_title') }}</div>
     <div class="grid-2">
@@ -469,6 +525,95 @@
   </div>
 
 </div>
+
+<script>
+  // TTS Filters Integration
+  window.HecosVoiceFilters = {
+    container: null,
+    
+    init() {
+      this.container = document.getElementById('tts-custom-filters-container');
+    },
+
+    renderRows(replacements) {
+      this.container.innerHTML = '';
+      if (!replacements || replacements.length === 0) {
+        return;
+      }
+      replacements.forEach(rep => this.addRow(rep.target, rep.replacement));
+    },
+
+    addRow(target = '', replacement = '') {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.gap = '10px';
+      row.style.alignItems = 'center';
+      
+      row.innerHTML = `
+        <input type="text" class="v-target config-input" placeholder="Target text/symbol (e.g. ...)" value="${target.replace(/"/g, '&quot;')}" onchange="window.saveTTSFilters()" style="flex:1;">
+        <span style="color:var(--muted);"><i class="fas fa-arrow-right"></i></span>
+        <input type="text" class="v-replacement config-input" placeholder="Replacement (e.g. space)" value="${replacement.replace(/"/g, '&quot;')}" onchange="window.saveTTSFilters()" style="flex:1;">
+        <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); window.saveTTSFilters();" title="Remove"><i class="fas fa-trash"></i></button>
+      `;
+      this.container.appendChild(row);
+    },
+
+    addPlaceholderRow() {
+      this.addRow('', '');
+    },
+
+    getValues() {
+      const rows = Array.from(this.container.children);
+      const data = [];
+      rows.forEach(row => {
+        const t = row.querySelector('.v-target').value;
+        const r = row.querySelector('.v-replacement').value;
+        if (t.trim() !== '') {
+          data.push({ target: t, replacement: r });
+        }
+      });
+      return data;
+    }
+  };
+
+  window.loadTTSFilters = function() {
+    window.HecosVoiceFilters.init();
+    fetch('/api/audio/filters')
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok && d.config) {
+          document.getElementById('tts-filter-punctuation').checked = d.config.remove_punctuation || false;
+          document.getElementById('tts-filter-llm').checked = d.config.remove_llm_errors || false;
+          document.getElementById('tts-filter-xtts-periods').checked = d.config.xtts_fix_periods !== false;
+          window.HecosVoiceFilters.renderRows(d.config.custom_replacements || []);
+        }
+      })
+      .catch(e => console.error("Failed to load TTS filters:", e));
+  };
+
+  window.saveTTSFilters = function() {
+    const data = {
+      remove_punctuation: document.getElementById('tts-filter-punctuation').checked,
+      remove_llm_errors: document.getElementById('tts-filter-llm').checked,
+      xtts_fix_periods: document.getElementById('tts-filter-xtts-periods').checked,
+      custom_replacements: window.HecosVoiceFilters.getValues()
+    };
+    
+    fetch('/api/audio/filters', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(d => {
+      if(!d.ok) console.error("Failed to save filters", d.error);
+    })
+    .catch(e => console.error("Error saving TTS filters:", e));
+  };
+
+  // Run on load to fetch and display the current settings
+  window.loadTTSFilters();
+</script>
 
 <script>
   // Merge the dynamically loaded zoptions into the global sysOptions

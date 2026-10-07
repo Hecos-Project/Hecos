@@ -9,6 +9,7 @@ from hecos.core.audio.tts.base_engine import BaseTTSEngine
 from hecos.core.audio.tts.piper_engine import get_engine as get_piper
 from hecos.core.audio.tts.kokoro_engine import get_engine as get_kokoro
 from hecos.core.audio.tts.xtts_engine import get_engine as get_xtts
+from hecos.core.audio.tts_filter import sanitize_text
 
 def _get_engine_instance(engine_name: str) -> BaseTTSEngine:
     if engine_name == "kokoro":
@@ -44,6 +45,9 @@ class TTSManager:
     """
     @classmethod
     def speak(cls, text: str, state=None, _run_id=None, _timeout=0, _start=0, session_overrides=None):
+        text = sanitize_text(text)
+        if not text:
+            return
         engine = get_engine_for_session(session_overrides)
         try:
             engine.speak(text, state=state, _run_id=_run_id, _timeout=_timeout, _start=_start, session_overrides=session_overrides)
@@ -58,6 +62,9 @@ class TTSManager:
 
     @classmethod
     def generate_wav(cls, text: str, filepath: str, session_overrides=None) -> bool:
+        text = sanitize_text(text)
+        if not text:
+            return False
         engine = get_engine_for_session(session_overrides)
         try:
             success = engine.generate_wav(text, filepath, session_overrides=session_overrides)
@@ -73,6 +80,9 @@ class TTSManager:
 
     @classmethod
     def generate_wav_chunked(cls, text: str, filepath: str, progress_callback=None, session_overrides=None) -> bool:
+        text = sanitize_text(text)
+        if not text:
+            return False
         engine = get_engine_for_session(session_overrides)
         try:
             success = engine.generate_wav_chunked(text, filepath, progress_callback, session_overrides=session_overrides)

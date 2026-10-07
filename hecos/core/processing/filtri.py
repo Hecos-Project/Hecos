@@ -180,9 +180,9 @@ def clean_for_voice(text):
 
     # 5. Removes markdown (bold, italic, list items, headers)
     if conf.get("remove_markdown", True):
-        text = re.sub(r'\*\*.*?\*\*', '', text)
-        text = re.sub(r'__.*?__', '', text)
-        text = re.sub(r'\*.*?\*', '', text)
+        text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+        text = re.sub(r'__(.*?)__', r'\1', text)
+        text = re.sub(r'\*(.*?)\*', r'\1', text)
         # Strip markdown list items (lines starting with - or *)
         text = re.sub(r'(?m)^[\s]*[\-\*][\s]+', '', text)
         # Strip markdown headers (lines starting with #)

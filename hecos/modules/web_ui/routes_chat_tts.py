@@ -307,6 +307,8 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
     try:
         _ensure_dirs()
 
+        from hecos.core.audio.tts_filter import sanitize_text
+        text = sanitize_text(text)
         text = sanitize_text_for_tts(text)
         if not text:
             _chat_log.warning("[Audio] Text empty after sanitization. Generation skipped.")

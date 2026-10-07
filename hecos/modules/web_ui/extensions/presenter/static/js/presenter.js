@@ -474,7 +474,7 @@
                 for (const action of window.HKS_ACTIONS.getAll()) {
                     const combo = window.HKS_BINDINGS.get(action.id);
                     if (combo) {
-                        parts.push(`[${combo}] ${action.label}`);
+                        parts.push(`<span style="color:#ffffff;">[${combo}]</span> ${action.label}`);
                     }
                 }
                 if (parts.length > 0) {
