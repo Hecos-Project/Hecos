@@ -6,7 +6,16 @@
             <i class="fas fa-sliders-h" style="color: var(--accent1);"></i>
             <span id="so-panel-title">Chat Overrides</span>
         </div>
-        <button class="sf-close-btn" onclick="window.soTogglePanel(false)"><i class="fas fa-times"></i></button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn btn-secondary btn-sm" style="padding: 2px 8px;" onclick="window.soExportSoul()" title="Export .global_preset.json file">
+                <i class="fas fa-file-export"></i>
+            </button>
+            <button class="btn btn-secondary btn-sm" style="padding: 2px 8px;" onclick="document.getElementById('so-import-input').click()" title="Import .global_preset.json file">
+                <i class="fas fa-file-import"></i>
+            </button>
+            <input type="file" id="so-import-input" accept=".json" style="display:none;" onchange="window.soImportSoul(event)">
+            <button class="sf-close-btn" style="margin-left: 8px;" onclick="window.soTogglePanel(false)"><i class="fas fa-times"></i></button>
+        </div>
     </div>
     
     <div class="sf-body">
@@ -26,21 +35,20 @@
                     </select>
                 </div>
                 <button class="btn btn-primary btn-sm" onclick="window.soSaveAsNewSoul()" title="Save current config as new Global Default">
-                    <i class="fas fa-plus"></i> New
+                    <i class="fas fa-plus"></i>
                 </button>
                 <button id="so-top-save-global-btn" class="btn btn-primary btn-sm" onclick="window.soOverwriteGlobalPreset()" title="Overwrite current Global Default">
-                    <i class="fas fa-save"></i> Save
+                    <i class="fas fa-save"></i>
+                </button>
+                <button class="btn btn-info btn-sm" onclick="window.soRenameSoul()" title="Rename current Global Default">
+                    <i class="fas fa-pencil-alt"></i>
+                </button>
+                <button class="btn btn-warning btn-sm" onclick="window.soRevertSoul()" title="Revert to saved values">
+                    <i class="fas fa-undo"></i>
                 </button>
                 <button class="btn btn-danger btn-sm" onclick="window.soDeleteSoul()" title="Delete current Global Default">
                     <i class="fas fa-trash"></i>
                 </button>
-                <button class="btn btn-secondary btn-sm" onclick="window.soExportSoul()" title="Export .global_preset.json file">
-                    <i class="fas fa-file-export"></i>
-                </button>
-                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('so-import-input').click()" title="Import .global_preset.json file">
-                    <i class="fas fa-file-import"></i>
-                </button>
-                <input type="file" id="so-import-input" accept=".json" style="display:none;" onchange="window.soImportSoul(event)">
             </div>
         </div>
 
@@ -77,6 +85,24 @@
                 <div class="sf-control-group" style="flex:1;">
                     <label>Custom Direct Instructions</label>
                     <textarea id="so-custom-instructions" class="form-control" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Type custom instructions for this session here..." oninput="window.soDirty()"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- NOTES & CONTEXT -->
+        <div class="sf-section">
+            <div class="sf-section-header"><i class="fas fa-sticky-note"></i> NOTES & CONTEXT</div>
+            <div class="sf-controls-row">
+                <div class="sf-control-group">
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                        <input type="checkbox" id="so-send-notes-ai" onchange="window.soDirty()"> 
+                        Send notes to AI as context
+                    </label>
+                </div>
+            </div>
+            <div class="sf-controls-row" style="margin-top: 10px;">
+                <div class="sf-control-group" style="flex:1;">
+                    <textarea id="so-user-notes" class="form-control" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Type notes, links, or context here..." oninput="window.soDirty()"></textarea>
                 </div>
             </div>
         </div>
@@ -133,6 +159,23 @@
                 <div class="sf-slider-item">
                     <label>Max Tokens (Predict) <span id="so-val-predict">1024</span></label>
                     <input type="range" id="so-predict" min="128" max="8192" step="128" value="1024" oninput="window.soUpdateSliderVal(this, 'so-val-predict'); window.soDirty()">
+                </div>
+                <div class="sf-slider-item">
+                    <label>Context Size <span id="so-val-ctx">Auto</span></label>
+                    <input type="range" id="so-ctx" min="0" max="65536" step="512" value="0" oninput="
+                        document.getElementById('so-val-ctx').textContent = this.value == 0 ? 'Auto' : this.value;
+                        window.soDirty();
+                    ">
+                </div>
+                <div class="sf-slider-item">
+                    <label>GPU Layers <span id="so-val-gpu">Auto</span></label>
+                    <input type="range" id="so-gpu" min="-2" max="200" step="1" value="-2" oninput="
+                        let txt = this.value;
+                        if(this.value == -2) txt = 'Auto';
+                        else if(this.value == -1) txt = 'Max (-1)';
+                        document.getElementById('so-val-gpu').textContent = txt;
+                        window.soDirty();
+                    ">
                 </div>
             </div>
         </div>
@@ -221,7 +264,7 @@
     <i class="fas fa-exclamation-triangle" style="font-size:3em; color:var(--accent); margin-bottom:20px;"></i>
     <div id="hecos-confirm-modal-text" style="font-size:1.1em; color:var(--text); margin-bottom:30px; line-height:1.5;"></div>
     <div style="display:flex; justify-content:space-between; gap:12px;">
-      <button type="button" class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('hecos-confirm-modal').style.display='none'">Cancel</button>
+      <button type="button" id="hecos-confirm-modal-no" class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('hecos-confirm-modal').style.display='none'">Cancel</button>
       <button type="button" id="hecos-confirm-modal-yes" class="btn btn-primary" style="flex:1;">Confirm</button>
     </div>
   </div>

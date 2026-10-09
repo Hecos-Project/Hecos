@@ -1,0 +1,11 @@
+{
+    "tag": "URANIA_TEACHER",
+    "name": "Urania - Teacher",
+    "version": "1.0.0",
+    "description": "A specialized Teacher Persona (Urania 9800) designed exclusively to teach.",
+    "lazy_load": true,
+    "is_class_based": true,
+    "commands": {},
+    "tool_schema": [],
+    "slash_commands": []
+}

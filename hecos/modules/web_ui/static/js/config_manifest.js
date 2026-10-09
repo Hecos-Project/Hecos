@@ -19,7 +19,6 @@ window.CONFIG_HUB = {
         { id: 'backend',   label: 'hub_mod_backend',      icon: '<i class="fas fa-server"></i>', cat: 'INTELLIGENZA', pluginTag: 'MODELS', isCore: true },
 
         { id: 'keymanager',label: 'hub_mod_keymanager',   icon: '<i class="fas fa-key"></i>', cat: 'INTELLIGENZA', isCore: true },
-        { id: 'routing',   label: 'hub_mod_routing',      icon: '<i class="fas fa-route"></i>', cat: 'INTELLIGENZA', isCore: true },
         { id: 'ia',        label: 'hub_mod_persona',      icon: '<i class="fas fa-user-astronaut"></i>', cat: 'INTELLIGENZA', isCore: true },
         { id: 'filters',   label: 'hub_mod_filters',      icon: '<i class="fas fa-filter"></i>', cat: 'INTELLIGENZA', isCore: true },
         { id: 'memory',    label: 'hub_mod_memory',       icon: '<i class="fas fa-memory"></i>', cat: 'INTELLIGENZA', pluginTag: 'MEMORY', isCore: true },
@@ -120,7 +119,7 @@ window.CONFIG_HUB.tagMap = {
  * Used by renderConfigHub() to show tabs even before a panel has been fetched.
  */
 window.LAZY_PANEL_IDS = new Set([
-    'backend', 'keymanager', 'routing', 'agent', 'ia', 'filters', 'bridge',
+    'backend', 'keymanager', 'agent', 'ia', 'filters', 'bridge',
     'memory', 'voice',
     'webcam', 'executor', 'automation',
     'browser', 'system', 'sysnet', 'users', 'payload', 'plugins',

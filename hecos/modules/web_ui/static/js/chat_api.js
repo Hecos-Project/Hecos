@@ -158,7 +158,7 @@ window.sendMessage = async function() {
   if (typeof window.attachActionsToBubble === 'function') window.attachActionsToBubble(userBubble);
 
   window.chatHistory.push({role:'assistant', content:''});
-  const { bubble: aiBubble } = window.addBubble('ai', '', 'ai-'+Date.now());
+  const { bubble: aiBubble } = window.addBubble('ai', '', 'ai-'+Date.now(), { persona_name: window.HecosPersonaName || null });
   const cursor = document.createElement('span');
   cursor.className = 'cursor';
   aiBubble.appendChild(cursor);
@@ -317,7 +317,7 @@ window.sendInternalMessage = async function(text) {
   if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
   if (window.hideWelcome) window.hideWelcome();
   
-  const { bubble: aiBubble } = window.addBubble('ai', '', 'ai-'+Date.now());
+  const { bubble: aiBubble } = window.addBubble('ai', '', 'ai-'+Date.now(), { persona_name: window.HecosPersonaName || null });
   const cursor = document.createElement('span');
   cursor.className = 'cursor';
   aiBubble.appendChild(cursor);

@@ -60,6 +60,7 @@ class PromptBuilder:
             f"{rules['media_formatting_rules']}"
             f"{RoutingManager.get_dynamic_instructions(config)}"
             f"{rules['safety_instructions_block']}"
+            f"{rules['context_notes_block']}"
             f"{rules['user_profile_block']}"
             f"{rules['special_instructions_block']}"
             f"{vision_note}"
@@ -335,6 +336,11 @@ class PromptBuilder:
         # I'll just use the global safety if toggled on.
         safety_instructions_block = f"\n### SAFETY & CONTEXT DISCLAIMER ###\n{global_safe}\n" if global_safe and enable_safety else ""
         
+        # Context Notes
+        send_notes_to_ai = ai_cfg.get('send_notes_to_ai', False)
+        user_notes = ai_cfg.get('user_notes', '').strip()
+        context_notes_block = f"\n### CONTEXT & NOTES ###\n{user_notes}\n" if (send_notes_to_ai and user_notes) else ""
+        
         user_profile_block = ""
         try:
             profile = auth_mgr.get_profile(user_id)
@@ -372,6 +378,7 @@ class PromptBuilder:
             "media_formatting_rules": media_formatting_rules,
             "special_instructions_block": special_instructions_block,
             "safety_instructions_block": safety_instructions_block,
+            "context_notes_block": context_notes_block,
             "user_profile_block": user_profile_block,
             "local_model_rules": local_model_rules
         }

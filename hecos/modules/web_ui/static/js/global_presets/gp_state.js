@@ -9,21 +9,33 @@ window.sfState = {
     isDirty: false
 };
 
-// Custom Hecos Modals for Chat UI
-window.hecosConfirm = function(msg, onYes) {
+window.hecosConfirm = function(msg, onYes, onNo) {
     const modal = document.getElementById('hecos-confirm-modal');
     const textEl = document.getElementById('hecos-confirm-modal-text');
     const yesBtn = document.getElementById('hecos-confirm-modal-yes');
+    const noBtn = document.getElementById('hecos-confirm-modal-no');
     
     if (modal && textEl && yesBtn) {
         textEl.textContent = msg;
         modal.style.display = 'flex';
+        
         yesBtn.onclick = function() {
             modal.style.display = 'none';
-            onYes();
+            if (onYes) onYes();
         };
+        
+        if (noBtn) {
+            noBtn.onclick = function() {
+                modal.style.display = 'none';
+                if (onNo) onNo();
+            };
+        }
     } else {
-        if (confirm(msg)) onYes();
+        if (confirm(msg)) {
+            if (onYes) onYes();
+        } else {
+            if (onNo) onNo();
+        }
     }
 };
 
@@ -90,6 +102,7 @@ window.sfLoadGlobalState = async function() {
     try {
         const res = await fetch(`/hecos/config`, { cache: 'no-store' });
         const cfg = await res.json();
+        window.HecosSystemConfig = cfg;
         
         let activeSoulId = null;
         if (cfg.ai && cfg.ai.active_global_preset) {
@@ -108,6 +121,43 @@ window.sfLoadGlobalState = async function() {
             if (soulData.ok) {
                 window.sfApplySoulToUI(soulData.soul);
             }
+        } else {
+            // Build virtual soul from cfg when no preset is active
+            const btype = cfg.backend?.type || 'ollama';
+            const bdict = cfg.backend?.[btype] || {};
+            
+            // TTS engine might be in cfg.audio or cfg.ai, check both
+            let ttsEngine = cfg.ai?.tts_engine;
+            if (!ttsEngine && cfg.audio) ttsEngine = cfg.audio.active_engine;
+            
+            const virtualSoul = {
+                persona: {
+                    soul_file: cfg.ai?.active_personality,
+                    use_global_direct_instructions: cfg.ai?.use_global_direct_instructions,
+                    use_global_safety_instructions: cfg.ai?.use_global_safety_instructions,
+                    custom_instructions: cfg.ai?.custom_instructions,
+                    user_notes: cfg.ai?.user_notes,
+                    send_notes_to_ai: cfg.ai?.send_notes_to_ai
+                },
+                model: {
+                    backend_type: btype,
+                    model_name: bdict.model
+                },
+                voice: {
+                    tts_engine: ttsEngine,
+                    tts_voice: cfg.ai?.tts_voice,
+                    xtts_preset: cfg.ai?.xtts_preset
+                },
+                inference: {
+                    temperature: bdict.temperature,
+                    top_p: bdict.top_p,
+                    repeat_penalty: bdict.repeat_penalty,
+                    num_predict: bdict.num_predict,
+                    num_ctx: bdict.num_ctx || bdict.n_ctx,
+                    n_gpu_layers: bdict.num_gpu || bdict.n_gpu_layers
+                }
+            };
+            window.sfApplySoulToUI(virtualSoul);
         }
         
         window.sfState.isDirty = false;
@@ -118,7 +168,7 @@ window.sfLoadGlobalState = async function() {
 };
 
 window.sfActivateSoul = async function(soulId) {
-    if (!soulId) return;
+    if (soulId === undefined || soulId === null) return;
     
     try {
         const res = await fetch('/api/souls/activate', {
@@ -128,11 +178,28 @@ window.sfActivateSoul = async function(soulId) {
         });
         
         if (res.ok) {
-            document.getElementById('sf-status-msg').textContent = "Global Preset activated as system default.";
+            document.getElementById('sf-status-msg').textContent = soulId ? "Global Preset activated as system default." : "Global Preset cleared.";
             setTimeout(() => document.getElementById('sf-status-msg').textContent = "", 3000);
             
             // Reload the UI state to match the newly activated global
             await window.sfLoadGlobalState();
+            
+            // Also refresh the Chat Session topbar because the default fallbacks have changed!
+            if (window.chatHistoryState && window.chatHistoryState.activeSessionId) {
+                if (window.soActivateSoul) {
+                    // Explicitly bind the current chat session to the newly activated global preset
+                    // so that it immediately reflects the changes and clears stale overrides.
+                    await window.soActivateSoul(soulId);
+                } else if (window.loadSessionConfig) {
+                    await window.loadSessionConfig(window.chatHistoryState.activeSessionId);
+                }
+            }
+            
+            // If the Chat Overrides panel is currently open, sync it to reflect the new system fallbacks
+            const panel = document.getElementById('session-overrides-panel');
+            if (panel && panel.classList.contains('open') && window.soLoadActiveSessionState) {
+                window.soLoadActiveSessionState();
+            }
         }
     } catch(e) {}
 };

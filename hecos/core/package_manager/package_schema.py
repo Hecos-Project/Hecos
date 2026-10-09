@@ -315,8 +315,8 @@ class HpkgManifest(BaseModel):
     @classmethod
     def id_must_be_slug(cls, v: str) -> str:
         import re
-        if not re.match(r"^[a-z0-9_\-]+$", v):
-            raise ValueError(f"Package id '{v}' must be lowercase alphanumeric with underscores/hyphens only.")
+        if not re.match(r"^[a-z0-9_\-\.]+$", v):
+            raise ValueError(f"Package id '{v}' must be lowercase alphanumeric with underscores/hyphens/dots only.")
         return v
 
 

@@ -1,5 +1,5 @@
 active_engine: xtts2
-voice_status: false
+voice_status: true
 piper_path: C:\Hecos\bin\piper\piper.exe
 onnx_model: C:\Hecos\bin\piper\it_IT-paola-medium.onnx
 speed: 1.0
@@ -18,13 +18,13 @@ xtts:
   speaker: Camilla Holmström
   gpu_acceleration: gpu
   chunk_sentences: true
-  speaker_wav: ''
+  speaker_wav: C:\Hecos\hecos\assets\voice_clones\voce antonio 1.wav
   temperature: 0.6
   repetition_penalty: 4.0
   top_k: 40
   top_p: 0.8
   length_penalty: 0.9
-  current_preset: Emanuela P
+  current_preset: default
 xtts_presets:
   8bitMamma 1:
     chunk_sentences: true
@@ -34,6 +34,18 @@ xtts_presets:
     repetition_penalty: 4
     speaker: Claribel Dervla
     speaker_wav: C:\Hecos\hecos\assets\voice_clones\8bitMamma_voce1.wav
+    speed: 1.4
+    temperature: 0.6
+    top_k: 40
+    top_p: 0.8
+  Antonio 1:
+    chunk_sentences: true
+    gpu_acceleration: gpu
+    language: it
+    length_penalty: 0.9
+    repetition_penalty: 4
+    speaker: Colette Olivier
+    speaker_wav: C:\Hecos\hecos\assets\voice_clones\voce antonio 1.wav
     speed: 1.4
     temperature: 0.6
     top_k: 40

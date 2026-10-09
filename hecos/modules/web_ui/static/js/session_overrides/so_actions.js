@@ -71,7 +71,7 @@ window.soSaveGlobalInlineToActive = async function() {
             
             const topBtn = document.getElementById('so-top-save-global-btn');
             if (topBtn) {
-                topBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+                topBtn.innerHTML = '<i class="fas fa-save"></i>';
                 topBtn.style.backgroundColor = '';
                 topBtn.style.color = '';
                 topBtn.onclick = window.soOverwriteGlobalPreset;
@@ -88,6 +88,60 @@ window.soOverwriteGlobalPreset = function() {
     }
     window.hecosConfirm("Do you want to overwrite the active Global Preset with these chat override settings?", function() {
         window.soSaveGlobalInlineToActive();
+    });
+};
+
+window.soRenameSoul = function() {
+    const soulId = window.soState.activeSoulId;
+    if (!soulId) {
+        if (window.showToast) window.showToast("No Global Preset selected to rename.", "error");
+        return;
+    }
+    const soulObj = window.soState.souls.find(s => s.meta.id === soulId);
+    if (!soulObj) return;
+
+    window.hecosPrompt("Enter the new name for the Global Preset:", async function(newName) {
+        if (!newName || newName === soulObj.meta.name) return;
+        
+        const newData = window.soCollectUIState();
+        newData.meta = { ...soulObj.meta, name: newName };
+        
+        try {
+            const res = await fetch('/api/souls', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(newData)
+            });
+            if (res.ok) {
+                await window.soLoadData();
+                document.getElementById('so-status-msg').textContent = "Global Preset renamed successfully.";
+                setTimeout(() => document.getElementById('so-status-msg').textContent = "", 3000);
+            }
+        } catch(e) {}
+    });
+};
+
+window.soRevertSoul = function() {
+    const soulId = window.soState.activeSoulId;
+    if (!soulId) {
+        if (window.showToast) window.showToast("No Global Preset selected to revert.", "error");
+        return;
+    }
+    window.hecosConfirm("Are you sure you want to revert all changes to the saved values?", function() {
+        const soulObj = window.soState.souls.find(s => s.meta.id === soulId);
+        if (soulObj) {
+            window.soApplySoulToUI(soulObj);
+            window.soState.isDirty = false;
+            const topBtn = document.getElementById('so-top-save-global-btn');
+            if (topBtn) {
+                topBtn.innerHTML = '<i class="fas fa-save"></i>';
+                topBtn.style.backgroundColor = '';
+                topBtn.style.color = '';
+                topBtn.onclick = window.soOverwriteGlobalPreset;
+            }
+            document.getElementById('so-status-msg').textContent = "Reverted to saved values.";
+            setTimeout(() => document.getElementById('so-status-msg').textContent = "", 3000);
+        }
     });
 };
 

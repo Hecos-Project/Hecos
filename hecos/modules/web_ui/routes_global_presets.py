@@ -71,6 +71,8 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                 soul = get_soul(soul_id)
                 if not soul:
                     return jsonify({"ok": False, "error": "Soul not found"}), 404
+            elif "soul" in data and data["soul"]:
+                soul = SoulProfile.model_validate(data["soul"])
                 
             logger.info(f"[GlobalPresets] /activate: soul_id='{soul_id}', session_id='{session_id}', soul_name='{soul.meta.name if soul else 'None'}'")
             
@@ -123,11 +125,16 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
             else:
                 from hecos.memory.session_config_db import set_session_config, get_session_config
                 overrides = get_session_config(session_id) or {}
-                overrides['active_global_preset'] = soul_id
                 
-                # Optionally populate ai/backend overrides if we want UI dropdowns to reflect them
                 if soul:
-                    if 'ai' not in overrides: overrides['ai'] = {}
+                    # Clear previous overrides so old values don't bleed through
+                    for k in ['ai', 'backend', 'inference', 'voice']:
+                        if k in overrides:
+                            del overrides[k]
+                            
+                    overrides['active_global_preset'] = soul_id
+                    overrides['ai'] = {}
+                    
                     if soul.persona.soul_file: overrides['ai']['active_personality'] = soul.persona.soul_file
                     if soul.voice.tts_engine: overrides['ai']['tts_engine'] = soul.voice.tts_engine
                     if soul.voice.tts_voice: overrides['ai']['tts_voice'] = soul.voice.tts_voice
@@ -149,13 +156,16 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                         if 'voice' not in overrides: overrides['voice'] = {}
                         for k, v in soul.voice.model_dump(exclude_unset=True).items():
                             overrides['voice'][k] = v
+                else:
+                    # The user selected "No active global preset", so we clear all overrides
+                    overrides = {'active_global_preset': ""}
                 
                 set_session_config(session_id, overrides)
             
             if soul:
-                logger.info(f"[GlobalPresets] About to emit persona_switched for '{soul.meta.name}'")
+                logger.info(f"[GlobalPresets] About to emit persona_switched for '{soul.persona.soul_file}'")
                 from hecos.core.events import emit
-                emit("persona_switched", {"new_persona": soul.meta.name})
+                emit("persona_switched", {"new_persona": soul.persona.soul_file})
                 logger.info("[GlobalPresets] persona_switched emitted OK")
             else:
                 logger.info("[GlobalPresets] No soul, skipping emit")

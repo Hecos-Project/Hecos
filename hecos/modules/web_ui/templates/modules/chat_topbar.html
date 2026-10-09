@@ -4,29 +4,68 @@
     <div id="model-badge" style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
       <div id="tb-status-dot" style="width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);"></div>
       <span id="tb-model" style="font-size: 13px; font-weight: 500;">{{ t('webui_chat_loading') }}</span>
-      <select id="so-quick-preset-select" class="chat-session-select" style="border-color: var(--accent1); color: var(--accent1);" onchange="if(this.value) window.soActivateSoul(this.value)">
+      <select id="so-quick-preset-select" class="chat-session-select" style="border-color: var(--accent1); color: var(--accent1);" onchange="window.soActivateSoul(this.value)" title="Select Global Preset (Override)">
           <option value="">⚡ Preset...</option>
       </select>
-      <select id="chat-persona-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
-          <option value="">&#127381; Soul...</option>
-      </select>
-      <select id="chat-model-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
-          <option value="">&#x1F916; Model...</option>
-      </select>
-      <select id="chat-tts-engine-select" class="chat-session-select" onchange="window.updateSessionTTSVoices();">
-          <option value="">&#x1F50A; TTS Engine...</option>
-          <option value="piper">Piper</option>
-          <option value="kokoro">Kokoro</option>
-          <option value="xtts2">XTTSv2</option>
-      </select>
-      <select id="chat-tts-voice-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
-          <option value="">&#127908; TTS Voice...</option>
-      </select>
-      <button id="soul-forge-toggle-btn" class="chat-session-select" style="background:var(--bg3); color:var(--accent1); border-color:var(--accent1); display:flex; align-items:center; gap:5px;" onclick="window.soTogglePanel(true)">
-          <i class="fas fa-sliders-h"></i> Chat Overrides
+      <button id="topbar-overrides-toggle-btn" class="chat-session-select" style="background:var(--bg2); color:var(--text-muted); border: 1px solid var(--border); padding: 3px 6px; cursor: pointer; transition: all 0.2s;" onclick="window.toggleTopbarOverrides()" title="Toggle Override Controls">
+          <i id="topbar-overrides-toggle-icon" class="fas fa-chevron-left"></i>
       </button>
+      <div id="topbar-overrides-group" style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
+          <select id="chat-persona-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
+              <option value="">&#127381; Soul...</option>
+          </select>
+          <select id="chat-model-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
+              <option value="">&#x1F916; Model...</option>
+          </select>
+          <select id="chat-tts-engine-select" class="chat-session-select" onchange="window.updateSessionTTSVoices();">
+              <option value="">&#x1F50A; TTS Engine...</option>
+              <option value="piper">Piper</option>
+              <option value="kokoro">Kokoro</option>
+              <option value="xtts2">XTTSv2</option>
+          </select>
+          <select id="chat-tts-voice-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
+              <option value="">&#127908; TTS Voice...</option>
+          </select>
+          <button id="topbar-reset-btn" class="chat-session-select" style="background:var(--bg3); color:#f87171; border-color:#f87171; display:flex; align-items:center; gap:5px;" onclick="window.hecosConfirm('Reset all overrides for this chat to default?', function() { window.soActivateSoul(''); });" title="Reset Session Overrides">
+              <i class="fas fa-undo"></i> Reset
+          </button>
+          <button id="soul-forge-toggle-btn" class="chat-session-select" style="background:var(--bg3); color:var(--accent1); border-color:var(--accent1); display:flex; align-items:center; gap:5px;" onclick="window.soTogglePanel(true)" title="Advanced override settings for this session">
+              <i class="fas fa-sliders-h"></i> Chat Overrides
+          </button>
+      </div>
     </div>
     <script>
+      window.toggleTopbarOverrides = function() {
+          const grp = document.getElementById('topbar-overrides-group');
+          const icon = document.getElementById('topbar-overrides-toggle-icon');
+          if (grp.style.display === 'none') {
+              grp.style.display = 'flex';
+              icon.classList.remove('fa-chevron-right');
+              icon.classList.add('fa-chevron-left');
+              localStorage.setItem('hecos_topbar_overrides_open', 'true');
+          } else {
+              grp.style.display = 'none';
+              icon.classList.remove('fa-chevron-left');
+              icon.classList.add('fa-chevron-right');
+              localStorage.setItem('hecos_topbar_overrides_open', 'false');
+          }
+      };
+      
+      document.addEventListener('DOMContentLoaded', () => {
+          const isOpen = localStorage.getItem('hecos_topbar_overrides_open') !== 'false';
+          const grp = document.getElementById('topbar-overrides-group');
+          const icon = document.getElementById('topbar-overrides-toggle-icon');
+          if (grp && icon) {
+              if (isOpen) {
+                  grp.style.display = 'flex';
+                  if (icon.classList.contains('fa-chevron-right')) icon.classList.replace('fa-chevron-right', 'fa-chevron-left');
+              } else {
+                  grp.style.display = 'none';
+                  if (icon.classList.contains('fa-chevron-left')) icon.classList.replace('fa-chevron-left', 'fa-chevron-right');
+              }
+          }
+      });
+      
       /* ── Chat Session Select Styles ── */
       (function() {
         const style = document.createElement('style');
@@ -133,7 +172,7 @@
           
           let overrides = {};
           try {
-              const res = await fetch(`/api/chat/session/config?session_id=${sessionId}`);
+              const res = await fetch(`/api/chat/session/config?session_id=${sessionId}`, { cache: 'no-store' });
               const data = await res.json();
               if (data.ok && data.config) overrides = data.config;
           } catch(e) {}
@@ -143,17 +182,26 @@
           
           if (!overrides.ai) overrides.ai = {};
           
+          const personaChanged = window._lastTbPersonaVal !== pVal;
+          window._lastTbPersonaVal = pVal;
+          
           if (pVal) {
               overrides.ai.active_personality = pVal;
               window.HecosPersonaName = pVal.replace('.yaml', '').replace(/_/g, ' ');
               fetch(`/api/persona/avatar?persona=${encodeURIComponent(pVal)}`)
                   .then(r => r.json())
-                  .then(d => { if (d.ok && d.avatar_path) window.HecosAvatar = d.avatar_path; })
-                  .catch(()=>{});
+                  .then(d => { 
+                      if (d.ok && d.avatar_path) window.HecosAvatar = d.avatar_path; 
+                      if (personaChanged && window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+                  })
+                  .catch(()=>{
+                      if (personaChanged && window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+                  });
           } else {
               delete overrides.ai.active_personality;
               window.HecosPersonaName = window._globalPersonaName || 'Hecos';
               if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
+              if (personaChanged && window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
           }
           
           if (mVal) {
@@ -253,6 +301,13 @@
                       opt.textContent = text;
                       voiceSel.appendChild(opt);
                   });
+                  
+                  // Add Custom option for cloned voices
+                  const customOpt = document.createElement('option');
+                  customOpt.value = 'custom';
+                  customOpt.textContent = 'Custom';
+                  voiceSel.appendChild(customOpt);
+                  
                   if (selectedVoice) {
                       voiceSel.value = selectedVoice;
                   }
@@ -284,7 +339,7 @@
           }
           await loadChatConfigOptions();
           try {
-              const res = await fetch('/api/chat/session/config?session_id=' + sessionId);
+              const res = await fetch('/api/chat/session/config?session_id=' + sessionId, { cache: 'no-store' });
               const data = await res.json();
               
               const mSel = document.getElementById('chat-model-select');
@@ -302,27 +357,62 @@
                   if (data.config.ai?.active_personality) {
                       if (pSel) pSel.value = data.config.ai.active_personality;
                       window.HecosPersonaName = data.config.ai.active_personality.replace('.yaml', '').replace(/_/g, ' ');
+                      window._globalPersonaName = window.HecosPersonaName;
                       fetch(`/api/persona/avatar?persona=${encodeURIComponent(data.config.ai.active_personality)}`)
                           .then(r => r.json())
-                          .then(d => { if (d.ok && d.avatar_path) window.HecosAvatar = d.avatar_path; })
+                          .then(d => {
+                              if (d.ok && d.avatar_path) {
+                                  window.HecosAvatar = d.avatar_path;
+                                  window._globalAvatar = d.avatar_path;
+                              }
+                          })
                           .catch(()=>{});
                   } else {
-                      window.HecosPersonaName = window._globalPersonaName || 'Hecos';
-                      if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
+                      if (pSel) pSel.value = "";
+                      // If a global preset is active, use its persona; otherwise fall back to _globalPersonaName
+                      if (window.sfState && window.sfState.activeSoulId && window._globalPersonaName) {
+                          window.HecosPersonaName = window._globalPersonaName;
+                          if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
+                      } else {
+                          window.HecosPersonaName = window._globalPersonaName || 'Hecos';
+                          if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
+                      }
                   }
                   if (data.config.ai?.tts_engine) {
                       if (tEngSel) {
                           tEngSel.value = data.config.ai.tts_engine;
-                          window.updateSessionTTSVoices(data.config.ai?.tts_voice);
+                          let selectedVoice = data.config.ai?.tts_voice;
+                          if (data.config.voice?.xtts_speaker_wav) {
+                              selectedVoice = 'custom';
+                          }
+                          await window.updateSessionTTSVoices(selectedVoice);
                       }
+                  } else {
+                      if (tEngSel) tEngSel.value = "";
+                      const tVoiceSel = document.getElementById('chat-tts-voice-select');
+                      if (tVoiceSel) tVoiceSel.value = "";
                   }
                   if (data.config.backend) {
                       const bType = data.config.backend.type;
                       const subConf = data.config.backend[bType];
                       if (subConf?.model && mSel) {
                           mSel.value = subConf.model;
+                      } else {
+                          if (mSel) mSel.value = "";
                       }
+                  } else {
+                      if (mSel) mSel.value = "";
                   }
+              } else {
+                  // No session config at all — new chat
+                  if (pSel) pSel.value = "";
+                  if (tEngSel) tEngSel.value = "";
+                  const tVoiceSel = document.getElementById('chat-tts-voice-select');
+                  if (tVoiceSel) tVoiceSel.value = "";
+                  if (mSel) mSel.value = "";
+                  // Ensure persona/avatar reflect the active global preset
+                  if (window._globalPersonaName) window.HecosPersonaName = window._globalPersonaName;
+                  if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
               }
               window.updateSessionDropdownTitles();
           } catch(e) { console.warn("Failed to load session config", e); }

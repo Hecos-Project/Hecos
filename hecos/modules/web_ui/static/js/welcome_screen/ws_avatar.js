@@ -133,9 +133,12 @@
 
         const cleanName = soul.personaName.replace(/_/g, ' ').replace(/\.yaml$/i, '');
 
+        const isFlippedClass = (opts && opts.flipped && !soul.isDefaultHecos) ? ' is-flipped' : '';
+        const isShowClass = (opts && opts.flipped) ? ' show' : '';
+
         container.innerHTML = `
             <div class="hecos-welcome-card-scene">
-                <div class="hecos-welcome-card" id="hecos-welcome-card">
+                <div class="hecos-welcome-card${isFlippedClass}" id="hecos-welcome-card">
                     <div class="hecos-welcome-card-face hecos-welcome-card-front">
                         <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png" alt="Hecos">
                     </div>
@@ -144,7 +147,7 @@
                     </div>
                 </div>
             </div>
-            <div class="hecos-welcome-text" id="hecos-welcome-text">
+            <div class="hecos-welcome-text${isShowClass}" id="hecos-welcome-text">
                 <div class="hecos-welcome-title">Now you are talking to</div>
                 <div class="hecos-welcome-name">${cleanName}</div>
                 ${soul.activePreset ? `<div class="hecos-welcome-preset" title="Global Preset"><i class="fas fa-bolt"></i> ${soul.activePreset}</div>` : ''}

@@ -81,6 +81,19 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
             ts    = datetime.fromtimestamp(mtime).strftime("%H:%M:%S") if mtime else "?"
 
             persona = cfg.get("ai", {}).get("active_personality", "Hecos_System_Soul")
+
+            # If a global preset is active, use its persona instead of system.yaml
+            # (system.yaml may lag behind the in-memory preset activation)
+            active_preset_id = cfg.get("ai", {}).get("active_global_preset")
+            if active_preset_id:
+                try:
+                    from hecos.core.global_presets import get_soul
+                    active_soul = get_soul(active_preset_id)
+                    if active_soul and active_soul.persona.soul_file:
+                        persona = active_soul.persona.soul_file
+                except Exception:
+                    pass  # Fall back to system.yaml value
+
             if persona.endswith(".yaml"):
                 persona = persona[:-5]
 

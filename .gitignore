@@ -416,6 +416,25 @@ hecos/personas/*/
 !hecos/personas/Urania_9800/*
 !hecos/personas/Urania_9800/avatars/*
 
+# Whitelisted Teacher & Presenter personas
+!hecos/personas/hecos_teacher/
+!hecos/personas/hecos_teacher/*
+!hecos/personas/hecos_teacher/avatars/*
+!hecos/personas/urania_teacher/
+!hecos/personas/urania_teacher/*
+!hecos/personas/urania_teacher/avatars/*
+!hecos/personas/hecos_presenter/
+!hecos/personas/hecos_presenter/*
+!hecos/personas/hecos_presenter/avatars/*
+!hecos/personas/urania_presenter/
+!hecos/personas/urania_presenter/*
+!hecos/personas/urania_presenter/avatars/*
+
+# Whitelisted Dev Persona
+!hecos/personas/antonio_meloni/
+!hecos/personas/antonio_meloni/*
+!hecos/personas/antonio_meloni/avatars/*
+
 # ── PRIVATE ASSETS: Always block these (Privacy / Copyright) ─────────────
 hecos/personas/Jun_my_little_princess/
 

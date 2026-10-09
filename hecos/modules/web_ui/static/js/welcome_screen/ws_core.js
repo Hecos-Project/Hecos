@@ -32,7 +32,7 @@
      * Show the welcome screen. Idempotent — safe to call multiple times.
      * Removes previous state and re-renders based on current mode & soul.
      */
-    function show() {
+    function show(isUpdate = false) {
         const chatArea = document.getElementById('chat-area');
         if (!chatArea) return;
 
@@ -43,6 +43,14 @@
         if (messages.length > 0) return;
 
         const mode = getMode();
+
+        let isHybridAvatarVisible = false;
+        if (mode === 'hybrid') {
+            const oldMain = document.getElementById('welcome');
+            if (oldMain && oldMain.style.display === 'none') {
+                isHybridAvatarVisible = true;
+            }
+        }
 
         // Clean up previous avatar welcome
         if (window.WelcomeAvatar) window.WelcomeAvatar.remove();
@@ -59,20 +67,39 @@
         if (mode === 'avatar') {
             if (window.WelcomeMain) window.WelcomeMain.hide();
             if (window.WelcomeAvatar) {
-                window.WelcomeAvatar.render(chatArea, { hidden: false });
-                setTimeout(() => window.WelcomeAvatar.animate(), 100);
+                if (isUpdate) {
+                    window.WelcomeAvatar.render(chatArea, { hidden: false, flipped: true });
+                } else {
+                    window.WelcomeAvatar.render(chatArea, { hidden: false });
+                    setTimeout(() => window.WelcomeAvatar.animate(), 100);
+                }
             }
             return;
         }
 
         // ── HYBRID: Main first, then Avatar on interaction ──
         const mainEl = window.WelcomeMain ? window.WelcomeMain.render(chatArea) : null;
-        if (window.WelcomeMain) window.WelcomeMain.show();
+        
+        if (isHybridAvatarVisible) {
+            if (window.WelcomeMain) window.WelcomeMain.hide();
+        } else {
+            if (window.WelcomeMain) window.WelcomeMain.show();
+        }
 
         if (window.WelcomeAvatar) {
-            const avatarEl = window.WelcomeAvatar.render(chatArea, { hidden: true });
+            const avatarEl = window.WelcomeAvatar.render(chatArea, { hidden: !isHybridAvatarVisible, flipped: isHybridAvatarVisible });
             if (window.WelcomeHybrid && mainEl && avatarEl) {
                 window.WelcomeHybrid.setup(chatArea, mainEl, avatarEl);
+            }
+            if (isHybridAvatarVisible) {
+                avatarEl.style.display = 'flex';
+                // We don't animate anymore, the flipped flag renders it already flipped
+            } else if (isUpdate) {
+                // The persona was changed while on the main welcome screen.
+                // Trigger the hybrid transition so the user sees the new persona card flip in!
+                setTimeout(() => {
+                    if (window.HecosWelcome.triggerHybrid) window.HecosWelcome.triggerHybrid();
+                }, 10);
             }
         }
     }

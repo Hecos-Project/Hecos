@@ -3,19 +3,16 @@ import os
 from hecos.core.logging import logger
 from hecos.core.system.module_loader import get_active_tags
 from hecos.config import load_yaml
-from hecos.config.schemas.routing_schema import RoutingOverrides
 
 # Replicate the constants needed for routing
 _HECOS_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 REGISTRY_PATH = os.path.join(_HECOS_DIR, "core", "registry.json")
-ROUTING_OVERRIDES_PATH = os.path.join(_HECOS_DIR, "config", "data", "routing_overrides.yaml")
 
 class RoutingManager:
     """
-    Manages the 3-tier hybrid routing system:
-    1. Plugin Manifest (Default)
-    2. User Overrides (YAML)
-    3. Core Defaults (Fallback)
+    Manages the hybrid routing system:
+    1. HPM Plugin Manifest / dynamic override (Default)
+    2. Core Defaults (Fallback)
     """
     @staticmethod
     def get_dynamic_instructions(config):
@@ -29,16 +26,7 @@ class RoutingManager:
                 with open(REGISTRY_PATH, "r", encoding="utf-8") as f:
                     registry_data = json.load(f)
             
-            # 3. Load user overrides
-            overrides = {}
-            if os.path.exists(ROUTING_OVERRIDES_PATH):
-                try:
-                    overrides_model = load_yaml(ROUTING_OVERRIDES_PATH, RoutingOverrides)
-                    overrides = overrides_model.overrides
-                except Exception as e:
-                    logger.debug(f"RoutingManager: Error loading routing overrides: {e}")
-
-            # 4. Merge logic
+            # 3. Merge logic
             merged_instructions = []
             
             # --- FASE 6: HPM v2 Routing Support ---
@@ -48,8 +36,8 @@ class RoutingManager:
             for tag in active_tags:
                 tag_upper = tag.upper()
                 tag_lower = tag.lower()
-                # Priority: YAML Override > HPM routing_override.txt > HPM Manifest > Legacy Registry
-                instruction = overrides.get(tag_upper)
+                # Priority: HPM routing_override.yaml > HPM Manifest > Legacy Registry
+                instruction = None
                 
                 # Check HPM package
                 if not instruction:

@@ -356,8 +356,9 @@ window.refreshStatus = async function() {
 
     const pSel = document.getElementById('chat-persona-select');
     const sessionPersona = pSel ? pSel.value : null;
-    // Also check if a Soul Forge global preset is active — if so, it controls the persona/avatar
-    const soulForgeActive = !!(window.soState && window.soState.activeSoulId);
+    // Check if a Soul Forge global preset is active (either via Chat Overrides or global panel)
+    const soulForgeActive = !!(window.soState && window.soState.activeSoulId)
+                         || !!(window.sfState && window.sfState.activeSoulId);
     
     if (!sessionPersona && !soulForgeActive) {
         window.HecosPersonaName = d.persona || 'Hecos';

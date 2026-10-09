@@ -22,36 +22,34 @@ window.soState = {
 
 // Custom Hecos Modals for Chat UI
 
-window.hecosConfirm = function(msg, onYes) {
-
+window.hecosConfirm = function(msg, onYes, onNo) {
     const modal = document.getElementById('hecos-confirm-modal');
-
     const textEl = document.getElementById('hecos-confirm-modal-text');
-
     const yesBtn = document.getElementById('hecos-confirm-modal-yes');
-
+    const noBtn = document.getElementById('hecos-confirm-modal-no');
     
-
     if (modal && textEl && yesBtn) {
-
         textEl.textContent = msg;
-
         modal.style.display = 'flex';
-
+        
         yesBtn.onclick = function() {
-
             modal.style.display = 'none';
-
-            onYes();
-
+            if (onYes) onYes();
         };
-
+        
+        if (noBtn) {
+            noBtn.onclick = function() {
+                modal.style.display = 'none';
+                if (onNo) onNo();
+            };
+        }
     } else {
-
-        if (confirm(msg)) onYes();
-
+        if (confirm(msg)) {
+            if (onYes) onYes();
+        } else {
+            if (onNo) onNo();
+        }
     }
-
 };
 
 
@@ -368,7 +366,7 @@ window.soActivateSoul = async function(soulId) {
 
         if (res.ok) {
 
-            document.getElementById('so-status-msg').textContent = "Global Preset activated.";
+            document.getElementById('so-status-msg').textContent = soulId ? "Global Preset activated." : "Global Preset cleared.";
 
             setTimeout(() => document.getElementById('so-status-msg').textContent = "", 3000);
 

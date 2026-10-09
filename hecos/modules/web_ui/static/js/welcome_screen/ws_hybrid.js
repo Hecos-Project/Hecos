@@ -86,7 +86,7 @@
 
         const onKeydown = (e) => {
             if ((e.key === 'Shift' && e.ctrlKey) || (e.key === 'Control' && e.shiftKey)) {
-                handleTrigger();
+                handleTrigger(true); // Force avatar, do not toggle back
             }
         };
 

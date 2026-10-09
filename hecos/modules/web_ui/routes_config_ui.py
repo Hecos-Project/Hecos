@@ -13,7 +13,6 @@ from hecos.modules.web_ui.routes_config_api import _build_options_dict
 _PANEL_MAP = {
     'backend':         'modules/config_backend.html',
     'keymanager':      'modules/key_manager.html',
-    'routing':         'modules/config_routing.html',
     'agent':           'modules/config_agent.html',
     'ia':              'modules/config_persona.html',
     'filters':         'modules/config_filters.html',

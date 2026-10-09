@@ -36,7 +36,15 @@ window.soTogglePanel = function(force, mode = 'global') {
         panel.classList.remove('open');
         overlay.style.display = 'none';
         if (window.soState.isDirty) {
-            window.soSaveInlineToActive();
+            if (window.soState.activeSoulId) {
+                window.hecosConfirm("You have unsaved changes. Do you want to update the active Global Preset?\n\n(Click 'Confirm' to update the Global Preset, or 'Cancel' to keep changes only for this session)", function() {
+                    window.soSaveGlobalInlineToActive();
+                }, function() {
+                    window.soSaveInlineToActive();
+                });
+            } else {
+                window.soSaveInlineToActive();
+            }
         }
     }
 };
@@ -103,7 +111,7 @@ window.soDirty = function() {
     const topBtn = document.getElementById('so-top-save-global-btn');
     if (topBtn) {
         if (window.soState.activeSoulId) {
-            topBtn.innerHTML = '<i class="fas fa-save"></i> Update';
+            topBtn.innerHTML = '<i class="fas fa-save"></i>';
             topBtn.style.backgroundColor = 'var(--accent1, #00d2ff)';
             topBtn.style.color = '#000';
             topBtn.onclick = window.soSaveGlobalInlineToActive;
@@ -113,6 +121,67 @@ window.soDirty = function() {
     // Toggle XTTS settings visibility
     const ttsEngine = document.getElementById('so-tts-engine-select').value;
     document.getElementById('so-xtts-controls').style.display = (ttsEngine === 'xtts2') ? 'block' : 'none';
+    
+    // Visually update the topbar in the background so the user gets instant feedback
+    const pSel = document.getElementById('chat-persona-select');
+    const pVal = document.getElementById('so-persona-select')?.value || "";
+    if (pSel) pSel.value = pVal;
+
+    const mSel = document.getElementById('chat-model-select');
+    const mVal = document.getElementById('so-model-select')?.value || "";
+    if (mSel) mSel.value = mVal;
+
+    const tEngSel = document.getElementById('chat-tts-engine-select');
+    const tEngVal = document.getElementById('so-tts-engine-select')?.value || "";
+    let engineChanged = false;
+    if (tEngSel && tEngSel.value !== tEngVal) {
+        tEngSel.value = tEngVal;
+        engineChanged = true;
+    }
+
+    const tVoiceSel = document.getElementById('chat-tts-voice-select');
+    let tVoiceVal = document.getElementById('so-tts-voice-select')?.value || "";
+    const soXttsWav = document.getElementById('so-xtts-speaker-wav')?.value;
+    if (soXttsWav) {
+        tVoiceVal = 'custom';
+    }
+    
+    let voiceMissing = false;
+    if (tVoiceSel && !engineChanged) {
+        tVoiceSel.value = tVoiceVal;
+        if (tVoiceVal && tVoiceSel.value !== tVoiceVal) {
+            voiceMissing = true;
+        }
+    }
+
+    if (engineChanged || voiceMissing) {
+        if (window.updateSessionTTSVoices) {
+            window.updateSessionTTSVoices(tVoiceVal);
+        }
+    }
+    
+    if (window.updateSessionDropdownTitles) window.updateSessionDropdownTitles();
+    
+    // Visually update the avatar and persona name instantly and flip the card if it changed
+    if (window._lastSoPersonaVal !== pVal) {
+        window._lastSoPersonaVal = pVal;
+        if (pVal) {
+            window.HecosPersonaName = pVal.replace('.yaml', '').replace(/_/g, ' ');
+            fetch(`/api/persona/avatar?persona=${encodeURIComponent(pVal)}`)
+                .then(r => r.json())
+                .then(d => { 
+                    if (d.ok && d.avatar_path) window.HecosAvatar = d.avatar_path; 
+                    if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+                })
+                .catch(()=>{
+                    if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+                });
+        } else {
+            window.HecosPersonaName = window._globalPersonaName || 'Hecos';
+            if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
+            if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+        }
+    }
 };
 
 
@@ -325,7 +394,7 @@ window.soApplySoulToUI = async function(soul) {
         
         const topBtn = document.getElementById('so-top-save-global-btn');
         if (topBtn) {
-            topBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+            topBtn.innerHTML = '<i class="fas fa-save"></i>';
             topBtn.style.backgroundColor = '';
             topBtn.style.color = '';
             topBtn.onclick = window.soOverwriteGlobalPreset;
@@ -340,6 +409,8 @@ window.soApplySoulToUI = async function(soul) {
     document.getElementById('so-use-global-direct').checked = soul.persona?.use_global_direct_instructions !== false;
     document.getElementById('so-use-global-safety').checked = soul.persona?.use_global_safety_instructions !== false;
     document.getElementById('so-custom-instructions').value = soul.persona?.custom_instructions || "";
+    document.getElementById('so-user-notes').value = soul.persona?.user_notes || "";
+    document.getElementById('so-send-notes-ai').checked = soul.persona?.send_notes_to_ai === true;
     
     // Model
     document.getElementById('so-backend-select').value = soul.model?.backend_type || fallbacks.backend || "ollama";
@@ -365,6 +436,18 @@ window.soApplySoulToUI = async function(soul) {
     setVal('so-topp', soul.inference?.top_p);
     setVal('so-reppen', soul.inference?.repeat_penalty);
     setVal('so-predict', soul.inference?.num_predict);
+
+    const ctxEl = document.getElementById('so-ctx');
+    if (ctxEl) {
+        ctxEl.value = (soul.inference?.num_ctx !== undefined && soul.inference?.num_ctx !== null) ? soul.inference.num_ctx : 0;
+        ctxEl.dispatchEvent(new Event('input'));
+    }
+    
+    const gpuEl = document.getElementById('so-gpu');
+    if (gpuEl) {
+        gpuEl.value = (soul.inference?.n_gpu_layers !== undefined && soul.inference?.n_gpu_layers !== null) ? soul.inference.n_gpu_layers : -2;
+        gpuEl.dispatchEvent(new Event('input'));
+    }
     
     document.getElementById('so-xtts-preset-select').value = soul.voice?.xtts_preset || "";
     
@@ -405,7 +488,7 @@ window.soApplySoulToUI = async function(soul) {
     
     const topBtn = document.getElementById('so-top-save-global-btn');
     if (topBtn) {
-        topBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+        topBtn.innerHTML = '<i class="fas fa-save"></i>';
         topBtn.style.backgroundColor = '';
         topBtn.style.color = '';
         topBtn.onclick = window.soOverwriteGlobalPreset;
@@ -424,7 +507,9 @@ window.soCollectUIState = function() {
             soul_file: getVal('so-persona-select'),
             use_global_direct_instructions: getCheck('so-use-global-direct'),
             use_global_safety_instructions: getCheck('so-use-global-safety'),
-            custom_instructions: getVal('so-custom-instructions')
+            custom_instructions: getVal('so-custom-instructions'),
+            user_notes: getVal('so-user-notes'),
+            send_notes_to_ai: getCheck('so-send-notes-ai')
         },
         model: { backend_type: getVal('so-backend-select'), model_name: getVal('so-model-select') },
         inference: {
@@ -432,7 +517,9 @@ window.soCollectUIState = function() {
             temperature: getNum('so-temp'),
             top_p: getNum('so-topp'),
             repeat_penalty: getNum('so-reppen'),
-            num_predict: parseInt(getNum('so-predict'))
+            num_predict: parseInt(getNum('so-predict')),
+            num_ctx: getNum('so-ctx') === 0 ? null : parseInt(getNum('so-ctx')),
+            n_gpu_layers: getNum('so-gpu') === -2 ? null : parseInt(getNum('so-gpu'))
         },
         voice: {
             tts_engine: getVal('so-tts-engine-select'),

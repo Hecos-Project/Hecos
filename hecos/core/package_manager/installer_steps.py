@@ -96,8 +96,12 @@ def install_plugin_code(staging: str, manifest: HpkgManifest, hecos_root: str) -
                 plugin_src = candidate_path
                 break
         else:
-            logger.warning(f"[HPM:Installer] No plugin code directory found in package '{manifest.id}'. Skipping code install.")
-            return []
+            if manifest.type in ["persona", "theme"]:
+                plugin_src = staging
+            else:
+                logger.warning(f"[HPM:Installer] No plugin code directory found in package '{manifest.id}'. Skipping code install.")
+                return []
+
 
     target_base = os.path.join(hecos_root, target_dir_name)
     os.makedirs(target_base, exist_ok=True)
