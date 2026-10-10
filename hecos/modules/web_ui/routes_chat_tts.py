@@ -187,16 +187,24 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict, job_id: str = N
 
         session = voice_cfg.get('session_overrides', {})
         if session:
-            if 'xtts_speaker_wav' in session and session['xtts_speaker_wav']: speaker_wav = session['xtts_speaker_wav'].strip()
-            if 'tts_voice' in session and session['tts_voice'] and session['tts_voice'] != 'default': speaker = session['tts_voice']
+            # If the session explicitly requests a built-in voice but no clone, clear the global clone override
+            if 'tts_voice' in session and session['tts_voice'] and session['tts_voice'] != 'default': 
+                speaker = session['tts_voice']
+                if 'xtts_speaker_wav' not in session or not session['xtts_speaker_wav']:
+                    speaker_wav = ""
+            
+            if 'xtts_speaker_wav' in session and session['xtts_speaker_wav']: 
+                speaker_wav = session['xtts_speaker_wav'].strip()
+                
             if 'xtts_speed' in session and session['xtts_speed'] is not None: speed = str(session['xtts_speed'])
             if 'xtts_temperature' in session and session['xtts_temperature'] is not None: temperature = str(session['xtts_temperature'])
             if 'xtts_repetition_penalty' in session and session['xtts_repetition_penalty'] is not None: repetition_penalty = str(session['xtts_repetition_penalty'])
             if 'xtts_top_k' in session and session['xtts_top_k'] is not None: top_k = str(session['xtts_top_k'])
             if 'xtts_top_p' in session and session['xtts_top_p'] is not None: top_p = str(session['xtts_top_p'])
-        if 'xtts_length_penalty' in session and session['xtts_length_penalty'] is not None: length_penalty = str(session['xtts_length_penalty'])
+            if 'xtts_length_penalty' in session and session['xtts_length_penalty'] is not None: length_penalty = str(session['xtts_length_penalty'])
 
         if speaker_wav and not os.path.isabs(speaker_wav):
+            root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
             speaker_wav = os.path.join(root_dir, "hecos", "assets", "voice_clones", speaker_wav)
 
         _chat_log.info(f"[XTTS2 Bypass] Starting isolated generation. GPU mode: {gpu_acceleration}, Wav target: {out_path}, Speaker Wav: {speaker_wav}")
@@ -250,7 +258,7 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict, job_id: str = N
             "    print('PROGRESS: 10', flush=True)\n"
             "    tts = TTS('tts_models/multilingual/multi-dataset/xtts_v2', gpu=use_cuda)\n"
             "    print('PROGRESS: 50', flush=True)\n"
-            "    kwargs = {'text': text, 'file_path': out_path, 'language': lang, 'speed': speed, 'temperature': temperature, 'repetition_penalty': rep_pen, 'top_k': top_k, 'top_p': top_p, 'length_penalty': length_penalty}\n"
+            "    kwargs = {'text': text, 'file_path': out_path, 'language': lang, 'speed': speed, 'temperature': temperature, 'repetition_penalty': rep_pen, 'top_k': top_k, 'top_p': top_p, 'length_penalty': length_penalty, 'split_sentences': True}\n"
             "    if speaker_wav and os.path.exists(speaker_wav):\n"
             "        kwargs['speaker_wav'] = speaker_wav\n"
             "    else:\n"

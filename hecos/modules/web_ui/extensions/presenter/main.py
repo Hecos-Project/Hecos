@@ -34,6 +34,7 @@ def init_routes(app, root_dir: str = None):
             cfg = load_presenter_config()
             
             if 'enabled' in data: cfg.enabled = data['enabled']
+            if 'allow_commands' in data: cfg.allow_commands = data['allow_commands']
             if 'panel_default' in data: cfg.panel_default = data['panel_default']
             if 'live_commentary' in data: cfg.live_commentary = data['live_commentary']
             if 'commentary_on_messages' in data: cfg.commentary_on_messages = data['commentary_on_messages']

@@ -62,6 +62,14 @@
     </div>
 
     <div class="toggle-row" style="margin-top:12px;">
+      <div class="toggle-info">Allow Tools / Commands<br><small style="color:var(--muted); font-size:10px;">If enabled, the Presenter can execute direct commands (e.g. /img)</small></div>
+      <label class="switch">
+        <input type="checkbox" id="presenter-allow-commands" onchange="savePresenterConfig()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row" style="margin-top:12px;">
       <div class="toggle-info">Briefing on New Chat<br><small style="color:var(--muted); font-size:10px;">Show system status briefing when a new session starts</small></div>
       <label class="switch">
         <input type="checkbox" id="presenter-briefing-on-new-chat" onchange="savePresenterConfig()">
@@ -99,6 +107,7 @@
         document.getElementById('presenter-display-mode').value = presenterConfig.panel_default;
         document.getElementById('presenter-live-commentary').checked = presenterConfig.live_commentary !== false;
         document.getElementById('presenter-commentary-on-messages').checked = presenterConfig.commentary_on_messages === true;
+        document.getElementById('presenter-allow-commands').checked = presenterConfig.allow_commands === true;
         document.getElementById('presenter-briefing-on-new-chat').checked = presenterConfig.briefing_on_new_chat !== false;
         
         // 2. Load Global Presets
@@ -130,6 +139,7 @@
     presenterConfig.panel_default = document.getElementById('presenter-display-mode').value;
     presenterConfig.live_commentary = document.getElementById('presenter-live-commentary').checked;
     presenterConfig.commentary_on_messages = document.getElementById('presenter-commentary-on-messages').checked;
+    presenterConfig.allow_commands = document.getElementById('presenter-allow-commands').checked;
     presenterConfig.briefing_on_new_chat = document.getElementById('presenter-briefing-on-new-chat').checked;
     
     if (!presenterConfig.voice) presenterConfig.voice = {};

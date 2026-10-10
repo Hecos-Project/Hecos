@@ -9,7 +9,7 @@ sentence_silence: 0.2
 piper_timeout: 180
 kokoro:
   speed: 1.0
-  voice: Camilla Holmström
+  voice: af_heart
   sentence_silence: 0.0
   model_path: ''
 xtts:

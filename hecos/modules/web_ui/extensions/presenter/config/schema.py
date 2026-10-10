@@ -20,6 +20,7 @@ class PresenterConfig(BaseModel):
     model_config = ConfigDict(extra='ignore')
 
     enabled: bool = True
+    allow_commands: bool = False
     panel_default: str = "collapsed"
     briefing_on_new_chat: bool = True
     briefing_sections: List[str] = Field(default_factory=lambda: ["system", "backend", "persona", "tips"])

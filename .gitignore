@@ -572,7 +572,7 @@ hecos/modules/web_ui/static/css/browser_automation.css
 hecos/modules/web_ui/static/js/browser_automation.js
 hecos/modules/web_ui/static/css/image_gen.css
 hecos/modules/web_ui/static/js/image_gen.js
-hecos/modules/web_ui/static/js/igen_panel.js
+hecos/modules/web_ui/static/js/igen_*.js
 hecos/modules/web_ui/static/js/document_maker_panel.js
 hecos/modules/web_ui/static/js/pc_automation.js
 hecos/modules/web_ui/static/js/messenger.js
@@ -677,3 +677,7 @@ hecos/_builder_backup/
 # Persona Media
 hecos/personas/*/media/
 !hecos/personas/*/media/.gitkeep
+
+# Presenter Playbooks (HPM System App)
+hecos/modules/playbooks/
+hecos/modules/web_ui/templates/modules/config_playbooks.html

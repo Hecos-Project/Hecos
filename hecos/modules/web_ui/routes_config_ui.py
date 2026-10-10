@@ -36,6 +36,7 @@ _PANEL_MAP = {
     'packages':        'modules/config_packages.html',
     'shortcuts':       'modules/config_shortcuts.html',
     'presenter':       'modules/config_presenter.html',
+    'playbooks':       'modules/config_playbooks.html',
     'chat_ui':         'modules/config_chat_ui.html',
 }
 

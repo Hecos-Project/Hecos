@@ -33,7 +33,7 @@ class PresenterEngine:
             bus.subscribe("hpm:package_uninstalled", self._on_package_event)
             logger.info("[Presenter] Engine started. Subscribed to events.")
 
-    def _generate_commentary(self, event_type: str, system_prompt: str, user_prompt: str):
+    def _generate_commentary(self, event_type: str, system_prompt: str, user_prompt: str, session_id: str = None):
         """Generates commentary using the designated Global Preset model."""
         import copy
         
@@ -68,6 +68,25 @@ class PresenterEngine:
         if custom_instructions:
             system_prompt += f"\n\n[PRESENTER MODULE CUSTOM INSTRUCTIONS]:\n{custom_instructions}"
             
+        # 3. Handle tools/commands permission
+        allow_commands = getattr(cfg, "allow_commands", False)
+        if allow_commands:
+            system_prompt += "\n\n[COMMANDS ENABLED]: You CAN use direct slash commands (e.g., /img <description>) or other available tools if you feel it's necessary to show something to the user directly."
+        else:
+            system_prompt += "\n\n[COMMANDS DISABLED]: You are an observer. Do NOT use slash commands (like /img) or attempt to execute tools. Provide ONLY text commentary."
+            
+        # 4. Inject Playbook context (if Playbooks module is installed)
+        try:
+            try:
+                from hecos.modules.playbooks.playbooks.storage import get_active_playbook_context
+            except ImportError:
+                from hecos.hpm.playbooks.storage import get_active_playbook_context
+            playbook_ctx = get_active_playbook_context()
+            if playbook_ctx:
+                system_prompt += f"\n\n[PLAYBOOK KNOWLEDGE BASE]:\n{playbook_ctx}"
+        except Exception:
+            pass  # Playbooks module not installed or error — silently skip
+
         merged_cfg['ai']['special_instructions'] = system_prompt
         
         # Override tokens if configured
@@ -93,6 +112,24 @@ class PresenterEngine:
                     if response.startswith("Error"):
                         logger.error(f"[Presenter] generate_response returned error: {response}")
                     else:
+                        if allow_commands:
+                            try:
+                                from hecos.core.processing import processore
+                                from hecos.modules.web_ui.server import get_state_manager
+                                sm = get_state_manager()
+                                
+                                tools_called, tool_results, extracted_text, think_block = processore.extract_and_execute_tools(
+                                    response, 
+                                    current_config=merged_cfg, 
+                                    sm=sm
+                                )
+                                
+                                if tools_called:
+                                    from hecos.core.agent.media_interceptor import MediaInterceptor
+                                    response = MediaInterceptor.append_ui_media_to_text(extracted_text, tool_results)
+                            except Exception as tool_e:
+                                logger.error(f"[Presenter] Error executing presenter tools: {tool_e}")
+
                         logger.info(f"[Presenter] Writing feed entry for '{event_type}'")
                         add_feed_entry(event_type, response, persist=cfg.feed.persist)
                         logger.info(f"[Presenter] Feed entry written successfully")
@@ -117,13 +154,14 @@ class PresenterEngine:
         
         payload = event.get("payload", {})
         persona_name = payload.get("new_persona", "Unknown")
+        session_id = payload.get("session_id")
         
         sys_prompt = (
             "You are the Hecos System Presenter. Provide a brief, punchy, 1-sentence introduction or commentary about the newly activated AI persona. Use the language of the system."
         )
         user_prompt = f"The user has just switched the AI persona to '{persona_name}'. Introduce them briefly."
         
-        self._generate_commentary("persona_switched", sys_prompt, user_prompt)
+        self._generate_commentary("persona_switched", sys_prompt, user_prompt, session_id=session_id)
 
     def _on_new_chat(self, event: Dict[str, Any]):
         logger.info(f"[Presenter] _on_new_chat RECEIVED: {event}")
@@ -133,12 +171,15 @@ class PresenterEngine:
             logger.info("[Presenter] Skipped: disabled or briefing_on_new_chat=False")
             return
         
+        payload = event.get("payload", {})
+        session_id = payload.get("session_id")
+        
         sys_prompt = (
             "You are the Hecos System Presenter. Greet the user in 1 short sentence indicating that a new session has started."
         )
         user_prompt = "A new chat session was just started. Acknowledge it."
         
-        self._generate_commentary("new_chat", sys_prompt, user_prompt)
+        self._generate_commentary("new_chat", sys_prompt, user_prompt, session_id=session_id)
 
     def _on_package_event(self, event: Dict[str, Any]):
         """Direct feed entry for package events — no LLM needed."""
@@ -171,6 +212,7 @@ class PresenterEngine:
             
         payload = event.get("payload", {})
         user_msg = payload.get("user_message", "")
+        session_id = payload.get("session_id")
         if not user_msg or len(user_msg.strip()) < 3:
             return
         
@@ -182,7 +224,7 @@ class PresenterEngine:
             "Do NOT answer the question yourself — you are the observer, not the AI."
         )
         user_prompt = f"Admin says: {user_msg[:300]}"
-        self._generate_commentary("user_comment", sys_prompt, user_prompt)
+        self._generate_commentary("user_comment", sys_prompt, user_prompt, session_id=session_id)
 
     def _on_assistant_response(self, event: Dict[str, Any]):
         """Comment on the AI's response after it arrives (full mode only)."""
@@ -197,6 +239,7 @@ class PresenterEngine:
         payload = event.get("payload", {})
         user_msg = payload.get("user_message", "")
         ai_msg = payload.get("assistant_message", "")
+        session_id = payload.get("session_id")
         if not ai_msg or len(ai_msg.strip()) < 3:
             return
         
@@ -208,7 +251,7 @@ class PresenterEngine:
             "Do NOT repeat the response — you are the observer."
         )
         user_prompt = f"Admin asked: {user_msg[:200]}\nAI responded: {ai_msg[:300]}"
-        self._generate_commentary("ai_comment", sys_prompt, user_prompt)
+        self._generate_commentary("ai_comment", sys_prompt, user_prompt, session_id=session_id)
 
     def _on_message_exchange(self, event: Dict[str, Any]):
         """Legacy: generates commentary on the full exchange (exchange mode only)."""
@@ -224,6 +267,7 @@ class PresenterEngine:
         payload = event.get("payload", {})
         user_msg = payload.get("user_message", "")
         ai_msg = payload.get("assistant_message", "")
+        session_id = payload.get("session_id")
         
         sys_prompt = (
             "You are the Hecos System Presenter, a witty and sharp sports commentator for this AI system. "
@@ -234,7 +278,7 @@ class PresenterEngine:
         )
         
         user_prompt = f"Exchange to comment on:\nAdmin: {user_msg}\nAI: {ai_msg}"
-        self._generate_commentary("message_exchange", sys_prompt, user_prompt)
+        self._generate_commentary("message_exchange", sys_prompt, user_prompt, session_id=session_id)
 
 _engine_instance = None
 

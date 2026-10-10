@@ -166,6 +166,36 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
+    "IMAGE_GEN": {
+        "description": "AI Image Generation - Generates images from text prompts with priority support for local backends (SwarmUI/ComfyUI on port 7801). Additionally supports cloud AI providers including Pollinations, Gemini, OpenAI DALL-E, Stability AI, and HuggingFace. Fully autonomous package with its own TOML configuration.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"fas fa-image\"></i>",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "img",
+                "manifest_version": "1",
+                "aliases": [
+                    "/img",
+                    "/image",
+                    "/photo",
+                    "/foto"
+                ],
+                "description": "Generates an AI image from a text description",
+                "usage": "/img <descrizione>",
+                "example": "/img foto fotorealistica di un gatto su Marte",
+                "icon": "ðŸ–¼ï¸",
+                "method": "generate_image",
+                "requires_args": true
+            }
+        ]
+    },
     "AUTOMATION": {
         "description": "PC Automation: control the mouse, keyboard, and application windows. Use with desktop_screenshot for a full see-and-act loop.",
         "commands": {

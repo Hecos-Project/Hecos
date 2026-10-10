@@ -163,6 +163,10 @@ class HpkgManifest(BaseModel):
             "Can be any string; unknown types will be installed in hpm/<type>s."
         )
     )
+    category: str = Field(
+        "",
+        description="Store/Builder category for the package. If left empty, it will be inferred dynamically."
+    )
     author: str = Field("Unknown", description="Author name or organization")
     description: str = Field("", description="Short description of what this package does")
 
