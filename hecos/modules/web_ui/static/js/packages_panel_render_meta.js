@@ -35,6 +35,7 @@ window.HPM_TYPE_META = {
   persona:     { label: window.hpm_ti('Personas', 'Persona', 'Personas'),                    icon: 'fa-user-astronaut',    color: '#ec4899', order: 6 },
   theme:       { label: window.hpm_ti('Themes', 'Temi', 'Temas'),                            icon: 'fa-palette',           color: '#10b981', order: 7 },
   extension:   { label: window.hpm_ti('Extensions', 'Estensioni', 'Extensiones'),            icon: 'fa-puzzle-piece',      color: '#45a29e', order: 8 },
+  playbook:    { label: window.hpm_ti('Playbooks', 'Playbook', 'Playbooks'),                  icon: 'fa-book-open',         color: '#06b6d4', order: 8.5 },
   skill_pack:  { label: window.hpm_ti('Skill Packs', 'Pacchetti Skill', 'Paquetes de Skill'), icon: 'fa-graduation-cap',   color: '#f97316', order: 9 },
   core_module: { label: window.hpm_ti('Core Modules', 'Moduli Core', 'Módulos Core'), shortLabel: window.hpm_ti('Core', 'Core', 'Core'), icon: 'fa-microchip', color: '#ff4444', order: 10 },
   other:       { label: window.hpm_ti('Other', 'Altro', 'Otros'),                            icon: 'fa-cube',              color: '#6b7280', order: 11 }

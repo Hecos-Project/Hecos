@@ -64,7 +64,7 @@ function _hpmStoreApplyFilters() {
   const { catalog, activeType, searchQuery } = window.HPM_STORE_STATE;
   if (!catalog) return;
   let pkgs = catalog.packages || [];
-  if (activeType !== 'all') pkgs = pkgs.filter(p => p.type === activeType);
+  if (activeType !== 'all') pkgs = pkgs.filter(p => ((p.category && p.category.trim() !== "") ? p.category.toLowerCase() : p.type) === activeType);
   if (searchQuery) {
     pkgs = pkgs.filter(p => {
       const hay = [p.name, p.description, p.author, ...(p.tags || [])].join(' ').toLowerCase();
@@ -107,11 +107,18 @@ function _hpmStoreBuildShell() {
 function _hpmStoreBuildTypeFilters(packages) {
   const container = document.getElementById('hpm-store-type-filters');
   if (!container) return;
-  const types = ['all', ...new Set(packages.map(p => p.type))];
+  const getCat = p => (p.category && p.category.trim() !== '') ? p.category.toLowerCase() : p.type;
+  const types = ['all', ...new Set(packages.map(getCat))];
   const counts = {};
-  packages.forEach(p => { counts[p.type] = (counts[p.type] || 0) + 1; });
+  packages.forEach(p => { 
+      const c = getCat(p);
+      counts[c] = (counts[c] || 0) + 1; 
+  });
   container.innerHTML = types.map(type => {
-    const meta = TYPE_META[type] || { label: type, icon: 'fa-cube', color: '#6b7280' };
+    let meta = TYPE_META[type];
+    if (!meta) {
+      meta = { label: type.charAt(0).toUpperCase() + type.slice(1), icon: 'fa-folder-open', color: '#14b8a6' };
+    }
     const count = type === 'all' ? packages.length : (counts[type] || 0);
     const isActive = window.HPM_STORE_STATE.activeType === type;
     return `
@@ -141,7 +148,9 @@ function _hpmStoreRenderGrid(packages) {
 }
 
 function _hpmStoreRenderCard(pkg) {
-  const meta = TYPE_META[pkg.type] || { label: pkg.type, icon: 'fa-cube', color: '#6b7280' };
+  const pcat = (pkg.category && pkg.category.trim() !== "") ? pkg.category.toLowerCase() : pkg.type;
+  let meta = TYPE_META[pcat];
+  if (!meta) meta = { label: pcat.charAt(0).toUpperCase() + pcat.slice(1), icon: 'fa-folder-open', color: '#14b8a6' };
   const sizeFmt = pkg.size_bytes ? `${(pkg.size_bytes / 1024).toFixed(1)} KB` : '';
   const icon = pkg.fa_icon || 'fa-cube';
   const fallbackIcon = 'https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview_square.png';

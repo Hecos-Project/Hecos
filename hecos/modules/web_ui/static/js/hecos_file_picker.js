@@ -16,7 +16,7 @@ window.HecosFilePicker = {
     },
 
     open(options = {}) {
-        this._options = { ...this._options, ...options };
+        this._options = { title: "Select File or Folder", hideSelect: false, mode: 'any', ...options };
         this._onSelect = options.onSelect || null;
         this._selectedPath = null;
         this._renderModal();
@@ -55,6 +55,7 @@ window.HecosFilePicker = {
             });
             const d = await r.json();
             if (!d.ok) {
+                if (path !== 'C:\\' && d.error === 'Invalid path') return this._browse('C:\\');
                 body.innerHTML = `<div style="padding:20px; color:var(--red); font-size:12px;">Error: ${d.error}</div>`;
                 return;
             }
@@ -82,11 +83,15 @@ window.HecosFilePicker = {
             });
 
             body.innerHTML = html;
-            this._modal.querySelector('#zp-confirm-btn').disabled = true;
+            this._selectedPath = null;
+            const confirmBtn = this._modal.querySelector('#zp-confirm-btn');
+            // In 'dir' mode the currently browsed folder can be confirmed directly
+            if (confirmBtn) confirmBtn.disabled = (this._options.mode !== 'dir');
         } catch (e) { console.error(e); }
     },
 
     _selectItem(path, isDir) {
+        if (this._options.mode === 'dir' && !isDir) return;
         this._selectedPath = path;
         this._modal.querySelectorAll('.hecos-picker-item').forEach(el => el.classList.remove('selected'));
         // Find the element and select it
@@ -100,10 +105,12 @@ window.HecosFilePicker = {
     },
 
     _confirm() {
-        if (this._onSelect && this._selectedPath) {
-            this._onSelect(this._selectedPath);
-        }
+        let chosen = this._selectedPath;
+        if (!chosen && this._options.mode === 'dir') chosen = this._currentPath;
         this.close();
+        if (this._onSelect && chosen) {
+            this._onSelect(chosen);
+        }
     },
 
     _renderModal() {

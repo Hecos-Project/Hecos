@@ -117,6 +117,22 @@ window.stopWebAudioRecording = function() {
   console.log('[WebAudio] Recording stopped, preparing payload...');
 };
 
+window.cancelWebAudioRecording = function() {
+  if (!window.isWebAudioRecording || !window.webAudioRecorder) return;
+  window.webAudioChunks = [];
+  try {
+    window.webAudioRecorder.onstop = null;
+    window.webAudioRecorder.stop();
+  } catch(e) {}
+  window.isWebAudioRecording = false;
+  window.isTouchHold = false;
+  if (window._webptt_setButtonState) window._webptt_setButtonState('idle');
+  if (window.UnifiedToast) window.UnifiedToast.hide();
+  console.log('[WebAudio] Recording cancelled.');
+};
+
+
+
 async function uploadWebAudio(wasLockedMode) {
   if (window.webAudioChunks.length === 0) {
     if (window._webptt_setButtonState) window._webptt_setButtonState('idle');

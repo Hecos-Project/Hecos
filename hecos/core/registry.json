@@ -166,6 +166,75 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
+    "DOCS": {
+        "description": "Generates and modifies PDF/HTML documents from templates or raw HTML using Playwright.",
+        "commands": {
+            "generate_pdf": "Converts HTML content to a PDF file and returns the file path.",
+            "list_documents": "Lists all documents in the documents folder.",
+            "list_images": "Lists available images in media/images and media/generated_photos that can be reused in documents.",
+            "modify_document": "Modifies an existing HTML document (add images, replace sections, change layout).",
+            "optimize_layout": "Calculates page breaks for a document and returns a report of elements split across pages."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"fas fa-file-pdf\"></i>",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "pdf",
+                "aliases": [
+                    "/pdf",
+                    "/makepdf",
+                    "/documento"
+                ],
+                "description": "Genera un documento PDF da un testo HTML o da un template Hecos"
+            },
+            {
+                "id": "generate_pdf",
+                "aliases": [
+                    "/DOCS__generate_pdf",
+                    "/pdf",
+                    "/generate_pdf"
+                ],
+                "description": "Generate a PDF document from a template ID or raw HTML.",
+                "requires_args": true
+            },
+            {
+                "id": "modify_document",
+                "aliases": [
+                    "/DOCS__modify_document",
+                    "/doc_edit",
+                    "/modify_document"
+                ],
+                "description": "Modify an existing document and regenerate its PDF.",
+                "requires_args": true
+            },
+            {
+                "id": "list_documents",
+                "aliases": [
+                    "/DOCS__list_documents",
+                    "/docs_list",
+                    "/list_documents"
+                ],
+                "description": "List all saved HTML and PDF documents.",
+                "requires_args": true
+            },
+            {
+                "id": "optimize_layout",
+                "aliases": [
+                    "/DOCS__optimize_layout",
+                    "/doc_layout",
+                    "/optimize_layout"
+                ],
+                "description": "Analyze an HTML document to find pagination errors (cut-off elements) and get suggestions for page breaks.",
+                "requires_args": true
+            }
+        ]
+    },
     "IMAGE_GEN": {
         "description": "AI Image Generation - Generates images from text prompts with priority support for local backends (SwarmUI/ComfyUI on port 7801). Additionally supports cloud AI providers including Pollinations, Gemini, OpenAI DALL-E, Stability AI, and HuggingFace. Fully autonomous package with its own TOML configuration.",
         "commands": {},

@@ -92,6 +92,7 @@ def init_explorer_routes(app, logger):
         """
         try:
             import subprocess
+            import base64
 
             data        = request.get_json(force=True, silent=True) or {}
             d_title     = data.get("title", "Hecos — Select")
@@ -103,16 +104,38 @@ def init_explorer_routes(app, logger):
             ])
 
             if sys.platform == "win32":
-                # ── Windows: PowerShell native dialog ─────────────────────────
+                # ── Windows: PowerShell native dialog with TopMost owner form ──
+                clean_title = (d_title or "").replace("'", "''")
+                clean_initdir = (d_initdir or "").rstrip("\\").replace("'", "''")
+
                 if pick_dir:
                     ps_script = f"""
 Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+[System.Windows.Forms.Application]::EnableVisualStyles()
+$form = New-Object System.Windows.Forms.Form
+$form.TopMost = $true
+$form.StartPosition = [System.Windows.Forms.FormStartPosition]::Manual
+$form.Location = New-Object System.Drawing.Point(-32000, -32000)
+$form.Size = New-Object System.Drawing.Size(1, 1)
+$form.ShowInTaskbar = $false
+$form.Show()
+$form.Activate()
+$form.BringToFront()
+
 $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
-$dialog.Description = '{d_title.replace("'", "`'")}'
+$dialog.AutoUpgradeEnabled = $true
+$dialog.Description = '{clean_title}'
 $dialog.ShowNewFolderButton = $true
-if ('{d_initdir}') {{ $dialog.SelectedPath = '{d_initdir.replace("'", "`'")}' }}
-$result = $dialog.ShowDialog()
-if ($result -eq 'OK') {{ Write-Host $dialog.SelectedPath -NoNewline }}
+if ('{clean_initdir}' -and (Test-Path '{clean_initdir}')) {{
+    $dialog.SelectedPath = '{clean_initdir}'
+}}
+$result = $dialog.ShowDialog($form)
+$form.Dispose()
+
+if ($result -eq [System.Windows.Forms.DialogResult]::OK) {{
+    [Console]::Out.Write($dialog.SelectedPath)
+}}
 """
                 else:
                     # Build the filter string: "Image Files (*.jpg)|*.jpg|All Files (*.*)|*.*"
@@ -125,17 +148,36 @@ if ($result -eq 'OK') {{ Write-Host $dialog.SelectedPath -NoNewline }}
 
                     ps_script = f"""
 Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+[System.Windows.Forms.Application]::EnableVisualStyles()
+$form = New-Object System.Windows.Forms.Form
+$form.TopMost = $true
+$form.StartPosition = [System.Windows.Forms.FormStartPosition]::Manual
+$form.Location = New-Object System.Drawing.Point(-32000, -32000)
+$form.Size = New-Object System.Drawing.Size(1, 1)
+$form.ShowInTaskbar = $false
+$form.Show()
+$form.Activate()
+$form.BringToFront()
+
 $dialog = New-Object System.Windows.Forms.OpenFileDialog
-$dialog.Title = '{d_title.replace("'", "`'")}'
+$dialog.AutoUpgradeEnabled = $true
+$dialog.Title = '{clean_title}'
 $dialog.Filter = '{filter_str}'
 $dialog.Multiselect = $false
-if ('{d_initdir}') {{ $dialog.InitialDirectory = '{d_initdir.replace("'", "`'")}' }}
-[System.Windows.Forms.Application]::EnableVisualStyles()
-$result = $dialog.ShowDialog()
-if ($result -eq 'OK') {{ Write-Host $dialog.FileName -NoNewline }}
+if ('{clean_initdir}' -and (Test-Path '{clean_initdir}')) {{
+    $dialog.InitialDirectory = '{clean_initdir}'
+}}
+$result = $dialog.ShowDialog($form)
+$form.Dispose()
+
+if ($result -eq [System.Windows.Forms.DialogResult]::OK) {{
+    [Console]::Out.Write($dialog.FileName)
+}}
 """
+                b64_cmd = base64.b64encode(ps_script.encode("utf-16le")).decode("ascii")
                 result = subprocess.run(
-                    ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_script],
+                    ["powershell", "-NoProfile", "-STA", "-EncodedCommand", b64_cmd],
                     capture_output=True, text=True, timeout=300
                 )
                 path = result.stdout.strip()

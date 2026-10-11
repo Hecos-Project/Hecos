@@ -140,8 +140,72 @@ window.webptt_loadPrefs = function() {
   if (toggleEl) toggleEl.checked = (togglePref === 'true');
 };
 
+// ── Keyboard PTT (Control+Shift hold) ────────────────────────────────────
+let _isPTTKeyDown = false;
+let _pttAbortDueToThirdKey = false;
+
+window.bindPTTKeyboard = function() {
+  document.addEventListener('keydown', (e) => {
+    // If user presses a third non-modifier key while holding Ctrl+Shift (e.g. Ctrl+Shift+R, Ctrl+Shift+I):
+    if (_isPTTKeyDown && e.key !== 'Control' && e.key !== 'Shift') {
+      _pttAbortDueToThirdKey = true;
+      if (window.isWebAudioRecording && window.cancelWebAudioRecording) {
+        window.cancelWebAudioRecording();
+      }
+      return;
+    }
+
+    const isCtrlShift = (e.ctrlKey || e.metaKey) && e.shiftKey;
+    if (isCtrlShift && (e.key === 'Control' || e.key === 'Shift')) {
+      if (_isPTTKeyDown) return; // Ignore repeat events
+
+      // PTT must be enabled (or mic on)
+      if (typeof window.currentPTTOn !== 'undefined' && !window.currentPTTOn) {
+        return;
+      }
+
+      _isPTTKeyDown = true;
+      _pttAbortDueToThirdKey = false;
+      window.isTouchHold = true;
+      window.pressStartTime = Date.now();
+
+      if (typeof window.unlockAudioContext === 'function') window.unlockAudioContext();
+      if (window.startWebAudioRecording) {
+        window.startWebAudioRecording();
+      }
+    }
+  });
+
+  document.addEventListener('keyup', (e) => {
+    if (_isPTTKeyDown && (e.key === 'Control' || e.key === 'Shift')) {
+      _isPTTKeyDown = false;
+      window.isTouchHold = false;
+
+      if (_pttAbortDueToThirdKey) {
+        _pttAbortDueToThirdKey = false;
+        return;
+      }
+
+      if (window.isWebAudioRecording && window.stopWebAudioRecording) {
+        window.stopWebAudioRecording();
+      }
+    }
+  });
+
+  window.addEventListener('blur', () => {
+    if (_isPTTKeyDown) {
+      _isPTTKeyDown = false;
+      window.isTouchHold = false;
+      if (window.isWebAudioRecording && window.stopWebAudioRecording) {
+        window.stopWebAudioRecording();
+      }
+    }
+  });
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   if (window.bindWebPTT) window.bindWebPTT('web-ptt-btn');
+  if (window.bindPTTKeyboard) window.bindPTTKeyboard();
   if (window._webptt_setButtonState) window._webptt_setButtonState('idle');
   if (window.webptt_loadPrefs) window.webptt_loadPrefs();
 });

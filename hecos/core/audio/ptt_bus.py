@@ -257,24 +257,23 @@ def _heartbeat_loop(stop_event: threading.Event):
     while not stop_event.is_set():
         now = time.time()
         
-        # 1. Hardware watchdog to prevent "stuck" keys (Windows OS often drops Ctrl+Shift releases)
-        if ptt_active and _last_source == "keyboard_hotkey" and _ptt_cache.get("hotkey") == "ctrl+shift" and sys.platform == "win32":
+        # 1. Hardware watchdog & fallback poller (Windows OS often drops low-level hooks under load)
+        if _ptt_cache.get("enabled") and _ptt_cache.get("sources", {}).get("keyboard_hotkey", True) and _ptt_cache.get("hotkey") == "ctrl+shift" and sys.platform == "win32":
             try:
                 import ctypes
                 # VK_CONTROL = 0x11, VK_SHIFT = 0x10. Most significant bit is set if pressed.
                 ctrl_down = (ctypes.windll.user32.GetAsyncKeyState(0x11) & 0x8000) != 0
                 shift_down = (ctypes.windll.user32.GetAsyncKeyState(0x10) & 0x8000) != 0
-                
-                if not (ctrl_down and shift_down):
-                    # Hardware disagrees with pynput (key was released but event dropped)
-                    debug_log("PTT-BUS WATCHDOG: Keys physically released, overriding pynput state.")
-                    
+                both_down = ctrl_down and shift_down
+
+                if both_down and not ptt_active:
+                    fire_ptt("start", "keyboard_hotkey")
+                elif not both_down and ptt_active and _last_source == "keyboard_hotkey":
                     # Force clear the pressed keys array of the modifiers
                     from pynput.keyboard import Key
                     for k in [Key.ctrl, Key.ctrl_l, Key.ctrl_r, Key.shift, Key.shift_l, Key.shift_r]:
                         if k in _pressed_keys:
                             _pressed_keys.remove(k)
-                            
                     fire_ptt("stop", "keyboard_hotkey")
             except Exception as e:
                 pass
@@ -286,8 +285,8 @@ def _heartbeat_loop(stop_event: threading.Event):
                 h.flush()
             last_hb = now
             
-        # Poll faster if PTT is active to make the watchdog responsive (100ms)
-        time.sleep(0.1 if ptt_active else 1.0)
+        # Fast poll (80ms) for instant PTT response, even if Windows drops pynput hooks
+        time.sleep(0.08)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
