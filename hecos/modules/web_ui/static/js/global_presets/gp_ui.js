@@ -129,10 +129,14 @@ window.sfDirty = function() {
         const pVal = document.getElementById('sf-persona-select')?.value || "";
         if (window._lastSfPersonaVal !== pVal) {
             window._lastSfPersonaVal = pVal;
-            if (pVal) {
-                window.HecosPersonaName = pVal.replace('.yaml', '').replace(/_/g, ' ');
+            // Use actual persona from select; if empty, fall back to the system-default
+            // persona from sfSystemFallbacks (i.e. the value in config/active_personality).
+            // Never blindly reset to the hardcoded 'Hecos' string.
+            const effectivePVal = pVal || (window.sfSystemFallbacks?.persona) || "";
+            if (effectivePVal) {
+                window.HecosPersonaName = effectivePVal.replace('.yaml', '').replace(/_/g, ' ');
                 window._globalPersonaName = window.HecosPersonaName;
-                fetch(`/api/persona/avatar?persona=${encodeURIComponent(pVal)}`)
+                fetch(`/api/persona/avatar?persona=${encodeURIComponent(effectivePVal)}`)
                     .then(r => r.json())
                     .then(d => { 
                         if (d.ok && d.avatar_path) {
@@ -146,8 +150,9 @@ window.sfDirty = function() {
                         if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
                     });
             } else {
-                window.HecosPersonaName = 'Hecos';
-                window._globalPersonaName = 'Hecos';
+                // Truly no persona configured anywhere — show Hecos logo
+                window.HecosPersonaName = 'Hecos System Soul';
+                window._globalPersonaName = 'Hecos System Soul';
                 window.HecosAvatar = null;
                 window._globalAvatar = null;
                 window.HecosAvatarType = 'image';
@@ -430,7 +435,7 @@ window.sfUpdateTooltip = function(soul) {
         const backendName = soul.model?.backend_type || 'unknown';
         lines.push(`🤖 Model: ${modelName} (${backendName})`);
         
-        const soulFile = soul.persona?.soul_file || 'None';
+        const soulFile = soul.persona?.soul_file || window.sfSystemFallbacks?.persona || 'System Default';
         lines.push(`👤 Soul: ${soulFile}`);
         
         const temp = soul.inference?.temperature !== undefined && soul.inference.temperature !== null ? soul.inference.temperature : '?';
@@ -485,12 +490,32 @@ window.sfUpdateTooltip = function(soul) {
                 if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
             });
     } else {
-        window.HecosPersonaName = 'Hecos';
-        window._globalPersonaName = 'Hecos';
-        window.HecosAvatar = null;
-        window._globalAvatar = null;
-        window.HecosAvatarType = 'image';
-        if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+        // No soul_file in this preset/config — fall back to the raw system default
+        const fallbackPersona = window.sfSystemFallbacks?.persona || '';
+        if (fallbackPersona) {
+            window.HecosPersonaName = fallbackPersona.replace('.yaml', '').replace(/_/g, ' ');
+            window._globalPersonaName = window.HecosPersonaName;
+            fetch(`/api/persona/avatar?persona=${encodeURIComponent(fallbackPersona)}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.ok && d.avatar_path) {
+                        window.HecosAvatar = d.avatar_path;
+                        window._globalAvatar = d.avatar_path;
+                        window.HecosAvatarType = d.avatar_type || 'image';
+                    }
+                    if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+                })
+                .catch(() => {
+                    if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+                });
+        } else {
+            window.HecosPersonaName = 'Hecos System Soul';
+            window._globalPersonaName = 'Hecos System Soul';
+            window.HecosAvatar = null;
+            window._globalAvatar = null;
+            window.HecosAvatarType = 'image';
+            if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+        }
     }
 };
 

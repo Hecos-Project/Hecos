@@ -78,16 +78,18 @@ class PresenterEngine:
         # 4. Inject Playbook context (if Playbooks module is installed)
         try:
             try:
-                from hecos.modules.playbooks.playbooks.storage import get_active_playbook_context
+                from hecos.modules.playbooks.playbooks.storage import get_presenter_playbook_context
             except ImportError:
-                from hecos.hpm.playbooks.storage import get_active_playbook_context
-            playbook_ctx = get_active_playbook_context()
+                from hecos.modules.playbooks.playbooks.storage import get_active_playbook_context as get_presenter_playbook_context
+            playbook_ctx = get_presenter_playbook_context(max_tokens=1500, chat_id=session_id or "default")
             if playbook_ctx:
                 system_prompt += f"\n\n[PLAYBOOK KNOWLEDGE BASE]:\n{playbook_ctx}"
         except Exception:
             pass  # Playbooks module not installed or error — silently skip
 
         merged_cfg['ai']['special_instructions'] = system_prompt
+        merged_cfg['ai']['skip_chat_playbook'] = True
+        merged_cfg['is_presenter'] = True
         
         # Override tokens if configured
         btype = merged_cfg.get('backend', {}).get('type', 'ollama')
@@ -99,6 +101,12 @@ class PresenterEngine:
 
         def _task():
             try:
+                # If local backend and event is triggered by user message, stagger slightly
+                # so the main chat thread establishes its prompt and priority in the local model first
+                if btype in ['ollama', 'llamacpp', 'local'] and event_type in ["user_message_sent", "coach_advice", "user_comment"]:
+                    import time
+                    time.sleep(1.5)
+
                 logger.info(f"[Presenter] _task started: calling generate_response for '{event_type}'")
                 response = generate_response(
                     user_text=user_prompt,
@@ -131,7 +139,7 @@ class PresenterEngine:
                                 logger.error(f"[Presenter] Error executing presenter tools: {tool_e}")
 
                         logger.info(f"[Presenter] Writing feed entry for '{event_type}'")
-                        add_feed_entry(event_type, response, persist=cfg.feed.persist)
+                        add_feed_entry(event_type, response, session_id=session_id, persist=cfg.feed.persist)
                         logger.info(f"[Presenter] Feed entry written successfully")
                 else:
                     logger.warning(f"[Presenter] generate_response returned None/empty for '{event_type}'")
@@ -157,9 +165,9 @@ class PresenterEngine:
         session_id = payload.get("session_id")
         
         sys_prompt = (
-            "You are the Hecos System Presenter. Provide a brief, punchy, 1-sentence introduction or commentary about the newly activated AI persona. Use the language of the system."
+            "You are the Hecos System Presenter. Provide a brief, punchy, 1-sentence introduction or commentary about the newly activated AI soul. Use the language of the system."
         )
-        user_prompt = f"The user has just switched the AI persona to '{persona_name}'. Introduce them briefly."
+        user_prompt = f"The user has just switched the AI soul to '{persona_name}'. Introduce them briefly."
         
         self._generate_commentary("persona_switched", sys_prompt, user_prompt, session_id=session_id)
 
@@ -196,12 +204,12 @@ class PresenterEngine:
         else:
             text = f"Package event: {pkg_id}"
         
-        add_feed_entry("package_event", text, persist=self.cfg.feed.persist)
+        add_feed_entry("package_event", text, session_id=None, persist=self.cfg.feed.persist)
 
     # ── Full Commentary Mode handlers ────────────────────────────────
     
     def _on_user_message_sent(self, event: Dict[str, Any]):
-        """Comment on the user's message as soon as they send it (full mode only)."""
+        """Comment on the user's message. In simulation mode → coach. Otherwise → commentator."""
         if not self._running: return
         
         cfg = self.cfg
@@ -216,18 +224,78 @@ class PresenterEngine:
         if not user_msg or len(user_msg.strip()) < 3:
             return
         
-        sys_prompt = (
-            "You are the Hecos System Presenter, a witty third-party sports commentator for this AI system. "
-            "The Admin (user) has just sent a message to the AI. "
-            "Write a brief, punchy 1-sentence commentary about what the user is asking or doing. "
-            "Be like a sports commentator narrating a play as it happens. Keep it under 20 words. "
-            "Do NOT answer the question yourself — you are the observer, not the AI."
-        )
-        user_prompt = f"Admin says: {user_msg[:300]}"
-        self._generate_commentary("user_comment", sys_prompt, user_prompt, session_id=session_id)
+        # ── Check simulation state ──
+        try:
+            from hecos.modules.playbooks.playbooks.storage import (
+                get_simulation_state, check_forbidden_terms, get_playbook, increment_turn
+            )
+            sim_state = get_simulation_state(session_id or "default")
+            sim_running = sim_state.get("status") == "running"
+        except Exception:
+            sim_running = False
+            sim_state = {}
+
+        if sim_running:
+            # ── COACH MODE: check for violations + provide coaching ──
+            try:
+                violations = check_forbidden_terms(user_msg, sim_state.get("playbook_id"))
+                increment_turn(session_id or "default")
+                
+                # Send violations as dedicated feed entries
+                if violations:
+                    for v in violations:
+                        violation_text = (
+                            f"⚠️ VIOLATION: User said '{', '.join(v['terms_found'])}'. "
+                            f"Correction: {v['correction']} "
+                            f"[severity: {v['severity']}]"
+                        )
+                        add_feed_entry("playbook_violation", violation_text, session_id=session_id, persist=cfg.feed.persist)
+                
+                # Coach prompt: analyze user's move and suggest next step
+                pb = get_playbook(sim_state.get("playbook_id", "")) if sim_state.get("playbook_id") else None
+                mission = pb.get("mission", {}) if pb else {}
+                coach_role = mission.get("coach_role", "Coach")
+                user_role = mission.get("user_role", "User")
+                chat_role = mission.get("chat_role", "Interlocutor")
+                swapped = sim_state.get("swapped", False)
+                if swapped:
+                    user_role, chat_role = chat_role, user_role
+                
+                coach_tasks = mission.get("coach_tasks", [])
+                tasks_str = "; ".join(coach_tasks) if coach_tasks else "Guide and advise"
+
+                violation_note = ""
+                if violations:
+                    v_terms = ", ".join(v['terms_found'] for v in violations)
+                    v_corrections = "; ".join(v['correction'] for v in violations if v['correction'])
+                    violation_note = f"\nVIOLATION DETECTED: User said forbidden term(s): [{v_terms}]. Correct answer: {v_corrections}. You MUST address this violation first."
+                
+                sys_prompt = (
+                    f"You are the COACH ({coach_role}) in a live simulation.\n"
+                    f"The user plays: {user_role}. The chat AI plays: {chat_role}.\n"
+                    f"Your tasks: {tasks_str}\n"
+                    f"Analyze the user's message and provide 1-2 concise coaching suggestions. "
+                    f"Keep it under 30 words. Be direct and actionable.{violation_note}"
+                )
+                user_prompt = f"User ({user_role}) says: {user_msg[:300]}"
+                self._generate_commentary("coach_advice", sys_prompt, user_prompt, session_id=session_id)
+                
+            except Exception as e:
+                logger.error(f"[Presenter] Coach mode error: {e}\n{traceback.format_exc()}")
+        else:
+            # ── COMMENTATOR MODE (legacy) ──
+            sys_prompt = (
+                "You are the Hecos System Presenter, a witty third-party sports commentator for this AI system. "
+                "The Admin (user) has just sent a message to the AI. "
+                "Write a brief, punchy 1-sentence commentary about what the user is asking or doing. "
+                "Be like a sports commentator narrating a play as it happens. Keep it under 20 words. "
+                "Do NOT answer the question yourself — you are the observer, not the AI."
+            )
+            user_prompt = f"Admin says: {user_msg[:300]}"
+            self._generate_commentary("user_comment", sys_prompt, user_prompt, session_id=session_id)
 
     def _on_assistant_response(self, event: Dict[str, Any]):
-        """Comment on the AI's response after it arrives (full mode only)."""
+        """Comment on the AI's response. In simulation → coach evaluates the exchange."""
         if not self._running: return
         
         cfg = self.cfg
@@ -243,15 +311,50 @@ class PresenterEngine:
         if not ai_msg or len(ai_msg.strip()) < 3:
             return
         
-        sys_prompt = (
-            "You are the Hecos System Presenter, a witty third-party sports commentator for this AI system. "
-            "The AI has just responded to the Admin's question. "
-            "Write a brief, punchy 1-sentence commentary about the quality, style, or content of the AI's response. "
-            "Be sarcastic, funny, or impressed depending on the context. Keep it under 20 words. "
-            "Do NOT repeat the response — you are the observer."
-        )
-        user_prompt = f"Admin asked: {user_msg[:200]}\nAI responded: {ai_msg[:300]}"
-        self._generate_commentary("ai_comment", sys_prompt, user_prompt, session_id=session_id)
+        # ── Check simulation state ──
+        try:
+            from hecos.modules.playbooks.playbooks.storage import get_simulation_state, get_playbook
+            sim_state = get_simulation_state(session_id or "default")
+            sim_running = sim_state.get("status") == "running"
+        except Exception:
+            sim_running = False
+            sim_state = {}
+
+        if sim_running:
+            # ── COACH MODE: evaluate exchange ──
+            try:
+                pb = get_playbook(sim_state.get("playbook_id", "")) if sim_state.get("playbook_id") else None
+                mission = pb.get("mission", {}) if pb else {}
+                coach_role = mission.get("coach_role", "Coach")
+                user_role = mission.get("user_role", "User")
+                chat_role = mission.get("chat_role", "Interlocutor")
+                swapped = sim_state.get("swapped", False)
+                if swapped:
+                    user_role, chat_role = chat_role, user_role
+
+                sys_prompt = (
+                    f"You are the COACH ({coach_role}) observing a simulation exchange.\n"
+                    f"User plays: {user_role}. Chat AI plays: {chat_role}.\n"
+                    "Evaluate the AI's response for consistency with the scenario. "
+                    "Suggest how the user should respond next. "
+                    "Analyze the interlocutor's personality traits based on their responses. "
+                    "Keep it under 40 words. Be direct."
+                )
+                user_prompt = f"User ({user_role}): {user_msg[:200]}\nChat ({chat_role}): {ai_msg[:300]}"
+                self._generate_commentary("coach_evaluation", sys_prompt, user_prompt, session_id=session_id)
+            except Exception as e:
+                logger.error(f"[Presenter] Coach evaluation error: {e}\n{traceback.format_exc()}")
+        else:
+            # ── COMMENTATOR MODE (legacy) ──
+            sys_prompt = (
+                "You are the Hecos System Presenter, a witty third-party sports commentator for this AI system. "
+                "The AI has just responded to the Admin's question. "
+                "Write a brief, punchy 1-sentence commentary about the quality, style, or content of the AI's response. "
+                "Be sarcastic, funny, or impressed depending on the context. Keep it under 20 words. "
+                "Do NOT repeat the response — you are the observer."
+            )
+            user_prompt = f"Admin asked: {user_msg[:200]}\nAI responded: {ai_msg[:300]}"
+            self._generate_commentary("ai_comment", sys_prompt, user_prompt, session_id=session_id)
 
     def _on_message_exchange(self, event: Dict[str, Any]):
         """Legacy: generates commentary on the full exchange (exchange mode only)."""

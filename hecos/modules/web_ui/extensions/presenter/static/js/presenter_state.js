@@ -12,6 +12,10 @@
         MAX_FEED: 50,
         presenterHiddenTypes: new Set(),
         presenterSearchQuery: '',
+        sessionFeeds: {},
+        sessionBooted: {},
+        currentSessionId: null,
+        appBooted: false,
         
         TYPE_META: {
             system_info:     { icon: 'fas fa-info-circle',          color: '#6cb4ee', tooltip: 'System Information' },
@@ -21,13 +25,17 @@
             tip:             { icon: 'fas fa-lightbulb',            color: '#ffd54f', tooltip: 'Helpful Tip' },
             package_event:   { icon: 'fas fa-box-open',             color: '#ab47bc', tooltip: 'Package Event' },
             log_important:   { icon: 'fas fa-clipboard-list',       color: '#ef5350', tooltip: 'Important Log' },
-            persona_switched:{ icon: 'fas fa-user-astronaut',       color: '#e040fb', tooltip: 'Persona Switched' },
+            persona_switched:{ icon: 'fas fa-user-astronaut',       color: '#e040fb', tooltip: 'Soul Switched' },
             new_chat:        { icon: 'fas fa-comments',             color: '#29b6f6', tooltip: 'New Chat Session' },
             user_comment:    { icon: 'fas fa-user',                 color: '#42a5f5', tooltip: "Comment on User's Message" },
             ai_comment:      { icon: 'fas fa-robot',                color: '#ab47bc', tooltip: "Comment on AI's Response" },
             message_exchange:{ icon: 'fas fa-exchange-alt',         color: '#78909c', tooltip: 'Comment on Chat Exchange' },
             test:            { icon: 'fas fa-flask',                color: '#26c6da', tooltip: 'Test Event' },
             briefing:        { icon: 'fas fa-satellite-dish',       color: '#ff7043', tooltip: 'System Briefing' },
+            playbook_event:  { icon: 'fas fa-book-open',            color: '#a78bfa', tooltip: 'Playbook Event' },
+            playbook_violation:{ icon: 'fas fa-ban',                 color: '#ef4444', tooltip: 'Playbook Rule Violation' },
+            coach_advice:    { icon: 'fas fa-chalkboard-teacher',   color: '#f59e0b', tooltip: 'Coach Suggestion' },
+            coach_evaluation:{ icon: 'fas fa-clipboard-check',     color: '#14b8a6', tooltip: 'Coach Evaluation' },
             default:         { icon: 'fas fa-bullhorn',             color: '#ff512f', tooltip: 'Notification' }
         }
     };

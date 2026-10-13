@@ -23,21 +23,22 @@ def _get_active_engine() -> str:
 def _sanitize_for_xtts(text: str) -> str:
     """
     XTTS2-specific sanitization.
-    Known issue: XTTS v2 sometimes vocalizes the period character as "punto"
-    in Italian (and similar artifacts in other languages). This is a documented
-    model limitation in Coqui's issue tracker.
+    Known issue: XTTS v2 sometimes vocalizes isolated period characters or ellipses as "punto"
+    in Italian.
     
-    Fix: replace sentence-ending periods with commas (which produce a natural 
-    pause but are never vocalized), and strip the very last period entirely.
+    IMPORTANT: We must NOT replace mid-text sentence periods ('. ') with commas,
+    as that destroys sentence boundaries and causes pysbd to return a single massive
+    block exceeding XTTS's 400-token architectural limit.
+    Instead, collapse multiple dots to a single period and strip trailing dots.
     """
-    # Replace ". " (mid-text sentence endings) with ", " — comma gives the
-    # same pause cue to XTTS without being read aloud
-    text = re.sub(r'\.\s+', ', ', text)
+    # Replace multiple dots with a single dot
+    text = re.sub(r'\.{2,}', '.', text)
 
     # Strip any trailing period at the very end of the text
-    text = text.rstrip('.')
+    text = text.rstrip('. ')
 
     return text
+
 
 
 def sanitize_text(text: str) -> str:

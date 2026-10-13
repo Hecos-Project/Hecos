@@ -136,3 +136,119 @@
 .presenter-dark-input::-webkit-outer-spin-button:hover {
     opacity: 1;
 }
+
+/* Presenter Header Playbook Pill */
+.hbs-presenter-playbook-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    margin-left: 8px;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 12px;
+    font-size: 11px;
+    color: #93c5fd;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    text-decoration: none;
+    max-width: 440px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+.hbs-presenter-playbook-pill:hover {
+    background: rgba(59, 130, 246, 0.22);
+    border-color: rgba(59, 130, 246, 0.55);
+    color: #bfdbfe;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+}
+.pb-sim-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text, #fff);
+    transition: all 0.15s ease;
+    line-height: 1.4;
+}
+.pb-sim-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: scale(1.05);
+}
+.pb-sim-btn-play {
+    background: rgba(16, 185, 129, 0.22);
+    border-color: rgba(16, 185, 129, 0.45);
+    color: #34d399;
+}
+.pb-sim-btn-play:hover {
+    background: rgba(16, 185, 129, 0.38);
+    color: #6ee7b7;
+}
+.pb-sim-btn-stop {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #f87171;
+}
+.pb-sim-btn-stop:hover {
+    background: rgba(239, 68, 68, 0.35);
+    color: #fca5a5;
+}
+.pb-sim-btn-pause {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+}
+.pb-sim-btn-pause:hover {
+    background: rgba(245, 158, 11, 0.35);
+    color: #fde68a;
+}
+.pb-sim-btn-swap {
+    background: rgba(192, 132, 252, 0.2);
+    border-color: rgba(192, 132, 252, 0.4);
+    color: #c084fc;
+}
+.pb-sim-btn-swap:hover {
+    background: rgba(192, 132, 252, 0.35);
+    color: #e9d5ff;
+}
+.hbs-presenter-playbook-pill.inactive {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--muted);
+}
+.hbs-presenter-playbook-pill.inactive:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: var(--text);
+}
+.hbs-presenter-playbook-pill .dot-active {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 6px rgba(52, 211, 153, 0.85);
+    flex-shrink: 0;
+    animation: pbDotPulse 2.2s infinite ease-in-out;
+}
+.hbs-presenter-playbook-pill .dot-inactive {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #64748b;
+    flex-shrink: 0;
+}
+@keyframes pbDotPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.55; transform: scale(0.85); }
+}

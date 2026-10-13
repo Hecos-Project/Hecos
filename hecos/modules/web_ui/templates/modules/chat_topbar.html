@@ -199,7 +199,9 @@
                   });
           } else {
               delete overrides.ai.active_personality;
-              window.HecosPersonaName = window._globalPersonaName || 'Hecos';
+              window.HecosPersonaName = window._globalPersonaName
+                  || window.sfSystemFallbacks?.persona?.replace('.yaml', '').replace(/_/g, ' ')
+                  || 'Hecos System Soul';
               if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
               if (personaChanged && window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
           }
@@ -328,7 +330,9 @@
           if (tVoiceSel) tVoiceSel.innerHTML = '<option value="">\uD83C\uDF99\uFE0F TTS Voice...</option>';
           window.updateSessionDropdownTitles();
           
-          window.HecosPersonaName = window._globalPersonaName || 'Hecos';
+          window.HecosPersonaName = window._globalPersonaName
+              || window.sfSystemFallbacks?.persona?.replace('.yaml', '').replace(/_/g, ' ')
+              || 'Hecos System Soul';
           if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
       };
 
@@ -374,7 +378,9 @@
                           window.HecosPersonaName = window._globalPersonaName;
                           if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
                       } else {
-                          window.HecosPersonaName = window._globalPersonaName || 'Hecos';
+                          window.HecosPersonaName = window._globalPersonaName
+                              || window.sfSystemFallbacks?.persona?.replace('.yaml', '').replace(/_/g, ' ')
+                              || 'Hecos System Soul';
                           if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
                       }
                   }

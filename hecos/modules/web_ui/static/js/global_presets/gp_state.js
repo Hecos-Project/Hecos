@@ -206,7 +206,10 @@ window.sfActivateSoul = async function(soulId) {
 
 
 
-// Auto-load sidebar preset label on page load
-document.addEventListener('DOMContentLoaded', () => {
+// Auto-load sidebar preset label on page load.
+// sfUpdateFallbackLabels MUST run first so that window.sfSystemFallbacks is populated
+// before sfLoadGlobalState → sfApplySoulToUI → sfDirty uses it to resolve the persona name.
+document.addEventListener('DOMContentLoaded', async () => {
+    if (window.sfUpdateFallbackLabels) await window.sfUpdateFallbackLabels();
     if (window.sfLoadGlobalState) window.sfLoadGlobalState();
 });

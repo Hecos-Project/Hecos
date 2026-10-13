@@ -271,20 +271,30 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
         hecos_root = os.path.dirname(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         )
-        plugin_base = os.path.join(hecos_root, "hpm", plugin_id)
-        if not os.path.isdir(plugin_base):
-            plugin_base = os.path.join(hecos_root, "hpm", "libraries", plugin_id)
-        if not os.path.isdir(plugin_base):
-            plugin_base = os.path.join(hecos_root, "hpm", "plugins", plugin_id)
-        if not os.path.isdir(plugin_base):
-            plugin_base = os.path.join(hecos_root, "modules", plugin_id)
-        if not os.path.isdir(plugin_base):
-            plugin_base = os.path.join(hecos_root, "plugins", plugin_id)
+        candidate_bases = [
+            os.path.join(hecos_root, "modules", plugin_id),
+            os.path.join(hecos_root, "hpm", plugin_id),
+            os.path.join(hecos_root, "hpm", "libraries", plugin_id),
+            os.path.join(hecos_root, "hpm", "plugins", plugin_id),
+            os.path.join(hecos_root, "plugins", plugin_id),
+        ]
+        plugin_base = None
+        safe_path = None
+        for cand in candidate_bases:
+            if not os.path.isdir(cand):
+                continue
+            cand_abs = os.path.abspath(cand)
+            target = os.path.abspath(os.path.join(cand_abs, filename))
+            if target.startswith(cand_abs) and os.path.isfile(target):
+                plugin_base = cand_abs
+                safe_path = target
+                break
+
+        if not plugin_base or not safe_path:
+            logger.warning(f"[WebUI] hpm_plugin_static: file not found for {plugin_id}/{filename}")
+            abort(404)
 
         try:
-            safe_path = os.path.abspath(os.path.join(plugin_base, filename))
-            if not safe_path.startswith(os.path.abspath(plugin_base)):
-                abort(403)
             return send_from_directory(os.path.dirname(safe_path), os.path.basename(safe_path))
         except Exception as e:
             logger.warning(f"[WebUI] hpm_plugin_static error for {plugin_id}/{filename}: {e}")

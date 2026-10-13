@@ -435,6 +435,12 @@ hecos/personas/*/
 !hecos/personas/antonio_meloni/*
 !hecos/personas/antonio_meloni/avatars/*
 
+# Whitelisted Neutral Persona (Dummy null)
+!hecos/personas/dummy_null/
+!hecos/personas/dummy_null/*
+!hecos/personas/dummy_null/avatars/*
+
+
 # ── PRIVATE ASSETS: Always block these (Privacy / Copyright) ─────────────
 hecos/personas/Jun_my_little_princess/
 

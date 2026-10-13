@@ -39,9 +39,53 @@ class PromptBuilder:
         rules = PromptBuilder._build_rules(config, user_id, backend_config)
         vision_note = PromptBuilder._build_vision_note(images)
         
+        # Inject Active Playbook Chat Context (if Playbooks module is active and not Presenter)
+        playbook_chat_block = ""
+        playbook_mission_block = ""  # Mission goes FIRST when simulation is running
+        is_presenter = config.get('is_presenter', False) or config.get('ai', {}).get('skip_chat_playbook', False)
+        if not is_presenter:
+            try:
+                from hecos.modules.playbooks.playbooks.storage import (
+                    get_chat_playbook_context, get_simulation_state, check_forbidden_terms, get_playbook
+                )
+                chat_id = session_id or "default"
+                sim_state = get_simulation_state(chat_id)
+                sim_running = sim_state.get("status") == "running"
+                
+                pb_chat_ctx = get_chat_playbook_context(chat_id=chat_id, personality_name=personality_name)
+                if pb_chat_ctx:
+                    if sim_running:
+                        # Check if soul personality should be injected or completely suppressed
+                        pb_obj = get_playbook(sim_state.get("playbook_id", "")) if sim_state.get("playbook_id") else None
+                        mission_cfg = pb_obj.get("mission", {}) if pb_obj else {}
+                        inject_soul = mission_cfg.get("inject_soul", not mission_cfg.get("persona_override", False))
+                        if not inject_soul:
+                            personality_prompt = ""
+                            visual_identity_block = ""
 
+                        # Deterministic violation check for the current user turn
+                        violation_note = ""
+                        turn_violations = check_forbidden_terms(user_text, sim_state.get("playbook_id"))
+                        if turn_violations:
+                            v_terms = ", ".join(f"'{t}'" for v in turn_violations for t in v.get("terms_found", []))
+                            v_corrs = "; ".join(v.get("correction", "") for v in turn_violations if v.get("correction"))
+                            violation_note = (
+                                f"\n### ⚠️ IMMEDIATE RULE VIOLATION DETECTED ###\n"
+                                f"The user just used forbidden term(s): {v_terms}.\n"
+                                f"Required correction: {v_corrs}.\n"
+                                f"DIRECTIVE: React in character immediately to this violation (express shock, rebuke, or challenge the user).\n"
+                            )
+
+                        # During simulation: mission block goes BEFORE personality
+                        playbook_mission_block = f"\n{pb_chat_ctx}\n{violation_note}\n"
+                    else:
+                        # Idle (freestyle knowledge base only)
+                        playbook_chat_block = f"\n### ACTIVE PLAYBOOK KNOWLEDGE BASE ###\n{pb_chat_ctx}\n"
+            except Exception as e:
+                logger.debug(f"[PromptBuilder] Playbook chat context injection skipped: {e}")
         
         system_prompt = (
+            f"{playbook_mission_block}"
             f"{personality_prompt}\n"
             f"{visual_identity_block}"
             f"{memory_context}\n"
@@ -63,8 +107,10 @@ class PromptBuilder:
             f"{rules['context_notes_block']}"
             f"{rules['user_profile_block']}"
             f"{rules['special_instructions_block']}"
+            f"{playbook_chat_block}"
             f"{vision_note}"
         )
+
         
         logger.debug("PromptBuilder", f"System prompt created: {len(system_prompt)} characters")
         return system_prompt

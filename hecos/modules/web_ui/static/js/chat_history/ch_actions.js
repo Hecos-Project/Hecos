@@ -33,7 +33,12 @@ window.newChatSession = async function (mode = null) {
         window.chatArea && (window.chatArea.innerHTML = '');
     }
 
-    if (window.Presenter) window.Presenter.clear();
+    // Load the Presenter feed for the new session (clears old entries, loads fresh briefing)
+    if (window.Presenter && typeof window.Presenter.loadSessionFeed === 'function') {
+        window.Presenter.loadSessionFeed(res.session_id, true);
+    } else if (window.Presenter && typeof window.Presenter.updatePlaybookStatus === 'function') {
+        window.Presenter.updatePlaybookStatus(false);
+    }
 
     await window.loadChatSessions();
 };
@@ -62,9 +67,11 @@ window.activateChatSession = async function (sessionId) {
     if (window._clearChatDOM) window._clearChatDOM();
     else if (window.chatArea) window.chatArea.innerHTML = '';
 
-    if (window.Presenter) {
-        window.Presenter.clear();
-        setTimeout(() => { if (window.Presenter.briefing) window.Presenter.briefing(); }, 500);
+    // Load the Presenter feed for the switched-to session
+    if (window.Presenter && typeof window.Presenter.loadSessionFeed === 'function') {
+        window.Presenter.loadSessionFeed(sessionId, false);
+    } else if (window.Presenter && typeof window.Presenter.updatePlaybookStatus === 'function') {
+        window.Presenter.updatePlaybookStatus(false);
     }
 
     if (window.renderHistoryMessages) window.renderHistoryMessages(res.messages || []);

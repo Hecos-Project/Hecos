@@ -177,7 +177,9 @@ window.soDirty = function() {
                     if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
                 });
         } else {
-            window.HecosPersonaName = window._globalPersonaName || 'Hecos';
+            window.HecosPersonaName = window._globalPersonaName
+                || window.sfSystemFallbacks?.persona?.replace('.yaml', '').replace(/_/g, ' ')
+                || 'Hecos System Soul';
             if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
             if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
         }

@@ -89,28 +89,42 @@ class AgentExecutor:
             save_hist = (iteration == 1)
             current_cfg = self.config_manager.config if getattr(self, 'config_manager', None) else processore.current_config
             
+            import threading
+            import time
+
             self._emit(f"Working (Step {iteration})...", level="info")
-            raw_response = brain.generate_response(
-                user_text, 
-                external_config=current_cfg, 
-                agent_context=agent_context,
-                save_history=save_hist,
-                images=images,
-                user_id=self.current_user_id,
-                session_id=self.session_id,
-                sender_tab_id=self.sender_tab_id
-            )
+            stop_gen_hb = threading.Event()
+            def _gen_heartbeat():
+                start_gen = time.time()
+                while not stop_gen_hb.wait(10.0):
+                    elapsed_gen = int(time.time() - start_gen)
+                    self._emit(f"Working (Step {iteration})... [{elapsed_gen}s]", level="info")
+
+            gen_hb_thread = threading.Thread(target=_gen_heartbeat, daemon=True)
+            gen_hb_thread.start()
+            try:
+                raw_response = brain.generate_response(
+                    user_text, 
+                    external_config=current_cfg, 
+                    agent_context=agent_context,
+                    save_history=save_hist,
+                    images=images,
+                    user_id=self.current_user_id,
+                    session_id=self.session_id,
+                    sender_tab_id=self.sender_tab_id
+                )
+            finally:
+                stop_gen_hb.set()
+                gen_hb_thread.join(0.5)
             
             if self.state_manager and getattr(self.state_manager, "webui_stop_requested", False):
                 self._emit("Operation aborted by user.", level="error")
                 break
             
-            import threading
-            import time
             stop_hb = threading.Event()
             def _heartbeat():
                 start = time.time()
-                while not stop_hb.wait(15.0):
+                while not stop_hb.wait(10.0):
                     elapsed = int(time.time() - start)
                     self._emit(f"Working (Step {iteration})... [{elapsed}s]", level="tool")
             

@@ -7,15 +7,16 @@ ai:
     '3': antonio_meloni
     '4': atlas_man
     '5': claudia
-    '6': hecos_presenter
-    '7': hecos_teacher
-    '8': jun_my_little_princess
-    '9': motoko_kusanagi
-    '10': nova_x-01
-    '11': sebastian_pro
-    '12': urania_9800_presenter
-    '13': urania_presenter
-    '14': urania_teacher
+    '6': dummy_null
+    '7': hecos_presenter
+    '8': hecos_teacher
+    '9': jun_my_little_princess
+    '10': motoko_kusanagi
+    '11': nova_x-01
+    '12': sebastian_pro
+    '13': urania_9800_presenter
+    '14': urania_presenter
+    '15': urania_teacher
   save_special_instructions: true
   special_instructions: Ricorda che devi sempre parlare in italiano, non in inglese.
     Scrivi sempre e solo in lingua italiana - a meno che non si tratti della generazione
