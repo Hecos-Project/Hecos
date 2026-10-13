@@ -41,6 +41,11 @@ window.hpmStoreInit = async function () {
   if (!pane) return;
   pane.innerHTML = _hpmStoreBuildShell();
 
+  // Populate repository selector if helper is available
+  if (typeof window.hpmPopulateRepoSelect === 'function') {
+    window.hpmPopulateRepoSelect('hpm-store-repo-select');
+  }
+
   const searchEl = document.getElementById('hpm-store-search');
   if (searchEl) {
     searchEl.addEventListener('input', (e) => {
@@ -79,6 +84,19 @@ function _hpmStoreApplyFilters() {
 function _hpmStoreBuildShell() {
   return `
     <div id="hpm-store-offline-banner" style="display:none;"></div>
+    <!-- Store Repository Selector Bar -->
+    <div class="hpm-store-repo-bar" style="display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;padding:8px 14px;margin-bottom:14px;gap:12px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:260px;">
+        <i class="fas fa-database" style="color:var(--accent);font-size:15px;"></i>
+        <label for="hpm-store-repo-select" style="font-size:0.85em;color:var(--text);font-weight:600;white-space:nowrap;">Repository:</label>
+        <select id="hpm-store-repo-select" onchange="window.hpmSelectRepository(this.value)" style="flex:1;max-width:380px;background:var(--bg3);border:1px solid var(--border-color);border-radius:8px;padding:5px 10px;color:var(--text);font-size:0.82em;outline:none;cursor:pointer;">
+          <option value="">Loading repositories...</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-sm btn-outline" onclick="showTab('hpm-settings')" title="Configure repositories in HPM Settings" style="font-size:0.8em;padding:5px 12px;display:flex;align-items:center;gap:6px;">
+        <i class="fas fa-sliders-h"></i> Manage Repositories
+      </button>
+    </div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
       <div style="position:relative;flex:1;min-width:220px;">
         <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none;"></i>
@@ -262,6 +280,11 @@ function _hpmStoreShowBanner(text, type) {
       <i class="fas fa-wifi" style="margin-right:6px;"></i>${_hesc(text)}
     </div>`;
   banner.style.display = 'block';
+}
+
+function _hpmStoreHideBanner() {
+  const banner = document.getElementById('hpm-store-offline-banner');
+  if (banner) banner.style.display = 'none';
 }
 
 document.addEventListener('hpmProgressUpdate', (e) => {

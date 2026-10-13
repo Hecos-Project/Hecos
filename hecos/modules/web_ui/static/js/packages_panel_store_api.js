@@ -1,7 +1,94 @@
-window.hpmStoreLoad = async function (forceRefresh = false) {
+// ── Repositories Management ──────────────────────────────────────────────────
+window._hpmRepositories = window._hpmRepositories || ['https://hecos-project.github.io/store/index.json'];
+window._hpmActiveRepoUrl = window._hpmActiveRepoUrl || 'https://hecos-project.github.io/store/index.json';
+
+window.hpmGetRepoLabel = function (url) {
+  if (!url) return 'Default Repository';
+  if (url === 'https://hecos-project.github.io/store/index.json') {
+    return 'Hecos Official (github.io)';
+  }
+  if (url === 'https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/store/index.json') {
+    return 'Hecos GitHub Main (raw)';
+  }
+  try {
+    const u = new URL(url);
+    const pathSnippet = u.pathname.length > 25 ? '...' + u.pathname.slice(-22) : u.pathname;
+    return `${u.hostname}${pathSnippet}`;
+  } catch (_) {
+    return url.length > 35 ? url.slice(0, 15) + '...' + url.slice(-15) : url;
+  }
+};
+
+window.hpmPopulateRepoSelect = function (selectId) {
+  const el = typeof selectId === 'string' ? document.getElementById(selectId) : selectId;
+  if (!el) return;
+  const repos = window._hpmRepositories || [];
+  const active = window._hpmActiveRepoUrl || (repos[0] || '');
+
+  el.innerHTML = '';
+  repos.forEach(url => {
+    const opt = document.createElement('option');
+    opt.value = url;
+    opt.textContent = window.hpmGetRepoLabel(url);
+    opt.title = url;
+    if (url === active) opt.selected = true;
+    el.appendChild(opt);
+  });
+};
+
+window.hpmLoadRepositories = async function () {
+  try {
+    const resp = await fetch('/api/hpm/settings/repositories');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data.ok && Array.isArray(data.repositories)) {
+      window._hpmRepositories = data.repositories;
+      window._hpmActiveRepoUrl = data.active_repository || data.repositories[0] || '';
+
+      // Update both select dropdowns
+      window.hpmPopulateRepoSelect('hpm-header-repo-select');
+      window.hpmPopulateRepoSelect('hpm-store-repo-select');
+    }
+  } catch (err) {
+    console.warn('[HPM] Failed to load repositories:', err);
+  }
+};
+
+window.hpmSelectRepository = async function (url) {
+  if (!url) return;
+  window._hpmActiveRepoUrl = url;
+
+  // Sync all select elements in DOM
+  ['hpm-header-repo-select', 'hpm-store-repo-select'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (sel && sel.value !== url) sel.value = url;
+  });
+
+  // Persist active repo to backend
+  try {
+    await fetch('/api/hpm/settings/active_repository', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active_repository: url }),
+    });
+  } catch (e) {
+    console.warn('[HPM] Failed to save active repository:', e);
+  }
+
+  // Reload store catalog from new repo if store is active or loaded
+  if (typeof window.hpmStoreLoad === 'function') {
+    await window.hpmStoreLoad(true, url);
+  }
+};
+
+window.hpmStoreLoad = async function (forceRefresh = false, repoUrl = null) {
   _hpmStoreShowLoading();
   try {
-    const url = `/api/hpm/store/catalog${forceRefresh ? '?refresh=1' : ''}`;
+    const activeRepo = repoUrl || window._hpmActiveRepoUrl;
+    let url = `/api/hpm/store/catalog?refresh=${forceRefresh ? '1' : '0'}`;
+    if (activeRepo) {
+      url += `&repo_url=${encodeURIComponent(activeRepo)}`;
+    }
     const resp = await fetch(url);
     const data = await resp.json();
     if (!data.ok) throw new Error(data.error || 'Unknown error');
@@ -10,12 +97,17 @@ window.hpmStoreLoad = async function (forceRefresh = false) {
     window.HPM_STORE_STATE.catalog = catalog;
     window.HPM_STORE_STATE.filtered = catalog.packages || [];
     if (data.offline) _hpmStoreShowBanner('⚠️ Offline mode — showing cached catalog', 'warning');
+    else if (typeof _hpmStoreHideBanner === 'function') _hpmStoreHideBanner();
     _hpmStoreBuildTypeFilters(catalog.packages || []);
     _hpmStoreApplyFilters();
+    if (typeof window.hpmUpdateCount === 'function') {
+      window.hpmUpdateCount('store', (catalog.packages || []).length);
+    }
   } catch (err) {
     _hpmStoreShowError(err.message);
   }
 };
+
 
 // ── Filtering & Search ────────────────────────────────────────────────────────
 window.hpmStoreInstall = async function (pkgId, downloadUrl, pkgName, skipDepsCheck = false) {

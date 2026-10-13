@@ -43,9 +43,14 @@ DOWNLOAD_TIMEOUT_SECONDS = 60
 
 # ── Internal helpers ─────────────────────────────────────────────────────────
 
-def _cache_path(hecos_src: str) -> str:
-    """Return the path of the local store cache file."""
-    return os.path.join(hecos_src, "data", "store_cache.json")
+def _cache_path(hecos_src: str, repo_url: str | None = None) -> str:
+    """Return the path of the local store cache file for a specific repo URL."""
+    if not repo_url or repo_url == CATALOG_URL:
+        return os.path.join(hecos_src, "data", "store_cache.json")
+    import hashlib
+    clean_url = repo_url.strip().rstrip("/")
+    h = hashlib.sha256(clean_url.encode("utf-8")).hexdigest()[:12]
+    return os.path.join(hecos_src, "data", f"store_cache_{h}.json")
 
 
 def _load_cache(cache_file: str) -> dict | None:
@@ -72,15 +77,20 @@ def _save_cache(cache_file: str, catalog: dict) -> None:
         logger.warning(f"[HPM:Store] Could not write cache: {e}")
 
 
-def _fetch_remote_catalog(cfg_mgr) -> dict:
-    """Download the catalog JSON from the configured store URL."""
-    url = (cfg_mgr.get("hpm.store_catalog_url") or CATALOG_URL) if cfg_mgr else CATALOG_URL
+def _fetch_remote_catalog(cfg_mgr, custom_url: str | None = None) -> dict:
+    """Download the catalog JSON from the configured store URL or custom URL."""
+    url = (custom_url or (cfg_mgr.get("hpm.store_catalog_url") if cfg_mgr else None) or CATALOG_URL).strip()
     logger.info(f"[HPM:Store] Attempting to fetch remote catalog from: {url}")
     
     # If the URL is a local file path, read it directly
     if not url.startswith("http"):
+        local_path = url
+        if local_path.startswith("file:///"):
+            local_path = local_path[8:]
+        elif local_path.startswith("file://"):
+            local_path = local_path[7:]
         try:
-            with open(url, "r", encoding="utf-8") as f:
+            with open(local_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
             logger.error(f"[HPM:Store] Could not read local catalog at {url}: {e}")
@@ -101,7 +111,7 @@ def _fetch_remote_catalog(cfg_mgr) -> dict:
         },
     )
     
-    # Optional fallback URL just in case
+    # Optional fallback URL just in case default catalog is used
     fallback_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/store/index.json"
     
     urls_to_try = [url]
@@ -119,7 +129,15 @@ def _fetch_remote_catalog(cfg_mgr) -> dict:
                 logger.info(f"[HPM:Store] Response {status_code} from {attempt_url}. Size: {len(raw_data)} bytes")
                 
                 try:
-                    return json.loads(raw_data.decode("utf-8"))
+                    cat = json.loads(raw_data.decode("utf-8"))
+                    # If packages have relative download_url, resolve them relative to attempt_url
+                    if isinstance(cat, dict) and "packages" in cat and isinstance(cat["packages"], list):
+                        import urllib.parse
+                        for pkg in cat["packages"]:
+                            dl = pkg.get("download_url")
+                            if dl and not dl.startswith(("http://", "https://", "file://")):
+                                pkg["download_url"] = urllib.parse.urljoin(attempt_url, dl)
+                    return cat
                 except json.JSONDecodeError as je:
                     logger.error(f"[HPM:Store] JSON decode failed for {attempt_url}. Error: {je}")
                     logger.debug(f"[HPM:Store] Raw response snippet: {raw_data[:200]}")
@@ -136,7 +154,7 @@ def _fetch_remote_catalog(cfg_mgr) -> dict:
             logger.error(f"[HPM:Store] Unexpected error fetching {attempt_url}: {e}")
             last_error = e
 
-    raise RuntimeError(f"All attempts to fetch catalog failed. Last error: {last_error}")
+    raise RuntimeError(f"All attempts to fetch catalog failed for {url}. Last error: {last_error}")
 
 
 def _enrich_catalog(catalog: dict, registry) -> dict:
@@ -170,11 +188,21 @@ def _enrich_catalog(catalog: dict, registry) -> dict:
 
 def _download_hpkg(url: str, dest_dir: str) -> str:
     """
-    Download a .hpkg file from a URL into dest_dir.
+    Download a .hpkg file from a URL or copy from local path into dest_dir.
     Returns the local file path.
     """
     filename = url.split("/")[-1].split("?")[0] or "package.hpkg"
     dest_path = os.path.join(dest_dir, filename)
+
+    if not url.startswith("http"):
+        local_path = url
+        if local_path.startswith("file:///"):
+            local_path = local_path[8:]
+        elif local_path.startswith("file://"):
+            local_path = local_path[7:]
+        import shutil
+        shutil.copy2(local_path, dest_path)
+        return dest_path
 
     req = urllib.request.Request(
         url,
@@ -203,24 +231,29 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
         Return the enriched remote package catalog.
         Serves from local cache if fresh (< 1 hour old).
         Force-refresh by passing ?refresh=1.
+        Select repository by passing ?repo_url=...
         """
         force = request.args.get("refresh", "0") == "1"
-        offline = False
+        repo_url = request.args.get("repo_url") or request.args.get("url")
+        if not repo_url and cfg_mgr:
+            repo_url = cfg_mgr.get("hpm.store_catalog_url")
+        repo_url = (repo_url or CATALOG_URL).strip()
 
-        cache_file = _cache_path(_hecos_src)
+        offline = False
+        cache_file = _cache_path(_hecos_src, repo_url)
         registry, _, _ = _get_hpm_components(_hecos_src)
 
         catalog = None if force else _load_cache(cache_file)
 
         if catalog is None:
             try:
-                catalog = _fetch_remote_catalog(cfg_mgr)
+                catalog = _fetch_remote_catalog(cfg_mgr, custom_url=repo_url)
                 _save_cache(cache_file, catalog)
             except Exception as e:
-                log.warning(f"[HPM:Store] Remote fetch failed: {e} — serving cache if available")
+                log.warning(f"[HPM:Store] Remote fetch failed for {repo_url}: {e} — serving cache if available")
                 catalog = _load_cache(cache_file)
                 if catalog is None:
-                    return jsonify({"ok": False, "offline": True, "error": str(e)}), 503
+                    return jsonify({"ok": False, "offline": True, "error": str(e), "repo_url": repo_url}), 503
                 offline = True
 
         enriched = _enrich_catalog(catalog, registry)
@@ -228,6 +261,7 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
             "ok": True,
             "offline": offline,
             "catalog": enriched,
+            "repo_url": repo_url,
         })
 
     # ── GET /api/hpm/store/search ─────────────────────────────────────────────
@@ -237,19 +271,24 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
         """
         Filter the catalog by a search query (name, description, tags, author).
         Query params:
-          q     - search term
-          type  - filter by module type (plugin, widget, app, persona, theme, ...)
+          q         - search term
+          type      - filter by module type (plugin, widget, app, persona, theme, ...)
+          repo_url  - repository url
         """
         query = request.args.get("q", "").strip().lower()
         type_filter = request.args.get("type", "").strip().lower()
+        repo_url = request.args.get("repo_url") or request.args.get("url")
+        if not repo_url and cfg_mgr:
+            repo_url = cfg_mgr.get("hpm.store_catalog_url")
+        repo_url = (repo_url or CATALOG_URL).strip()
 
-        cache_file = _cache_path(_hecos_src)
+        cache_file = _cache_path(_hecos_src, repo_url)
         registry, _, _ = _get_hpm_components(_hecos_src)
 
         catalog = _load_cache(cache_file)
         if catalog is None:
             try:
-                catalog = _fetch_remote_catalog(cfg_mgr)
+                catalog = _fetch_remote_catalog(cfg_mgr, custom_url=repo_url)
                 _save_cache(cache_file, catalog)
             except Exception as e:
                 return jsonify({"ok": False, "error": str(e)}), 503
@@ -271,7 +310,7 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
                 return query in haystack
             packages = [p for p in packages if _matches(p)]
 
-        return jsonify({"ok": True, "packages": packages, "total": len(packages)})
+        return jsonify({"ok": True, "packages": packages, "total": len(packages), "repo_url": repo_url})
 
     # ── GET /api/hpm/store/check-updates ──────────────────────────────────────
     @app.route("/api/hpm/store/check-updates", methods=["GET"])
@@ -281,20 +320,25 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
         Compare installed package versions against the remote catalog.
         Returns packages that have an update available.
         """
-        cache_file = _cache_path(_hecos_src)
+        repo_url = request.args.get("repo_url") or request.args.get("url")
+        if not repo_url and cfg_mgr:
+            repo_url = cfg_mgr.get("hpm.store_catalog_url")
+        repo_url = (repo_url or CATALOG_URL).strip()
+
+        cache_file = _cache_path(_hecos_src, repo_url)
         registry, _, _ = _get_hpm_components(_hecos_src)
 
         catalog = _load_cache(cache_file)
         if catalog is None:
             try:
-                catalog = _fetch_remote_catalog(cfg_mgr)
+                catalog = _fetch_remote_catalog(cfg_mgr, custom_url=repo_url)
                 _save_cache(cache_file, catalog)
             except Exception as e:
                 return jsonify({"ok": False, "error": str(e)}), 503
 
         enriched = _enrich_catalog(catalog, registry)
         updates = [p for p in enriched.get("packages", []) if p.get("update_available")]
-        return jsonify({"ok": True, "updates": updates, "count": len(updates)})
+        return jsonify({"ok": True, "updates": updates, "count": len(updates), "repo_url": repo_url})
 
     # ── POST /api/hpm/store/install ────────────────────────────────────────────
     @app.route("/api/hpm/store/install", methods=["POST"])

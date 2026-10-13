@@ -221,6 +221,16 @@ class AgentInlineConfig(BaseModel):
     action_console_enabled: bool = True
 
 
+# ─── HPM (HECOS PACKAGE MANAGER) ──────────────────────────────────────────────
+
+class HpmConfig(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    store_catalog_url: str = "https://hecos-project.github.io/store/index.json"
+    repositories: List[str] = Field(default_factory=lambda: [
+        "https://hecos-project.github.io/store/index.json"
+    ])
+
+
 # ─── ROOT ─────────────────────────────────────────────────────────────────────
 
 class SystemConfig(BaseModel):
@@ -242,5 +252,7 @@ class SystemConfig(BaseModel):
     processor: ProcessorConfig = Field(default_factory=ProcessorConfig)
     routing_engine: RoutingEngineConfig = Field(default_factory=RoutingEngineConfig)
     system: SystemFlagsConfig = Field(default_factory=SystemFlagsConfig)
+    hpm: HpmConfig = Field(default_factory=HpmConfig)
     # Absorb legacy `agent:` key from old system.yaml — NOT re-serialized on save
     agent: AgentInlineConfig = Field(default_factory=AgentInlineConfig)
+

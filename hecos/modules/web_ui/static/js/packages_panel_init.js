@@ -5,6 +5,9 @@
  */
 
 window.hpmInit = function () {
+  if (typeof window.hpmLoadRepositories === 'function') {
+    window.hpmLoadRepositories();
+  }
   window.hpmSwitchTab('packages');
   // Fetch widget count from API so the badge is always accurate
   setTimeout(() => {

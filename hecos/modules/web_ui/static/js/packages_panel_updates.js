@@ -20,7 +20,10 @@ window._hpmCheckUpdatesBackground = async function (packages, showFeedback = fal
 
   try {
     // Force a fresh catalog fetch when called manually, use cache otherwise
-    const url = showFeedback ? '/api/hpm/store/catalog?refresh=1' : '/api/hpm/store/catalog';
+    let url = showFeedback ? '/api/hpm/store/catalog?refresh=1' : '/api/hpm/store/catalog';
+    if (window._hpmActiveRepoUrl) {
+      url += (url.includes('?') ? '&' : '?') + 'repo_url=' + encodeURIComponent(window._hpmActiveRepoUrl);
+    }
     const resp = await fetch(url);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();

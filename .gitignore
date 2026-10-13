@@ -570,7 +570,6 @@ hecos/modules/web_ui/templates/modules/config_panel.html
 hecos/modules/web_ui/templates/modules/hpm_notifications.html
 hecos/modules/web_ui/templates/modules/config_document_maker.html
 hecos/modules/web_ui/templates/modules/docs_editor.html
-hecos/modules/web_ui/templates/modules/config_hpm_settings.html
 
 # WebUI Static Assets belonging to HPM packages
 hecos/modules/web_ui/static/js/config_mapper_drive.js

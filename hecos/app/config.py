@@ -110,6 +110,8 @@ class ConfigManager:
                 return False
 
     def get(self, *keys, default=None):
+        if len(keys) == 1 and isinstance(keys[0], str) and "." in keys[0]:
+            keys = tuple(keys[0].split("."))
         value = self.config
         for key in keys:
             if isinstance(value, dict):
@@ -121,6 +123,8 @@ class ConfigManager:
         return value
 
     def set(self, value, *keys):
+        if len(keys) == 1 and isinstance(keys[0], str) and "." in keys[0]:
+            keys = tuple(keys[0].split("."))
         if len(keys) == 0:
             return False
         target = self.config

@@ -227,3 +227,7 @@ routing_engine:
 system:
   flask_debug: false
   check_local_backend_on_boot: true
+hpm:
+  store_catalog_url: https://hecos-project.github.io/store/index.json
+  repositories:
+  - https://hecos-project.github.io/store/index.json

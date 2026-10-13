@@ -163,3 +163,115 @@ def register_manage_config_routes(app, _hecos_src: str, cfg_mgr, log):
         except Exception as e:
             log.error(f"[HPM] POST /api/hpm/settings/reset_cache error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/hpm/settings/repositories", methods=["GET"])
+    @login_required
+    def api_hpm_get_repositories():
+        """Returns the list of configured package repositories and the active one."""
+        default_repo = "https://hecos-project.github.io/store/index.json"
+        repos = []
+        active = default_repo
+        try:
+            if cfg_mgr:
+                hpm_cfg = cfg_mgr.get("hpm") or {}
+                if isinstance(hpm_cfg, dict):
+                    repos = list(hpm_cfg.get("repositories") or [])
+                    active = hpm_cfg.get("store_catalog_url") or default_repo
+                elif hasattr(hpm_cfg, "repositories"):
+                    repos = list(getattr(hpm_cfg, "repositories", []) or [])
+                    active = getattr(hpm_cfg, "store_catalog_url", default_repo) or default_repo
+
+            if not repos or not isinstance(repos, list):
+                repos = [default_repo]
+            if default_repo not in repos:
+                repos.insert(0, default_repo)
+
+            if not active or active not in repos:
+                active = repos[0]
+
+            return jsonify({
+                "ok": True,
+                "repositories": repos,
+                "active_repository": active
+            })
+        except Exception as e:
+            log.error(f"[HPM] GET /api/hpm/settings/repositories error: {e}")
+            return jsonify({"ok": False, "error": str(e), "repositories": [default_repo], "active_repository": default_repo}), 500
+
+    @app.route("/api/hpm/settings/repositories", methods=["POST"])
+    @login_required
+    def api_hpm_set_repositories():
+        """Updates the list of configured repositories and optionally the active repository."""
+        default_repo = "https://hecos-project.github.io/store/index.json"
+        try:
+            data = request.get_json(silent=True) or {}
+            raw_repos = data.get("repositories", [])
+            active_repo = (data.get("active_repository") or "").strip()
+
+            if isinstance(raw_repos, str):
+                lines = [l.strip() for l in raw_repos.replace(",", "\n").splitlines()]
+            elif isinstance(raw_repos, list):
+                lines = [str(l).strip() for l in raw_repos]
+            else:
+                lines = []
+
+            cleaned = []
+            for l in lines:
+                if l and not l.startswith("#") and l not in cleaned:
+                    cleaned.append(l)
+
+            if not cleaned:
+                cleaned = [default_repo]
+
+            if not active_repo or active_repo not in cleaned:
+                active_repo = cleaned[0]
+
+            if cfg_mgr:
+                if "hpm" not in cfg_mgr.config or not isinstance(cfg_mgr.config["hpm"], dict):
+                    cfg_mgr.config["hpm"] = {}
+                cfg_mgr.config["hpm"]["repositories"] = cleaned
+                cfg_mgr.config["hpm"]["store_catalog_url"] = active_repo
+                cfg_mgr.save()
+
+            log.info(f"[HPM] Repositories updated ({len(cleaned)} repos, active: {active_repo})")
+            return jsonify({
+                "ok": True,
+                "repositories": cleaned,
+                "active_repository": active_repo
+            })
+        except Exception as e:
+            log.error(f"[HPM] POST /api/hpm/settings/repositories error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/hpm/settings/active_repository", methods=["POST"])
+    @login_required
+    def api_hpm_set_active_repository():
+        """Changes the currently active repository URL."""
+        try:
+            data = request.get_json(silent=True) or {}
+            active_repo = (data.get("active_repository") or "").strip()
+            if not active_repo:
+                return jsonify({"ok": False, "error": "active_repository is required"}), 400
+
+            if cfg_mgr:
+                if "hpm" not in cfg_mgr.config or not isinstance(cfg_mgr.config["hpm"], dict):
+                    cfg_mgr.config["hpm"] = {}
+                repos = cfg_mgr.config["hpm"].get("repositories", [])
+                if not isinstance(repos, list):
+                    repos = []
+                if active_repo not in repos:
+                    repos.append(active_repo)
+                    cfg_mgr.config["hpm"]["repositories"] = repos
+
+                cfg_mgr.config["hpm"]["store_catalog_url"] = active_repo
+                cfg_mgr.save()
+
+            log.info(f"[HPM] Active repository switched to: {active_repo}")
+            return jsonify({
+                "ok": True,
+                "active_repository": active_repo
+            })
+        except Exception as e:
+            log.error(f"[HPM] POST /api/hpm/settings/active_repository error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
