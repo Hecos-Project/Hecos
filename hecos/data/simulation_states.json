@@ -60,13 +60,13 @@
     "current_scene_index": 0
   },
   "a3ae783c-523a-4714-8c3a-e0a8381095ce": {
-    "status": "running",
-    "started_at": 1791859604.8006206,
-    "turn_count": 5,
+    "status": "idle",
+    "started_at": null,
+    "turn_count": 0,
     "swapped": true,
-    "playbook_id": "dio-serpente-meccanico",
+    "playbook_id": null,
     "violations": [],
-    "current_scene_id": "scene-approccio",
+    "current_scene_id": "",
     "current_scene_index": 0
   },
   "default": {

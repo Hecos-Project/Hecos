@@ -74,6 +74,15 @@ class AgentExecutor:
             logger.info("[AGENT] Agentic Loop is disabled in config. Running single iteration.")
             self.max_iterations = 1
             
+        # Initialize image generation limit for this turn (default 1 unless user asked for more)
+        try:
+            from hecos.core.processing.tool_dispatcher import get_requested_image_limit
+            if self.state_manager:
+                self.state_manager.requested_image_limit = get_requested_image_limit(user_text)
+                self.state_manager.total_images_in_turn = 0
+        except Exception as _e:
+            logger.debug(f"[AGENT] Failed to set image limit: {_e}")
+
         iteration = 0
         agent_context = []
         accumulated_tool_results = []
@@ -217,6 +226,22 @@ class AgentExecutor:
                     
                     images = MediaInterceptor.load_vision_images(output_text, images, self._emit)
                     
+                # Short-circuit on successful image generation if the model already formulated substantive text
+                has_generated_img = any("[[IMG:" in str(r.get("output", "")) for r in accumulated_tool_results)
+                if has_generated_img and extracted_text and len(extracted_text.strip()) > 10:
+                    self._emit("Image generated and response formulated.", level="success")
+                    if think_block:
+                        extracted_text = f"<think>\n{think_block}\n</think>\n\n{extracted_text}"
+                    extracted_text = MediaInterceptor.append_ui_media_to_text(extracted_text, accumulated_tool_results)
+                    if iteration > 1:
+                        from hecos.memory import brain_interface
+                        _clean_for_hist = re.sub(r'<think>[\s\S]*?</think>\s*', '', extracted_text, flags=re.IGNORECASE).strip()
+                        if '</think>' in _clean_for_hist:
+                            _clean_for_hist = _clean_for_hist.split('</think>', 1)[-1].strip()
+                        brain_interface.save_message("assistant", _clean_for_hist, config=self.config, user_id=self.current_user_id, session_id=self.session_id, sender_tab_id=self.sender_tab_id)
+                    video_response, clean_voice = processore.clean_final_output(extracted_text, accumulated_tool_results, raw_response, voice_status)
+                    return video_response, clean_voice
+
                 self._emit("Analyzing tool results...", level="info")
                 
                 if iteration == self.max_iterations:

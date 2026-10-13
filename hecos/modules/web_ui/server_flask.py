@@ -49,7 +49,8 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
         logger.warning("[WebUI] flask-compress not installed — responses will not be compressed.")
 
     app.hecos_config_manager = config_manager
-    
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.jinja_env.auto_reload = True
     # FIX: Force CSS/JS mimetypes
     import mimetypes
     mimetypes.add_type('text/css', '.css')

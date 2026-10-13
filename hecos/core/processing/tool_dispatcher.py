@@ -42,6 +42,30 @@ TAG_MAPPING = {
 }
 
 
+def get_requested_image_limit(user_text: str) -> int:
+    """
+    Parses user_text to check if the user asked for multiple images/photos.
+    Defaults to 1.
+    """
+    if not user_text or not isinstance(user_text, str):
+        return 1
+    t = user_text.lower()
+    import re
+    m = re.search(r'\b(?:fanne|mandane|generane|creane|voglio|fai)\s+(\d+)\b', t)
+    if m:
+        return min(max(1, int(m.group(1))), 4)
+    m2 = re.search(r'\b(\d+)\s+(?:foto|immagini|pictures|images|photo|photos)\b', t)
+    if m2:
+        return min(max(1, int(m2.group(1))), 4)
+    if any(w in t for w in ["due foto", "due immagini", "coppia di foto", "2 foto"]):
+        return 2
+    if any(w in t for w in ["tre foto", "tre immagini", "3 foto"]):
+        return 3
+    if any(w in t for w in ["quattro foto", "quattro immagini", "4 foto"]):
+        return 4
+    return 1
+
+
 def _handle_system_tool(method_name: str, args: dict, call_id: str, current_config: dict) -> str | None:
     """Dispatcher for built-in SYSTEM__ LLM tools."""
     if method_name == "describe_module":
@@ -165,6 +189,9 @@ def extract_and_execute_tools(raw_response, current_config: dict, sm=None):
                 
     # 5. Execution
     tool_results = []
+    image_limit = getattr(sm, "requested_image_limit", 1) if sm else 1
+    images_already_done = getattr(sm, "total_images_in_turn", 0) if sm else 0
+
     for tag_info in tags_found:
         if sm and getattr(sm, "webui_stop_requested", False):
             logger.warning("[PROCESSOR] Tool execution aborted by user via ESC.")
@@ -182,6 +209,24 @@ def extract_and_execute_tools(raw_response, current_config: dict, sm=None):
                 pass
 
         module_to_call = original_tag
+
+        # Check if this tool is an image generation action
+        is_image_call = False
+        if original_tag == "direct_command" and isinstance(action_or_args, str):
+            cmd_lower = action_or_args.strip().lower()
+            if cmd_lower.startswith(("/img", "/image", "/photo", "/foto")):
+                is_image_call = True
+        elif module_to_call.upper() == "IMAGE_GEN" and (method_name == "generate_image" or not method_name):
+            is_image_call = True
+
+        if is_image_call and images_already_done >= image_limit:
+            logger.warning(f"[PROCESSOR] Image generation limit reached ({image_limit}). Skipping duplicate/extra generation.")
+            tool_results.append({
+                "id": call_id,
+                "output": f"[IMAGE_GEN: Limite di {image_limit} immagine/i per turno già raggiunto. L'immagine richiesta è già stata prodotta con successo. Concludi la risposta ora.]",
+                "tag": "SLASH_COMMAND" if original_tag == "direct_command" else "IMAGE_GEN"
+            })
+            continue
         
         if original_tag == "direct_command":
             from hecos.core.commands.executor import get_executor
@@ -197,9 +242,16 @@ def extract_and_execute_tools(raw_response, current_config: dict, sm=None):
                     page_context="agent_internal"
                 )
                 if res.get("ok"):
-                    tool_results.append({"id": call_id, "output": res.get("output", ""), "tag": "SLASH_COMMAND"})
+                    output_val = res.get("output", "")
+                    tool_results.append({"id": call_id, "output": output_val, "tag": "SLASH_COMMAND"})
                 else:
-                    tool_results.append({"id": call_id, "output": f"Error: {res.get('error')}", "tag": "SLASH_COMMAND"})
+                    output_val = f"Error: {res.get('error')}"
+                    tool_results.append({"id": call_id, "output": output_val, "tag": "SLASH_COMMAND"})
+                
+                if is_image_call:
+                    images_already_done += 1
+                    if sm:
+                        sm.total_images_in_turn = images_already_done
             except Exception as e:
                 logger.error(f"[PROCESSOR] Error executing slash command: {e}")
                 tool_results.append({"id": call_id, "output": f"Error: {e}", "tag": "SLASH_COMMAND"})
@@ -328,6 +380,10 @@ def extract_and_execute_tools(raw_response, current_config: dict, sm=None):
                         if result:
                             logger.info(f"[OUTPUT {module_to_call.upper()}]:\n{result}")
                             tool_results.append({"id": call_id, "output": str(result), "tag": module_to_call.upper()})
+                            if is_image_call and ("[[IMG:" in str(result) or "gen_" in str(result)):
+                                images_already_done += 1
+                                if sm:
+                                    sm.total_images_in_turn = images_already_done
                     except Exception as e:
                         logger.error(f"[PROCESSOR] Direct method error ({module_to_call}.{method_name}): {e}")
                         tool_results.append({"id": call_id, "output": f"Error: {e}", "tag": module_to_call.upper()})
