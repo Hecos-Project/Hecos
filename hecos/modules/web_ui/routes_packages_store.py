@@ -23,6 +23,7 @@ import threading
 import queue
 import urllib.request
 import urllib.error
+import urllib.parse
 from flask import jsonify, request, Response, stream_with_context
 from flask_login import login_required
 
@@ -77,24 +78,88 @@ def _save_cache(cache_file: str, catalog: dict) -> None:
         logger.warning(f"[HPM:Store] Could not write cache: {e}")
 
 
+def _resolve_catalog_candidates(url: str) -> tuple[bool, list[str]]:
+    """
+    Given a user input URL or local path, determine if it is local or remote,
+    and return candidate paths/URLs to attempt.
+    Supports:
+      - GitHub repo URLs (e.g. https://github.com/owner/repo)
+      - Direct JSON URLs (e.g. https://raw.githubusercontent.com/.../index.json)
+      - Local directory paths (e.g. C:\\Hecos-Elite)
+      - Local file paths (e.g. C:\\Hecos-Elite\\store\\index.json)
+    """
+    cleaned = url.strip()
+    if not cleaned.startswith(("http://", "https://")):
+        local_path = cleaned
+        if local_path.startswith("file:///"):
+            local_path = local_path[8:]
+        elif local_path.startswith("file://"):
+            local_path = local_path[7:]
+        if len(local_path) > 2 and local_path[0] == '/' and local_path[2] == ':':
+            local_path = local_path[1:]
+        
+        if os.path.isdir(local_path):
+            candidates = [
+                os.path.join(local_path, "store", "index.json"),
+                os.path.join(local_path, "packages", "index.json"),
+                os.path.join(local_path, "index.json"),
+            ]
+            valid_cands = [c for c in candidates if os.path.isfile(c)]
+            if valid_cands:
+                return True, valid_cands
+            return True, candidates
+        return True, [local_path]
+
+    import re
+    gh_match = re.match(r"^https?://github\.com/([^/]+)/([^/#?]+?)(?:\.git)?/?$", cleaned, re.IGNORECASE)
+    if gh_match:
+        owner = gh_match.group(1)
+        repo = gh_match.group(2)
+        urls = [
+            f"https://raw.githubusercontent.com/{owner}/{repo}/main/store/index.json",
+            f"https://raw.githubusercontent.com/{owner}/{repo}/main/packages/index.json",
+            f"https://raw.githubusercontent.com/{owner}/{repo}/main/index.json",
+            f"https://raw.githubusercontent.com/{owner}/{repo}/master/store/index.json",
+            f"https://raw.githubusercontent.com/{owner}/{repo}/master/packages/index.json",
+            f"https://{owner}.github.io/{repo}/store/index.json",
+            f"https://{owner}.github.io/{repo}/index.json",
+            cleaned,
+        ]
+        return False, urls
+
+    urls = [cleaned]
+    if cleaned == CATALOG_URL:
+        urls.append("https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/store/index.json")
+    return False, urls
+
+
 def _fetch_remote_catalog(cfg_mgr, custom_url: str | None = None) -> dict:
     """Download the catalog JSON from the configured store URL or custom URL."""
     url = (custom_url or (cfg_mgr.get("hpm.store_catalog_url") if cfg_mgr else None) or CATALOG_URL).strip()
     logger.info(f"[HPM:Store] Attempting to fetch remote catalog from: {url}")
     
-    # If the URL is a local file path, read it directly
-    if not url.startswith("http"):
-        local_path = url
-        if local_path.startswith("file:///"):
-            local_path = local_path[8:]
-        elif local_path.startswith("file://"):
-            local_path = local_path[7:]
-        try:
-            with open(local_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.error(f"[HPM:Store] Could not read local catalog at {url}: {e}")
-            raise
+    is_local, candidates = _resolve_catalog_candidates(url)
+
+    if is_local:
+        last_err = None
+        for cand in candidates:
+            if os.path.isfile(cand):
+                try:
+                    with open(cand, "r", encoding="utf-8") as f:
+                        cat = json.load(f)
+                    # Resolve relative download_urls to absolute local file paths
+                    if isinstance(cat, dict) and "packages" in cat and isinstance(cat["packages"], list):
+                        cand_dir = os.path.dirname(os.path.abspath(cand))
+                        for pkg in cat["packages"]:
+                            dl = pkg.get("download_url")
+                            if dl and not dl.startswith(("http://", "https://", "file://")):
+                                pkg["download_url"] = os.path.normpath(os.path.join(cand_dir, dl))
+                    return cat
+                except Exception as e:
+                    last_err = e
+                    continue
+        logger.error(f"[HPM:Store] Could not read local catalog at {url}: {last_err or 'File not found'}")
+        raise FileNotFoundError(f"Could not read local catalog at '{url}'. Attempted candidates: {candidates}. Error: {last_err}")
 
     # Prepare robust SSL context (useful on some Windows setups or proxies)
     import ssl
@@ -103,27 +168,18 @@ def _fetch_remote_catalog(cfg_mgr, custom_url: str | None = None) -> dict:
     except Exception:
         ctx = ssl._create_unverified_context()
 
-    req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-            "Accept": "application/json, text/plain, */*"
-        },
-    )
-    
-    # Optional fallback URL just in case default catalog is used
-    fallback_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/store/index.json"
-    
-    urls_to_try = [url]
-    if url == CATALOG_URL:
-        urls_to_try.append(fallback_url)
-
     last_error = None
-    for attempt_url in urls_to_try:
+    for attempt_url in candidates:
         try:
-            logger.debug(f"[HPM:Store] Requesting {attempt_url}...")
-            req.full_url = attempt_url
-            with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
+            logger.debug(f"[HPM:Store] Probing catalog URL: {attempt_url}...")
+            req = urllib.request.Request(
+                attempt_url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+                    "Accept": "application/json, text/plain, */*"
+                },
+            )
+            with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
                 status_code = resp.getcode()
                 raw_data = resp.read()
                 logger.info(f"[HPM:Store] Response {status_code} from {attempt_url}. Size: {len(raw_data)} bytes")
@@ -132,26 +188,24 @@ def _fetch_remote_catalog(cfg_mgr, custom_url: str | None = None) -> dict:
                     cat = json.loads(raw_data.decode("utf-8"))
                     # If packages have relative download_url, resolve them relative to attempt_url
                     if isinstance(cat, dict) and "packages" in cat and isinstance(cat["packages"], list):
-                        import urllib.parse
                         for pkg in cat["packages"]:
                             dl = pkg.get("download_url")
                             if dl and not dl.startswith(("http://", "https://", "file://")):
                                 pkg["download_url"] = urllib.parse.urljoin(attempt_url, dl)
                     return cat
                 except json.JSONDecodeError as je:
-                    logger.error(f"[HPM:Store] JSON decode failed for {attempt_url}. Error: {je}")
-                    logger.debug(f"[HPM:Store] Raw response snippet: {raw_data[:200]}")
+                    logger.debug(f"[HPM:Store] JSON decode failed for {attempt_url}. Error: {je}")
                     last_error = je
                     continue
 
         except urllib.error.HTTPError as he:
-            logger.error(f"[HPM:Store] HTTP Error {he.code} fetching {attempt_url}: {he.reason}")
+            logger.debug(f"[HPM:Store] HTTP Error {he.code} fetching {attempt_url}: {he.reason}")
             last_error = he
         except urllib.error.URLError as ue:
-            logger.error(f"[HPM:Store] URL Error fetching {attempt_url}: {ue.reason}")
+            logger.debug(f"[HPM:Store] URL Error fetching {attempt_url}: {ue.reason}")
             last_error = ue
         except Exception as e:
-            logger.error(f"[HPM:Store] Unexpected error fetching {attempt_url}: {e}")
+            logger.debug(f"[HPM:Store] Unexpected error fetching {attempt_url}: {e}")
             last_error = e
 
     raise RuntimeError(f"All attempts to fetch catalog failed for {url}. Last error: {last_error}")
@@ -200,6 +254,8 @@ def _download_hpkg(url: str, dest_dir: str) -> str:
             local_path = local_path[8:]
         elif local_path.startswith("file://"):
             local_path = local_path[7:]
+        if len(local_path) > 2 and local_path[0] == '/' and local_path[2] == ':':
+            local_path = local_path[1:]
         import shutil
         shutil.copy2(local_path, dest_path)
         return dest_path

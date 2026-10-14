@@ -45,8 +45,13 @@ window.hpmLoadRepositories = async function () {
       window._hpmRepositories = data.repositories;
       window._hpmActiveRepoUrl = data.active_repository || data.repositories[0] || '';
 
-      // Update both select dropdowns
-      window.hpmPopulateRepoSelect('hpm-header-repo-select');
+      if (window.cfg) {
+        window.cfg.hpm = window.cfg.hpm || {};
+        window.cfg.hpm.repositories = data.repositories;
+        window.cfg.hpm.store_catalog_url = window._hpmActiveRepoUrl;
+      }
+
+      // Update store select dropdown
       window.hpmPopulateRepoSelect('hpm-store-repo-select');
     }
   } catch (err) {
@@ -58,11 +63,9 @@ window.hpmSelectRepository = async function (url) {
   if (!url) return;
   window._hpmActiveRepoUrl = url;
 
-  // Sync all select elements in DOM
-  ['hpm-header-repo-select', 'hpm-store-repo-select'].forEach(id => {
-    const sel = document.getElementById(id);
-    if (sel && sel.value !== url) sel.value = url;
-  });
+  // Sync store select element in DOM
+  const sel = document.getElementById('hpm-store-repo-select');
+  if (sel && sel.value !== url) sel.value = url;
 
   // Persist active repo to backend
   try {
@@ -95,6 +98,7 @@ window.hpmStoreLoad = async function (forceRefresh = false, repoUrl = null) {
 
     const catalog = data.catalog;
     window.HPM_STORE_STATE.catalog = catalog;
+    window.HPM_STORE_STATE.loadedRepoUrl = activeRepo;
     window.HPM_STORE_STATE.filtered = catalog.packages || [];
     if (data.offline) _hpmStoreShowBanner('⚠️ Offline mode — showing cached catalog', 'warning');
     else if (typeof _hpmStoreHideBanner === 'function') _hpmStoreHideBanner();

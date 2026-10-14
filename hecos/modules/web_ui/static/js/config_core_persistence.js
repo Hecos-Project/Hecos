@@ -11,6 +11,22 @@ async function saveConfig(silent = false) {
   if (typeof buildPayload !== 'function') return;
   if (!silent) setSaveMsg(I18N.msg_saving || 'Saving...', 'muted');
   try {
+    const repoTextEl = document.getElementById('hpm-settings-repos-text');
+    if (repoTextEl && typeof window.hpmSaveRepositoriesSettings === 'function') {
+      try { await window.hpmSaveRepositoriesSettings(true); } catch (_) {}
+    }
+
+    if (window.cfg) {
+      if (window._hpmRepositories) {
+        window.cfg.hpm = window.cfg.hpm || {};
+        window.cfg.hpm.repositories = window._hpmRepositories;
+      }
+      if (window._hpmActiveRepoUrl) {
+        window.cfg.hpm = window.cfg.hpm || {};
+        window.cfg.hpm.store_catalog_url = window._hpmActiveRepoUrl;
+      }
+    }
+
     const payload = buildPayload();
     payload._force_restart = !silent;
 

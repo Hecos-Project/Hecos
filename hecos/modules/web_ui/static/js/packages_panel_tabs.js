@@ -159,9 +159,22 @@ window.hpmSwitchTab = async function(tabId) {
       }
     }
   } else if (tabId === 'store') {
+    if (typeof window.hpmLoadRepositories === 'function') {
+      window.hpmLoadRepositories();
+    }
+    if (typeof window.hpmPopulateRepoSelect === 'function') {
+      window.hpmPopulateRepoSelect('hpm-store-repo-select');
+    }
     if (typeof window.hpmStoreInit === 'function') {
       if (!window.HPM_STORE_STATE || !window.HPM_STORE_STATE.catalog) {
         window.hpmStoreInit();
+      } else {
+        if (window._hpmActiveRepoUrl && window.HPM_STORE_STATE.loadedRepoUrl &&
+            window.HPM_STORE_STATE.loadedRepoUrl !== window._hpmActiveRepoUrl) {
+          if (typeof window.hpmStoreLoad === 'function') {
+            window.hpmStoreLoad(false, window._hpmActiveRepoUrl);
+          }
+        }
       }
     }
   }

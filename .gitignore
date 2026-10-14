@@ -695,3 +695,6 @@ hecos/modules/web_ui/static/js/playbooks/
 hecos/data/playbooks_settings.json
 hecos/hpm/playbooks/
 
+# HPM Store Cache
+hecos/data/store_cache*.json
+

@@ -47,8 +47,9 @@
                 placeholder="https://hecos-project.github.io/store/index.json&#10;https://raw.githubusercontent.com/.../index.json&#10;http://192.168.1.50:8080/store/index.json"
                 style="width: 100%; box-sizing: border-box; background: var(--bg3, #121218); border: 1px solid var(--border-color, #333); border-radius: 10px; padding: 12px 14px; font-family: monospace; font-size: 0.88em; color: var(--text); line-height: 1.6; resize: vertical; outline: none; transition: border-color .2s;"
                 onfocus="this.style.borderColor='var(--accent)';"
-                onblur="this.style.borderColor='var(--border-color, #333)';"
-                oninput="window.hpmSyncActiveRepoDropdown()"></textarea>
+                onblur="this.style.borderColor='var(--border-color, #333)'; window.hpmSyncActiveRepoDropdown();"
+                oninput="window.hpmSyncActiveRepoDropdown()"
+                onchange="window.hpmSyncActiveRepoDropdown()"></textarea>
       <div style="font-size: 0.78em; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 6px;">
         <i class="fas fa-info-circle" style="color: var(--accent);"></i>
         <span>Supports HTTPS, HTTP URLs or local file paths. Empty lines or lines starting with <code>#</code> will be ignored.</span>
@@ -123,12 +124,22 @@
   const DEFAULT_REPO = 'https://hecos-project.github.io/store/index.json';
 
   // Navigation back to Package Manager
-  window.hpmBackToPackages = function() {
+  window.hpmBackToPackages = async function() {
+    if (typeof window.hpmSaveRepositoriesSettings === 'function') {
+      try {
+        await window.hpmSaveRepositoriesSettings(true);
+      } catch (err) {
+        console.warn('[HPM Settings] Auto-save on back error:', err);
+      }
+    }
     if (typeof window.showTab === 'function') {
       window.showTab('packages');
     }
     if (typeof window.hpmLoadRepositories === 'function') {
-      window.hpmLoadRepositories();
+      await window.hpmLoadRepositories();
+    }
+    if (typeof window.hpmPopulateRepoSelect === 'function') {
+      window.hpmPopulateRepoSelect('hpm-store-repo-select');
     }
   };
 
@@ -199,7 +210,7 @@
   };
 
   // Save repositories
-  window.hpmSaveRepositoriesSettings = async function() {
+  window.hpmSaveRepositoriesSettings = async function(silent = false) {
     const textEl = document.getElementById('hpm-settings-repos-text');
     const selEl = document.getElementById('hpm-settings-active-repo');
     const statusEl = document.getElementById('hpm-settings-repos-status');
@@ -225,13 +236,27 @@
         window._hpmRepositories = data.repositories;
         window._hpmActiveRepoUrl = data.active_repository;
 
-        // Sync dropdowns in Package Manager if present in DOM
+        // Keep window.cfg synchronized so global saveConfig does not revert this
+        if (window.cfg) {
+          window.cfg.hpm = window.cfg.hpm || {};
+          window.cfg.hpm.repositories = data.repositories;
+          window.cfg.hpm.store_catalog_url = data.active_repository;
+        }
+
+        // Sync dropdown in settings itself
+        window.hpmSyncActiveRepoDropdown(data.active_repository);
+
+        // Sync dropdown in Package Manager Store tab if present in DOM
         if (typeof window.hpmPopulateRepoSelect === 'function') {
-          window.hpmPopulateRepoSelect('hpm-header-repo-select');
           window.hpmPopulateRepoSelect('hpm-store-repo-select');
         }
 
-        if (statusEl) {
+        // Invalidate store catalog cache so next visit will reload from active repo
+        if (window.HPM_STORE_STATE) {
+          window.HPM_STORE_STATE.catalog = null;
+        }
+
+        if (statusEl && !silent) {
           statusEl.style.display = 'inline-block';
           statusEl.style.background = 'rgba(34,197,94,0.15)';
           statusEl.style.color = '#22c55e';
@@ -243,7 +268,7 @@
         throw new Error(data.error || 'Error while saving');
       }
     } catch (e) {
-      if (statusEl) {
+      if (statusEl && !silent) {
         statusEl.style.display = 'inline-block';
         statusEl.style.background = 'rgba(239,68,68,0.15)';
         statusEl.style.color = '#ef4444';
