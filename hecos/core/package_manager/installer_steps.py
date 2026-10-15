@@ -23,6 +23,7 @@ TYPE_DEFAULT_DIR = {
     "widget":         None,            # widget-only: no backend, skip code install
     "persona":        "personas",
     "theme":          "themes",
+    "playbook":       "hpm/playbooks",
     "skill_pack":     "hpm/skill_packs",
 }
 
@@ -96,8 +97,12 @@ def install_plugin_code(staging: str, manifest: HpkgManifest, hecos_root: str) -
                 plugin_src = candidate_path
                 break
         else:
-            logger.warning(f"[HPM:Installer] No plugin code directory found in package '{manifest.id}'. Skipping code install.")
-            return []
+            if manifest.type in ["persona", "theme", "playbook"] or getattr(manifest, "category", "") == "playbooks" or os.path.isfile(os.path.join(staging, "playbook.toml")):
+                plugin_src = staging
+            else:
+                logger.warning(f"[HPM:Installer] No plugin code directory found in package '{manifest.id}'. Skipping code install.")
+                return []
+
 
     target_base = os.path.join(hecos_root, target_dir_name)
     os.makedirs(target_base, exist_ok=True)

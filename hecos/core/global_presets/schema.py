@@ -38,8 +38,13 @@ class SoulMeta(BaseModel):
 
 class SoulPersona(BaseModel):
     soul_file: Optional[str] = None
-    special_instructions: Optional[str] = None
-    safety_instructions: Optional[str] = None
+    special_instructions: Optional[str] = None # Legacy/override
+    safety_instructions: Optional[str] = None # Legacy/override
+    use_global_direct_instructions: Optional[bool] = None
+    use_global_safety_instructions: Optional[bool] = None
+    custom_instructions: Optional[str] = None
+    user_notes: Optional[str] = None
+    send_notes_to_ai: Optional[bool] = False
 
 class SoulInference(BaseModel):
     preset_name: Optional[str] = None

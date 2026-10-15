@@ -163,6 +163,10 @@ class HpkgManifest(BaseModel):
             "Can be any string; unknown types will be installed in hpm/<type>s."
         )
     )
+    category: str = Field(
+        "",
+        description="Store/Builder category for the package. If left empty, it will be inferred dynamically."
+    )
     author: str = Field("Unknown", description="Author name or organization")
     description: str = Field("", description="Short description of what this package does")
 
@@ -315,8 +319,8 @@ class HpkgManifest(BaseModel):
     @classmethod
     def id_must_be_slug(cls, v: str) -> str:
         import re
-        if not re.match(r"^[a-z0-9_\-]+$", v):
-            raise ValueError(f"Package id '{v}' must be lowercase alphanumeric with underscores/hyphens only.")
+        if not re.match(r"^[a-z0-9_\-\.]+$", v):
+            raise ValueError(f"Package id '{v}' must be lowercase alphanumeric with underscores/hyphens/dots only.")
         return v
 
 

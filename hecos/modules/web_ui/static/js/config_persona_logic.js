@@ -16,6 +16,11 @@ async function loadPersonaAvatar(personaName) {
     } catch (e) {
         console.warn("[Avatar] Failed to load avatar for", name, e);
     }
+    
+    // Auto-refresh the Soul Media Library if the function is available
+    if (typeof pmLoadMedia === 'function') {
+        pmLoadMedia();
+    }
 }
 
 async function uploadAvatar() {

@@ -45,15 +45,15 @@
       </div>
     </div>
     <p id="mem-status-text" style="color:var(--muted); font-size:0.9em;">Loading...</p>
-    <div style="margin-top:10px; display:flex; gap:8px; align-items:stretch;">
-      <select id="clear-range" class="mode-selector config-input" style="flex:1; margin:0; height:auto;">
+    <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+      <select id="clear-range" class="mode-selector config-input" style="flex:1; margin:0;">
         <option value="all">Full Wipe (Everything)</option>
         <option value="1">Older than 24h</option>
         <option value="7">Older than 7 days</option>
         <option value="30">Older than 30 days</option>
       </select>
-      <button class="btn btn-danger" style="flex:1; white-space:nowrap; padding:0 10px; height:auto;" onclick="clearMemoryHistory()"><i class="fas fa-trash-alt"></i> {{ t('webui_chat_btn_clear') or 'Clear' }}</button>
-      <button class="btn btn-secondary" style="width:40px; flex-shrink:0;" onclick="loadMemoryStatus()" title="Refresh"><i class="fas fa-sync"></i></button>
+      <button class="btn btn-danger" onclick="clearMemoryHistory()"><i class="fas fa-trash-alt"></i> {{ t('webui_chat_btn_clear') or 'Clear' }}</button>
+      <button class="btn btn-secondary" onclick="loadMemoryStatus()" title="Refresh"><i class="fas fa-sync"></i></button>
     </div>
 
     <small style="color:var(--muted); font-size:11px; margin-top:8px; display:block;">
@@ -65,11 +65,7 @@
   <div class="card" id="rag-card">
     <div class="card-title" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
       <span>RAG Vector Memory</span>
-      <span id="rag-status-badge" style="
-        font-size:10px; font-weight:600; padding:2px 8px; border-radius:12px;
-        background:var(--muted); color:#fff; vertical-align:middle;">
-        CHECKING...
-      </span>
+      <span id="rag-status-badge" class="badge-pill badge-neutral">CHECKING...</span>
       <!-- Backup / Restore RAG Sources -->
       <div style="display:flex; gap:6px; padding-left:6px; margin-left:auto;">
         <button class="tpl-icon-btn" title="Backup RAG Sources Registry" onclick="ragBackupSources()">
@@ -123,15 +119,14 @@
         <div style="font-weight:600; font-size:13px; color:var(--accent);">
           <i class="fas fa-database"></i> Knowledge Base
         </div>
-        <button class="btn btn-secondary" id="btn-toggle-all-rag" onclick="toggleAllRagSources()" 
-                style="font-size:10px; padding:2px 8px; height:22px;" title="Expand/Collapse All">
+        <button class="btn btn-secondary" id="btn-toggle-all-rag" onclick="toggleAllRagSources()" title="Expand/Collapse All">
           <i class="fas fa-expand-alt"></i>
         </button>
       </div>
       <p id="rag-stats-text" style="color:var(--muted);font-size:0.88em;margin-bottom:10px;">Loading...</p>
 
       <!-- Ingest area -->
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
         <input type="text" id="rag-ingest-text" class="config-input"
                placeholder="Type text to add to knowledge base..." style="flex:1;min-width:180px;">
         <input type="text" id="rag-ingest-label" class="config-input"
@@ -140,7 +135,7 @@
           <i class="fas fa-plus"></i> Add
         </button>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
         <input type="text" id="rag-ingest-filepath" class="config-input"
                placeholder="File path (.txt .md .pdf)..." style="flex:1;min-width:180px;">
         <button class="btn btn-secondary" onclick="ragIngestFile()" title="Ingest file">
@@ -155,7 +150,7 @@
       </div>
 
       <!-- Semantic search test -->
-        <div style="display:flex;gap:10px;">
+        <div style="display:flex; gap:10px; align-items:center;">
           <input type="text" id="rag-search-query" class="config-input" style="flex:1;" placeholder="Type query (e.g. 'project goals')">
           <button class="btn btn-primary" onclick="ragTestSearch()" id="rag-btn-search"><i class="fas fa-search"></i> Search</button>
           <button class="btn btn-danger" onclick="ragStopSearch()" id="rag-btn-stop" style="display:none;"><i class="fas fa-stop"></i> Stop</button>
@@ -197,19 +192,21 @@ function loadRagStatus() {
 
     if (!data.ok) {
       badge.textContent = 'ERROR';
-      badge.style.background = '#c0392b';
+      badge.className = 'badge-pill badge-err';
+      badge.style.background = '';
       if(stats) stats.textContent = 'Error: ' + (data.error || 'unknown');
       return;
     }
 
-    const statusColors = {
-      'ONLINE':   '#27ae60',
-      'STANDBY':  '#7f8c8d',
-      'DEGRADED': '#e67e22',
-      'INDEXING': '#2980b9'
+    const statusMap = {
+      'ONLINE':   'badge-ok',
+      'STANDBY':  'badge-neutral',
+      'DEGRADED': 'badge-warn',
+      'INDEXING': 'badge-accent'
     };
     badge.textContent = data.status || 'STANDBY';
-    badge.style.background = statusColors[data.status] || '#7f8c8d';
+    badge.className = 'badge-pill ' + (statusMap[data.status] || 'badge-neutral');
+    badge.style.background = '';
 
     if (stats) {
       const topK = data.top_k !== undefined ? data.top_k : '5';
@@ -222,7 +219,7 @@ function loadRagStatus() {
     loadRagSources();
   }).catch(e => {
     const badge = document.getElementById('rag-status-badge');
-    if(badge) { badge.textContent = 'OFFLINE'; badge.style.background = '#c0392b'; }
+    if(badge) { badge.textContent = 'OFFLINE'; badge.className = 'badge-pill badge-err'; badge.style.background = ''; }
   });
 }
 
@@ -646,9 +643,9 @@ async function ragRestoreSources(event) {
   <div class="modal-content" style="background:var(--bg2, #1e1e1e); border:1px solid var(--border-color); border-radius:12px; padding:24px; max-width:400px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
     <h2 style="margin-top:0; font-size:1.4em; color:var(--text);"><i class="fas fa-exclamation-triangle" style="color:#ff4a4a; margin-right:8px;"></i>Warning</h2>
     <p id="memory-confirm-modal-text" style="margin:20px 0; color:var(--text); font-size:1.05em;"></p>
-    <div class="modal-actions" style="display:flex; justify-content:center; gap:15px; margin-top:24px;">
+    <div class="modal-actions" style="display:flex; justify-content:center; gap:10px; margin-top:20px;">
       <button type="button" class="btn btn-secondary" onclick="document.getElementById('memory-confirm-modal').style.display='none'">Cancel</button>
-      <button type="button" class="btn btn-danger" style="background:#ff4a4a; color:white; border:none;" id="memory-confirm-modal-yes">Continue</button>
+      <button type="button" class="btn btn-danger" id="memory-confirm-modal-yes">Continue</button>
     </div>
   </div>
 </div>

@@ -50,6 +50,12 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 logger.error("[WebUI] Failed to save MIC toggle.")
 
             try:
+                from hecos.core.audio import ptt_bus
+                ptt_bus.update_cache()
+            except Exception:
+                pass
+
+            try:
                 from hecos.core.processing import processore
                 processore.configure(cfg_mgr.config)
             except Exception:
@@ -118,6 +124,11 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 logger.error("[WebUI] Failed to save PTT toggle.")
             if sm is not None:
                 sm.push_to_talk = new_val
+            try:
+                from hecos.core.audio import ptt_bus
+                ptt_bus.update_cache()
+            except Exception:
+                pass
             return jsonify({"ok": True, "push_to_talk": new_val})
         except Exception as exc:
             logger.error(f"[WebUI] toggle_ptt error: {exc}")
@@ -141,7 +152,7 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 for k in ["active_engine", "kokoro", "xtts", "xtts_presets", "xtts_inference_presets", "voice_status", "listening_status",
                           "piper_path", "onnx_model", "speed", "noise_scale", "noise_w",
                           "sentence_silence", "piper_timeout", "energy_threshold",
-                          "silence_timeout", "phrase_limit", "tts_history_max_files"]:
+                          "silence_timeout", "phrase_limit", "tts_history_max_files", "push_to_talk"]:
                     if k in data:
                         cfg[k] = data[k]
 
@@ -157,6 +168,12 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                     if "push_to_talk" in data:
                         sm.push_to_talk = data["push_to_talk"]
 
+                try:
+                    from hecos.core.audio import ptt_bus
+                    ptt_bus.update_cache()
+                except Exception:
+                    pass
+
                 # If voice capabilities changed, we must update the processor
                 if any(k in data for k in ["voice_status", "listening_status"]):
                     try:
@@ -169,6 +186,23 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             except Exception as exc:
                 logger.error(f"[WebUI] manage_audio_config POST error: {exc}")
                 return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.route("/api/audio/filters", methods=["GET", "POST"])
+    def manage_tts_filters():
+        """Gets or updates TTS filters config."""
+        try:
+            from hecos.core.audio.tts_filter.config import get_filter_config, save_filter_config
+            if request.method == "GET":
+                return jsonify({"ok": True, "config": get_filter_config()})
+            elif request.method == "POST":
+                data = request.get_json(force=True) or {}
+                if save_filter_config(data):
+                    return jsonify({"ok": True})
+                else:
+                    return jsonify({"ok": False, "error": "Failed to save filters"}), 500
+        except Exception as exc:
+            logger.error(f"[WebUI] manage_tts_filters error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
 
     # ── Audio Stop ────────────────────────────────────────────────────────────────
 

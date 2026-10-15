@@ -95,6 +95,7 @@ window.startWebAudioRecording = async function() {
 
   if (window._webptt_beep) window._webptt_beep(880, 0.1);
   if (window._webptt_setButtonState) window._webptt_setButtonState('listening');
+  if (window.UnifiedToast) window.UnifiedToast.show('🎙️ Listening...', 'fas fa-microphone', 0, 'rgba(235, 75, 75, 0.9)');
   console.log('[WebAudio] Recording started... lockedMode=', capturedLockedMode);
 };
 
@@ -109,11 +110,28 @@ window.stopWebAudioRecording = function() {
 
   if (window._webptt_beep) window._webptt_beep(440, 0.15);
   if (window._webptt_setButtonState) window._webptt_setButtonState('transcribing');
+  if (window.UnifiedToast) window.UnifiedToast.hide();
 
   window.webAudioRecorder.stop();
   window.isWebAudioRecording = false;
   console.log('[WebAudio] Recording stopped, preparing payload...');
 };
+
+window.cancelWebAudioRecording = function() {
+  if (!window.isWebAudioRecording || !window.webAudioRecorder) return;
+  window.webAudioChunks = [];
+  try {
+    window.webAudioRecorder.onstop = null;
+    window.webAudioRecorder.stop();
+  } catch(e) {}
+  window.isWebAudioRecording = false;
+  window.isTouchHold = false;
+  if (window._webptt_setButtonState) window._webptt_setButtonState('idle');
+  if (window.UnifiedToast) window.UnifiedToast.hide();
+  console.log('[WebAudio] Recording cancelled.');
+};
+
+
 
 async function uploadWebAudio(wasLockedMode) {
   if (window.webAudioChunks.length === 0) {

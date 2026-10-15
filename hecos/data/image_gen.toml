@@ -1,16 +1,16 @@
 [image_gen]
 enabled = true
 provider = "swarmui"
-model = "ZI Orn master Turbo/pornmasterZImage_turboV35Bf16.safetensors"
+model = "PornMaster-色情大師 Flux2 Klein/pornmasterFlux2Klein_v4TurboFp8.safetensors"
 nologo = true
-api_key = ""
+api_key = "hecos"
 api_key_comment = ""
 hf_provider = "hf-inference"
 aspect_ratio = "3:4"
 width = 896
 height = 1152
 seed = -1
-last_seed = 697940185
+last_seed = 767036250
 sampler = "euler"
 scheduler = "simple"
 guidance_scale = 2.5
@@ -27,13 +27,13 @@ loras = [
 ]
 flux_refiner_instructions = "Convert keywords into a descriptive natural language paragraph for Flux. Output ONLY the optimised prompt, no preamble."
 show_metadata_in_chat = true
-active_preset = "🍑 PornMaster ZImage Turbo"
-default_preset = "🍑 PornMaster ZImage Turbo"
+active_preset = "🔥 PornMaster Flux2 Klein"
+default_preset = "🔥 PornMaster Flux2 Klein"
 default_profile = ""
 custom_hf_models = []
-horde_api_key = "hecos"
+horde_api_key = ""
 horde_nsfw = true
-horde_worker_blacklist = ""
+horde_worker_blacklist = "admin"
 cloud_enabled = false
 routing_override = ""
 

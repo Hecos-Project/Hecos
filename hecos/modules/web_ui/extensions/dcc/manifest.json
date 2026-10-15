@@ -1,0 +1,11 @@
+{
+    "extension_id": "dcc",
+    "name": "Dynamic Capability Chips",
+    "version": "1.0.0",
+    "description": "Contextual action chips for Hecos",
+    "required_plugin": "WEB_UI",
+    "eager_load": true,
+    "config_schema": {
+        "enabled": {"type": "boolean", "default": true}
+    }
+}

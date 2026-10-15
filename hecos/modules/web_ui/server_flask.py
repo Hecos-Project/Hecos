@@ -49,7 +49,8 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
         logger.warning("[WebUI] flask-compress not installed — responses will not be compressed.")
 
     app.hecos_config_manager = config_manager
-    
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.jinja_env.auto_reload = True
     # FIX: Force CSS/JS mimetypes
     import mimetypes
     mimetypes.add_type('text/css', '.css')
@@ -98,7 +99,7 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     @app.before_request
     def require_login():
         if request.headers.get("X-Hecos-Internal") == "backup": return
-        exempt_paths = ['/login', '/logout', '/static', '/assets', '/favicon.ico', '/ext']
+        exempt_paths = ['/login', '/logout', '/static', '/assets', '/favicon.ico', '/ext', '/hpm_plugin']
         if any(request.path.startswith(p) for p in exempt_paths): return
         
         if not current_user.is_authenticated:

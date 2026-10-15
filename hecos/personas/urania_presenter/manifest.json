@@ -1,0 +1,11 @@
+{
+    "tag": "URANIA_PRESENTER",
+    "name": "Urania - Presenter",
+    "version": "1.0.0",
+    "description": "A specialized sarcastic commentator Persona (Urania 9800) designed exclusively for the Hecos Presenter module. Acts as a third-party observer and does not answer user queries.",
+    "lazy_load": true,
+    "is_class_based": true,
+    "commands": {},
+    "tool_schema": [],
+    "slash_commands": []
+}

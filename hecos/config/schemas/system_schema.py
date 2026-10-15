@@ -7,7 +7,7 @@ DESCRIPTION: Pydantic v2 models for config/system.yaml (core system only).
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -221,6 +221,24 @@ class AgentInlineConfig(BaseModel):
     action_console_enabled: bool = True
 
 
+# ─── HPM (HECOS PACKAGE MANAGER) ──────────────────────────────────────────────
+
+class HpmRepoItem(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    name: str = ""
+    url: str
+
+
+class HpmConfig(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    store_catalog_url: str = "https://hecos-project.github.io/store/index.json"
+    repositories: List[Union[HpmRepoItem, str, Dict[str, Any]]] = Field(default_factory=lambda: [
+        {"name": "Hecos Official", "url": "https://hecos-project.github.io/store/index.json"}
+    ])
+    # Security: token is strictly stored in local untracked hpm_auth.json, never in system.yaml
+    github_token: str = Field(default="", exclude=True)
+
+
 # ─── ROOT ─────────────────────────────────────────────────────────────────────
 
 class SystemConfig(BaseModel):
@@ -242,5 +260,7 @@ class SystemConfig(BaseModel):
     processor: ProcessorConfig = Field(default_factory=ProcessorConfig)
     routing_engine: RoutingEngineConfig = Field(default_factory=RoutingEngineConfig)
     system: SystemFlagsConfig = Field(default_factory=SystemFlagsConfig)
+    hpm: HpmConfig = Field(default_factory=HpmConfig)
     # Absorb legacy `agent:` key from old system.yaml — NOT re-serialized on save
     agent: AgentInlineConfig = Field(default_factory=AgentInlineConfig)
+

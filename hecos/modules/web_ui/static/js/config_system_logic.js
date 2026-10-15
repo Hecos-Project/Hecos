@@ -36,6 +36,9 @@ function populateSystemUI() {
     setCheck('sys-track-vram', dsb.console_telemetry_vram ?? false);
     setCheck('wui-control-room-panel', webUiPlug.control_room_panel ?? true);
     setCheck('wui-control-room-home', webUiPlug.control_room_home ?? true);
+    setVal('chatui-welcome-mode', webUiPlug.chatui_welcome_mode || 'hybrid');
+    setCheck('wui-dcc-new-first', webUiPlug.dcc_new_first ?? true);
+    setVal('wui-dcc-highlight-hours', webUiPlug.dcc_new_highlight_hours || 72);
 
     const sysNet = (c.plugins || {}).SYS_NET || {};
     setCheck('sys-proxy-enabled', sysNet.proxy_enabled ?? false);
@@ -135,7 +138,10 @@ function buildSystemPayload() {
             WEB_UI: {
                 https_enabled: getC('webui-https-enabled', wui.https_enabled ?? false),
                 control_room_panel: getC('wui-control-room-panel', wui.control_room_panel ?? true),
-                control_room_home: getC('wui-control-room-home', wui.control_room_home ?? true)
+                control_room_home: getC('wui-control-room-home', wui.control_room_home ?? true),
+                chatui_welcome_mode: getV('chatui-welcome-mode', wui.chatui_welcome_mode || 'hybrid'),
+                dcc_new_first: getC('wui-dcc-new-first', wui.dcc_new_first ?? true),
+                dcc_new_highlight_hours: parseInt(getV('wui-dcc-highlight-hours', wui.dcc_new_highlight_hours || 72))
             }
         }
     };

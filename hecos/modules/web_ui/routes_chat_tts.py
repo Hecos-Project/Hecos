@@ -81,32 +81,46 @@ def sanitize_text_for_tts(text: str) -> str:
 
     custom_chars = acfg.get("tts_excluded_chars", "*#_~><|-=\\/^@$%&")
 
-    # 1. Remove agent image tags (e.g. IMG:gen_...)
+    # 1. Remove think blocks if any leaked from reasoning models
+    text = re.sub(r'<think>[\s\S]*?</think>', '', text, flags=re.IGNORECASE)
+
+    # 2. Remove leading control/role labels (e.g. SYNCHRONIZED, COACH:, PRESENTER:, etc.)
+    text = re.sub(r'^(SYNCHRONIZED|COACH|PRESENTER|AI|ASSISTANT|SYSTEM|USER)\s*[:\-]?\s*', '', text, flags=re.IGNORECASE).strip()
+
+    # 3. Remove agent image tags (e.g. IMG:gen_...)
     text = re.sub(r'IMG:\S+', '', text)
     text = re.sub(r'IMG:.*$', '', text, flags=re.MULTILINE)
 
-    # 2. Remove code blocks and inline code
+    # 4. Remove code blocks and inline code
     text = re.sub(r'```[\s\S]*?```', '', text)
     text = re.sub(r'`[^`]+`', '', text)
 
-    # 3. Remove URLs and handle Markdown links [Text](url)
+    # 5. Remove URLs and handle Markdown links [Text](url)
     text = re.sub(r'https?://\S+|www\.\S+', '', text)
     text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
 
-    # 4. Remove Markdown formatting
+    # 6. Remove Markdown formatting
     text = re.sub(r'\*{1,3}|_{1,3}|~{1,2}', '', text)
     text = re.sub(r'^\s*#{1,6}\s*', '', text, flags=re.MULTILINE)
 
-    # 5. Remove arrows and repeated character sequences
+    # 7. Remove arrows and repeated character sequences
     text = re.sub(r'[-=><~_]{2,}', ' ', text)
 
-    # 6. Remove user-specified custom characters
+    # 8. Remove user-specified custom characters
     if custom_chars:
         escaped_chars = re.escape(custom_chars)
         text = re.sub(rf'[{escaped_chars}]', ' ', text)
 
-    # 7. Final normalization
+    # 9. Clean anomalous punctuation sequences (e.g., ".,.", "..,", "..")
     text = re.sub(r'\.{2,}', '.', text)
+    text = re.sub(r'[,;:\s]*\.[,;:\s]*', '. ', text)
+    text = re.sub(r'\s+([.,!?;:])', r'\1', text)
+
+    # 10. Strip enclosing dialogue quotes that wrap the entire utterance
+    text = re.sub(r'^["\'«»“”‘’]+\s*', '', text)
+    text = re.sub(r'\s*["\'«»“”‘’]+$', '', text)
+
+    # 11. Final normalization
     text = re.sub(r'\s+', ' ', text).strip()
 
     return text
@@ -187,16 +201,24 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict, job_id: str = N
 
         session = voice_cfg.get('session_overrides', {})
         if session:
-            if 'xtts_speaker_wav' in session and session['xtts_speaker_wav']: speaker_wav = session['xtts_speaker_wav'].strip()
-            if 'tts_voice' in session and session['tts_voice'] and session['tts_voice'] != 'default': speaker = session['tts_voice']
+            # If the session explicitly requests a built-in voice but no clone, clear the global clone override
+            if 'tts_voice' in session and session['tts_voice'] and session['tts_voice'] != 'default': 
+                speaker = session['tts_voice']
+                if 'xtts_speaker_wav' not in session or not session['xtts_speaker_wav']:
+                    speaker_wav = ""
+            
+            if 'xtts_speaker_wav' in session and session['xtts_speaker_wav']: 
+                speaker_wav = session['xtts_speaker_wav'].strip()
+                
             if 'xtts_speed' in session and session['xtts_speed'] is not None: speed = str(session['xtts_speed'])
             if 'xtts_temperature' in session and session['xtts_temperature'] is not None: temperature = str(session['xtts_temperature'])
             if 'xtts_repetition_penalty' in session and session['xtts_repetition_penalty'] is not None: repetition_penalty = str(session['xtts_repetition_penalty'])
             if 'xtts_top_k' in session and session['xtts_top_k'] is not None: top_k = str(session['xtts_top_k'])
             if 'xtts_top_p' in session and session['xtts_top_p'] is not None: top_p = str(session['xtts_top_p'])
-        if 'xtts_length_penalty' in session and session['xtts_length_penalty'] is not None: length_penalty = str(session['xtts_length_penalty'])
+            if 'xtts_length_penalty' in session and session['xtts_length_penalty'] is not None: length_penalty = str(session['xtts_length_penalty'])
 
         if speaker_wav and not os.path.isabs(speaker_wav):
+            root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
             speaker_wav = os.path.join(root_dir, "hecos", "assets", "voice_clones", speaker_wav)
 
         _chat_log.info(f"[XTTS2 Bypass] Starting isolated generation. GPU mode: {gpu_acceleration}, Wav target: {out_path}, Speaker Wav: {speaker_wav}")
@@ -225,6 +247,54 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict, job_id: str = N
             "except Exception:\n"
             "    pass\n"
             "\n"
+            "import re\n"
+            "def safe_split_for_xtts(t, max_c=200, l='it'):\n"
+            "    t = re.sub(r'^(SYNCHRONIZED|COACH|PRESENTER|AI|ASSISTANT|SYSTEM|USER)\\s*[:\\-]?\\s*', '', t, flags=re.IGNORECASE).strip()\n"
+            "    t = re.sub(r'^[\"\\'«»“”‘’]+\\s*', '', t)\n"
+            "    t = re.sub(r'\\s*[\"\\'«»“”‘’]+$', '', t)\n"
+            "    t = re.sub(r'[,;:\\s]*\\.[,;:\\s]*', '. ', t)\n"
+            "    t = re.sub(r'\\s+([.,!?;:])', r'\\1', t)\n"
+            "    try:\n"
+            "        import pysbd\n"
+            "        seg = pysbd.Segmenter(language=l, clean=True)\n"
+            "        raw_s = seg.segment(t)\n"
+            "    except Exception:\n"
+            "        raw_s = re.split(r'(?<=[.!?])\\s+', t)\n"
+            "    chunks = []\n"
+            "    for s in raw_s:\n"
+            "        s = s.strip()\n"
+            "        s = re.sub(r'^[\"\\'«»“”‘’]+|[\"\\'«»“”‘’]+$', '', s).strip()\n"
+            "        if not s or not re.search(r'\\w', s): continue\n"
+            "        if len(s) <= max_c:\n"
+            "            chunks.append(s)\n"
+            "            continue\n"
+            "        sub_parts = re.split(r'([;:\\—\\-]|\,(?=\\s))', s)\n"
+            "        cur = ''\n"
+            "        for i in range(0, len(sub_parts), 2):\n"
+            "            p = sub_parts[i]\n"
+            "            punct = sub_parts[i+1] if i+1 < len(sub_parts) else ''\n"
+            "            comb = (cur + ' ' + p + punct).strip() if cur else (p + punct).strip()\n"
+            "            if len(comb) <= max_c:\n"
+            "                cur = comb\n"
+            "            else:\n"
+            "                if cur and re.search(r'\\w', cur): chunks.append(cur.strip())\n"
+            "                if len((p + punct).strip()) > max_c:\n"
+            "                    w_cur = ''\n"
+            "                    for w in (p + punct).strip().split():\n"
+            "                        if len((w_cur + ' ' + w).strip()) <= max_c:\n"
+            "                            w_cur = (w_cur + ' ' + w).strip()\n"
+            "                        else:\n"
+            "                            if w_cur and re.search(r'\\w', w_cur): chunks.append(w_cur)\n"
+            "                            w_cur = w\n"
+            "                    cur = w_cur\n"
+            "                else: cur = (p + punct).strip()\n"
+            "        if cur and re.search(r'\\w', cur): chunks.append(cur.strip())\n"
+            "    clean = []\n"
+            "    for c in chunks:\n"
+            "        c = re.sub(r'[,;:\\s.]+$', '', c.strip()).strip()\n"
+            "        if c and re.search(r'\\w', c): clean.append(c)\n"
+            "    return clean or [t]\n"
+            "\n"
             "from TTS.api import TTS\n"
             "text = sys.argv[1]\n"
             "out_path = sys.argv[2]\n"
@@ -249,13 +319,27 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict, job_id: str = N
             "    print(f'[XTTS2 Subprocess] gpu_mode={gpu_mode}, CUDA available={cuda_available}, using_gpu={use_cuda}', file=sys.stderr)\n"
             "    print('PROGRESS: 10', flush=True)\n"
             "    tts = TTS('tts_models/multilingual/multi-dataset/xtts_v2', gpu=use_cuda)\n"
+            "    synth_count = [0]\n"
+            "    total_count = [1]\n"
+            "    orig_synth = tts.synthesizer.tts_model.synthesize\n"
+            "    def tracked_synth(*s_args, **s_kwargs):\n"
+            "        synth_count[0] += 1\n"
+            "        pct = int(50 + (synth_count[0] / total_count[0]) * 45)\n"
+            "        print(f'PROGRESS: {min(pct, 95)}', flush=True)\n"
+            "        return orig_synth(*s_args, **s_kwargs)\n"
+            "    def tracked_split(inp):\n"
+            "        res = safe_split_for_xtts(inp, max_c=200, l=lang)\n"
+            "        total_count[0] = max(len(res), 1)\n"
+            "        print(f'[XTTS2 Split] text divided into {len(res)} chunks', file=sys.stderr)\n"
+            "        return res\n"
+            "    tts.synthesizer.split_into_sentences = tracked_split\n"
+            "    tts.synthesizer.tts_model.synthesize = tracked_synth\n"
             "    print('PROGRESS: 50', flush=True)\n"
-            "    kwargs = {'text': text, 'file_path': out_path, 'language': lang, 'speed': speed, 'temperature': temperature, 'repetition_penalty': rep_pen, 'top_k': top_k, 'top_p': top_p, 'length_penalty': length_penalty}\n"
+            "    kwargs = {'text': text, 'file_path': out_path, 'language': lang, 'speed': speed, 'temperature': temperature, 'repetition_penalty': rep_pen, 'top_k': top_k, 'top_p': top_p, 'length_penalty': length_penalty, 'split_sentences': True}\n"
             "    if speaker_wav and os.path.exists(speaker_wav):\n"
             "        kwargs['speaker_wav'] = speaker_wav\n"
             "    else:\n"
             "        kwargs['speaker'] = speaker\n"
-            "    print('PROGRESS: 60', flush=True)\n"
             "    tts.tts_to_file(**kwargs)\n"
             "    print('PROGRESS: 95', flush=True)\n"
             "    sys.exit(0)\n"
@@ -307,6 +391,8 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
     try:
         _ensure_dirs()
 
+        from hecos.core.audio.tts_filter import sanitize_text
+        text = sanitize_text(text)
         text = sanitize_text_for_tts(text)
         if not text:
             _chat_log.warning("[Audio] Text empty after sanitization. Generation skipped.")

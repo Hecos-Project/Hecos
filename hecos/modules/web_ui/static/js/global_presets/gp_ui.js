@@ -36,7 +36,16 @@ window.sfTogglePanel = function(force, mode = 'global') {
         panel.classList.remove('open');
         overlay.style.display = 'none';
         if (window.sfState.isDirty) {
-            window.sfSaveInlineToSession();
+            if (window.sfState.activeSoulId) {
+                window.hecosConfirm("You have unsaved changes. Do you want to update the active Global Preset?", function() {
+                    if (window.sfSaveInlineToActive) window.sfSaveInlineToActive();
+                }, function() {
+                    // Do nothing, just lose changes
+                    window.sfState.isDirty = false;
+                });
+            } else {
+                window.sfState.isDirty = false;
+            }
         }
     }
 };
@@ -103,7 +112,7 @@ window.sfDirty = function() {
     const topBtn = document.getElementById('sf-top-save-btn');
     if (topBtn) {
         if (window.sfState.activeSoulId) {
-            topBtn.innerHTML = '<i class="fas fa-save"></i> Update';
+            topBtn.innerHTML = '<i class="fas fa-save"></i>';
             topBtn.style.backgroundColor = 'var(--accent1, #00d2ff)';
             topBtn.style.color = '#000';
             topBtn.onclick = window.sfSaveInlineToActive;
@@ -113,6 +122,63 @@ window.sfDirty = function() {
     // Toggle XTTS settings visibility
     const ttsEngine = document.getElementById('sf-tts-engine-select').value;
     document.getElementById('sf-xtts-controls').style.display = (ttsEngine === 'xtts2') ? 'block' : 'none';
+    
+    // Instantly update the welcome screen if the current chat session is using the global default
+    const chatPersonaSel = document.getElementById('chat-persona-select');
+    if (!chatPersonaSel || !chatPersonaSel.value) {
+        const pVal = document.getElementById('sf-persona-select')?.value || "";
+        if (window._lastSfPersonaVal !== pVal) {
+            window._lastSfPersonaVal = pVal;
+            // Use actual persona from select; if empty, fall back to the system-default
+            // persona from sfSystemFallbacks (i.e. the value in config/active_personality).
+            // Never blindly reset to the hardcoded 'Hecos' string.
+            const effectivePVal = pVal || (window.sfSystemFallbacks?.persona) || "";
+            if (effectivePVal) {
+                window.HecosPersonaName = effectivePVal.replace('.yaml', '').replace(/_/g, ' ');
+                window._globalPersonaName = window.HecosPersonaName;
+                fetch(`/api/persona/avatar?persona=${encodeURIComponent(effectivePVal)}`)
+                    .then(r => r.json())
+                    .then(d => { 
+                        if (d.ok && d.avatar_path) {
+                            window.HecosAvatar = d.avatar_path;
+                            window._globalAvatar = d.avatar_path;
+                            window.HecosAvatarType = d.avatar_type || 'image';
+                        }
+                        if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+                    })
+                    .catch(()=>{
+                        if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+                    });
+            } else {
+                // Truly no persona configured anywhere — show Hecos logo
+                window.HecosPersonaName = 'Hecos System Soul';
+                window._globalPersonaName = 'Hecos System Soul';
+                window.HecosAvatar = null;
+                window._globalAvatar = null;
+                window.HecosAvatarType = 'image';
+                if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+            }
+        }
+    }
+    
+    // Auto-save to base config if no global preset is active (instant application)
+    if (!window.sfState.activeSoulId) {
+        clearTimeout(window._sfBaseSaveTimeout);
+        window._sfBaseSaveTimeout = setTimeout(() => {
+            const data = window.sfCollectUIState();
+            // Assign dummy meta to pass validation
+            data.meta = { id: "", name: "Base Defaults", icon: "⚙️" };
+            fetch('/api/souls/activate', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ soul_id: "", session_id: 'global', soul: data })
+            }).catch(e => console.error("Failed to auto-save global config", e));
+            
+            if (window.sfUpdateTooltip) window.sfUpdateTooltip(data);
+        }, 300);
+    } else {
+        if (window.sfUpdateTooltip) window.sfUpdateTooltip(window.sfCollectUIState());
+    }
 };
 
 
@@ -275,6 +341,12 @@ window.sfApplySoulToUI = async function(soul) {
     // Persona
     document.getElementById('sf-persona-select').value = soul.persona?.soul_file || fallbacks.persona || "";
     
+    document.getElementById('sf-use-global-direct').checked = soul.persona?.use_global_direct_instructions !== false;
+    document.getElementById('sf-use-global-safety').checked = soul.persona?.use_global_safety_instructions !== false;
+    document.getElementById('sf-custom-instructions').value = soul.persona?.custom_instructions || "";
+    document.getElementById('sf-user-notes').value = soul.persona?.user_notes || "";
+    document.getElementById('sf-send-notes-ai').checked = soul.persona?.send_notes_to_ai === true;
+    
     // Model
     document.getElementById('sf-backend-select').value = soul.model?.backend_type || fallbacks.backend || "ollama";
     window.sfUpdateModelsDropdown();
@@ -299,6 +371,18 @@ window.sfApplySoulToUI = async function(soul) {
     setVal('sf-topp', soul.inference?.top_p);
     setVal('sf-reppen', soul.inference?.repeat_penalty);
     setVal('sf-predict', soul.inference?.num_predict);
+
+    const ctxEl = document.getElementById('sf-ctx');
+    if (ctxEl) {
+        ctxEl.value = (soul.inference?.num_ctx !== undefined && soul.inference?.num_ctx !== null) ? soul.inference.num_ctx : 0;
+        ctxEl.dispatchEvent(new Event('input'));
+    }
+    
+    const gpuEl = document.getElementById('sf-gpu');
+    if (gpuEl) {
+        gpuEl.value = (soul.inference?.n_gpu_layers !== undefined && soul.inference?.n_gpu_layers !== null) ? soul.inference.n_gpu_layers : -2;
+        gpuEl.dispatchEvent(new Event('input'));
+    }
     
     document.getElementById('sf-xtts-preset-select').value = soul.voice?.xtts_preset || "";
     
@@ -322,15 +406,116 @@ window.sfApplySoulToUI = async function(soul) {
     
     const topBtn = document.getElementById('sf-top-save-btn');
     if (topBtn) {
-        topBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+        topBtn.innerHTML = '<i class="fas fa-save"></i>';
         topBtn.style.backgroundColor = '';
         topBtn.style.color = '';
         topBtn.onclick = window.sfOverwriteSoul;
     }
     
+    window.sfUpdateTooltip(soul);
+};
+
+window.sfUpdateTooltip = function(soul) {
+    if (!soul) return;
     const sbGD = document.getElementById('sb-global-defaults');
-    if (sbGD) {
-        sbGD.textContent = window.sfState.activeSoulId || 'Custom';
+    const sbGDLabel = document.getElementById('sb-global-defaults-label');
+    const sbGDBtn = sbGD ? sbGD.closest('.status-pill') : null;
+    
+    if (sbGD && sbGDLabel) {
+        const isPreset = !!window.sfState.activeSoulId;
+        let lines = [];
+        
+        if (isPreset) {
+            lines.push(`🎭 Global Preset: ${window.sfState.activeSoulId}`);
+        } else {
+            lines.push(`🎭 Active Configuration (Default)`);
+        }
+        
+        const modelName = soul.model?.model_name || 'System Default';
+        const backendName = soul.model?.backend_type || 'unknown';
+        lines.push(`🤖 Model: ${modelName} (${backendName})`);
+        
+        const soulFile = soul.persona?.soul_file || window.sfSystemFallbacks?.persona || 'System Default';
+        lines.push(`👤 Soul: ${soulFile}`);
+        
+        const temp = soul.inference?.temperature !== undefined && soul.inference.temperature !== null ? soul.inference.temperature : '?';
+        const topP = soul.inference?.top_p !== undefined && soul.inference.top_p !== null ? soul.inference.top_p : '?';
+        const repPen = soul.inference?.repeat_penalty !== undefined && soul.inference.repeat_penalty !== null ? soul.inference.repeat_penalty : '?';
+        lines.push(`⚙ Temp: ${temp} | Top P: ${topP} | Rep Pen: ${repPen}`);
+        
+        const btype = soul.model?.backend_type || window.HecosSystemConfig?.backend?.type || 'ollama';
+        const fallbackBackendCfg = window.HecosSystemConfig?.backend?.[btype] || {};
+
+        const numCtxVal = soul.inference?.num_ctx !== undefined && soul.inference.num_ctx !== null ? soul.inference.num_ctx : (fallbackBackendCfg.num_ctx || fallbackBackendCfg.n_ctx || '?');
+        const numPredict = soul.inference?.num_predict !== undefined && soul.inference.num_predict !== null ? soul.inference.num_predict : '?';
+        const gpuVal = soul.inference?.n_gpu_layers !== undefined && soul.inference.n_gpu_layers !== null ? soul.inference.n_gpu_layers : (fallbackBackendCfg.num_gpu || fallbackBackendCfg.n_gpu_layers || '?');
+        lines.push(`📊 Ctx: ${numCtxVal} | Predict: ${numPredict} | GPU: ${gpuVal}`);
+        
+        if (soul.voice?.tts_engine) {
+            const voiceStr = soul.voice.tts_voice ? ` / ${soul.voice.tts_voice}` : '';
+            lines.push(`🔊 TTS: ${soul.voice.tts_engine}${voiceStr}`);
+        }
+        
+        const titleText = lines.join('\n');
+        
+        if (isPreset) {
+            sbGDLabel.innerHTML = '<i class="fas fa-cog"></i> Global Preset';
+            sbGD.textContent = window.sfState.activeSoulId;
+            if (sbGDBtn) sbGDBtn.title = titleText;
+        } else {
+            sbGDLabel.innerHTML = '<i class="fas fa-cog"></i> Active Config';
+            sbGD.textContent = 'Configure';
+            if (sbGDBtn) sbGDBtn.title = titleText;
+        }
+    }
+    
+    // ── Update chat avatar & persona globals when system default changes ──
+    // Always update the global defaults — the global preset is the system authority.
+    // Session overrides (soApplySoulToUI / soSyncToTopbar) will re-override if needed.
+    const sfPersona = soul.persona?.soul_file;
+    if (sfPersona) {
+        window.HecosPersonaName = sfPersona;
+        window._globalPersonaName = window.HecosPersonaName;
+        fetch(`/api/persona/avatar?persona=${encodeURIComponent(sfPersona)}`)
+            .then(r => r.json())
+            .then(d => {
+                if (d.ok && d.avatar_path) {
+                    window.HecosAvatar = d.avatar_path;
+                    window._globalAvatar = d.avatar_path;
+                    window.HecosAvatarType = d.avatar_type || 'image';
+                }
+                if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+            })
+            .catch(() => {
+                if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+            });
+    } else {
+        // No soul_file in this preset/config — fall back to the raw system default
+        const fallbackPersona = window.sfSystemFallbacks?.persona || '';
+        if (fallbackPersona) {
+            window.HecosPersonaName = fallbackPersona.replace('.yaml', '').replace(/_/g, ' ');
+            window._globalPersonaName = window.HecosPersonaName;
+            fetch(`/api/persona/avatar?persona=${encodeURIComponent(fallbackPersona)}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.ok && d.avatar_path) {
+                        window.HecosAvatar = d.avatar_path;
+                        window._globalAvatar = d.avatar_path;
+                        window.HecosAvatarType = d.avatar_type || 'image';
+                    }
+                    if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+                })
+                .catch(() => {
+                    if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+                });
+        } else {
+            window.HecosPersonaName = 'Hecos System Soul';
+            window._globalPersonaName = 'Hecos System Soul';
+            window.HecosAvatar = null;
+            window._globalAvatar = null;
+            window.HecosAvatarType = 'image';
+            if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+        }
     }
 };
 
@@ -338,16 +523,26 @@ window.sfApplySoulToUI = async function(soul) {
 window.sfCollectUIState = function() {
     const getVal = (id) => { const v = document.getElementById(id).value; return v === "" ? null : v; };
     const getNum = (id) => { const v = document.getElementById(id).value; return v ? parseFloat(v) : null; };
+    const getCheck = (id) => document.getElementById(id).checked;
     
     return {
-        persona: { soul_file: getVal('sf-persona-select') },
+        persona: { 
+            soul_file: getVal('sf-persona-select'),
+            use_global_direct_instructions: getCheck('sf-use-global-direct'),
+            use_global_safety_instructions: getCheck('sf-use-global-safety'),
+            custom_instructions: getVal('sf-custom-instructions'),
+            user_notes: getVal('sf-user-notes'),
+            send_notes_to_ai: getCheck('sf-send-notes-ai')
+        },
         model: { backend_type: getVal('sf-backend-select'), model_name: getVal('sf-model-select') },
         inference: {
             preset_name: getVal('sf-inference-preset-select'),
             temperature: getNum('sf-temp'),
             top_p: getNum('sf-topp'),
             repeat_penalty: getNum('sf-reppen'),
-            num_predict: parseInt(getNum('sf-predict'))
+            num_predict: parseInt(getNum('sf-predict')),
+            num_ctx: getNum('sf-ctx') === 0 ? null : parseInt(getNum('sf-ctx')),
+            n_gpu_layers: getNum('sf-gpu') === -2 ? null : parseInt(getNum('sf-gpu'))
         },
         voice: {
             tts_engine: getVal('sf-tts-engine-select'),

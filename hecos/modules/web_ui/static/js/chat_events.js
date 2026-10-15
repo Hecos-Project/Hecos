@@ -76,11 +76,13 @@ window.initEvents = function() {
       window.isBackendPTTActive = ev.active;
       
       if (ev.active) {
-          if (pttInd) pttInd.classList.add('active');
+          if (window.UnifiedToast) {
+              window.UnifiedToast.show('🎙️ Listening (Hardware PTT)...', 'fas fa-microphone', 0, 'rgba(235, 75, 75, 0.9)');
+          }
           // Bypassing browser beep and auto-recording on backend PTT hardware events
           // to avoid double-echoing and double-recording contexts.
       } else {
-          if (pttInd) pttInd.classList.remove('active');
+          if (window.UnifiedToast) window.UnifiedToast.hide();
       }
       
     } else if (ev.type === 'voice_detected' && ev.text) {

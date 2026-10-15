@@ -8,7 +8,6 @@ window.I18N = window.I18N || {};
 const chatArea   = document.getElementById('chat-area');
 const userInput  = document.getElementById('user-input');
 const sendBtn    = document.getElementById('send-btn');
-const welcome    = document.getElementById('welcome');
 
 window.chatArea = chatArea;
 window.userInput = userInput;
@@ -129,7 +128,7 @@ if (document.readyState === 'loading') {
 // ---------------------------
 
 window.hideWelcome = function() {
-  if (welcome) welcome.style.display = 'none';
+  if (window.HecosWelcome) window.HecosWelcome.hide();
 };
 
 window.autoResize = function(ta) {
@@ -145,7 +144,9 @@ window.handleKey = function(e) {
 };
 
 window.startPrompt = function(text) {
-  if (userInput) {
+  if (window.HecosWelcome) {
+    window.HecosWelcome.startPrompt(text);
+  } else if (userInput) {
     userInput.value = text;
     window.autoResize(userInput);
     if (window.sendMessage) window.sendMessage();
@@ -161,19 +162,13 @@ window.clearChat = async function() {
   // Fallback: just clear the DOM
   window.chatHistory = [];
   if (chatArea) chatArea.innerHTML = '';
-  if (welcome) {
-      chatArea.appendChild(welcome);
-      welcome.style.display = 'flex';
-  }
+  if (window.HecosWelcome) window.HecosWelcome.show();
 };
 
 window._clearChatDOM = function() {
   window.chatHistory = [];
   if (chatArea) chatArea.innerHTML = '';
-  if (welcome) {
-      chatArea.appendChild(welcome);
-      welcome.style.display = 'flex';
-  }
+  if (window.HecosWelcome) window.HecosWelcome.show();
 };
 
 window.clearInput = function() {
@@ -361,8 +356,9 @@ window.refreshStatus = async function() {
 
     const pSel = document.getElementById('chat-persona-select');
     const sessionPersona = pSel ? pSel.value : null;
-    // Also check if a Soul Forge global preset is active — if so, it controls the persona/avatar
-    const soulForgeActive = !!(window.soState && window.soState.activeSoulId);
+    // Check if a Soul Forge global preset is active (either via Chat Overrides or global panel)
+    const soulForgeActive = !!(window.soState && window.soState.activeSoulId)
+                         || !!(window.sfState && window.sfState.activeSoulId);
     
     if (!sessionPersona && !soulForgeActive) {
         window.HecosPersonaName = d.persona || 'Hecos';
@@ -383,6 +379,7 @@ window.refreshStatus = async function() {
     
     if (d.avatar_size) {
         window.HecosAvatarSize = d.avatar_size;
+        window.HecosAvatarAnimate = d.avatar_animate !== undefined ? d.avatar_animate : true;
         // Apply size class globally to chat area
         const chatArea = document.getElementById('chat-area');
         if (chatArea) {

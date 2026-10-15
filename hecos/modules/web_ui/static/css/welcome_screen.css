@@ -1,0 +1,73 @@
+/**
+ * welcome_screen.css — Welcome Screen Styles
+ * Extracted from chat.css for modularity.
+ * Styles for the Main Welcome (logo, title, subtitle, chips).
+ */
+
+#welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex: 1;
+    text-align: center;
+    padding: 40px;
+}
+
+.welcome-logo {
+    height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 0 40px rgba(var(--accent-rgb), .4));
+    margin-bottom: 5px;
+}
+
+.welcome-logo img {
+    height: 100%;
+    object-fit: contain;
+}
+
+.welcome-title {
+    font-size: 28px;
+    font-weight: 700;
+    background: var(--accent-g);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.welcome-sub {
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 480px;
+    line-height: 1.6;
+}
+
+.quick-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.chip {
+    padding: 8px 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .2s;
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chip:hover {
+    background: rgba(var(--accent-rgb), .15);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-1px);
+}

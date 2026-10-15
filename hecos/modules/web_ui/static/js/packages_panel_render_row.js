@@ -19,7 +19,7 @@ window.hpmRenderRow = function (pkg, meta) {
 
   const versionBadge = (pkg.version && pkg.version !== 'built-in')
     ? `<span style="font-size:0.68em;color:var(--muted);background:var(--bg3,var(--bg2));
-                    padding:1px 5px;border-radius:3px;border:1px solid var(--border-color);">
+                    padding:2px 7px;border-radius:20px;border:1px solid var(--border-color);display:inline-flex;align-items:center;">
          v${window._hesc(pkg.version)}
        </span>`
     : '';
@@ -87,7 +87,7 @@ window.hpmRenderRow = function (pkg, meta) {
                     style="font-size:10px;padding:4px 10px;margin-left:4px;
                            background:linear-gradient(135deg,#f59e0b,#d97706);
                            border:none;color:#fff;font-weight:700;
-                           border-radius:6px;cursor:pointer;
+                           border-radius:8px;cursor:pointer;
                            animation:hpmPulse 2s ease-in-out infinite;"
                     onclick="window._hpmDoRestart()"
                     title="${_ti('Restart required to activate this package', 'Riavvio richiesto per attivare il pacchetto', 'Reinicio requerido para activar el paquete')}">
@@ -165,8 +165,8 @@ window.hpmRenderRow = function (pkg, meta) {
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           ${statusDot}
           <span style="font-weight:600;color:var(--text);font-size:0.88em;">${window._hesc(pkg.name)}</span>
-          <span style="font-size:9px;background:${typeMeta.color}15;color:${typeMeta.color};
-                       padding:1px 5px;border-radius:3px;letter-spacing:.5px;border:1px solid ${typeMeta.color}33;">${typeMeta.shortLabel || typeMeta.label}</span>
+          <span style="font-size:9px;font-weight:700;background:${typeMeta.color}15;color:${typeMeta.color};
+                       padding:2px 8px;border-radius:20px;letter-spacing:.5px;border:1px solid ${typeMeta.color}33;display:inline-flex;align-items:center;line-height:1.2;">${typeMeta.shortLabel || typeMeta.label}</span>
           ${versionBadge}
         </div>
         ${pkg.description ? `

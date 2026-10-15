@@ -41,6 +41,11 @@ window.hpmStoreInit = async function () {
   if (!pane) return;
   pane.innerHTML = _hpmStoreBuildShell();
 
+  // Populate repository selector if helper is available
+  if (typeof window.hpmPopulateRepoSelect === 'function') {
+    window.hpmPopulateRepoSelect('hpm-store-repo-select');
+  }
+
   const searchEl = document.getElementById('hpm-store-search');
   if (searchEl) {
     searchEl.addEventListener('input', (e) => {
@@ -64,7 +69,7 @@ function _hpmStoreApplyFilters() {
   const { catalog, activeType, searchQuery } = window.HPM_STORE_STATE;
   if (!catalog) return;
   let pkgs = catalog.packages || [];
-  if (activeType !== 'all') pkgs = pkgs.filter(p => p.type === activeType);
+  if (activeType !== 'all') pkgs = pkgs.filter(p => ((p.category && p.category.trim() !== "") ? p.category.toLowerCase() : p.type) === activeType);
   if (searchQuery) {
     pkgs = pkgs.filter(p => {
       const hay = [p.name, p.description, p.author, ...(p.tags || [])].join(' ').toLowerCase();
@@ -79,6 +84,20 @@ function _hpmStoreApplyFilters() {
 function _hpmStoreBuildShell() {
   return `
     <div id="hpm-store-offline-banner" style="display:none;"></div>
+    <!-- Store Repository Selector Bar -->
+    <div class="hpm-store-repo-bar" style="display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;padding:8px 14px;margin-bottom:14px;gap:12px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:260px;">
+        <i class="fas fa-database" style="color:var(--accent);font-size:15px;"></i>
+        <label for="hpm-store-repo-select" style="font-size:0.85em;color:var(--text);font-weight:600;white-space:nowrap;">Repository:</label>
+        <select id="hpm-store-repo-select" onchange="window.hpmSelectRepository(this.value)" style="flex:1;min-width:260px;max-width:520px;background:var(--bg3);border:1px solid var(--border-color);border-radius:8px;padding:6px 10px;color:var(--text);font-size:0.82em;outline:none;cursor:pointer;text-overflow:ellipsis;">
+          <option value="">Loading repositories...</option>
+        </select>
+      </div>
+      <div id="hpm-store-active-repo-badge" style="display:inline-flex;align-items:center;gap:8px;background:rgba(102,252,241,0.08);border:1px solid rgba(102,252,241,0.25);border-radius:20px;padding:6px 14px;font-size:0.84em;font-weight:600;color:var(--accent);max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Active Repository">
+        <i class="fas fa-server" style="font-size:12px;opacity:0.85;"></i>
+        <span id="hpm-store-repo-name-text">Official Store</span>
+      </div>
+    </div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
       <div style="position:relative;flex:1;min-width:220px;">
         <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none;"></i>
@@ -107,11 +126,18 @@ function _hpmStoreBuildShell() {
 function _hpmStoreBuildTypeFilters(packages) {
   const container = document.getElementById('hpm-store-type-filters');
   if (!container) return;
-  const types = ['all', ...new Set(packages.map(p => p.type))];
+  const getCat = p => (p.category && p.category.trim() !== '') ? p.category.toLowerCase() : p.type;
+  const types = ['all', ...new Set(packages.map(getCat))];
   const counts = {};
-  packages.forEach(p => { counts[p.type] = (counts[p.type] || 0) + 1; });
+  packages.forEach(p => { 
+      const c = getCat(p);
+      counts[c] = (counts[c] || 0) + 1; 
+  });
   container.innerHTML = types.map(type => {
-    const meta = TYPE_META[type] || { label: type, icon: 'fa-cube', color: '#6b7280' };
+    let meta = TYPE_META[type];
+    if (!meta) {
+      meta = { label: type.charAt(0).toUpperCase() + type.slice(1), icon: 'fa-folder-open', color: '#14b8a6' };
+    }
     const count = type === 'all' ? packages.length : (counts[type] || 0);
     const isActive = window.HPM_STORE_STATE.activeType === type;
     return `
@@ -120,7 +146,7 @@ function _hpmStoreBuildTypeFilters(packages) {
               style="display:inline-flex;align-items:center;gap:6px;font-size:0.8em;">
         ${type !== 'all' ? `<i class="fas ${meta.icon}" style="color:${meta.color};"></i>` : '<i class="fas fa-border-all"></i>'}
         ${type === 'all' ? 'All' : meta.label}
-        <span style="background:rgba(255,255,255,0.1);padding:1px 6px;border-radius:10px;font-size:0.85em;">${count}</span>
+        <span style="background:rgba(255,255,255,0.1);padding:1px 6px;border-radius:20px;font-size:0.85em;">${count}</span>
       </button>`;
   }).join('');
 }
@@ -141,7 +167,9 @@ function _hpmStoreRenderGrid(packages) {
 }
 
 function _hpmStoreRenderCard(pkg) {
-  const meta = TYPE_META[pkg.type] || { label: pkg.type, icon: 'fa-cube', color: '#6b7280' };
+  const pcat = (pkg.category && pkg.category.trim() !== "") ? pkg.category.toLowerCase() : pkg.type;
+  let meta = TYPE_META[pcat];
+  if (!meta) meta = { label: pcat.charAt(0).toUpperCase() + pcat.slice(1), icon: 'fa-folder-open', color: '#14b8a6' };
   const sizeFmt = pkg.size_bytes ? `${(pkg.size_bytes / 1024).toFixed(1)} KB` : '';
   const icon = pkg.fa_icon || 'fa-cube';
   const fallbackIcon = 'https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview_square.png';
@@ -155,7 +183,7 @@ function _hpmStoreRenderCard(pkg) {
       ? `<button onclick="window.hpmStoreInstall('${pkg.id}','${pkg.download_url}','${pkg.name}')"
                 style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:0.78em;font-weight:700;cursor:pointer;">
            <i class="fas fa-arrow-up" style="margin-right:4px;"></i>Update to v${pkg.version}</button>`
-      : `<span style="display:inline-flex;align-items:center;gap:5px;font-size:0.8em;color:#10b981;background:rgba(16,185,129,.12);padding:6px 12px;border-radius:8px;font-weight:600;">
+      : `<span style="display:inline-flex;align-items:center;gap:5px;font-size:0.78em;color:#10b981;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);padding:3px 10px;border-radius:20px;font-weight:600;">
            <i class="fas fa-check-circle"></i> Installed</span>`
     : `<button onclick="window.hpmStoreInstall('${pkg.id}','${pkg.download_url}','${pkg.name}')"
               style="background:linear-gradient(135deg,var(--accent),var(--accent2,#7c3aed));color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:0.78em;font-weight:700;cursor:pointer;transition:opacity .2s;"
@@ -180,8 +208,8 @@ function _hpmStoreRenderCard(pkg) {
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;color:var(--text);font-size:0.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_hesc(pkg.name)}</div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap;">
-            <span style="font-size:0.7em;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:${meta.color};background:${meta.color}18;padding:2px 7px;border-radius:5px;">${meta.shortLabel || meta.label}</span>
-            <span style="font-size:0.72em;color:var(--muted);">v${_hesc(pkg.version)}</span>
+            <span style="font-size:0.72em;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:${meta.color};background:${meta.color}18;padding:2px 8px;border-radius:20px;border:1px solid ${meta.color}44;display:inline-flex;align-items:center;line-height:1.2;">${meta.shortLabel || meta.label}</span>
+            <span style="font-size:0.75em;color:var(--muted);">v${_hesc(pkg.version)}</span>
             ${sizeFmt ? `<span style="font-size:0.7em;color:var(--muted);">${sizeFmt}</span>` : ''}
           </div>
         </div>
@@ -194,7 +222,7 @@ function _hpmStoreRenderCard(pkg) {
         <img src="${_hesc(screenshots[0])}" style="width:100%;height:100%;object-fit:contain;padding:8px;box-sizing:border-box;
              transition:transform 0.3s ease;" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'"
              loading="lazy" onerror="this.src='https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png'">
-        ${hasMultiple ? `<div style="position:absolute;bottom:7px;right:9px;background:rgba(0,0,0,.65);color:#fff;font-size:0.68em;padding:2px 8px;border-radius:10px;pointer-events:none;font-weight:600;">1 / ${screenshots.length}</div>` : ''}
+        ${hasMultiple ? `<div style="position:absolute;bottom:7px;right:9px;background:rgba(0,0,0,.65);color:#fff;font-size:0.68em;padding:2px 8px;border-radius:20px;pointer-events:none;font-weight:600;">1 / ${screenshots.length}</div>` : ''}
       </div>
 
       <!-- Description -->
@@ -210,7 +238,7 @@ function _hpmStoreRenderCard(pkg) {
       <!-- Tags -->
       ${pkg.tags && pkg.tags.length ? `
         <div style="display:flex;gap:5px;flex-wrap:wrap;">
-          ${pkg.tags.slice(0, 4).map(t => `<span style="font-size:0.68em;background:rgba(255,255,255,.06);color:var(--muted);padding:2px 7px;border-radius:5px;">#${_hesc(t)}</span>`).join('')}
+          ${pkg.tags.slice(0, 4).map(t => `<span style="font-size:0.68em;background:rgba(255,255,255,.06);color:var(--muted);padding:2px 8px;border-radius:20px;border:1px solid rgba(255,255,255,.1);">#${_hesc(t)}</span>`).join('')}
         </div>` : ''}
 
       <!-- Footer -->
@@ -253,6 +281,11 @@ function _hpmStoreShowBanner(text, type) {
       <i class="fas fa-wifi" style="margin-right:6px;"></i>${_hesc(text)}
     </div>`;
   banner.style.display = 'block';
+}
+
+function _hpmStoreHideBanner() {
+  const banner = document.getElementById('hpm-store-offline-banner');
+  if (banner) banner.style.display = 'none';
 }
 
 document.addEventListener('hpmProgressUpdate', (e) => {

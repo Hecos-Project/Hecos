@@ -45,26 +45,29 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
     # ── Watchdog: kills the session if inference hangs ──────────────
     try:
         import hecos.core.keys.key_manager as _km_mod
-        webui_timeout = getattr(_km_mod, "_KM_WEBUI_INFERENCE_TIMEOUT", _WEBUI_INFERENCE_TIMEOUT)
+        webui_timeout = max(300, int(getattr(_km_mod, "_KM_WEBUI_INFERENCE_TIMEOUT", _WEBUI_INFERENCE_TIMEOUT)))
     except Exception:
-        webui_timeout = _WEBUI_INFERENCE_TIMEOUT
+        webui_timeout = max(300, int(_WEBUI_INFERENCE_TIMEOUT))
 
     _timed_out = threading.Event()
     _last_activity = [time.monotonic()]
+    max_turn_timeout = max(webui_timeout * 2, 900)  # 15 mins absolute hard cap
 
     def _watchdog():
         while not _timed_out.is_set():
-            if time.monotonic() - _last_activity[0] > webui_timeout:
-                elapsed = time.monotonic() - t_start
-                _chat_log.warning(f"[INFERENCE] ⚠️ WATCHDOG TIMEOUT after {elapsed:.1f}s (limit={webui_timeout}s) sid={session_id[:8]}")
-                sess["queue"].put({"type": "error", "text": f"⏰ Timeout: no response from AI within {webui_timeout}s. The provider might be slow or unreachable."})
+            now = time.monotonic()
+            inactivity = now - _last_activity[0]
+            elapsed = now - t_start
+            if inactivity > webui_timeout or elapsed > max_turn_timeout:
+                _chat_log.warning(f"[INFERENCE] ⚠️ WATCHDOG TIMEOUT after {elapsed:.1f}s (inactivity={inactivity:.1f}s, limit={webui_timeout}s) sid={session_id[:8]}")
+                sess["queue"].put({"type": "error", "text": f"⏰ Timeout: no response from AI within {int(webui_timeout)}s. The provider might be slow or unreachable."})
                 sess["done"] = True
                 return
             time.sleep(0.5)
 
     _wd_thread = threading.Thread(target=_watchdog, daemon=True)
     _wd_thread.start()
-    _chat_log.info(f"[INFERENCE] Watchdog started (limit={webui_timeout}s)")
+    _chat_log.info(f"[INFERENCE] Watchdog started (inactivity_limit={webui_timeout}s, hard_cap={max_turn_timeout}s)")
     # ──────────────────────────────────────────────────────────────────────────
 
     try:
@@ -139,6 +142,16 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         _chat_log.info(f"[INFERENCE] Calling AgentExecutor.run_agentic_loop...")
         t_llm_start = time.monotonic()
 
+        # Emit event for Presenter: user just sent a message (before AI responds)
+        try:
+            from hecos.core.events import emit
+            emit("user_message_sent", {
+                "session_id": session_id,
+                "user_message": user_message
+            })
+        except Exception as e:
+            _chat_log.warning(f"[INFERENCE] Could not emit user_message_sent: {e}")
+
         full_text, clean_voice = agent.run_agentic_loop(user_message, voice_status=True, images=images)
 
         t_llm_end = time.monotonic()
@@ -147,9 +160,17 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         # Stop watchdog - we got a response
         _timed_out.set()
 
-        # If watchdog already fired (race condition), don't push more tokens
+        # If watchdog already fired (race condition), don't push more tokens but ensure state is synced
         if sess.get("done"):
-            _chat_log.warning(f"[INFERENCE] Watchdog already fired, discarding late LLM response.")
+            _chat_log.warning(f"[INFERENCE] Watchdog already fired, late LLM response finished in {t_llm_end - t_llm_start:.1f}s.")
+            sess["history"].append({"role": "user",      "content": user_message})
+            sess["history"].append({"role": "assistant",  "content": full_text})
+            try:
+                from hecos.core.events import emit
+                emit("message_exchange", {"session_id": session_id, "user_message": user_message, "assistant_message": full_text})
+                emit("assistant_response", {"session_id": session_id, "user_message": user_message, "assistant_message": full_text})
+            except Exception:
+                pass
             return
 
         # ── Client Camera Interceptor ────────────────────────────────────────
@@ -263,6 +284,22 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
 
         sess["history"].append({"role": "user",      "content": user_message})
         sess["history"].append({"role": "assistant",  "content": full_text})
+
+        # Emit events for Presenter and other extensions
+        try:
+            from hecos.core.events import emit
+            emit("message_exchange", {
+                "session_id": session_id,
+                "user_message": user_message,
+                "assistant_message": full_text
+            })
+            emit("assistant_response", {
+                "session_id": session_id,
+                "user_message": user_message,
+                "assistant_message": full_text
+            })
+        except Exception as e:
+            _chat_log.warning(f"[INFERENCE] Could not emit message events: {e}")
 
         _chat_log.info(f"[INFERENCE] Generating TTS...")
         t_tts_start = time.monotonic()

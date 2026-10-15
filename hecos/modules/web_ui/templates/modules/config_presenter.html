@@ -1,0 +1,578 @@
+<div id="tab-presenter" class="panel">
+  <!-- Header Card -->
+  <div class="card" style="margin-bottom:14px; padding:12px 16px; background:linear-gradient(135deg, rgba(var(--accent-rgb),0.06), var(--bg2));">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#ff512f,#dd2476); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <i class="fas fa-bullhorn" style="color:#fff; font-size:15px;"></i>
+      </div>
+      <div>
+        <div style="font-weight:700; color:var(--text); font-size:0.95em;">Presenter</div>
+        <div style="font-size:0.72em; color:var(--muted);">System announcements, live commentary &amp; notifications</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fas fa-power-off"></i> Core Settings</div>
+    
+    <div class="toggle-row">
+      <div class="toggle-info">Enable Presenter Module</div>
+      <label class="switch">
+        <input type="checkbox" id="presenter-enabled" onchange="savePresenterConfig()">
+        <span class="slider"></span>
+      </label>
+    </div>
+    
+    <div class="field" style="margin-top: 16px;">
+      <label>Display Mode</label>
+      <select id="presenter-display-mode" onchange="savePresenterConfig()">
+        <option value="embedded">Embedded in Chat (Expanded)</option>
+        <option value="collapsed">Embedded in Chat (Collapsed)</option>
+        <option value="overlay">Floating Overlay (Toast)</option>
+      </select>
+      <small style="color:var(--muted); font-size:11px;">Choose how the Presenter UI is displayed.</small>
+    </div>
+
+    <div class="field" style="margin-top: 16px;">
+      <label>Global Preset (Voice &amp; Personality)</label>
+      <select id="presenter-preset-id" onchange="savePresenterConfig()">
+        <option value="">Use Global Defaults</option>
+      </select>
+      <small style="color:var(--muted); font-size:11px;">Select a Global Preset to dictate the Presenter's model, voice and personality.</small>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px;">
+    <div class="card-title"><i class="fas fa-satellite-dish"></i> Behavior</div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Live Commentary<br><small style="color:var(--muted); font-size:10px;">LLM-generated commentary on system events (persona switch, etc.)</small></div>
+      <label class="switch">
+        <input type="checkbox" id="presenter-live-commentary" onchange="savePresenterConfig()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row" style="margin-top:12px;">
+      <div class="toggle-info">Commentary on Chat Messages<br><small style="color:var(--muted); font-size:10px;">LLM-generated commentary summarizing every chat exchange</small></div>
+      <label class="switch">
+        <input type="checkbox" id="presenter-commentary-on-messages" onchange="savePresenterConfig()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row" style="margin-top:12px;">
+      <div class="toggle-info">Allow Tools / Commands<br><small style="color:var(--muted); font-size:10px;">If enabled, the Presenter can execute direct commands (e.g. /img)</small></div>
+      <label class="switch">
+        <input type="checkbox" id="presenter-allow-commands" onchange="savePresenterConfig()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row" style="margin-top:12px;">
+      <div class="toggle-info">Briefing on New Chat<br><small style="color:var(--muted); font-size:10px;">Show system status briefing when a new session starts</small></div>
+      <label class="switch">
+        <input type="checkbox" id="presenter-briefing-on-new-chat" onchange="savePresenterConfig()">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Notification Types Catalog Card -->
+  <style>
+    .presenter-type-item {
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+    .presenter-type-item:hover {
+      transform: translateY(-2px);
+      border-color: rgba(var(--accent-rgb), 0.45) !important;
+      background: var(--bg2) !important;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+    }
+    .presenter-type-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 10.5px;
+      font-weight: 600;
+      font-family: monospace;
+      letter-spacing: 0.3px;
+      line-height: 1;
+      white-space: nowrap;
+      box-sizing: border-box;
+      min-height: 20px;
+    }
+  </style>
+
+  <div class="card" style="margin-top:14px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; gap:8px;">
+      <div class="card-title" style="margin:0; display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-tags" style="color:var(--accent);"></i>
+        <span>Notification Types &amp; Feed Icons</span>
+      </div>
+      <span class="badge-pill badge-accent" style="font-size:10.5px; padding:3px 10px;">19 Event Types</span>
+    </div>
+
+    <p style="font-size:11.5px; color:var(--muted); margin:0 0 14px 0; line-height:1.45;">
+      Complete reference catalog of all notification events and feed indicators emitted by the Presenter engine, chat hooks, and system bridges.
+    </p>
+
+    <!-- Search & Quick Filter -->
+    <div style="margin-bottom:16px; display:flex; gap:10px; align-items:center;">
+      <div style="position:relative; flex:1;">
+        <i class="fas fa-search" style="position:absolute; left:11px; top:50%; transform:translateY(-50%); font-size:11px; color:var(--muted);"></i>
+        <input type="text" id="presenter-types-search" placeholder="Search event types, names or keywords (e.g. coach, status, playbook, warning)..." 
+               oninput="filterPresenterNotificationTypes(this.value)" 
+               class="config-input" 
+               style="padding-left:32px; font-size:11.5px; height:32px; width:100%;">
+      </div>
+      <div id="presenter-types-count" class="badge-pill badge-neutral" style="font-size:11px; font-family:monospace; padding:3px 12px; height:32px;">
+        19 types
+      </div>
+    </div>
+
+    <!-- Category 1: System & Infrastructure -->
+    <div class="presenter-type-group" style="margin-bottom:16px;">
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+        <i class="fas fa-server" style="color:#6cb4ee; font-size:11px;"></i>
+        <span>System &amp; Infrastructure</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(290px, 1fr)); gap:10px;">
+        
+        <div class="presenter-type-item" data-keywords="system_info system information port soul engine runtime environment"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(108,180,238,0.12); border:1px solid rgba(108,180,238,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-info-circle" style="color:#6cb4ee; font-size:15px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">System Information</span>
+              <span class="presenter-type-badge" style="color:#6cb4ee; background:rgba(108,180,238,0.1); border:1px solid rgba(108,180,238,0.3);">system_info</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Runtime port info, active global souls, engine status, and general environment events.</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="system_status service status backend connectivity ollama cdp models online offline health"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(76,175,80,0.12); border:1px solid rgba(76,175,80,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-circle" style="color:#4caf50; font-size:11px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">Service Status</span>
+              <span class="presenter-type-badge" style="color:#4caf50; background:rgba(76,175,80,0.1); border:1px solid rgba(76,175,80,0.3);">system_status</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Service connectivity state, Ollama online status, loaded model count, and CDP automation links.</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="system_warning warning alert unreachable timeout degraded failure error"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(255,167,38,0.12); border:1px solid rgba(255,167,38,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-exclamation-triangle" style="color:#ffa726; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">System Warning</span>
+              <span class="presenter-type-badge" style="color:#ffa726; background:rgba(255,167,38,0.1); border:1px solid rgba(255,167,38,0.3);">system_warning</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Unreachable services, network timeouts, degraded mode warnings, and recoverable system errors.</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="briefing startup launch overview health diagnostic session init"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(255,112,67,0.12); border:1px solid rgba(255,112,67,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-satellite-dish" style="color:#ff7043; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">System Briefing</span>
+              <span class="presenter-type-badge" style="color:#ff7043; background:rgba(255,112,67,0.1); border:1px solid rgba(255,112,67,0.3);">briefing</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Automated startup briefing summarizing backend status, active souls, and health on new sessions.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Category 2: Live Commentary & Chat Flow -->
+    <div class="presenter-type-group" style="margin-bottom:16px;">
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+        <i class="fas fa-comments" style="color:#29b6f6; font-size:11px;"></i>
+        <span>Live Commentary &amp; Chat Flow</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(290px, 1fr)); gap:10px;">
+
+        <div class="presenter-type-item" data-keywords="new_chat new chat session start greeting welcome conversation"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(41,182,246,0.12); border:1px solid rgba(41,182,246,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-comments" style="color:#29b6f6; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">New Chat Session</span>
+              <span class="presenter-type-badge" style="color:#29b6f6; background:rgba(41,182,246,0.1); border:1px solid rgba(41,182,246,0.3);">new_chat</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Live presenter greeting and opening commentary when a new chat session is launched.</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="persona_switched soul switch persona avatar identity change"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(224,64,251,0.12); border:1px solid rgba(224,64,251,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-user-astronaut" style="color:#e040fb; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">Soul / Persona Switched</span>
+              <span class="presenter-type-badge" style="color:#e040fb; background:rgba(224,64,251,0.1); border:1px solid rgba(224,64,251,0.3);">persona_switched</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Commentary and personality introduction triggered when switching the active AI persona.</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="user_comment user message commentary sports commentator reaction question"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(66,165,245,0.12); border:1px solid rgba(66,165,245,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-user" style="color:#42a5f5; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">User Prompt Commentary</span>
+              <span class="presenter-type-badge" style="color:#42a5f5; background:rgba(66,165,245,0.1); border:1px solid rgba(66,165,245,0.3);">user_comment</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Live sports-commentary style reaction to user prompts, intent, questions, or tactical moves.</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="ai_comment ai response assistant commentary critique witty observer"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(171,71,188,0.12); border:1px solid rgba(171,71,188,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-robot" style="color:#ab47bc; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">AI Response Commentary</span>
+              <span class="presenter-type-badge" style="color:#ab47bc; background:rgba(171,71,188,0.1); border:1px solid rgba(171,71,188,0.3);">ai_comment</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Observer commentary and witty critique on the AI assistant's generated response and style.</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="message_exchange exchange dialogue conversation turn dynamic banter"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(120,144,156,0.12); border:1px solid rgba(120,144,156,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-exchange-alt" style="color:#78909c; font-size:13px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">Dialogue Exchange</span>
+              <span class="presenter-type-badge" style="color:#78909c; background:rgba(120,144,156,0.1); border:1px solid rgba(120,144,156,0.3);">message_exchange</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Turn-by-turn commentary summarizing the interaction dynamic between user and assistant.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Category 3: Playbooks & Interactive Coaching -->
+    <div class="presenter-type-group" style="margin-bottom:16px;">
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+        <i class="fas fa-chalkboard-teacher" style="color:#f59e0b; font-size:11px;"></i>
+        <span>Playbooks &amp; Interactive Coaching</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(290px, 1fr)); gap:10px;">
+
+        <div class="presenter-type-item" data-keywords="playbook_event playbook scenario simulation transition milestone stage"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(167,139,250,0.12); border:1px solid rgba(167,139,250,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-book-open" style="color:#a78bfa; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">Playbook Event</span>
+              <span class="presenter-type-badge" style="color:#a78bfa; background:rgba(167,139,250,0.1); border:1px solid rgba(167,139,250,0.3);">playbook_event</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Scenario milestones, location transitions, stage updates, and narrative changes in Playbooks.</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="playbook_violation violation forbidden terms rules infraction warning penalty"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-ban" style="color:#ef4444; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">Playbook Rule Violation</span>
+              <span class="presenter-type-badge" style="color:#ef4444; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3);">playbook_violation</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Alert triggered when forbidden words or scenario rule constraints are broken during a simulation.</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="coach_advice coach advice suggestion tactical tip move playbook guidance"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-chalkboard-teacher" style="color:#f59e0b; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">Coach Suggestion</span>
+              <span class="presenter-type-badge" style="color:#f59e0b; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3);">coach_advice</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Real-time tactical tips and direct coaching suggestions advising the user on what to do next.</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="coach_evaluation coach evaluation scoring assessment traits feedback analysis"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(20,184,166,0.12); border:1px solid rgba(20,184,166,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-clipboard-check" style="color:#14b8a6; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">Coach Evaluation</span>
+              <span class="presenter-type-badge" style="color:#14b8a6; background:rgba(20,184,166,0.1); border:1px solid rgba(20,184,166,0.3);">coach_evaluation</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Simulation score review, scenario consistency check, and interlocutor personality trait analysis.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Category 4: Actions & Administration -->
+    <div class="presenter-type-group" style="margin-bottom:16px;">
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+        <i class="fas fa-tasks" style="color:#66bb6a; font-size:11px;"></i>
+        <span>Actions &amp; Administration</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(290px, 1fr)); gap:10px;">
+
+        <div class="presenter-type-item" data-keywords="action_confirm action confirm save success completed applied"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(102,187,106,0.12); border:1px solid rgba(102,187,106,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-check-circle" style="color:#66bb6a; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">Action Confirmed</span>
+              <span class="presenter-type-badge" style="color:#66bb6a; background:rgba(102,187,106,0.1); border:1px solid rgba(102,187,106,0.3);">action_confirm</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Successful confirmations for user commands, saved settings, configuration updates, and resets.</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="tip tips hints shortcuts command palette hdcs suggestion"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(255,213,79,0.12); border:1px solid rgba(255,213,79,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-lightbulb" style="color:#ffd54f; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">Helpful Tip</span>
+              <span class="presenter-type-badge" style="color:#ffd54f; background:rgba(255,213,79,0.1); border:1px solid rgba(255,213,79,0.3);">tip</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Productivity tips, keyboard shortcuts, and Command Palette discoveries (e.g. '/' or HDCS).</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="package_event package hpm install uninstall update plugin module"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(171,71,188,0.12); border:1px solid rgba(171,71,188,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-box-open" style="color:#ab47bc; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">Package Event</span>
+              <span class="presenter-type-badge" style="color:#ab47bc; background:rgba(171,71,188,0.1); border:1px solid rgba(171,71,188,0.3);">package_event</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">HPM package manager notifications when plugins or extensions are installed, updated, or removed.</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="log_important important log admin security priority key critical"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(239,83,80,0.12); border:1px solid rgba(239,83,80,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-clipboard-list" style="color:#ef5350; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">Important Log</span>
+              <span class="presenter-type-badge" style="color:#ef5350; background:rgba(239,83,80,0.1); border:1px solid rgba(239,83,80,0.3);">log_important</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">High-priority administrative logs, security audit events, and key system state changes.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Category 5: Diagnostics & Broadcasts -->
+    <div class="presenter-type-group" style="margin-bottom:6px;">
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+        <i class="fas fa-broadcast-tower" style="color:#ff512f; font-size:11px;"></i>
+        <span>Diagnostics &amp; Broadcasts</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(290px, 1fr)); gap:10px;">
+
+        <div class="presenter-type-item" data-keywords="test diagnostic self-test synthetic check probe"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(38,198,218,0.12); border:1px solid rgba(38,198,218,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-flask" style="color:#26c6da; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">Test Event</span>
+              <span class="presenter-type-badge" style="color:#26c6da; background:rgba(38,198,218,0.1); border:1px solid rgba(38,198,218,0.3);">test</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">Diagnostics verification events, synthetic test broadcasts, and presenter probe runs.</div>
+          </div>
+        </div>
+
+        <div class="presenter-type-item" data-keywords="default notification announcement broadcast general standard"
+             style="display:flex; align-items:flex-start; gap:12px; padding:10px 12px; background:var(--bg3); border:1px solid var(--border); border-radius:10px;">
+          <div style="width:34px; height:34px; border-radius:8px; background:rgba(255,81,47,0.12); border:1px solid rgba(255,81,47,0.25); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fas fa-bullhorn" style="color:#ff512f; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:3px;">
+              <span style="font-weight:700; font-size:12px; color:var(--text);">General Broadcast</span>
+              <span class="presenter-type-badge" style="color:#ff512f; background:rgba(255,81,47,0.1); border:1px solid rgba(255,81,47,0.3);">default</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); line-height:1.4;">General announcements, fallback broadcasts, and uncategorized system notifications.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+  let presenterConfig = {};
+
+  async function loadPresenterConfig() {
+    try {
+      // 1. Load config
+      const res = await fetch('/api/ext/presenter/config');
+      const data = await res.json();
+      if (data.ok) {
+        presenterConfig = data.config;
+        document.getElementById('presenter-enabled').checked = presenterConfig.enabled;
+        document.getElementById('presenter-display-mode').value = presenterConfig.panel_default;
+        document.getElementById('presenter-live-commentary').checked = presenterConfig.live_commentary !== false;
+        document.getElementById('presenter-commentary-on-messages').checked = presenterConfig.commentary_on_messages === true;
+        document.getElementById('presenter-allow-commands').checked = presenterConfig.allow_commands === true;
+        document.getElementById('presenter-briefing-on-new-chat').checked = presenterConfig.briefing_on_new_chat !== false;
+        
+        // 2. Load Global Presets
+        const sRes = await fetch('/api/souls');
+        if (sRes.ok) {
+          const sData = await sRes.json();
+          const select = document.getElementById('presenter-preset-id');
+          select.innerHTML = '<option value="">Use Global Defaults</option>';
+          if (sData.souls && Array.isArray(sData.souls)) {
+            sData.souls.forEach(soul => {
+              const opt = document.createElement('option');
+              opt.value = soul.meta.id;
+              opt.innerText = soul.meta.name || soul.meta.id;
+              select.appendChild(opt);
+            });
+          }
+          if (presenterConfig.voice && presenterConfig.voice.preset_id) {
+            select.value = presenterConfig.voice.preset_id;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("[Presenter] Failed to load config", e);
+    }
+  }
+
+  async function savePresenterConfig() {
+    presenterConfig.enabled = document.getElementById('presenter-enabled').checked;
+    presenterConfig.panel_default = document.getElementById('presenter-display-mode').value;
+    presenterConfig.live_commentary = document.getElementById('presenter-live-commentary').checked;
+    presenterConfig.commentary_on_messages = document.getElementById('presenter-commentary-on-messages').checked;
+    presenterConfig.allow_commands = document.getElementById('presenter-allow-commands').checked;
+    presenterConfig.briefing_on_new_chat = document.getElementById('presenter-briefing-on-new-chat').checked;
+    
+    if (!presenterConfig.voice) presenterConfig.voice = {};
+    presenterConfig.voice.preset_id = document.getElementById('presenter-preset-id').value;
+
+    try {
+      const res = await fetch('/api/ext/presenter/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(presenterConfig)
+      });
+      const data = await res.json();
+      if (data.ok) {
+        if (typeof setSaveMsg === 'function') {
+            const syncedMsg = (window.I18N && window.I18N.webui_conf_msg_synced) ? window.I18N.webui_conf_msg_synced.replace('✅ ', '✓ ') : '✓ Changes auto-saved';
+            setSaveMsg(syncedMsg, 'ok');
+            setTimeout(() => {
+                const msgEl = document.getElementById('save-msg');
+                if (msgEl && msgEl.textContent.includes('auto-saved')) {
+                    setSaveMsg('', 'muted');
+                }
+            }, 3500);
+        }
+        
+        // Notify the UI to update mode
+        if (window.Presenter) {
+           window.Presenter.setEnabled(presenterConfig.enabled);
+           window.Presenter.setDisplayMode(presenterConfig.panel_default);
+        }
+      } else {
+        if (typeof setSaveMsg === 'function') {
+            setSaveMsg('Error saving config: ' + data.error, 'err');
+        }
+      }
+    } catch (e) {
+      console.error("[Presenter] Failed to save config", e);
+    }
+  // Instant search filter for notification types
+  function filterPresenterNotificationTypes(query) {
+    const q = (query || '').toLowerCase().trim();
+    const items = document.querySelectorAll('.presenter-type-item');
+    const groups = document.querySelectorAll('.presenter-type-group');
+    let visibleCount = 0;
+
+    items.forEach(item => {
+      const kw = (item.getAttribute('data-keywords') || '') + ' ' + item.textContent.toLowerCase();
+      const match = !q || kw.includes(q);
+      item.style.display = match ? 'flex' : 'none';
+      if (match) visibleCount++;
+    });
+
+    groups.forEach(group => {
+      const hasVisible = Array.from(group.querySelectorAll('.presenter-type-item')).some(el => el.style.display !== 'none');
+      group.style.display = hasVisible ? 'block' : 'none';
+    });
+
+    const countEl = document.getElementById('presenter-types-count');
+    if (countEl) {
+      countEl.textContent = q ? `${visibleCount} of 19` : '19 types';
+    }
+  }
+
+  // Hook into the tab display event to load data
+  document.getElementById('tab-presenter').addEventListener('tab-active', () => {
+    loadPresenterConfig();
+  });
+
+  // Also call it once just in case the event already fired
+  setTimeout(loadPresenterConfig, 200);
+</script>

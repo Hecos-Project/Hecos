@@ -9,16 +9,16 @@ sentence_silence: 0.2
 piper_timeout: 180
 kokoro:
   speed: 1.0
-  voice: CLONE
+  voice: af_heart
   sentence_silence: 0.0
   model_path: ''
 xtts:
   speed: 1.4
   language: it
-  speaker: CLONE
+  speaker: Camilla Holmström
   gpu_acceleration: gpu
   chunk_sentences: true
-  speaker_wav: ''
+  speaker_wav: C:\Hecos\hecos\assets\voice_clones\voce antonio 1.wav
   temperature: 0.6
   repetition_penalty: 4.0
   top_k: 40
@@ -34,6 +34,18 @@ xtts_presets:
     repetition_penalty: 4
     speaker: Claribel Dervla
     speaker_wav: C:\Hecos\hecos\assets\voice_clones\8bitMamma_voce1.wav
+    speed: 1.4
+    temperature: 0.6
+    top_k: 40
+    top_p: 0.8
+  Antonio 1:
+    chunk_sentences: true
+    gpu_acceleration: gpu
+    language: it
+    length_penalty: 0.9
+    repetition_penalty: 4
+    speaker: Colette Olivier
+    speaker_wav: C:\Hecos\hecos\assets\voice_clones\voce antonio 1.wav
     speed: 1.4
     temperature: 0.6
     top_k: 40

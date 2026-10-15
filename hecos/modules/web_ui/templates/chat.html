@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
 <link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}&t=20260922">
 <link rel="stylesheet" href="/assets/css/chat.css?v={{ version }}&t=20260922b">
+<link rel="stylesheet" href="/static/css/welcome_screen.css?v={{ version }}">
 <link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}">
 <!-- GridStack.js — Widget Grid Library -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack.min.css">
@@ -27,6 +28,11 @@
 <!-- WEB_UI Sidebar Widget Extensions -->
 <!-- WEB_UI Emoticons Extension -->
 <link rel="stylesheet" href="/ext/emoticons/static/css/emoticons.css?v={{ version }}">
+<!-- WEB_UI HBS & Presenter Extensions -->
+<link rel="stylesheet" href="/ext/hbs_common/static/css/hbs_base.css?v={{ version }}">
+<link rel="stylesheet" href="/ext/presenter/static/css/presenter.css?v={{ version }}">
+<!-- WEB_UI DCC Extension -->
+<link rel="stylesheet" href="/ext/dcc/static/css/dcc.css?v={{ version }}">
 <!-- CRITICAL: inline mobile overrides - cache-proof -->
 <style>
   /* Default: hide hamburger/mobile elements on desktop */
@@ -103,6 +109,8 @@
 <div id="main">
   {% include 'modules/mobile/mobile_navbar.html' %}
   {% include 'modules/chat_topbar.html' %}
+  <!-- Hecos Presenter Embedded Container — lives outside chat-area to survive SPA navigation -->
+  <div id="hbs-presenter-embedded"></div>
   {% include 'modules/chat_area.html' %}
   {% include 'modules/chat_input.html' %}
 </div>
@@ -158,7 +166,15 @@
 <link rel="stylesheet" href="/static/css/doc_preview.css?v={{ version }}">
 <script src="/static/js/doc_preview.js?v={{ version }}"></script>
 <script src="/static/js/agent/agent_traces.js?v={{ version }}"></script>
-<!-- Refactored Chat Logic Modules -->
+<!-- DCC — Dynamic Capability Chips (must load before welcome_screen) -->
+<script src="/ext/dcc/static/js/dcc_render.js?v={{ version }}"></script>
+<script src="/ext/dcc/static/js/dcc_core.js?v={{ version }}"></script>
+<!-- Welcome Screen Module (modular replacement for chat_welcome.js) -->
+<script src="/static/js/welcome_screen/ws_chips.js?v={{ version }}"></script>
+<script src="/static/js/welcome_screen/ws_main.js?v={{ version }}"></script>
+<script src="/static/js/welcome_screen/ws_avatar.js?v={{ version }}"></script>
+<script src="/static/js/welcome_screen/ws_hybrid.js?v={{ version }}"></script>
+<script src="/static/js/welcome_screen/ws_core.js?v={{ version }}"></script>
 <script src="/static/js/chat_ui.js?v={{ version }}"></script>
 <script src="/static/js/chat_api.js?v={{ version }}"></script>
 <script src="/static/js/chat_events.js?v={{ version }}"></script>
@@ -166,6 +182,7 @@
 <script src="/static/js/audio_controls.js?v={{ version }}"></script>
 <script src="/static/js/chat_message_actions.js?v={{ version }}"></script>
 <script src="/static/js/chat_input_toolbar.js?v={{ version }}&t=20260922b"></script>
+<script src="/static/js/modules/hecos_gallery.js?v={{ version }}"></script>
 <script src="/static/js/chat_image_viewer.js?v={{ version }}"></script>
 <script src="/static/js/client_camera.js?v={{ version }}"></script>
 <!-- Refactored Audio UI Modules -->
@@ -200,6 +217,13 @@
 <script src="/static/js/control_room.js?v={{ version }}&t=20260921d"></script>
 <!-- WEB_UI Emoticons Extension -->
 <script src="/ext/emoticons/static/js/emoticons.js?v={{ version }}"></script>
+<!-- WEB_UI HBS & Presenter Extensions -->
+<script src="/ext/hbs_common/static/js/hbs_utils.js?v={{ version }}"></script>
+<script src="/ext/presenter/static/js/presenter_state.js?v={{ version }}"></script>
+<script src="/ext/presenter/static/js/presenter_stats.js?v={{ version }}"></script>
+<script src="/ext/presenter/static/js/presenter_stats_ui.js?v={{ version }}"></script>
+<script src="/ext/presenter/static/js/presenter_ui.js?v={{ version }}"></script>
+<script src="/ext/presenter/static/js/presenter.js?v={{ version }}"></script>
 <!-- HDCS Command Palette (self-contained, no ES modules) -->
 <link rel="stylesheet" href="/assets/css/cmd_palette.css?v={{ version }}">
 <script src="/static/js/commands/hecos_cmd_palette.js?v={{ version }}"></script>
@@ -226,7 +250,7 @@
 <script src="/static/js/keyboard_shortcuts/hks_actions.js?v={{ version }}"></script>
 <script src="/static/js/keyboard_shortcuts/hks_overlay.js?v={{ version }}"></script>
 <script src="/static/js/keyboard_shortcuts/hks_recorder.js?v={{ version }}"></script>
-<script src="/static/js/keyboard_shortcuts/hks_toast.js?v={{ version }}"></script>
+<script src="/static/js/chat_toast_unified/chat_toast_unified.js?v={{ version }}"></script>
 <script src="/static/js/keyboard_shortcuts/hks_tooltips.js?v={{ version }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {

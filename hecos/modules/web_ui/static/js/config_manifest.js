@@ -19,7 +19,6 @@ window.CONFIG_HUB = {
         { id: 'backend',   label: 'hub_mod_backend',      icon: '<i class="fas fa-server"></i>', cat: 'INTELLIGENZA', pluginTag: 'MODELS', isCore: true },
 
         { id: 'keymanager',label: 'hub_mod_keymanager',   icon: '<i class="fas fa-key"></i>', cat: 'INTELLIGENZA', isCore: true },
-        { id: 'routing',   label: 'hub_mod_routing',      icon: '<i class="fas fa-route"></i>', cat: 'INTELLIGENZA', isCore: true },
         { id: 'ia',        label: 'hub_mod_persona',      icon: '<i class="fas fa-user-astronaut"></i>', cat: 'INTELLIGENZA', isCore: true },
         { id: 'filters',   label: 'hub_mod_filters',      icon: '<i class="fas fa-filter"></i>', cat: 'INTELLIGENZA', isCore: true },
         { id: 'memory',    label: 'hub_mod_memory',       icon: '<i class="fas fa-memory"></i>', cat: 'INTELLIGENZA', pluginTag: 'MEMORY', isCore: true },
@@ -38,7 +37,9 @@ window.CONFIG_HUB = {
         { id: 'system',    label: 'hub_mod_system',       icon: '<i class="fas fa-cog"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'logs',      label: 'hub_mod_logs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'privacy',   label: 'hub_mod_privacy',      icon: '<i class="fas fa-user-secret"></i>', cat: 'SISTEMA', isCore: true },
-        { id: 'hpm-settings',label: 'HPM Settings',       icon: '<i class="fas fa-box-open"></i>', cat: 'SISTEMA', isCore: true }
+        { id: 'hpm-settings',label: 'HPM Settings',       icon: '<i class="fas fa-box-open"></i>', cat: 'SISTEMA', isCore: true },
+        { id: 'presenter', label: 'Presenter',            icon: '<i class="fas fa-bullhorn"></i>', cat: 'SISTEMA', isCore: true },
+        { id: 'chat_ui',   label: 'Chat Interface',       icon: '<i class="fas fa-comment-dots"></i>', cat: 'SISTEMA', isCore: true }
     ],
 
     // Fallback Icons based on keywords (for MCP or new plugins)
@@ -118,12 +119,12 @@ window.CONFIG_HUB.tagMap = {
  * Used by renderConfigHub() to show tabs even before a panel has been fetched.
  */
 window.LAZY_PANEL_IDS = new Set([
-    'backend', 'keymanager', 'routing', 'agent', 'ia', 'filters', 'bridge',
+    'backend', 'keymanager', 'agent', 'ia', 'filters', 'bridge',
     'memory', 'voice',
     'webcam', 'executor', 'automation',
     'browser', 'system', 'sysnet', 'users', 'payload', 'plugins',
     'contacts', 'remote-triggers',
-    'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup', 'shortcuts'
+    'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup', 'shortcuts', 'presenter'
 ]);
 
 window.SYSTEM_PANELS = [

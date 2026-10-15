@@ -185,6 +185,7 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                     tool_hint = "\n### CRITICAL: ACTIONS RULES ###\n"
                     tool_hint += "CRITICAL ANTI-REFUSAL: NEVER say 'I cannot generate images' or 'I am an AI'. You CAN generate images by emitting the /img command. DO IT!\n"
                     tool_hint += "You DO NOT have native JSON function calling. To perform actions like generating images, you MUST use the SLASH COMMANDS documented above (e.g. /img).\n"
+                    tool_hint += "Generate at most ONE image (/img) per turn unless the user explicitly requested multiple pictures (e.g. 'fanne 2').\n"
                     tool_hint += "Do NOT copy placeholder brackets like [description]. Replace them with the actual description!\n"
                     messages[0]["content"] += tool_hint
 

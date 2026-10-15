@@ -187,13 +187,13 @@ def init_keys_routes(app, logger):
             cloud_timeout  = int(body.get("cloud_timeout", 30))
             cooldown       = int(body.get("cooldown",       60))
             max_retries    = int(body.get("max_retries",     5))
-            webui_timeout  = int(body.get("webui_timeout",  120))
+            webui_timeout  = int(body.get("webui_timeout",  300))
 
             # Clamp to sane values
             cloud_timeout  = max(5, min(300, cloud_timeout))
             cooldown       = max(10, min(7200, cooldown))
             max_retries    = max(1, min(20, max_retries))
-            webui_timeout  = max(10, min(600, webui_timeout))
+            webui_timeout  = max(30, min(1200, webui_timeout))
 
             # Apply runtime overrides (module-level globals read by client.py / inference.py)
             _km_mod._KM_CLOUD_TIMEOUT             = cloud_timeout

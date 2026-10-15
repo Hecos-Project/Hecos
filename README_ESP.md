@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo de Hecos">
 </p>
 
-# Hecos - Versión 0.52.0 (Fase II: Ghost Fire)
+# Hecos - Versión 0.53.0 (Fase II: Ghost Fire)
 Idioma: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Idioma: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
-> **Estado: Fase II (Ghost Fire)**: Hecos está actualmente en `v0.52.0`. Este es un Helping Companion System que actúa como puente entre el razonamiento de alto nivel y la ejecución del sistema root.
+> **Estado: Fase II (Ghost Fire)**: Hecos está actualmente en `v0.53.0`. Este es un Helping Companion System que actúa como puente entre el razonamiento de alto nivel y la ejecución del sistema root.
 >
 > ⚠️ **Aviso Importante**: A partir de este lanzamiento principal (0.50.0+), el desarrollo principal y el entorno de destino migran oficialmente a **Windows 11**.
 
@@ -23,11 +23,12 @@ Basado en tres pilares fundamentales:
 * ⚡ **Velocidad Extrema** — Arquitectura nativa optimizada y sistema de complementos de alto rendimiento para una respuesta instantánea.
 * 🧊 **Simplicidad Total** — Tablero profesional y diseño modular que hace intuitiva la orquestación de IA avanzada.
 
-Ahora completamente migrato a una **arquitectura estable Fase II: Ghost Fire**, Hecos 0.52.0 ofrece una Interfaz Web dedicada (Chat + Configuración) y una Internacionalización completa. Desarrollado por **LiteLLM**, soporta Ollama, Llama.cpp, KoboldCpp y los principales proveedores en la nube con streaming en tiempo real y TTS local (Kokoro y Piper).
+Ahora completamente migrato a una **arquitectura estable Fase II: Ghost Fire**, Hecos 0.53.0 ofrece una Interfaz Web dedicada (Chat + Configuración) y una Internacionalización completa. Desarrollado por **LiteLLM**, soporta Ollama, Llama.cpp, KoboldCpp y los principales proveedores en la nube con streaming en tiempo real y TTS local (Kokoro y Piper).
 
 ---
 
-## ✨ Características Principales (v0.52.0)
+## ✨ Características Principales (v0.53.0)
+* 📢 **Presenter & Playbook (Entrenamiento, Coach y Roleplay)** — Motor interactivo integrado nativamente en el Core para anuncios del sistema, notificaciones y narración por voz en tiempo real. Gracias al módulo empaquetado **Playbook**, Hecos se transforma en un completo sistema de entrenamiento interactivo: puede actuar como personal coach, dirigir sesiones de roleplay y simulaciones guiadas, facilitar el aprendizaje de idiomas y guiar al usuario paso a paso en cualquier flujo operativo.
 * 🌐 **Ajustes Preestablecidos Globales (Soul Profiles)** — Infinitas posibilidades de creación combinando libremente personalidades de IA, motores de audio TTS y voces, backends de texto y perfiles de inferencia en perfiles maestros cohesivos.
 * 🎭 **Anulaciones de Chat en Línea y Personalidades Infinitas** — Sobrescribe el modelo de IA, la Persona y la Voz directamente en la interfaz del chat sobre la marcha. Crea infinitas personalidades al instante para cada sesión de conversación.
 * 📦 **Arquitectura HPM 0.40** — Migración completa a configuraciones Pydantic+TOML, introduciendo restricciones de versión de dependencias y `pip_requirements` bloqueados.
@@ -92,6 +93,17 @@ De forma predeterminada, Hecos incluye varias personalidades preconfiguradas:
 * **Nova X-01** — Una precisión analítica robótica para quienes prefieren interacciones puramente lógicas.
 
 Puedes intercambiar estas personalidades en cualquier momento, cambiando no solo la voz y el tono, sino el alma misma del sistema.
+
+---
+
+### 📢 Presenter & Playbooks: Entrenamiento, Coaching y Roleplay
+
+El **Presenter** es un motor interactivo integrado nativamente en el Core de Hecos para la gestión de anuncios del sistema, notificaciones activas y comentarios en vivo con narración por voz en tiempo real.
+
+Gracias a la integración con el módulo empaquetado **Playbook**, Hecos va más allá de un asistente convencional y se transforma en una plataforma completa de entrenamiento, coaching y simulación interactiva:
+* 🎓 **Sistema de Entrenamiento y Coaching Interactivo** — Guía al usuario paso a paso a través de procedimientos operativos, tareas técnicas complejas o planes de estudio estructurados.
+* 🗣️ **Aprendizaje de Idiomas** — Practica conversación en lenguas extranjeras con correcciones en vivo, explicaciones gramaticales y pronunciación guiada.
+* 🎭 **Roleplay y Escenarios Dinámicos** — Simula entrevistas de trabajo, negociaciones comerciales o ricas aventuras narrativas con personajes de IA gobernados por directivas y condiciones de activación precisas.
 
 ---
 

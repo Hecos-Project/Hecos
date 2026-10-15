@@ -41,25 +41,55 @@ window.hpmSwitchTab = async function(tabId) {
 
   } else if (tabId === 'builtin') {
     const builtinContainer = document.getElementById('hpm-builtin-container');
-    const existingTab = document.getElementById('tab-plugins');
+    let existingTab = document.getElementById('tab-plugins');
 
-    if (existingTab && existingTab.parentElement !== builtinContainer) {
-      // Already loaded — just re-attach and re-populate
-      builtinContainer.innerHTML = '';
-      builtinContainer.appendChild(existingTab);
-      existingTab.classList.remove('panel');
-      existingTab.style.display = 'block';
-      existingTab.classList.add('active');
+    // If existingTab is inside prefetch wrapper, it is a stripped search-only skeleton. Remove it!
+    if (existingTab && existingTab.closest('#_prefetch-hidden-wrap')) {
+      existingTab.remove();
+      existingTab = null;
+    }
+
+    const ensureAndRender = async () => {
+      if (typeof renderPlugins !== 'function') {
+        try {
+          await new Promise((resolve) => {
+            const s = document.createElement('script');
+            const v = window.VERSION ? `?v=${window.VERSION}` : '';
+            s.src = `/static/js/config_mapper_plugins.js${v}`;
+            s.onload = resolve;
+            s.onerror = resolve;
+            document.head.appendChild(s);
+          });
+        } catch (_) {}
+      }
       if (typeof window.populatePlugins === 'function') window.populatePlugins();
+      else if (typeof renderPlugins === 'function') renderPlugins(window.cfg?.plugins || {});
       else if (typeof populateUI === 'function') populateUI();
 
       setTimeout(() => {
         const builtinCount = document.querySelectorAll('#tab-plugins .toggle-row, #tab-plugins .plugin-card, #tab-plugins [data-plugin]').length;
         if (builtinCount > 0) window.hpmUpdateCount('builtin', builtinCount);
-      }, 500);
+      }, 100);
+    };
 
-    } else if (!existingTab && builtinContainer && builtinContainer.innerHTML.trim() === '') {
-      // First open — show spinner while loading
+    if (existingTab && existingTab.parentElement === builtinContainer) {
+      existingTab.style.display = 'block';
+      existingTab.classList.add('active');
+      const pluginList = document.getElementById('plugin-list');
+      if (pluginList && pluginList.querySelector('.fa-spinner')) {
+        await ensureAndRender();
+      } else {
+        const builtinCount = document.querySelectorAll('#tab-plugins .toggle-row, #tab-plugins .plugin-card, #tab-plugins [data-plugin]').length;
+        if (builtinCount > 0) window.hpmUpdateCount('builtin', builtinCount);
+      }
+    } else if (existingTab && existingTab.parentElement !== builtinContainer) {
+      builtinContainer.innerHTML = '';
+      builtinContainer.appendChild(existingTab);
+      existingTab.classList.remove('panel');
+      existingTab.style.display = 'block';
+      existingTab.classList.add('active');
+      await ensureAndRender();
+    } else {
       builtinContainer.innerHTML = `
         <div id="hpm-builtin-loading" style="text-align:center;padding:40px 20px;color:var(--muted);">
           <i class="fas fa-spinner fa-spin" style="font-size:1.6em;margin-bottom:12px;display:block;"></i>
@@ -76,28 +106,7 @@ window.hpmSwitchTab = async function(tabId) {
             loadedTab.style.display = 'block';
             loadedTab.classList.add('active');
 
-            // Wait for Phase2 scripts (config_mapper_plugins.js) if not yet ready
-            const maxWait = 3000;
-            const poll = 60;
-            let elapsed = 0;
-            await new Promise(resolve => {
-              const check = () => {
-                if (typeof renderPlugins === 'function' || elapsed >= maxWait) {
-                  resolve();
-                } else {
-                  elapsed += poll;
-                  setTimeout(check, poll);
-                }
-              };
-              check();
-            });
-
-            if (typeof populateUI === 'function') populateUI();
-
-            setTimeout(() => {
-              const builtinCount = document.querySelectorAll('#tab-plugins .toggle-row, #tab-plugins .plugin-card, #tab-plugins [data-plugin]').length;
-              if (builtinCount > 0) window.hpmUpdateCount('builtin', builtinCount);
-            }, 600);
+            await ensureAndRender();
           }
         } else {
           throw new Error('_loadPanel function not found');
@@ -109,7 +118,11 @@ window.hpmSwitchTab = async function(tabId) {
 
   } else if (tabId === 'widgets') {
     const widgetsContainer = document.getElementById('hpm-widgets-container');
-    const existingWidgetsTab = document.getElementById('tab-widgets');
+    let existingWidgetsTab = document.getElementById('tab-widgets');
+    if (existingWidgetsTab && existingWidgetsTab.closest('#_prefetch-hidden-wrap')) {
+      existingWidgetsTab.remove();
+      existingWidgetsTab = null;
+    }
 
     if (existingWidgetsTab && existingWidgetsTab.parentElement !== widgetsContainer) {
       widgetsContainer.innerHTML = '';
@@ -159,9 +172,28 @@ window.hpmSwitchTab = async function(tabId) {
       }
     }
   } else if (tabId === 'store') {
-    if (typeof window.hpmStoreInit === 'function') {
-      if (!window.HPM_STORE_STATE || !window.HPM_STORE_STATE.catalog) {
-        window.hpmStoreInit();
+    // 1. Ensure repositories configuration is loaded from server first
+    if (typeof window.hpmLoadRepositories === 'function') {
+      try {
+        await window.hpmLoadRepositories();
+      } catch (_) {}
+    }
+    // 2. Initialize store UI shell and load catalog for active repo
+    const pane = document.getElementById('hpm-pane-store');
+    const hasShell = pane && pane.querySelector('#hpm-store-repo-select');
+    if (!hasShell || !window.HPM_STORE_STATE || !window.HPM_STORE_STATE.catalog) {
+      if (typeof window.hpmStoreInit === 'function') {
+        await window.hpmStoreInit();
+      }
+    } else {
+      if (typeof window.hpmPopulateRepoSelect === 'function') {
+        window.hpmPopulateRepoSelect('hpm-store-repo-select');
+      }
+      if (window._hpmActiveRepoUrl && window.HPM_STORE_STATE.loadedRepoUrl &&
+          window.HPM_STORE_STATE.loadedRepoUrl !== window._hpmActiveRepoUrl) {
+        if (typeof window.hpmStoreLoad === 'function') {
+          await window.hpmStoreLoad(false, window._hpmActiveRepoUrl);
+        }
       }
     }
   }

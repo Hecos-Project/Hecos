@@ -147,6 +147,9 @@ async function uploadMyAvatar() {
             img.style.display   = "block";
             document.getElementById('my_avatar_placeholder').style.display = "none";
             _showSync();
+            if (typeof umLoadMedia === 'function') umLoadMedia();
+        } else {
+            alert(res.error || "Upload failed");
         }
     } catch (e) { console.error("Avatar upload failed", e); }
 }
@@ -384,3 +387,314 @@ async function usersRestoreFile(event) {
         else alert('Error: ' + err.message);
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User Media Library
+// ─────────────────────────────────────────────────────────────────────────────
+
+let umMediaItems = [];
+let umSelectedFiles = new Set();
+let umActiveFilter = 'all';
+let umContextMenuTarget = null;
+
+// Initialization when script loads
+setTimeout(() => {
+    umLoadMedia();
+}, 500);
+
+document.querySelectorAll('.um-filter').forEach(f => {
+  f.addEventListener('click', () => {
+    document.querySelectorAll('.um-filter').forEach(el => el.classList.remove('active'));
+    f.classList.add('active');
+    umActiveFilter = f.dataset.type;
+    umRenderGrid();
+  });
+});
+
+document.addEventListener('click', (e) => {
+  const cm = document.getElementById('um-context-menu');
+  if (cm && !e.target.closest('#um-context-menu')) {
+    cm.style.display = 'none';
+  }
+});
+
+async function umLoadMedia() {
+  try {
+    const res = await fetch(`/hecos/api/users/me/media`);
+    const data = await res.json();
+    if (data.ok) {
+      umMediaItems = data.media || [];
+      umSelectedFiles.clear();
+      umUpdateSelectionUI();
+      umRenderGrid();
+    }
+  } catch (e) {
+    console.error('Failed to load user media', e);
+  }
+}
+
+function umRenderGrid() {
+  const grid = document.getElementById('um-dropzone');
+  if (!grid) return;
+  grid.innerHTML = '';
+  
+  if (umMediaItems.length === 0) {
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted); padding: 20px; font-size: 12px;">No media files found.<br>Drag and drop files here to upload.</div>';
+    return;
+  }
+  
+  const filtered = umActiveFilter === 'all' 
+    ? umMediaItems 
+    : umMediaItems.filter(i => i.type === umActiveFilter);
+    
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted); padding: 20px; font-size: 12px;">No files match the filter.</div>';
+    return;
+  }
+  
+  filtered.forEach((item) => {
+    const el = document.createElement('div');
+    el.className = 'pm-item' + (umSelectedFiles.has(item.name) ? ' selected' : '') + (item.is_avatar ? ' is-avatar' : '');
+    el.dataset.name = item.name;
+    
+    let thumbHtml = '';
+    if (item.type === 'image') {
+      thumbHtml = `<img src="${item.url}" class="pm-item-thumb" loading="lazy">`;
+    } else if (item.type === 'video') {
+      thumbHtml = `
+        <video class="pm-item-thumb" muted preload="metadata">
+          <source src="${item.url}#t=0.1" type="video/mp4">
+        </video>
+        <div class="pm-item-icon" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;color:rgba(255,255,255,0.7);"><i class="fas fa-play-circle"></i></div>
+      `;
+    } else if (item.type === 'audio') {
+      thumbHtml = `<div class="pm-item-icon" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;color:var(--accent);"><i class="fas fa-music"></i></div>`;
+    } else {
+      thumbHtml = `<div class="pm-item-icon" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;color:rgba(255,255,255,0.7);"><i class="fas fa-file"></i></div>`;
+    }
+    
+    el.innerHTML = `
+      ${thumbHtml}
+      <div class="pm-item-type">${item.type}</div>
+      ${item.is_avatar ? '<div class="pm-item-avatar-badge">AVATAR</div>' : ''}
+      <div class="pm-item-name" style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:white;font-size:9px;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${item.name}">${item.name}</div>
+    `;
+    
+    el.addEventListener('click', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        umToggleSelection(item.name);
+      } else if (e.shiftKey) {
+        umToggleSelection(item.name);
+      } else {
+        if (umSelectedFiles.size === 1 && umSelectedFiles.has(item.name)) {
+          umToggleSelection(item.name);
+        } else {
+          umSelectedFiles.clear();
+          umSelectedFiles.add(item.name);
+          umUpdateSelectionUI();
+          umRenderGrid();
+        }
+      }
+    });
+    
+    el.addEventListener('dblclick', () => {
+      umViewItem(item);
+    });
+    
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      umContextMenuTarget = item;
+      
+      const setAvBtn = document.getElementById('um-cm-set-avatar');
+      if (item.type === 'image' || item.type === 'video') {
+        setAvBtn.style.display = 'flex';
+      } else {
+        setAvBtn.style.display = 'none';
+      }
+      
+      const menu = document.getElementById('um-context-menu');
+      menu.style.display = 'block';
+      
+      let x = e.clientX;
+      let y = e.clientY;
+      if (x + menu.offsetWidth > window.innerWidth) x = window.innerWidth - menu.offsetWidth;
+      if (y + menu.offsetHeight > window.innerHeight) y = window.innerHeight - menu.offsetHeight;
+      menu.style.left = x + 'px';
+      menu.style.top = y + 'px';
+    });
+    
+    grid.appendChild(el);
+  });
+}
+
+function umToggleSelection(name) {
+  if (umSelectedFiles.has(name)) umSelectedFiles.delete(name);
+  else umSelectedFiles.add(name);
+  umUpdateSelectionUI();
+  umRenderGrid();
+}
+
+function umClearSelection() {
+  umSelectedFiles.clear();
+  umUpdateSelectionUI();
+  umRenderGrid();
+}
+
+function umUpdateSelectionUI() {
+  const bulk = document.getElementById('um-bulk-actions');
+  const count = document.getElementById('um-selected-count');
+  if (umSelectedFiles.size > 0) {
+    bulk.style.display = 'flex';
+    count.textContent = umSelectedFiles.size;
+  } else {
+    bulk.style.display = 'none';
+  }
+}
+
+async function umUploadFiles(files) {
+  if (!files || files.length === 0) return;
+  const formData = new FormData();
+  for (let i = 0; i < files.length; i++) {
+    formData.append('file', files[i]);
+  }
+  try {
+    const res = await fetch('/hecos/api/users/me/media/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (data.ok) {
+      if (window.showToast) window.showToast(`Uploaded ${data.uploaded.length} files.`, 'success');
+      umLoadMedia();
+    } else {
+      if (window.showToast) window.showToast(data.error || 'Upload failed', 'error');
+    }
+  } catch (err) {
+    console.error('Upload failed', err);
+    if (window.showToast) window.showToast('Upload failed', 'error');
+  }
+}
+
+async function umDeleteSelected() {
+  if (umSelectedFiles.size === 0) return;
+  if (!confirm(`Delete ${umSelectedFiles.size} selected items?`)) return;
+  
+  try {
+    const res = await fetch('/hecos/api/users/me/media/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filenames: Array.from(umSelectedFiles) })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      if (window.showToast) window.showToast(`Deleted ${data.deleted_count} items.`, 'success');
+      umSelectedFiles.clear();
+      umLoadMedia();
+    } else {
+      if (window.showToast) window.showToast(data.error || 'Delete failed', 'error');
+    }
+  } catch (err) {
+    console.error('Delete failed', err);
+  }
+}
+
+async function umOpenFolder() {
+  try {
+    const res = await fetch('/hecos/api/users/me/media/open-folder', { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) {
+      if (window.showToast) window.showToast(data.error || 'Failed to open folder', 'error');
+    }
+  } catch (err) {
+    console.error('Open folder failed', err);
+  }
+}
+
+function umViewItem(item) {
+  if (window.HecosGallery) {
+    const allGalleryItems = umMediaItems.filter(i => i.type === 'image' || i.type === 'video');
+    let idx = allGalleryItems.findIndex(i => i.name === item.name);
+    if (idx < 0) idx = 0; // fallback if it's audio or something
+    
+    window.HecosGallery.open(allGalleryItems, idx, {
+      title: '<i class="fas fa-photo-video"></i> User Media'
+    });
+  } else {
+    window.open(item.url, '_blank');
+  }
+}
+
+// Context Menu Actions
+setTimeout(() => {
+    const umCmView = document.getElementById('um-cm-view');
+    if (umCmView) {
+        umCmView.addEventListener('click', () => {
+          document.getElementById('um-context-menu').style.display = 'none';
+          if (umContextMenuTarget) umViewItem(umContextMenuTarget);
+        });
+    }
+
+    const umCmSetAv = document.getElementById('um-cm-set-avatar');
+    if (umCmSetAv) {
+        umCmSetAv.addEventListener('click', async () => {
+          document.getElementById('um-context-menu').style.display = 'none';
+          if (!umContextMenuTarget) return;
+          try {
+            const res = await fetch('/hecos/api/users/me/media/set-avatar', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ filename: umContextMenuTarget.name })
+            });
+            const data = await res.json();
+            if (data.ok) {
+              if (window.showToast) window.showToast('Avatar updated!', 'success');
+              umLoadMedia();
+              loadMyProfile(); // Reload main avatar view
+            } else {
+              if (window.showToast) window.showToast(data.error || 'Failed to set avatar', 'error');
+            }
+          } catch (err) {
+            console.error('Set avatar failed', err);
+          }
+        });
+    }
+
+    const umCmRen = document.getElementById('um-cm-rename');
+    if (umCmRen) {
+        umCmRen.addEventListener('click', async () => {
+          document.getElementById('um-context-menu').style.display = 'none';
+          if (!umContextMenuTarget) return;
+          
+          const newName = prompt("New name for " + umContextMenuTarget.name + ":", umContextMenuTarget.name);
+          if (!newName || newName === umContextMenuTarget.name) return;
+          
+          try {
+            const res = await fetch('/hecos/api/users/me/media/rename', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ old_name: umContextMenuTarget.name, new_name: newName })
+            });
+            const data = await res.json();
+            if (data.ok) {
+              if (window.showToast) window.showToast('File renamed.', 'success');
+              umLoadMedia();
+            } else {
+              if (window.showToast) window.showToast(data.error || 'Rename failed', 'error');
+            }
+          } catch (err) {
+            console.error('Rename failed', err);
+          }
+        });
+    }
+
+    const umCmDel = document.getElementById('um-cm-delete');
+    if (umCmDel) {
+        umCmDel.addEventListener('click', () => {
+          document.getElementById('um-context-menu').style.display = 'none';
+          if (!umContextMenuTarget) return;
+          umSelectedFiles.clear();
+          umSelectedFiles.add(umContextMenuTarget.name);
+          umDeleteSelected();
+        });
+    }
+}, 500);

@@ -44,6 +44,7 @@
             `/static/js/config_media_logic.js${VER}`,
             `/static/js/config_system_logic.js${VER}`,
             `/static/js/config_persona_logic.js${VER}`,
+            `/static/js/modules/hecos_gallery.js${VER}`,
         ],
         // Batch C: Aesthetic picker (lazy, only needed for aesthetics tab)
         [
@@ -69,14 +70,7 @@
             `/static/js/logs_engine/le_windows.js${VER}`,
             `/static/js/logs_engine/le_modals.js${VER}`,
         ],
-        // Batch F: Routing panel
-        [
-            `/static/js/config_routing_data.js${VER}`,
-            `/static/js/config_routing_render.js${VER}`,
-            `/static/js/config_routing_actions.js${VER}`,
-            `/static/js/config_routing_logic.js${VER}`,
-        ],
-        // Batch G: Search + Events (last — depends on all panels being registered)
+        // Batch F: Search + Events (last — depends on all panels being registered)
         [
             `/static/js/config_search.js${VER}`,
             `/static/js/chat_events.js${VER}`,

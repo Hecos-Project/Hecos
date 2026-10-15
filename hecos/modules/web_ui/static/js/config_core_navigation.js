@@ -148,6 +148,8 @@ async function showTab(name, skipScroll = false) {
   if ((name === 'lists'      || targetId === 'lists')      && typeof listsInit     === 'function') listsInit();
   if ((name === 'backup'     || targetId === 'backup')     && typeof backupPanelInit === 'function') backupPanelInit();
   if (name === 'builder' && typeof window.builderRefreshSources === 'function') window.builderRefreshSources();
+  if (name === 'hpm-settings' && typeof window.hpmLoadSettingsRepos === 'function') window.hpmLoadSettingsRepos();
+  if (name === 'packages' && typeof window.hpmLoadRepositories === 'function') window.hpmLoadRepositories();
   
   // Scroll panel container to top
   if (!skipScroll) {

@@ -423,8 +423,8 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 3px 8px;
-    border-radius: 5px;
+    padding: 2px 9px;
+    border-radius: 20px;
     font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;

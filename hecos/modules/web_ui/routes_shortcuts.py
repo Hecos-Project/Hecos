@@ -32,7 +32,7 @@ DEFAULT_BINDINGS = {
     
     "nav.chat":          "f10",
     "nav.home":          "f11",
-    "ui.open_hdcs":      "f12",
+    "ui.open_hdcs":      "ctrl+space",
     
     "ui.ptt_trigger":    "ctrl+shift",
     "nav.drive":         "ctrl+shift+d",

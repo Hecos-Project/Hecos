@@ -11,7 +11,29 @@ async function saveConfig(silent = false) {
   if (typeof buildPayload !== 'function') return;
   if (!silent) setSaveMsg(I18N.msg_saving || 'Saving...', 'muted');
   try {
+    const repoTextEl = document.getElementById('hpm-settings-repos-text');
+    if (repoTextEl && typeof window.hpmSaveRepositoriesSettings === 'function') {
+      try { await window.hpmSaveRepositoriesSettings(true); } catch (_) {}
+    }
+
+    if (window.cfg) {
+      if (window._hpmRepositories) {
+        window.cfg.hpm = window.cfg.hpm || {};
+        window.cfg.hpm.repositories = window._hpmRepositories;
+      }
+      if (window._hpmActiveRepoUrl) {
+        window.cfg.hpm = window.cfg.hpm || {};
+        window.cfg.hpm.store_catalog_url = window._hpmActiveRepoUrl;
+      }
+      if (window.cfg.hpm) {
+        delete window.cfg.hpm.github_token;
+      }
+    }
+
     const payload = buildPayload();
+    if (payload.hpm && 'github_token' in payload.hpm) {
+      delete payload.hpm.github_token;
+    }
     payload._force_restart = !silent;
 
     const audioPayload = (typeof buildAudioPayload === 'function') ? buildAudioPayload() : {};

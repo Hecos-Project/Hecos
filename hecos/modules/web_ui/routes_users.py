@@ -152,18 +152,17 @@ def init_users_routes(app, logger):
             
         if file:
             try:
-                from hecos.memory.user_vault_manager import get_vault_path
-                vault = get_vault_path(username)
-                os.makedirs(vault, exist_ok=True)
+                from hecos.core.auth.user_media import UserMediaManager
+                # Upload directly to media and set as avatar
+                # First upload to media/
+                UserMediaManager.upload_media(username, file)
+                # Set as avatar
+                res = UserMediaManager.set_avatar(username, file.filename)
                 
-                # We always save it as avatar.jpg regardless of original name for simplicity
-                avatar_path = os.path.join(vault, "avatar.jpg")
-                file.save(avatar_path)
-                
-                # Update DB to point to the avatar endpoint
-                auth_mgr.update_profile(username, {"avatar_path": f"/hecos/api/users/{username}/avatar"})
+                # Update DB to point to the avatar endpoint if not already there
+                auth_mgr.update_profile(username, {"avatar_path": res.get("url", "")})
                 logger.info(f"[Auth API] Avatar caricato per: {username}")
-                return jsonify({"ok": True, "avatar_path": f"/hecos/api/users/{username}/avatar"})
+                return jsonify({"ok": True, "avatar_path": res.get("url", "")})
             except Exception as e:
                 logger.error(f"[Auth API] Errore upload avatar: {e}")
                 return jsonify({"ok": False, "error": str(e)}), 500
@@ -173,16 +172,130 @@ def init_users_routes(app, logger):
     def get_avatar(username):
         if username == "me":
             username = current_user.username
-        # We allow everyone logged in to see avatars (useful for UI lists)
+        from hecos.core.auth.user_media import UserMediaManager
+        from flask import redirect
+        res = UserMediaManager.resolve_avatar(username)
+        return redirect(res["url"])
+
+    @app.route("/hecos/api/users/<username>/avatars/<path:filename>", methods=["GET"])
+    def serve_user_avatar(username, filename):
         from hecos.memory.user_vault_manager import get_vault_path
+        import os
         vault = get_vault_path(username)
-        avatar_path = os.path.join(vault, "avatar.jpg")
-        
-        if os.path.exists(avatar_path):
-            return send_file(avatar_path, mimetype='image/jpeg')
+        return send_file(os.path.join(vault, "avatars", filename))
+
+    @app.route("/hecos/api/users/<username>/media/<path:filename>", methods=["GET"])
+    def serve_user_media(username, filename):
+        from hecos.memory.user_vault_manager import get_vault_path
+        import os
+        vault = get_vault_path(username)
+        return send_file(os.path.join(vault, "media", filename))
+
+    @app.route("/hecos/api/users/<username>/media", methods=["GET"])
+    @login_required
+    def get_user_media(username):
+        if username == "me": username = current_user.username
+        if current_user.role != "admin" and current_user.username != username:
+            return jsonify({"ok": False, "error": "Non autorizzato"}), 403
+        from hecos.core.auth.user_media import UserMediaManager
+        return jsonify({"ok": True, "media": UserMediaManager.list_media(username)})
+
+    @app.route("/hecos/api/users/<username>/media/upload", methods=["POST"])
+    @login_required
+    def upload_user_media(username):
+        if username == "me": username = current_user.username
+        if current_user.role != "admin" and current_user.username != username:
+            return jsonify({"ok": False, "error": "Non autorizzato"}), 403
             
-        # Fallback to no-avatar default? Not implemented yet, just 404 for now
-        return jsonify({"error": "No avatar"}), 404
+        if "file" not in request.files:
+            return jsonify({"ok": False, "error": "Nessun file inviato"}), 400
+            
+        files = request.files.getlist("file")
+        results = []
+        from hecos.core.auth.user_media import UserMediaManager
+        try:
+            for f in files:
+                if f and f.filename:
+                    res = UserMediaManager.upload_media(username, f)
+                    results.append(res)
+            return jsonify({"ok": True, "uploaded": results})
+        except Exception as e:
+            logger.error(f"[Auth API] Upload media error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/api/users/<username>/media/delete", methods=["POST"])
+    @login_required
+    def delete_user_media(username):
+        if username == "me": username = current_user.username
+        if current_user.role != "admin" and current_user.username != username:
+            return jsonify({"ok": False, "error": "Non autorizzato"}), 403
+            
+        data = request.get_json(force=True) or {}
+        filenames = data.get("filenames", [])
+        if not filenames:
+            return jsonify({"ok": False, "error": "Missing filenames"}), 400
+            
+        from hecos.core.auth.user_media import UserMediaManager
+        deleted = UserMediaManager.delete_media(username, filenames)
+        return jsonify({"ok": True, "deleted_count": deleted})
+
+    @app.route("/hecos/api/users/<username>/media/rename", methods=["POST"])
+    @login_required
+    def rename_user_media(username):
+        if username == "me": username = current_user.username
+        if current_user.role != "admin" and current_user.username != username:
+            return jsonify({"ok": False, "error": "Non autorizzato"}), 403
+            
+        data = request.get_json(force=True) or {}
+        old_name = data.get("old_name", "").strip()
+        new_name = data.get("new_name", "").strip()
+        if not old_name or not new_name:
+            return jsonify({"ok": False, "error": "Missing parameters"}), 400
+            
+        from hecos.core.auth.user_media import UserMediaManager
+        try:
+            res = UserMediaManager.rename_media(username, old_name, new_name)
+            return jsonify({"ok": True, "item": res})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/api/users/<username>/media/set-avatar", methods=["POST"])
+    @login_required
+    def set_user_avatar(username):
+        if username == "me": username = current_user.username
+        if current_user.role != "admin" and current_user.username != username:
+            return jsonify({"ok": False, "error": "Non autorizzato"}), 403
+            
+        data = request.get_json(force=True) or {}
+        filename = data.get("filename", "").strip()
+        if not filename:
+            return jsonify({"ok": False, "error": "Missing filename"}), 400
+            
+        from hecos.core.auth.user_media import UserMediaManager
+        try:
+            res = UserMediaManager.set_avatar(username, filename)
+            auth_mgr.update_profile(username, {"avatar_path": res.get("url", "")})
+            return jsonify({"ok": True, "avatar": res})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/api/users/<username>/media/open-folder", methods=["POST"])
+    @login_required
+    def open_user_folder(username):
+        if username == "me": username = current_user.username
+        if current_user.role != "admin" and current_user.username != username:
+            return jsonify({"ok": False, "error": "Non autorizzato"}), 403
+            
+        try:
+            from hecos.memory.user_vault_manager import get_vault_path
+            from hecos.core.auth.user_media import UserMediaManager
+            from hecos.core.system.os_adapter import OSAdapter
+            vault = get_vault_path(username)
+            UserMediaManager._ensure_dirs(vault)
+            OSAdapter.open_path(vault)
+            return jsonify({"ok": True})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
 
     # ── Backup / Restore ──────────────────────────────────────────────────────
 

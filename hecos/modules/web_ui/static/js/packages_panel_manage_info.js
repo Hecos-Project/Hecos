@@ -162,7 +162,7 @@ window.hpmShowCapabilities = async function (pkg_id, pkg_name) {
     let html = `
       <div style="text-align:left; font-size:13px; line-height:1.5;">
         <div style="margin-bottom:10px;">
-          <span style="display:inline-block; padding:2px 6px; background:var(--bg3, #2a2a35); border-radius:4px; font-weight:bold; font-size:11px; margin-right:6px;">${c.type.toUpperCase()}</span>
+          <span style="display:inline-flex; align-items:center; padding:2px 8px; background:var(--bg3, #2a2a35); border-radius:20px; font-weight:bold; font-size:11px; margin-right:6px; border:1px solid rgba(255,255,255,0.12); line-height:1.2;">${c.type.toUpperCase()}</span>
           <span style="font-size:16px; font-weight:bold; color:var(--text);">${c.name} <span style="opacity:0.5;font-weight:normal;font-size:12px;">v${c.version}</span></span>
         </div>
         <p style="color:var(--muted); margin-bottom:15px; font-size:14px;">${c.description}</p>
@@ -196,7 +196,7 @@ window.hpmShowCapabilities = async function (pkg_id, pkg_name) {
         <div style="margin-bottom:10px;">
           <div style="font-weight:bold; margin-bottom:4px;">LLM Tools:</div>
           <div style="display:flex; flex-wrap:wrap; gap:5px;">
-            ${c.llm_tools.map(t => `<span style="background:rgba(59,130,246,0.15); color:#3b82f6; padding:2px 6px; border-radius:4px; font-size:11px; border:1px solid rgba(59,130,246,0.3);">${t}</span>`).join('')}
+            ${c.llm_tools.map(t => `<span style="background:rgba(59,130,246,0.15); color:#3b82f6; padding:2px 8px; border-radius:20px; font-size:11px; border:1px solid rgba(59,130,246,0.3); font-weight:600;">${t}</span>`).join('')}
           </div>
         </div>
       `;
@@ -207,7 +207,7 @@ window.hpmShowCapabilities = async function (pkg_id, pkg_name) {
         <div style="margin-bottom:10px;">
           <div style="font-weight:bold; margin-bottom:4px;">Slash Commands:</div>
           <div style="display:flex; flex-wrap:wrap; gap:5px;">
-            ${c.slash_commands.map(cmd => `<span style="background:rgba(236,72,153,0.15); color:#ec4899; padding:2px 6px; border-radius:4px; font-size:11px; border:1px solid rgba(236,72,153,0.3);">${cmd}</span>`).join('')}
+            ${c.slash_commands.map(cmd => `<span style="background:rgba(236,72,153,0.15); color:#ec4899; padding:2px 8px; border-radius:20px; font-size:11px; border:1px solid rgba(236,72,153,0.3); font-weight:600;">${cmd}</span>`).join('')}
           </div>
         </div>
       `;
@@ -218,7 +218,7 @@ window.hpmShowCapabilities = async function (pkg_id, pkg_name) {
         <div style="margin-bottom:10px;">
           <div style="font-weight:bold; margin-bottom:4px; color:#60a5fa;">Dependencies (Hecos):</div>
           <div style="display:flex; flex-wrap:wrap; gap:5px;">
-            ${c.dependencies.map(d => `<span style="background:rgba(59,130,246,0.15); color:#60a5fa; padding:2px 6px; border-radius:4px; font-size:11px; border:1px solid rgba(59,130,246,0.3);">${window._hesc ? window._hesc(d) : d}</span>`).join('')}
+            ${c.dependencies.map(d => `<span style="background:rgba(59,130,246,0.15); color:#60a5fa; padding:2px 8px; border-radius:20px; font-size:11px; border:1px solid rgba(59,130,246,0.3); font-weight:600;">${window._hesc ? window._hesc(d) : d}</span>`).join('')}
           </div>
         </div>
       `;
@@ -231,7 +231,7 @@ window.hpmShowCapabilities = async function (pkg_id, pkg_name) {
           <div style="display:flex; flex-wrap:wrap; gap:5px;">
             ${c.pip_requirements.map(p => {
         let clean = p.split('==')[0].split('>=')[0];
-        return `<span style="background:rgba(245,158,11,0.15); color:#fbbf24; padding:2px 6px; border-radius:4px; font-size:11px; border:1px solid rgba(245,158,11,0.3);">${window._hesc ? window._hesc(clean) : clean}</span>`;
+        return `<span style="background:rgba(245,158,11,0.15); color:#fbbf24; padding:2px 8px; border-radius:20px; font-size:11px; border:1px solid rgba(245,158,11,0.3); font-weight:600;">${window._hesc ? window._hesc(clean) : clean}</span>`;
       }).join('')}
           </div>
         </div>

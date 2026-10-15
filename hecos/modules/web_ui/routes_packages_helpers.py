@@ -133,6 +133,12 @@ def _hpm_event_broadcast(event_name: str, payload: dict) -> None:
         if sm and hasattr(sm, "add_event"):
             sm.add_event(event_name, payload)
             logger.debug(f"[HPM:Routes] Event broadcast: {event_name} → {payload.get('id')}")
+        # Also emit to internal event bus for extensions (Presenter, etc.)
+        try:
+            from hecos.core.events import emit
+            emit(event_name, payload)
+        except Exception:
+            pass
     except Exception as e:
         logger.debug(f"[HPM:Routes] Could not broadcast event: {e}")
 

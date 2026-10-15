@@ -11,7 +11,6 @@ This file acts as a lightweight proxy, importing and registering them all.
 from .routes_config_core import init_config_core_routes
 from .routes_config_media import init_config_media_routes
 from .routes_config_agent import init_config_agent_routes
-from .routes_config_routing import init_config_routing_routes
 from .routes_config_utils import init_config_utils_routes
 
 from .routes_global_presets import init_global_presets_routes
@@ -29,9 +28,6 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     # 3. Agent Config (agent.yaml)
     init_config_agent_routes(app, root_dir, logger)
-
-    # 4. Routing Overrides Config (routing_overrides.yaml)
-    init_config_routing_routes(app, root_dir, logger)
 
     # 5. UI Utilities (Plugin Registry, Window State)
     init_config_utils_routes(app, root_dir, logger)

@@ -124,12 +124,127 @@ def init_chat_api_routes(app, cfg_mgr, logger):
             _chat_log.warning(f"[Chat] Flow intercept check failed: {_ie}")
         # ── End flow intercept ────────────────────────────────────────────────
 
+        # ── Playbook simulation slash commands (/pb ...) ────────────────────
+        pb_cmd = user_msg.strip().lower()
+        if pb_cmd.startswith("/pb") or pb_cmd.startswith("/playbook"):
+            sid  = data.get("session_id") or privacy_manager.get_session_id() or str(uuid.uuid4())
+            sess = {"queue": queue.Queue(), "history": list(history), "done": False, "user_id": uid}
+            with _sessions_lock:
+                _sessions[sid] = sess
+            
+            def _handle_pb_command():
+                try:
+                    from hecos.modules.playbooks.playbooks import storage as pb_storage
+                    from hecos.modules.web_ui.extensions.presenter.feed import add_feed_entry
+                    parts = pb_cmd.split()
+                    subcmd = parts[1] if len(parts) > 1 else "status"
+                    
+                    reply_text = ""
+                    if subcmd in ("start", "run", "play"):
+                        state = pb_storage.start_simulation(sid)
+                        pb = pb_storage.get_playbook(state.get("playbook_id", "")) if state.get("playbook_id") else None
+                        if not pb:
+                            for p in pb_storage.list_playbooks():
+                                if p.get("meta", {}).get("enabled"):
+                                    pb = p
+                                    state = pb_storage.start_simulation(sid, pb["meta"]["id"])
+                                    break
+                        if pb:
+                            raw_u = m.get("user_role", "User")
+                            raw_c = m.get("chat_role", "Interlocutor")
+                            coach_role = m.get("coach_role", "Coach")
+                            is_swapped = state.get("swapped", False)
+                            u_role = raw_c if is_swapped else raw_u
+                            c_role = raw_u if is_swapped else raw_c
+                            swap_badge = " (⇄ Ruoli Invertiti)" if is_swapped else ""
+                            add_feed_entry("playbook_event", f"▶ Simulation STARTED{swap_badge} — User: {u_role} · Chat: {c_role} · Coach: {coach_role}", session_id=sid)
+                            reply_text = (
+                                f"🎮 **Simulazione Avviata!**\n\n"
+                                f"• **Playbook:** {pb.get('meta', {}).get('name', 'Playbook')}\n"
+                                f"• **Obiettivo:** {m.get('objective', 'Non specificato')}\n"
+                                f"• **Il tuo ruolo:** {u_role}\n"
+                                f"• **Ruolo Chat:** {c_role}\n"
+                                f"• **Coach (Presenter):** {coach_role}\n\n"
+                                f"*La simulazione è attiva. Invia il tuo primo messaggio per iniziare!*"
+                            )
+                        else:
+                            reply_text = "⚠️ Nessun playbook attivo trovato. Attiva un playbook nel pannello Playbooks prima di avviare la simulazione."
+                    elif subcmd in ("stop", "end", "quit"):
+                        pb_storage.stop_simulation(sid)
+                        add_feed_entry("playbook_event", "⏹ Simulation STOPPED — Playbook returned to idle knowledge mode.", session_id=sid)
+                        reply_text = "⏹ **Simulazione Terminata.** Il sistema è tornato alla modalità conversazionale standard."
+                    elif subcmd in ("pause", "freeze"):
+                        pb_storage.pause_simulation(sid)
+                        add_feed_entry("playbook_event", "⏸ Simulation PAUSED.", session_id=sid)
+                        reply_text = "⏸ **Simulazione in Pausa.** Usa `/pb start` per riprenderla."
+                    elif subcmd in ("swap", "invert"):
+                        state = pb_storage.swap_roles(sid)
+                        pb = pb_storage.get_playbook(state.get("playbook_id", "")) if state.get("playbook_id") else None
+                        m = pb.get("mission", {}) if pb else {}
+                        u_role = m.get("chat_role", "Chat") if state.get("swapped") else m.get("user_role", "User")
+                        c_role = m.get("user_role", "User") if state.get("swapped") else m.get("chat_role", "Chat")
+                        add_feed_entry("playbook_event", f"⇄ Roles SWAPPED — User: {u_role} · Chat: {c_role}", session_id=sid)
+                        reply_text = f"⇄ **Ruoli Invertiti!**\n\n• **Il tuo nuovo ruolo:** {u_role}\n• **Ruolo Chat:** {c_role}\n\nIl coach si adatta alla nuova prospettiva per guidarti."
+                    else: # status
+                        state = pb_storage.get_simulation_state(sid)
+                        pb = pb_storage.get_playbook(state.get("playbook_id", "")) if state.get("playbook_id") else None
+                        pb_name = pb.get("meta", {}).get("name", "Nessuno") if pb else "Nessuno"
+                        reply_text = (
+                            f"📊 **Stato Simulazione:** {state.get('status', 'idle').upper()}\n"
+                            f"• **Playbook:** {pb_name}\n"
+                            f"• **Turni eseguiti:** {state.get('turn_count', 0)}\n"
+                            f"• **Ruoli invertiti:** {'Sì' if state.get('swapped') else 'No'}\n"
+                            f"• **Violazioni registrate:** {len(state.get('violations', []))}\n\n"
+                            f"*Comandi disponibili:* `/pb start`, `/pb stop`, `/pb pause`, `/pb swap`, `/pb status`"
+                        )
+                    
+                    time.sleep(0.1)
+                    sess["queue"].put({"type": "token", "token": reply_text})
+                    sess["queue"].put({"type": "trace_done", "persona_name": "System", "model_info": None})
+                    sess["history"].append({"role": "user", "content": user_msg})
+                    sess["history"].append({"role": "assistant", "content": reply_text})
+                    sess["done"] = True
+                except Exception as _pbe:
+                    _chat_log.error(f"[Chat] Playbook command error: {_pbe}")
+                    sess["queue"].put({"type": "token", "token": f"Errore comando playbook: {_pbe}"})
+                    sess["done"] = True
+            
+            threading.Thread(target=_handle_pb_command, daemon=True).start()
+            return jsonify({"ok": True, "session_id": sid})
+
+        # ── End Playbook slash commands ──────────────────────────────────────
+
         sm = get_state_manager()
         if sm:
             sm.webui_stop_requested = False  # Clear any stale cancellation flag
 
         sid  = data.get("session_id") or privacy_manager.get_session_id() or str(uuid.uuid4())
         tab_id = data.get("tab_id")
+
+        # ── Playbook keyword trigger auto-start ──────────────────────────────
+        try:
+            from hecos.modules.playbooks.playbooks import storage as pb_storage
+            from hecos.modules.web_ui.extensions.presenter.feed import add_feed_entry
+            sim_state = pb_storage.get_simulation_state(sid)
+            active_pbs = [p for p in pb_storage.list_playbooks() if p.get("meta", {}).get("enabled")]
+            if active_pbs and sim_state.get("status") == "idle":
+                active_pb = active_pbs[0]
+                mission = active_pb.get("mission", {})
+                kw = (mission.get("start_keyword") or "").strip().lower()
+                if kw and kw in user_msg.lower():
+                    new_state = pb_storage.start_simulation(sid, active_pb.get("meta", {}).get("id"))
+                    raw_u = mission.get("user_role", "User")
+                    raw_c = mission.get("chat_role", "Interlocutor")
+                    coach_role = mission.get("coach_role", "Coach")
+                    is_swapped = new_state.get("swapped", False)
+                    u_role = raw_c if is_swapped else raw_u
+                    c_role = raw_u if is_swapped else raw_c
+                    swap_badge = " (⇄ Ruoli Invertiti)" if is_swapped else ""
+                    add_feed_entry("playbook_event", f"▶ Simulation STARTED via keyword '{kw}'{swap_badge} — User: {u_role} · Chat: {c_role} · Coach: {coach_role}", session_id=sid)
+        except Exception as _kwe:
+            pass
+        # ─────────────────────────────────────────────────────────────────────
+
         sess = {"queue": queue.Queue(), "history": list(history), "done": False, "user_id": uid}
         with _sessions_lock:
             _sessions[sid] = sess
@@ -160,7 +275,17 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         if request.method == "POST":
             data = request.get_json(force=True) or {}
             overrides = data.get("config", {})
+            
+            old_overrides = get_session_config(session_id) or {}
+            old_p = old_overrides.get("ai", {}).get("active_personality")
+            new_p = overrides.get("ai", {}).get("active_personality")
+            
             set_session_config(session_id, overrides)
+            
+            if new_p and new_p != old_p:
+                from hecos.core.events import emit
+                emit("persona_switched", {"new_persona": new_p.replace(".yaml", "").replace("_", " ")})
+                
             return jsonify({"ok": True})
             
     @app.route("/api/chat/options")

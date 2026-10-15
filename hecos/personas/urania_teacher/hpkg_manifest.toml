@@ -1,0 +1,36 @@
+author = "Hecos"
+build_date = "2026-10-09T06:06:18Z"
+category = "PERSONAS"
+creation_date = "2026-10-09T06:06:18Z"
+date = ""
+description = "A specialized Teacher Persona (Urania 9800) designed exclusively to teach."
+id = "urania_teacher"
+license = ""
+manifest_version = "1"
+name = "Urania - Teacher"
+plugin_dir = "urania_teacher"
+plugin_tag = "PERSONA"
+readme = "README.md"
+screenshots = [
+    "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/sources/personas/Urania_Teacher_src/preview_1.png",
+]
+type = "persona"
+version = "1.0.0"
+update_date = "2026-10-09T09:56:57Z"
+signature = "/PFtQtB8HiOzZqFdypyZwJG7t3pxdwHXuoqeZICoJvC08erXX0bzcUMJ98ynF1PAaBqRFc4mMzkGxq5F5Kx7Ag=="
+
+[capabilities]
+llm_tools = []
+slash_commands = []
+has_widget = false
+has_config_panel = false
+has_api_routes = false
+has_system_calls = false
+syscall_notes = ""
+notes = ""
+
+[file_hashes]
+"persona.yaml" = "65d853863544a0fa65cba84985628f22237f53f20f2d0f0b9767d26786fbe827"
+"preview_1.png" = "a5a97af822ac1ca312d816c22abfb2667a8326660177252cea9781194b6e6572"
+"README.md" = "eefc7efe2fc15d99c697e83b66ebb924c34ac8ec25cb9981c13301c3f3b126c8"
+"avatars/urania_teacher_Avatar.png" = "a5a97af822ac1ca312d816c22abfb2667a8326660177252cea9781194b6e6572"

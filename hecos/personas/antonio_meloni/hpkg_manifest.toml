@@ -1,0 +1,31 @@
+author = "Antonio Meloni"
+category = "PERSONAS"
+description = "Antonio Meloni (Tony) - Il divino admin e sviluppatore di Hecos."
+id = "antonio_meloni"
+manifest_version = "1"
+name = "Antonio Meloni"
+plugin_dir = "antonio_meloni"
+plugin_tag = "PERSONA"
+readme = "README.md"
+type = "persona"
+version = "1.0.0"
+license = ""
+date = ""
+screenshots = []
+creation_date = "2026-10-09T11:00:00Z"
+build_date = "2026-10-09T11:00:00Z"
+signature = "VtSl2X0dnWuLs8iO3ALz1WJexWy2WnMKiV9W6pOtvULYseszLUeyTw2Mg4O48S0iWJNRAuSESACuAVYvULp0BA=="
+
+[capabilities]
+llm_tools = []
+slash_commands = []
+has_widget = false
+has_config_panel = false
+has_api_routes = false
+has_system_calls = false
+syscall_notes = ""
+notes = ""
+
+[file_hashes]
+"Antonio_Meloni.yaml" = "83dcc5cd5eb691b4814001bbc51e700f17561f29ee8566d8e09d973b652d0624"
+"README.md" = "08419f68b43f26fbf4d9d2a9a474fcee513a19dfcd8e10219eb0daaf578d03ae"

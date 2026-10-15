@@ -5,11 +5,11 @@
     <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">{{ t('webui_conf_logs_help') }}</p>
     
     <div class="log-grid-controls" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding:12px; background:var(--glass); border-radius:8px; border:1px solid var(--border); gap:15px; flex-wrap:wrap;">
-      <div style="display:flex; gap:10px; align-items:center;">
-        <button class="btn btn-primary" onclick="addLogWindow()" style="padding:6px 15px;"><i class="fas fa-plus"></i> {{ t('webui_conf_logs_add_window') }}</button>
-        <button class="btn btn-secondary" onclick="refreshLogFiles()" style="padding:6px 12px;"><i class="fas fa-sync-alt"></i> Refresh</button>
-        <button class="btn btn-secondary" onclick="openLogDeleteModal()" style="padding:6px 12px;" title="Manage Logs"><i class="fas fa-trash-alt"></i> Manage Logs</button>
-        <a href="/hecos/logs" target="_blank" class="btn btn-secondary" style="padding:6px 12px; text-decoration:none;" title="Open logs in a dedicated standalone window"><i class="fas fa-external-link-alt"></i> Standalone Logs</a>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn btn-primary" onclick="addLogWindow()"><i class="fas fa-plus"></i> {{ t('webui_conf_logs_add_window') }}</button>
+        <button class="btn btn-secondary" onclick="refreshLogFiles()"><i class="fas fa-sync-alt"></i> Refresh</button>
+        <button class="btn btn-secondary" onclick="openLogDeleteModal()" title="Manage Logs"><i class="fas fa-trash-alt"></i> Manage Logs</button>
+        <a href="/hecos/logs" target="_blank" class="btn btn-secondary" style="text-decoration:none;" title="Open logs in a dedicated standalone window"><i class="fas fa-external-link-alt"></i> Standalone Logs</a>
       </div>
       
       <div style="display:flex; gap:15px; align-items:center;">
@@ -20,8 +20,8 @@
           <option value="1x2">2 Columns</option>
           <option value="2x2">2x2 Grid</option>
         </select>
-        <div style="font-size:12px; color:var(--muted);">SSE: <span id="log-status" class="val-warn">Waiting...</span></div>
-        <button class="btn btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="clearAllLogWindows()">{{ t('webui_chat_btn_clear') }}</button>
+        <div style="font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px;">SSE: <span id="log-status" class="badge-pill badge-warn" style="font-size:10px; min-height:18px; padding:1px 8px;">Waiting...</span></div>
+        <button class="btn btn-secondary" onclick="clearAllLogWindows()"><i class="fas fa-eraser"></i> {{ t('webui_chat_btn_clear') }}</button>
       </div>
     </div>
 
@@ -84,9 +84,9 @@
         <div id="log-delete-list" style="padding:15px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:10px;">
           <!-- Items injected here -->
         </div>
-        <div style="padding:15px; border-top:1px solid var(--border); display:flex; justify-content:space-between;">
-          <button class="btn btn-danger btn-sm" onclick="deleteSelectedLogs(true)">Delete All</button>
-          <div style="display:flex; gap:10px;">
+        <div style="padding:15px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <button class="btn btn-danger" onclick="deleteSelectedLogs(true)">Delete All</button>
+          <div style="display:flex; gap:8px;">
             <button class="btn btn-secondary" onclick="closeLogDeleteModal()">Cancel</button>
             <button class="btn btn-primary" onclick="deleteSelectedLogs(false)">Delete Selected</button>
           </div>

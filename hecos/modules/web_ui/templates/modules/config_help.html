@@ -20,11 +20,11 @@
     <div class="card">
         <div class="card-title">{{ t('webui_help_resources') }}</div>
         <div class="grid-2" style="gap: 15px; margin-top: 15px;">
-            <a href="https://github.com/Hecos-Project/Hecos/wiki/00_introduction_en" target="_blank" class="btn btn-secondary" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; height: 45px; grid-column: span 2;">
-                <i class="fas fa-book" style="font-size: 18px;"></i> {{ t('webui_help_manual') }}
+            <a href="https://github.com/Hecos-Project/Hecos/wiki/00_introduction_en" target="_blank" class="btn btn-secondary" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; grid-column: span 2; padding: 8px 16px;">
+                <i class="fas fa-book" style="font-size: 16px;"></i> {{ t('webui_help_manual') }}
             </a>
-            <a href="https://github.com/Hecos-Project/Hecos" target="_blank" class="btn btn-secondary" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; height: 45px; grid-column: span 2;">
-                <i class="fab fa-github" style="font-size: 18px;"></i> {{ t('webui_help_community') }}
+            <a href="https://github.com/Hecos-Project/Hecos" target="_blank" class="btn btn-secondary" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; grid-column: span 2; padding: 8px 16px;">
+                <i class="fab fa-github" style="font-size: 16px;"></i> {{ t('webui_help_community') }}
             </a>
         </div>
     </div>
@@ -33,15 +33,15 @@
     <div class="card">
         <div class="card-title">{{ t('webui_help_diagnostics') }}</div>
         <div style="margin-top: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
-            <div class="badge-pill" style="height: auto; padding: 12px; flex-direction: column; align-items: flex-start; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border);">
+            <div class="diag-card" style="height: auto; padding: 12px; display: flex; flex-direction: column; align-items: flex-start; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border);">
                 <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);">OS Node Status</span>
                 <strong style="color: var(--green); margin-top: 4px;">ACTIVE (Healthy)</strong>
             </div>
-            <div class="badge-pill" style="height: auto; padding: 12px; flex-direction: column; align-items: flex-start; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border);">
+            <div class="diag-card" style="height: auto; padding: 12px; display: flex; flex-direction: column; align-items: flex-start; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border);">
                 <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);">Core Version</span>
                 <strong style="color: var(--accent); margin-top: 4px;">{{ version }}</strong>
             </div>
-            <div class="badge-pill" style="height: auto; padding: 12px; flex-direction: column; align-items: flex-start; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border);">
+            <div class="diag-card" style="height: auto; padding: 12px; display: flex; flex-direction: column; align-items: flex-start; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border);">
                 <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);">Architecture</span>
                 <strong style="color: var(--text); margin-top: 4px;">Modular AI Operating Layer</strong>
             </div>

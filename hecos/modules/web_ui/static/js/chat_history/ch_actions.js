@@ -19,11 +19,6 @@ window.newChatSession = async function (mode = null) {
     window.chatHistoryState.chatModeHasMessages = false;
     localStorage.setItem('hecos_active_session_id', res.session_id);
 
-    if (window._clearChatDOM) window._clearChatDOM();
-    else if (window.clearChat) {
-        window._clearChatDOM = window.clearChat;
-        window.chatArea && (window.chatArea.innerHTML = '');
-    }
     window.chatHistoryState.isUIRendered = true;
 
     // Reset topbar dropdowns (persona, model, tts) to defaults
@@ -31,6 +26,19 @@ window.newChatSession = async function (mode = null) {
 
     // Reset Soul Forge / overrides panel (topbar quick preset, sidebar panel, etc.)
     if (window.soLoadActiveSessionState) await window.soLoadActiveSessionState();
+
+    if (window._clearChatDOM) window._clearChatDOM();
+    else if (window.clearChat) {
+        window._clearChatDOM = window.clearChat;
+        window.chatArea && (window.chatArea.innerHTML = '');
+    }
+
+    // Load the Presenter feed for the new session (clears old entries, loads fresh briefing)
+    if (window.Presenter && typeof window.Presenter.loadSessionFeed === 'function') {
+        window.Presenter.loadSessionFeed(res.session_id, true);
+    } else if (window.Presenter && typeof window.Presenter.updatePlaybookStatus === 'function') {
+        window.Presenter.updatePlaybookStatus(false);
+    }
 
     await window.loadChatSessions();
 };
@@ -58,6 +66,13 @@ window.activateChatSession = async function (sessionId) {
 
     if (window._clearChatDOM) window._clearChatDOM();
     else if (window.chatArea) window.chatArea.innerHTML = '';
+
+    // Load the Presenter feed for the switched-to session
+    if (window.Presenter && typeof window.Presenter.loadSessionFeed === 'function') {
+        window.Presenter.loadSessionFeed(sessionId, false);
+    } else if (window.Presenter && typeof window.Presenter.updatePlaybookStatus === 'function') {
+        window.Presenter.updatePlaybookStatus(false);
+    }
 
     if (window.renderHistoryMessages) window.renderHistoryMessages(res.messages || []);
     if (window.loadChatSessions) await window.loadChatSessions();

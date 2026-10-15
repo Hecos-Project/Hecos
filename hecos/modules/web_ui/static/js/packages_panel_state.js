@@ -152,7 +152,7 @@ window.hpmRenderFilterBars = function() {
             <button class="hpm-cat-btn filter-btn ${window.HPM_STATE.activeCategory === 'all' ? 'active' : ''}" 
                     data-cat="all" onclick="window.hpmSetCategoryFilter('all')">
                 <i class="fas fa-layer-group"></i> All 
-                <span class="badge" style="background:rgba(255,255,255,0.1);padding:1px 6px;border-radius:10px;font-size:0.85em;margin-left:4px;">${counts['all']}</span>
+                <span class="badge" style="background:rgba(255,255,255,0.1);padding:1px 6px;border-radius:20px;font-size:0.85em;margin-left:4px;">${counts['all']}</span>
             </button>`;
             
         // Sort by order
@@ -167,7 +167,7 @@ window.hpmRenderFilterBars = function() {
                             data-cat="${catId}" onclick="window.hpmSetCategoryFilter('${catId}')"
                             style="display:inline-flex;align-items:center;gap:6px;font-size:0.8em;">
                         <i class="fas ${meta.icon}" style="color:${meta.color};"></i> ${meta.label}
-                        <span style="background:rgba(255,255,255,0.1);padding:1px 6px;border-radius:10px;font-size:0.85em;">${count}</span>
+                        <span style="background:rgba(255,255,255,0.1);padding:1px 6px;border-radius:20px;font-size:0.85em;">${count}</span>
                     </button>`;
             }
         }

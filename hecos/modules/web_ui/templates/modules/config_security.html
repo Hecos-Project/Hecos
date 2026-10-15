@@ -11,12 +11,12 @@
                 <div class="card-title" style="margin:0; font-family:'JetBrains Mono', monospace; font-size:14px;">ROOT CERTIFICATE (rootCA.pem)</div>
                 <div style="margin:5px 0 0 0; color:var(--muted); font-size:12px;">Identifies this network as a 100% trusted source.</div>
             </div>
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-primary" onclick="downloadRootCA()" style="font-weight:bold;">
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="btn btn-primary" onclick="downloadRootCA()">
                     <i class="fas fa-download"></i> {{ t('webui_conf_pki_download_btn') }}
                 </button>
                 <button class="btn btn-secondary" onclick="window.open('https://github.com/Hecos-Project/Hecos/wiki/00_introduction_en', '_blank')">
-                    {{ t('webui_conf_pki_guide_btn') }}
+                    <i class="fas fa-book-open"></i> {{ t('webui_conf_pki_guide_btn') }}
                 </button>
             </div>
         </div>

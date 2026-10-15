@@ -1,21 +1,190 @@
-window.hpmStoreLoad = async function (forceRefresh = false) {
+// ── Repositories Management ──────────────────────────────────────────────────
+window._hpmRepositories = window._hpmRepositories || [
+  { name: 'Hecos Official', url: 'https://hecos-project.github.io/store/index.json' }
+];
+window._hpmActiveRepoUrl = window._hpmActiveRepoUrl || 'https://hecos-project.github.io/store/index.json';
+
+window.hpmGetRepoLabel = function (repoOrUrl) {
+  if (!repoOrUrl) return 'Default Repository';
+  if (typeof repoOrUrl === 'object' && repoOrUrl !== null) {
+    if (repoOrUrl.name && repoOrUrl.name.trim()) return repoOrUrl.name.trim();
+    repoOrUrl = repoOrUrl.url || '';
+  }
+
+  const url = String(repoOrUrl).trim();
+  // Check if known in window._hpmRepositories list
+  if (Array.isArray(window._hpmRepositories)) {
+    const match = window._hpmRepositories.find(r => (typeof r === 'object' ? r.url : r) === url);
+    if (match && typeof match === 'object' && match.name && match.name.trim()) {
+      return match.name.trim();
+    }
+  }
+
+  if (url === 'https://hecos-project.github.io/store/index.json' || url.includes('Hecos-Packages')) {
+    return 'Hecos Official';
+  }
+
+  // GitHub repository auto-name
+  const ghMatch = url.match(/github\.com\/[^/]+\/([^/#?]+)/i) || url.match(/raw\.githubusercontent\.com\/[^/]+\/([^/#?]+)/i);
+  if (ghMatch) {
+    let repoName = ghMatch[1];
+    if (repoName.endsWith('.git')) repoName = repoName.slice(0, -4);
+    return repoName;
+  }
+
+  // Local path auto-name
+  if (url.includes('\\') || url.includes('/')) {
+    const parts = url.replace(/\\/g, '/').split('/').filter(Boolean);
+    const last = parts[parts.length - 1];
+    if (last && !last.endsWith('.json')) return last;
+    if (parts.length > 1) {
+      const prev = parts[parts.length - 2];
+      if (prev && !['store', 'packages'].includes(prev.toLowerCase())) return prev;
+    }
+  }
+
+  try {
+    const u = new URL(url);
+    const pathSnippet = u.pathname.length > 25 ? '...' + u.pathname.slice(-22) : u.pathname;
+    return `${u.hostname}${pathSnippet}`;
+  } catch (_) {
+    return url.length > 35 ? url.slice(0, 15) + '...' + url.slice(-15) : url;
+  }
+};
+
+window.hpmUpdateRepoNameDisplay = function (url) {
+  const activeUrl = url || window._hpmActiveRepoUrl;
+  const nameEl = document.getElementById('hpm-store-repo-name-text');
+  const badgeEl = document.getElementById('hpm-store-active-repo-badge');
+  const name = window.hpmGetRepoLabel(activeUrl);
+
+  if (nameEl) {
+    nameEl.textContent = name;
+  }
+  if (badgeEl) {
+    badgeEl.title = `Active Repository: ${name}\nURL: ${activeUrl}`;
+  }
+};
+
+window.hpmPopulateRepoSelect = function (selectId) {
+  const el = typeof selectId === 'string' ? document.getElementById(selectId) : selectId;
+  if (!el) return;
+  const rawRepos = window._hpmRepositories || [];
+  const repos = rawRepos.map((r, i) => {
+    if (typeof r === 'object' && r !== null) {
+      return { name: r.name || window.hpmGetRepoLabel(r.url), url: r.url };
+    }
+    return { name: window.hpmGetRepoLabel(r), url: String(r) };
+  });
+
+  const active = window._hpmActiveRepoUrl || (repos[0] ? repos[0].url : '');
+
+  el.innerHTML = '';
+  repos.forEach(repo => {
+    const opt = document.createElement('option');
+    opt.value = repo.url;
+    opt.textContent = repo.url;
+    opt.title = `${repo.name}\n${repo.url}`;
+    if (repo.url === active) opt.selected = true;
+    el.appendChild(opt);
+  });
+
+  // Badge displays the clean friendly name:
+  window.hpmUpdateRepoNameDisplay(active);
+};
+
+window.hpmLoadRepositories = async function () {
+  try {
+    const resp = await fetch('/api/hpm/settings/repositories');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data.ok && Array.isArray(data.repositories)) {
+      window._hpmRepositories = data.repositories;
+      const firstUrl = typeof data.repositories[0] === 'object' ? data.repositories[0].url : data.repositories[0];
+      window._hpmActiveRepoUrl = data.active_repository || firstUrl || '';
+
+      if (window.cfg) {
+        window.cfg.hpm = window.cfg.hpm || {};
+        window.cfg.hpm.repositories = data.repositories;
+        window.cfg.hpm.store_catalog_url = window._hpmActiveRepoUrl;
+      }
+
+      // Update store select dropdown & active badge
+      window.hpmPopulateRepoSelect('hpm-store-repo-select');
+    }
+  } catch (err) {
+    console.warn('[HPM] Failed to load repositories:', err);
+  }
+};
+
+window.hpmSelectRepository = async function (url) {
+  if (!url) return;
+  window._hpmActiveRepoUrl = url;
+
+  // Immediately update badge display to reflect friendly name
+  window.hpmUpdateRepoNameDisplay(url);
+
+  // Sync store select element in DOM
+  const sel = document.getElementById('hpm-store-repo-select');
+  if (sel && sel.value !== url) sel.value = url;
+
+  if (window.cfg) {
+    window.cfg.hpm = window.cfg.hpm || {};
+    window.cfg.hpm.store_catalog_url = url;
+  }
+
+  // Persist active repo to backend
+  try {
+    const res = await fetch('/api/hpm/settings/active_repository', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active_repository: url }),
+    });
+    const resData = await res.json();
+    if (resData && resData.ok && resData.active_repository) {
+      window._hpmActiveRepoUrl = resData.active_repository;
+      if (window.cfg && window.cfg.hpm) {
+        window.cfg.hpm.store_catalog_url = resData.active_repository;
+      }
+    }
+  } catch (e) {
+    console.warn('[HPM] Failed to save active repository:', e);
+  }
+
+  // Reload store catalog from new repo if store is active or loaded
+  if (typeof window.hpmStoreLoad === 'function') {
+    await window.hpmStoreLoad(true, url);
+  }
+};
+
+window.hpmStoreLoad = async function (forceRefresh = false, repoUrl = null) {
   _hpmStoreShowLoading();
   try {
-    const url = `/api/hpm/store/catalog${forceRefresh ? '?refresh=1' : ''}`;
+    const activeRepo = repoUrl || window._hpmActiveRepoUrl;
+    let url = `/api/hpm/store/catalog?refresh=${forceRefresh ? '1' : '0'}`;
+    if (activeRepo) {
+      url += `&repo_url=${encodeURIComponent(activeRepo)}`;
+    }
     const resp = await fetch(url);
     const data = await resp.json();
     if (!data.ok) throw new Error(data.error || 'Unknown error');
 
     const catalog = data.catalog;
     window.HPM_STORE_STATE.catalog = catalog;
+    window.HPM_STORE_STATE.loadedRepoUrl = activeRepo;
     window.HPM_STORE_STATE.filtered = catalog.packages || [];
     if (data.offline) _hpmStoreShowBanner('⚠️ Offline mode — showing cached catalog', 'warning');
+    else if (typeof _hpmStoreHideBanner === 'function') _hpmStoreHideBanner();
     _hpmStoreBuildTypeFilters(catalog.packages || []);
     _hpmStoreApplyFilters();
+    if (typeof window.hpmUpdateCount === 'function') {
+      window.hpmUpdateCount('store', (catalog.packages || []).length);
+    }
   } catch (err) {
     _hpmStoreShowError(err.message);
   }
 };
+
 
 // ── Filtering & Search ────────────────────────────────────────────────────────
 window.hpmStoreInstall = async function (pkgId, downloadUrl, pkgName, skipDepsCheck = false) {

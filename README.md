@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
-# Hecos - Version 0.52.0 (Phase II: Ghost Fire)
+# Hecos - Version 0.53.0 (Phase II: Ghost Fire)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
-> **Status: Phase II (Ghost Fire)**: Hecos is currently in `v0.52.0`. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution.
+> **Status: Phase II (Ghost Fire)**: Hecos is currently in `v0.53.0`. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution.
 >
 > ⚠️ **Important Notice**: Starting from this major release (0.50.0+), the primary development and target environment is officially **Windows 11**.
 
@@ -23,11 +23,12 @@ Built on three core pillars:
 * ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness.
 * 🧊 **Total Simplicity** — Professional dashboard and a modular design that makes advanced orchestration intuitive.
 
-Now fully migrated to a **Phase II: Ghost Fire stable architecture**, Hecos 0.52.0 brings a dedicated Web Interface (Chat + Config) and full internationalization. Powered by **LiteLLM**, it supports Ollama, Llama.cpp, KoboldCpp, and major cloud providers with real-time streaming and local TTS (Kokoro & Piper).
+Now fully migrated to a **Phase II: Ghost Fire stable architecture**, Hecos 0.53.0 brings a dedicated Web Interface (Chat + Config) and full internationalization. Powered by **LiteLLM**, it supports Ollama, Llama.cpp, KoboldCpp, and major cloud providers with real-time streaming and local TTS (Kokoro & Piper).
 
 ---
 
-## ✨ Key Features (v0.52.0)
+## ✨ Key Features (v0.53.0)
+* 📢 **Presenter & Playbook (Training, Coach, Roleplay)** — Interactive engine natively built into the Core for system announcements, active notifications, and real-time voice narration. Combined with the packaged **Playbook** module, Hecos transforms into a versatile interactive training and simulation platform: it acts as a personal coach, facilitates roleplay and simulation scenarios, assists in language learning, and guides users step-by-step through any educational or operational workflow.
 * 🌐 **Global Presets (Soul Profiles)** — Infinite creation possibilities by freely combining AI personalities, TTS audio engines and voices, text backends, and inference presets into cohesive master profiles.
 * 🎭 **Inline Chat Overrides & Infinite Personalities** — Override the AI Model, Persona, and Voice directly within the chat interface on the fly. Create infinite personalities instantly for each conversation session.
 * 📦 **HPM 0.40 Architecture** — Fully migrated to Pydantic+TOML configurations, introducing dependency version constraints and locked `pip_requirements`.
@@ -93,6 +94,17 @@ Out of the box, Hecos includes several pre-configured personalities:
 * **Nova X-01** — A precise, analytical robotic entity for those who prefer purely logical interactions.
 
 You can hot-swap these personas at any time, changing not just the voice and tone, but the very "soul" of the system.
+
+---
+
+### 📢 Presenter & Playbooks: Training, Coaching & Roleplay
+
+The **Presenter** is an interactive engine natively integrated into the Hecos Core for system announcements, active notifications, and real-time live commentary with voice narration.
+
+Combined with the packaged **Playbook** module, Hecos evolves beyond a traditional assistant into a complete interactive learning, simulation, and training environment:
+* 🎓 **Interactive Training & Coaching System** — Provides step-by-step guidance through operating procedures, complex technical tasks, or structured personal study.
+* 🗣️ **Language Learning** — Practice conversational skills in foreign languages with live feedback, grammatical insights, and guided pronunciation.
+* 🎭 **Dynamic Roleplay & Scenarios** — Simulate job interviews, business negotiations, or rich narrative storylines powered by AI characters with structured directives and trigger conditions.
 
 ---
 

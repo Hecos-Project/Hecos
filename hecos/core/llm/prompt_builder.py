@@ -39,9 +39,53 @@ class PromptBuilder:
         rules = PromptBuilder._build_rules(config, user_id, backend_config)
         vision_note = PromptBuilder._build_vision_note(images)
         
+        # Inject Active Playbook Chat Context (if Playbooks module is active and not Presenter)
+        playbook_chat_block = ""
+        playbook_mission_block = ""  # Mission goes FIRST when simulation is running
+        is_presenter = config.get('is_presenter', False) or config.get('ai', {}).get('skip_chat_playbook', False)
+        if not is_presenter:
+            try:
+                from hecos.modules.playbooks.playbooks.storage import (
+                    get_chat_playbook_context, get_simulation_state, check_forbidden_terms, get_playbook
+                )
+                chat_id = session_id or "default"
+                sim_state = get_simulation_state(chat_id)
+                sim_running = sim_state.get("status") == "running"
+                
+                pb_chat_ctx = get_chat_playbook_context(chat_id=chat_id, personality_name=personality_name)
+                if pb_chat_ctx:
+                    if sim_running:
+                        # Check if soul personality should be injected or completely suppressed
+                        pb_obj = get_playbook(sim_state.get("playbook_id", "")) if sim_state.get("playbook_id") else None
+                        mission_cfg = pb_obj.get("mission", {}) if pb_obj else {}
+                        inject_soul = mission_cfg.get("inject_soul", not mission_cfg.get("persona_override", False))
+                        if not inject_soul:
+                            personality_prompt = ""
+                            visual_identity_block = ""
 
+                        # Deterministic violation check for the current user turn
+                        violation_note = ""
+                        turn_violations = check_forbidden_terms(user_text, sim_state.get("playbook_id"))
+                        if turn_violations:
+                            v_terms = ", ".join(f"'{t}'" for v in turn_violations for t in v.get("terms_found", []))
+                            v_corrs = "; ".join(v.get("correction", "") for v in turn_violations if v.get("correction"))
+                            violation_note = (
+                                f"\n### ⚠️ IMMEDIATE RULE VIOLATION DETECTED ###\n"
+                                f"The user just used forbidden term(s): {v_terms}.\n"
+                                f"Required correction: {v_corrs}.\n"
+                                f"DIRECTIVE: React in character immediately to this violation (express shock, rebuke, or challenge the user).\n"
+                            )
+
+                        # During simulation: mission block goes BEFORE personality
+                        playbook_mission_block = f"\n{pb_chat_ctx}\n{violation_note}\n"
+                    else:
+                        # Idle (freestyle knowledge base only)
+                        playbook_chat_block = f"\n### ACTIVE PLAYBOOK KNOWLEDGE BASE ###\n{pb_chat_ctx}\n"
+            except Exception as e:
+                logger.debug(f"[PromptBuilder] Playbook chat context injection skipped: {e}")
         
         system_prompt = (
+            f"{playbook_mission_block}"
             f"{personality_prompt}\n"
             f"{visual_identity_block}"
             f"{memory_context}\n"
@@ -60,10 +104,13 @@ class PromptBuilder:
             f"{rules['media_formatting_rules']}"
             f"{RoutingManager.get_dynamic_instructions(config)}"
             f"{rules['safety_instructions_block']}"
+            f"{rules['context_notes_block']}"
             f"{rules['user_profile_block']}"
             f"{rules['special_instructions_block']}"
+            f"{playbook_chat_block}"
             f"{vision_note}"
         )
+
         
         logger.debug("PromptBuilder", f"System prompt created: {len(system_prompt)} characters")
         return system_prompt
@@ -292,14 +339,14 @@ class PromptBuilder:
             "- MEDIA PLAYBACK: When the user asks to 'play', 'open', 'riproduce', 'manda in play', or 'avvia' a video or audio file, ALWAYS use EXECUTOR__open_media_file(file_path) with the EXACT absolute path. NEVER use execute_shell_command for media playback.\n"
             "\n### IMAGE GENERATION PROTOCOL ###\n"
             "When the user asks you to generate, create, draw, or show an image or photo of ANYTHING:\n"
-            "CRITICAL ANTI-REFUSAL: NEVER claim you cannot generate images. You ARE equipped with a visual generator module! If asked for an image, YOU MUST generate it using the /img command immediately.\n"
-            "STEP 1: You MUST output the command on its own line in this EXACT format:\n"
+            "CRITICAL ANTI-REFUSAL: NEVER claim you cannot generate images. You ARE equipped with a visual generator module! If asked for an image, YOU MUST generate it using the /img command.\n"
+            "CRITICAL IMAGE COUNT RULE: Generate ONLY ONE image (EXACTLY ONE /img line) per response. NEVER output multiple /img commands or generate multiple images in the same turn unless the user explicitly requested a specific number (e.g. 'fanne 2', 'crea 3 immagini'). If the user asks for 'a photo', 'foto tua', 'una foto', 'show me', etc., you MUST generate EXACTLY 1 image.\n"
+            "FORMAT: Output the command on its own separate line in this format:\n"
             "  /img YOUR_VISUAL_DESCRIPTION_HERE_IN_ENGLISH\n"
-            "STEP 2: Do NOT use HTML tags like <img>. Replace 'YOUR_VISUAL_DESCRIPTION_HERE_IN_ENGLISH' with your actual creative prompt!\n"
-            "STEP 3: Do NOT add any other text before or after the /img line.\n"
-            "WRONG (FORBIDDEN): 'Ecco la foto che ho generato...'\n"
-            "WRONG (FORBIDDEN): /img [descrizione dettagliata della scena]\n"
-            "WRONG (FORBIDDEN): <img real photo of Motoko...>\n"
+            "DIALOGUE & ROLEPLAY: You CAN and SHOULD include your normal conversational or roleplay dialogue and actions in the same response, placing the /img command on its own separate line.\n"
+            "DO NOT REPEAT: If an image has already been produced or if you see [[IMG:...]] in the recent conversation context, DO NOT emit /img again for the same request.\n"
+            "WRONG (FORBIDDEN): Emitting multiple /img commands when only one photo was asked.\n"
+            "WRONG (FORBIDDEN): /img [descrizione tra parentesi]\n"
             "CORRECT: /img photorealistic portrait of a female cyborg with black hair and brown eyes, athletic build\n"
             "The /img command is the ONLY way to generate images. If IMAGE_GEN is listed in ACTIVE PROTOCOLS, you HAVE this ability. USE IT.\n"
         )
@@ -315,12 +362,30 @@ class PromptBuilder:
             "- For local Windows paths, use backslashes: `[video.mkv](C:\\Users\\Tony\\Downloads\\video.mkv)`\n"
         )
         
-        special_instructions = config.get('ai', {}).get('special_instructions', '').strip()
-        special_instructions_block = f"\n### SPECIAL INSTRUCTIONS ###\n{special_instructions}\n" if special_instructions else ""
+        ai_cfg = config.get('ai', {})
+        
+        # Special / Direct Instructions
+        use_global_dir = ai_cfg.get('use_global_direct_instructions', True)
+        global_dir = ai_cfg.get('special_instructions', '').strip() if use_global_dir else ""
+        custom_dir = ai_cfg.get('custom_instructions', '').strip()
+        
+        combined_special = "\n\n".join(filter(bool, [global_dir, custom_dir]))
+        special_instructions_block = f"\n### SPECIAL INSTRUCTIONS ###\n{combined_special}\n" if combined_special else ""
 
-        safety_instructions = config.get('ai', {}).get('safety_instructions', '').strip()
-        enable_safety = config.get('ai', {}).get('enable_safety_instructions', True)
-        safety_instructions_block = f"\n### SAFETY & CONTEXT DISCLAIMER ###\n{safety_instructions}\n" if safety_instructions and enable_safety else ""
+        # Safety Instructions
+        enable_safety = ai_cfg.get('enable_safety_instructions', True)
+        use_global_safe = ai_cfg.get('use_global_safety_instructions', True)
+        
+        global_safe = ai_cfg.get('safety_instructions', '').strip() if use_global_safe else ""
+        # For safety we might not have a 'custom_safety_instructions', the user only asked for one override box "custom_instructions".
+        # If they meant custom safety too, we could add it. But they asked for "an override personalized... and choose if we want to use the general ones".
+        # I'll just use the global safety if toggled on.
+        safety_instructions_block = f"\n### SAFETY & CONTEXT DISCLAIMER ###\n{global_safe}\n" if global_safe and enable_safety else ""
+        
+        # Context Notes
+        send_notes_to_ai = ai_cfg.get('send_notes_to_ai', False)
+        user_notes = ai_cfg.get('user_notes', '').strip()
+        context_notes_block = f"\n### CONTEXT & NOTES ###\n{user_notes}\n" if (send_notes_to_ai and user_notes) else ""
         
         user_profile_block = ""
         try:
@@ -359,6 +424,7 @@ class PromptBuilder:
             "media_formatting_rules": media_formatting_rules,
             "special_instructions_block": special_instructions_block,
             "safety_instructions_block": safety_instructions_block,
+            "context_notes_block": context_notes_block,
             "user_profile_block": user_profile_block,
             "local_model_rules": local_model_rules
         }

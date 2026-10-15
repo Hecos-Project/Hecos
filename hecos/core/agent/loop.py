@@ -74,6 +74,15 @@ class AgentExecutor:
             logger.info("[AGENT] Agentic Loop is disabled in config. Running single iteration.")
             self.max_iterations = 1
             
+        # Initialize image generation limit for this turn (default 1 unless user asked for more)
+        try:
+            from hecos.core.processing.tool_dispatcher import get_requested_image_limit
+            if self.state_manager:
+                self.state_manager.requested_image_limit = get_requested_image_limit(user_text)
+                self.state_manager.total_images_in_turn = 0
+        except Exception as _e:
+            logger.debug(f"[AGENT] Failed to set image limit: {_e}")
+
         iteration = 0
         agent_context = []
         accumulated_tool_results = []
@@ -89,28 +98,42 @@ class AgentExecutor:
             save_hist = (iteration == 1)
             current_cfg = self.config_manager.config if getattr(self, 'config_manager', None) else processore.current_config
             
+            import threading
+            import time
+
             self._emit(f"Working (Step {iteration})...", level="info")
-            raw_response = brain.generate_response(
-                user_text, 
-                external_config=current_cfg, 
-                agent_context=agent_context,
-                save_history=save_hist,
-                images=images,
-                user_id=self.current_user_id,
-                session_id=self.session_id,
-                sender_tab_id=self.sender_tab_id
-            )
+            stop_gen_hb = threading.Event()
+            def _gen_heartbeat():
+                start_gen = time.time()
+                while not stop_gen_hb.wait(10.0):
+                    elapsed_gen = int(time.time() - start_gen)
+                    self._emit(f"Working (Step {iteration})... [{elapsed_gen}s]", level="info")
+
+            gen_hb_thread = threading.Thread(target=_gen_heartbeat, daemon=True)
+            gen_hb_thread.start()
+            try:
+                raw_response = brain.generate_response(
+                    user_text, 
+                    external_config=current_cfg, 
+                    agent_context=agent_context,
+                    save_history=save_hist,
+                    images=images,
+                    user_id=self.current_user_id,
+                    session_id=self.session_id,
+                    sender_tab_id=self.sender_tab_id
+                )
+            finally:
+                stop_gen_hb.set()
+                gen_hb_thread.join(0.5)
             
             if self.state_manager and getattr(self.state_manager, "webui_stop_requested", False):
                 self._emit("Operation aborted by user.", level="error")
                 break
             
-            import threading
-            import time
             stop_hb = threading.Event()
             def _heartbeat():
                 start = time.time()
-                while not stop_hb.wait(15.0):
+                while not stop_hb.wait(10.0):
                     elapsed = int(time.time() - start)
                     self._emit(f"Working (Step {iteration})... [{elapsed}s]", level="tool")
             
@@ -203,6 +226,22 @@ class AgentExecutor:
                     
                     images = MediaInterceptor.load_vision_images(output_text, images, self._emit)
                     
+                # Short-circuit on successful image generation if the model already formulated substantive text
+                has_generated_img = any("[[IMG:" in str(r.get("output", "")) for r in accumulated_tool_results)
+                if has_generated_img and extracted_text and len(extracted_text.strip()) > 10:
+                    self._emit("Image generated and response formulated.", level="success")
+                    if think_block:
+                        extracted_text = f"<think>\n{think_block}\n</think>\n\n{extracted_text}"
+                    extracted_text = MediaInterceptor.append_ui_media_to_text(extracted_text, accumulated_tool_results)
+                    if iteration > 1:
+                        from hecos.memory import brain_interface
+                        _clean_for_hist = re.sub(r'<think>[\s\S]*?</think>\s*', '', extracted_text, flags=re.IGNORECASE).strip()
+                        if '</think>' in _clean_for_hist:
+                            _clean_for_hist = _clean_for_hist.split('</think>', 1)[-1].strip()
+                        brain_interface.save_message("assistant", _clean_for_hist, config=self.config, user_id=self.current_user_id, session_id=self.session_id, sender_tab_id=self.sender_tab_id)
+                    video_response, clean_voice = processore.clean_final_output(extracted_text, accumulated_tool_results, raw_response, voice_status)
+                    return video_response, clean_voice
+
                 self._emit("Analyzing tool results...", level="info")
                 
                 if iteration == self.max_iterations:
