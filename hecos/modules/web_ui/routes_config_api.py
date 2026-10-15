@@ -106,6 +106,10 @@ def register_config_api_routes(app, cfg_mgr, get_sm=None):
             if data is None:
                 return jsonify({"ok": False, "error": "No JSON provided"}), 400
 
+            # Guard: ensure sensitive credentials are never injected into system.yaml
+            if isinstance(data, dict) and "hpm" in data and isinstance(data["hpm"], dict):
+                data["hpm"].pop("github_token", None)
+
             success = cfg_mgr.update_from_webui(data)
             if success:
                 def _bg_sync(cfg_snapshot):

@@ -133,6 +133,21 @@ def _resolve_catalog_candidates(url: str) -> tuple[bool, list[str]]:
     return False, urls
 
 
+def _read_local_github_token() -> str:
+    """Read GitHub token from untracked local secrets file (hpm_auth.json) or env vars."""
+    try:
+        hecos_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        auth_file = os.path.join(hecos_dir, "data", "hpm_auth.json")
+        if os.path.isfile(auth_file):
+            with open(auth_file, "r", encoding="utf-8") as f:
+                tok = json.load(f).get("github_token", "").strip()
+                if tok:
+                    return tok
+    except Exception:
+        pass
+    return (os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or "").strip()
+
+
 def _fetch_remote_catalog(cfg_mgr, custom_url: str | None = None) -> dict:
     """Download the catalog JSON from the configured store URL or custom URL."""
     url = (custom_url or (cfg_mgr.get("hpm.store_catalog_url") if cfg_mgr else None) or CATALOG_URL).strip()
@@ -168,16 +183,24 @@ def _fetch_remote_catalog(cfg_mgr, custom_url: str | None = None) -> dict:
     except Exception:
         ctx = ssl._create_unverified_context()
 
+    gh_token = _read_local_github_token()
+
+    base_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*"
+    }
+
     last_error = None
     for attempt_url in candidates:
         try:
             logger.debug(f"[HPM:Store] Probing catalog URL: {attempt_url}...")
+            curr_headers = dict(base_headers)
+            if gh_token and ("github.com" in attempt_url or "githubusercontent.com" in attempt_url):
+                curr_headers["Authorization"] = f"token {gh_token}"
+
             req = urllib.request.Request(
                 attempt_url,
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-                    "Accept": "application/json, text/plain, */*"
-                },
+                headers=curr_headers,
             )
             with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
                 status_code = resp.getcode()
@@ -240,7 +263,7 @@ def _enrich_catalog(catalog: dict, registry) -> dict:
     return {**catalog, "packages": enriched}
 
 
-def _download_hpkg(url: str, dest_dir: str) -> str:
+def _download_hpkg(url: str, dest_dir: str, gh_token: str | None = None) -> str:
     """
     Download a .hpkg file from a URL or copy from local path into dest_dir.
     Returns the local file path.
@@ -260,9 +283,13 @@ def _download_hpkg(url: str, dest_dir: str) -> str:
         shutil.copy2(local_path, dest_path)
         return dest_path
 
+    headers = {"User-Agent": "Hecos-HPM/1.0"}
+    if gh_token and ("github.com" in url or "githubusercontent.com" in url):
+        headers["Authorization"] = f"token {gh_token.strip()}"
+
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": "Hecos-HPM/1.0"},
+        headers=headers,
     )
     with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT_SECONDS) as resp:
         with open(dest_path, "wb") as out:
@@ -426,7 +453,8 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
                     yield _sse("progress", {"step": "download", "message": "Fetching from remote..."})
 
                     try:
-                        hpkg_path = _download_hpkg(download_url, tmpdir)
+                        gh_token = _read_local_github_token()
+                        hpkg_path = _download_hpkg(download_url, tmpdir, gh_token=gh_token)
                     except Exception as e:
                         yield _sse("error", {"message": f"Download failed: {e}"})
                         return

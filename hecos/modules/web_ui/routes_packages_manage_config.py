@@ -164,80 +164,187 @@ def register_manage_config_routes(app, _hecos_src: str, cfg_mgr, log):
             log.error(f"[HPM] POST /api/hpm/settings/reset_cache error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    def _get_hpm_auth_file():
+        return os.path.join(_hecos_src, "data", "hpm_auth.json")
+
+    def _get_hpm_token():
+        auth_file = _get_hpm_auth_file()
+        if os.path.isfile(auth_file):
+            try:
+                import json
+                with open(auth_file, "r", encoding="utf-8") as f:
+                    tok = json.load(f).get("github_token", "").strip()
+                    if tok:
+                        return tok
+            except Exception:
+                pass
+        env_tok = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+        if env_tok and env_tok.strip():
+            return env_tok.strip()
+        return ""
+
+    def _save_hpm_token(token: str):
+        auth_file = _get_hpm_auth_file()
+        os.makedirs(os.path.dirname(auth_file), exist_ok=True)
+        import json
+        with open(auth_file, "w", encoding="utf-8") as f:
+            json.dump({"github_token": token.strip()}, f, indent=2)
+
+    def _auto_repo_name(url: str, index: int = 1) -> str:
+        url_clean = (url or "").strip().rstrip("/")
+        if "hecos-project.github.io" in url_clean or "Hecos-Packages" in url_clean:
+            return "Hecos Official"
+        import re
+        gh = re.search(r"github\.com/[^/]+/([^/#?]+)", url_clean, re.IGNORECASE) or \
+             re.search(r"raw\.githubusercontent\.com/[^/]+/([^/#?]+)", url_clean, re.IGNORECASE)
+        if gh:
+            repo_name = gh.group(1)
+            if repo_name.endswith(".git"):
+                repo_name = repo_name[:-4]
+            return repo_name
+        if "\\" in url_clean or "/" in url_clean:
+            base = os.path.basename(url_clean.replace("\\", "/"))
+            if base and not base.endswith(".json"):
+                return base
+            parent = os.path.basename(os.path.dirname(url_clean.replace("\\", "/")))
+            if parent and parent not in ("store", "packages", ""):
+                return parent
+        return f"Repository {index}"
+
+    def _normalize_repo_entry(entry, index: int = 1) -> dict | None:
+        if isinstance(entry, dict):
+            url = str(entry.get("url") or "").strip()
+            name = str(entry.get("name") or "").strip()
+        elif hasattr(entry, "url"):
+            url = str(getattr(entry, "url", "") or "").strip()
+            name = str(getattr(entry, "name", "") or "").strip()
+        elif isinstance(entry, str):
+            raw = entry.strip()
+            if "|" in raw:
+                parts = [p.strip() for p in raw.split("|", 1)]
+                if parts[0].startswith(("http://", "https://", "file://")) or ":\\" in parts[0] or parts[0].startswith("/"):
+                    url = parts[0]
+                    name = parts[1]
+                else:
+                    name = parts[0]
+                    url = parts[1]
+            else:
+                url = raw
+                name = ""
+        else:
+            return None
+
+        if not url:
+            return None
+        if not name:
+            name = _auto_repo_name(url, index)
+        return {"name": name, "url": url}
+
     @app.route("/api/hpm/settings/repositories", methods=["GET"])
     @login_required
     def api_hpm_get_repositories():
         """Returns the list of configured package repositories and the active one."""
-        default_repo = "https://hecos-project.github.io/store/index.json"
-        repos = []
-        active = default_repo
+        default_repo_url = "https://hecos-project.github.io/store/index.json"
+        raw_repos = []
+        active = default_repo_url
+        github_token = _get_hpm_token()
         try:
             if cfg_mgr:
                 hpm_cfg = cfg_mgr.get("hpm") or {}
                 if isinstance(hpm_cfg, dict):
-                    repos = list(hpm_cfg.get("repositories") or [])
-                    active = hpm_cfg.get("store_catalog_url") or default_repo
+                    raw_repos = list(hpm_cfg.get("repositories") or [])
+                    active = hpm_cfg.get("store_catalog_url") or default_repo_url
                 elif hasattr(hpm_cfg, "repositories"):
-                    repos = list(getattr(hpm_cfg, "repositories", []) or [])
-                    active = getattr(hpm_cfg, "store_catalog_url", default_repo) or default_repo
+                    raw_repos = list(getattr(hpm_cfg, "repositories", []) or [])
+                    active = getattr(hpm_cfg, "store_catalog_url", default_repo_url) or default_repo_url
 
-            if not repos or not isinstance(repos, list):
-                repos = [default_repo]
-            if default_repo not in repos:
-                repos.insert(0, default_repo)
+            normalized = []
+            seen_urls = set()
+            for idx, r in enumerate(raw_repos, 1):
+                item = _normalize_repo_entry(r, idx)
+                if item and item["url"] not in seen_urls:
+                    normalized.append(item)
+                    seen_urls.add(item["url"])
 
-            if not active or active not in repos:
-                active = repos[0]
+            if not normalized:
+                normalized = [{"name": "Hecos Official", "url": default_repo_url}]
+                seen_urls.add(default_repo_url)
+
+            if default_repo_url not in seen_urls:
+                normalized.insert(0, {"name": "Hecos Official", "url": default_repo_url})
+                seen_urls.add(default_repo_url)
+
+            valid_urls = [r["url"] for r in normalized]
+            if not active or active not in valid_urls:
+                active = valid_urls[0]
 
             return jsonify({
                 "ok": True,
-                "repositories": repos,
-                "active_repository": active
+                "repositories": normalized,
+                "active_repository": active,
+                "github_token": github_token
             })
         except Exception as e:
             log.error(f"[HPM] GET /api/hpm/settings/repositories error: {e}")
-            return jsonify({"ok": False, "error": str(e), "repositories": [default_repo], "active_repository": default_repo}), 500
+            fallback = [{"name": "Hecos Official", "url": default_repo_url}]
+            return jsonify({"ok": False, "error": str(e), "repositories": fallback, "active_repository": default_repo_url, "github_token": ""}), 500
 
     @app.route("/api/hpm/settings/repositories", methods=["POST"])
     @login_required
     def api_hpm_set_repositories():
         """Updates the list of configured repositories and optionally the active repository."""
-        default_repo = "https://hecos-project.github.io/store/index.json"
+        default_repo_url = "https://hecos-project.github.io/store/index.json"
         try:
             data = request.get_json(silent=True) or {}
             raw_repos = data.get("repositories", [])
             active_repo = (data.get("active_repository") or "").strip()
+            github_token = data.get("github_token")
 
             if isinstance(raw_repos, str):
                 lines = [l.strip() for l in raw_repos.replace(",", "\n").splitlines()]
             elif isinstance(raw_repos, list):
-                lines = [str(l).strip() for l in raw_repos]
+                lines = raw_repos
             else:
                 lines = []
 
             cleaned = []
-            for l in lines:
-                if l and not l.startswith("#") and l not in cleaned:
-                    cleaned.append(l)
+            seen_urls = set()
+            for idx, l in enumerate(lines, 1):
+                if isinstance(l, str) and l.strip().startswith("#"):
+                    continue
+                item = _normalize_repo_entry(l, idx)
+                if item and item["url"] not in seen_urls:
+                    cleaned.append(item)
+                    seen_urls.add(item["url"])
 
             if not cleaned:
-                cleaned = [default_repo]
+                cleaned = [{"name": "Hecos Official", "url": default_repo_url}]
+                seen_urls.add(default_repo_url)
 
-            if not active_repo or active_repo not in cleaned:
-                active_repo = cleaned[0]
+            valid_urls = [r["url"] for r in cleaned]
+            if not active_repo or active_repo not in valid_urls:
+                active_repo = valid_urls[0]
+
+            # Store the token safely in local untracked hpm_auth.json
+            if github_token is not None:
+                _save_hpm_token(github_token)
 
             if cfg_mgr:
                 if "hpm" not in cfg_mgr.config or not isinstance(cfg_mgr.config["hpm"], dict):
                     cfg_mgr.config["hpm"] = {}
                 cfg_mgr.config["hpm"]["repositories"] = cleaned
                 cfg_mgr.config["hpm"]["store_catalog_url"] = active_repo
+                # CRITICAL SECURITY: Never write private tokens into system.yaml (which is tracked by git)
+                cfg_mgr.config["hpm"].pop("github_token", None)
                 cfg_mgr.save()
 
+            saved_token = _get_hpm_token()
             log.info(f"[HPM] Repositories updated ({len(cleaned)} repos, active: {active_repo})")
             return jsonify({
                 "ok": True,
                 "repositories": cleaned,
-                "active_repository": active_repo
+                "active_repository": active_repo,
+                "github_token": saved_token
             })
         except Exception as e:
             log.error(f"[HPM] POST /api/hpm/settings/repositories error: {e}")
@@ -259,8 +366,15 @@ def register_manage_config_routes(app, _hecos_src: str, cfg_mgr, log):
                 repos = cfg_mgr.config["hpm"].get("repositories", [])
                 if not isinstance(repos, list):
                     repos = []
-                if active_repo not in repos:
-                    repos.append(active_repo)
+
+                # Properly extract known URLs from dicts, models, or strings
+                known_urls = [
+                    (r.get("url") if isinstance(r, dict) else (getattr(r, "url", str(r)))).strip()
+                    for r in repos
+                    if r
+                ]
+                if active_repo not in known_urls:
+                    repos.append({"name": _auto_repo_name(active_repo, len(repos) + 1), "url": active_repo})
                     cfg_mgr.config["hpm"]["repositories"] = repos
 
                 cfg_mgr.config["hpm"]["store_catalog_url"] = active_repo

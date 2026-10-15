@@ -115,7 +115,9 @@ function buildPayload() {
     }
 
     // 4. Plugin toggles, extensions, lazy, dashboard, browser, automation
-    // buildPluginsPayload(out); // REMOVED: function no longer exists after plugins refactor
+    if (typeof buildPluginsPayload === 'function') {
+        buildPluginsPayload(out);
+    }
 
     // 6. Reminder
     if (typeof buildReminderPayload === 'function') {

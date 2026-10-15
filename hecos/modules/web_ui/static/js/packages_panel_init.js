@@ -9,6 +9,12 @@ window.hpmInit = function () {
     window.hpmLoadRepositories();
   }
   window.hpmSwitchTab('packages');
+  // Compute initial builtin count from CONFIG_HUB if present
+  if (window.CONFIG_HUB && Array.isArray(window.CONFIG_HUB.modules)) {
+    const builtinCount = window.CONFIG_HUB.modules.filter(m => !m.isHpm && m.id !== 'plugins' && m.id !== 'packages' && m.id !== 'hpm-settings').length;
+    if (builtinCount > 0) window.hpmUpdateCount('builtin', builtinCount);
+  }
+
   // Fetch widget count from API so the badge is always accurate
   setTimeout(() => {
     if (document.getElementById('tab-plugins')) {
@@ -28,7 +34,7 @@ window.hpmInit = function () {
         if (widgetCount > 0) window.hpmUpdateCount('widgets', widgetCount);
       }
     });
-  }, 1000);
+  }, 300);
 };
 
 document.addEventListener('DOMContentLoaded', window.hpmInit);

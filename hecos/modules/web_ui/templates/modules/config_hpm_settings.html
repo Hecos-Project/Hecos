@@ -33,18 +33,17 @@
 
     <p style="font-size: 0.88em; color: var(--muted); line-height: 1.5; margin-bottom: 16px;">
       Configure remote or local package repositories to fetch modules and playbooks from.
-      Enter one or more full URLs (one per line). These links will be available in the
-      <strong>Package Manager repository dropdown</strong>, allowing anyone to download packages
-      from their desired repository (including non-GitHub sources, personal servers, local network endpoints, or custom hosts).
+      Enter <strong>Name | URL</strong> (or simply the URL, and a friendly name will be generated automatically).
+      These repositories will appear in the <strong>Package Manager repository dropdown</strong>, and the active repository name will be displayed in the Store bar.
     </p>
 
-    <!-- Textarea for Multiple URLs -->
+    <!-- Textarea for Multiple URLs & Names -->
     <div style="margin-bottom: 16px;">
       <label for="hpm-settings-repos-text" style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 6px; color: var(--text);">
-        Repository URLs (one per line):
+        Repository Name & URL (one per line, format: <code>Name | URL</code>):
       </label>
       <textarea id="hpm-settings-repos-text" rows="6" spellcheck="false"
-                placeholder="https://hecos-project.github.io/store/index.json&#10;https://raw.githubusercontent.com/.../index.json&#10;http://192.168.1.50:8080/store/index.json"
+                placeholder="Hecos Official | https://hecos-project.github.io/store/index.json&#10;Hecos Elite | https://github.com/Hecos-Project/Hecos-Elite&#10;http://192.168.1.50:8080/store/index.json"
                 style="width: 100%; box-sizing: border-box; background: var(--bg3, #121218); border: 1px solid var(--border-color, #333); border-radius: 10px; padding: 12px 14px; font-family: monospace; font-size: 0.88em; color: var(--text); line-height: 1.6; resize: vertical; outline: none; transition: border-color .2s;"
                 onfocus="this.style.borderColor='var(--accent)';"
                 onblur="this.style.borderColor='var(--border-color, #333)'; window.hpmSyncActiveRepoDropdown();"
@@ -52,7 +51,7 @@
                 onchange="window.hpmSyncActiveRepoDropdown()"></textarea>
       <div style="font-size: 0.78em; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 6px;">
         <i class="fas fa-info-circle" style="color: var(--accent);"></i>
-        <span>Supports HTTPS, HTTP URLs or local file paths. Empty lines or lines starting with <code>#</code> will be ignored.</span>
+        <span>Syntax: <code>Name | URL</code> (e.g. <code>Hecos Elite | https://github.com/Hecos-Project/Hecos-Elite</code>). If only a URL is entered, a friendly name is automatically generated. Empty lines or lines starting with <code>#</code> will be ignored.</span>
       </div>
     </div>
 
@@ -65,6 +64,32 @@
               style="flex: 1; min-width: 260px; max-width: 450px; background: var(--bg3, #121218); border: 1px solid var(--border-color, #333); border-radius: 8px; padding: 6px 12px; color: var(--text); font-size: 0.85em; outline: none; cursor: pointer;">
         <option value="">Loading...</option>
       </select>
+    </div>
+
+    <!-- GitHub Token Field (Optional, for private repositories) -->
+    <div style="margin-bottom: 20px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px 14px;">
+      <label for="hpm-settings-github-token" style="display: block; font-size: 0.85em; font-weight: 600; margin-bottom: 6px; color: var(--text);">
+        <i class="fab fa-github" style="color: var(--accent); margin-right: 6px;"></i>
+        GitHub Token (Optional, for private repositories):
+      </label>
+      <div style="position: relative; display: flex; align-items: center;">
+        <input type="password" id="hpm-settings-github-token" class="config-input" autocomplete="off"
+               placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+               style="width: 100%; box-sizing: border-box; background: var(--bg3, #121218); border: 1px solid var(--border-color, #333); border-radius: 8px; padding: 8px 42px 8px 12px; color: var(--text); font-size: 0.88em; outline: none; transition: border-color .2s;"
+               onfocus="this.style.borderColor='var(--accent)';"
+               onblur="this.style.borderColor='var(--border-color, #333)';">
+        <button type="button" id="hpm-settings-token-toggle-btn" onclick="window.hpmToggleTokenVisibility()"
+                title="Show / Hide Token"
+                style="position: absolute; right: 6px; background: none; border: none; color: var(--muted); cursor: pointer; padding: 6px 10px; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: color .2s;"
+                onmouseenter="this.style.color='var(--accent)';"
+                onmouseleave="this.style.color='var(--muted)';">
+          <i id="hpm-settings-token-toggle-icon" class="fas fa-eye"></i>
+        </button>
+      </div>
+      <div style="font-size: 0.78em; color: var(--muted); margin-top: 6px;">
+        <i class="fas fa-shield-alt" style="color: var(--accent); margin-right: 4px;"></i>
+        Only required if your repository is <strong>Private</strong> on GitHub. If public, leave empty.
+      </div>
     </div>
 
     <!-- Actions & Status -->
@@ -143,18 +168,34 @@
     }
   };
 
-  // Helper to get user-friendly label for repository
-  function getLabel(url) {
-    if (typeof window.hpmGetRepoLabel === 'function') {
-      return window.hpmGetRepoLabel(url);
+  // Helper to parse a line into { name, url }
+  function parseRepoLine(line, index = 1) {
+    if (!line) return null;
+    if (typeof line === 'object') {
+      const u = (line.url || '').trim();
+      const n = (line.name || '').trim();
+      return u ? { name: n || (typeof window.hpmGetRepoLabel === 'function' ? window.hpmGetRepoLabel(u) : `Repository ${index}`), url: u } : null;
     }
-    if (url === DEFAULT_REPO) return 'Hecos Official (github.io)';
-    try {
-      const u = new URL(url);
-      return `${u.hostname}${u.pathname}`;
-    } catch (_) {
-      return url;
+    const raw = String(line).trim();
+    if (!raw || raw.startsWith('#')) return null;
+
+    let name = '';
+    let url = raw;
+    if (raw.includes('|')) {
+      const parts = raw.split('|').map(p => p.trim());
+      if (parts[0].startsWith('http://') || parts[0].startsWith('https://') || parts[0].startsWith('file://') || parts[0].includes(':\\') || parts[0].startsWith('/')) {
+        url = parts[0];
+        name = parts[1];
+      } else {
+        name = parts[0];
+        url = parts[1];
+      }
     }
+    if (!url) return null;
+    if (!name && typeof window.hpmGetRepoLabel === 'function') {
+      name = window.hpmGetRepoLabel(url);
+    }
+    return { name: name || `Repository ${index}`, url: url };
   }
 
   // Load repositories from server into the settings form
@@ -167,15 +208,26 @@
       const resp = await fetch('/api/hpm/settings/repositories');
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       const data = await resp.json();
-      const repos = (data.ok && Array.isArray(data.repositories)) ? data.repositories : [DEFAULT_REPO];
-      const active = data.active_repository || repos[0] || DEFAULT_REPO;
+      const repos = (data.ok && Array.isArray(data.repositories)) ? data.repositories : [{ name: 'Hecos Official', url: DEFAULT_REPO }];
+      const active = data.active_repository || (repos[0] && repos[0].url ? repos[0].url : repos[0]) || DEFAULT_REPO;
 
-      textEl.value = repos.join('\n');
+      textEl.value = repos.map((r, i) => {
+        if (typeof r === 'object' && r !== null) {
+          return r.name ? `${r.name} | ${r.url}` : r.url;
+        }
+        return String(r);
+      }).join('\n');
+
       window.hpmSyncActiveRepoDropdown(active);
+      const tokenEl = document.getElementById('hpm-settings-github-token');
+      if (tokenEl && data.github_token !== undefined) {
+        tokenEl.value = data.github_token;
+        window._hpmGithubToken = data.github_token;
+      }
     } catch (e) {
       console.warn('[HPM Settings] Failed to load repositories:', e);
       if (!textEl.value.trim()) {
-        textEl.value = DEFAULT_REPO;
+        textEl.value = 'Hecos Official | ' + DEFAULT_REPO;
         window.hpmSyncActiveRepoDropdown(DEFAULT_REPO);
       }
     }
@@ -192,20 +244,34 @@
       .map(l => l.trim())
       .filter(l => l.length > 0 && !l.startsWith('#'));
 
-    const list = lines.length ? Array.from(new Set(lines)) : [DEFAULT_REPO];
+    const list = [];
+    const seenUrls = new Set();
+    lines.forEach((l, idx) => {
+      const parsed = parseRepoLine(l, idx + 1);
+      if (parsed && !seenUrls.has(parsed.url)) {
+        list.push(parsed);
+        seenUrls.add(parsed.url);
+      }
+    });
+
+    if (!list.length) {
+      list.push({ name: 'Hecos Official', url: DEFAULT_REPO });
+      seenUrls.add(DEFAULT_REPO);
+    }
 
     selEl.innerHTML = '';
-    list.forEach(url => {
+    list.forEach(repo => {
       const opt = document.createElement('option');
-      opt.value = url;
-      opt.textContent = getLabel(url);
-      opt.title = url;
-      if (url === currentVal) opt.selected = true;
+      opt.value = repo.url;
+      const shortUrl = repo.url.length > 40 ? repo.url.slice(0, 18) + '...' + repo.url.slice(-18) : repo.url;
+      opt.textContent = `${repo.name} (${shortUrl})`;
+      opt.title = `${repo.name}\n${repo.url}`;
+      if (repo.url === currentVal) opt.selected = true;
       selEl.appendChild(opt);
     });
 
     if (!selEl.value && list.length) {
-      selEl.value = list[0];
+      selEl.value = list[0].url;
     }
   };
 
@@ -213,6 +279,7 @@
   window.hpmSaveRepositoriesSettings = async function(silent = false) {
     const textEl = document.getElementById('hpm-settings-repos-text');
     const selEl = document.getElementById('hpm-settings-active-repo');
+    const tokenEl = document.getElementById('hpm-settings-github-token');
     const statusEl = document.getElementById('hpm-settings-repos-status');
     if (!textEl || !selEl) return;
 
@@ -220,27 +287,48 @@
       .map(l => l.trim())
       .filter(l => l.length > 0 && !l.startsWith('#'));
 
-    const cleaned = lines.length ? Array.from(new Set(lines)) : [DEFAULT_REPO];
-    let active = selEl.value || cleaned[0];
-    if (!cleaned.includes(active)) active = cleaned[0];
+    const cleaned = [];
+    const seenUrls = new Set();
+    lines.forEach((l, idx) => {
+      const parsed = parseRepoLine(l, idx + 1);
+      if (parsed && !seenUrls.has(parsed.url)) {
+        cleaned.push(parsed);
+        seenUrls.add(parsed.url);
+      }
+    });
+
+    if (!cleaned.length) {
+      cleaned.push({ name: 'Hecos Official', url: DEFAULT_REPO });
+      seenUrls.add(DEFAULT_REPO);
+    }
+
+    let active = selEl.value || cleaned[0].url;
+    if (!seenUrls.has(active)) active = cleaned[0].url;
+    const githubToken = tokenEl ? tokenEl.value.trim() : '';
 
     try {
       const resp = await fetch('/api/hpm/settings/repositories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repositories: cleaned, active_repository: active }),
+        body: JSON.stringify({ repositories: cleaned, active_repository: active, github_token: githubToken }),
       });
       const data = await resp.json();
 
       if (data.ok) {
         window._hpmRepositories = data.repositories;
         window._hpmActiveRepoUrl = data.active_repository;
+        window._hpmGithubToken = data.github_token;
+        if (tokenEl && data.github_token !== undefined) {
+          tokenEl.value = data.github_token;
+        }
 
         // Keep window.cfg synchronized so global saveConfig does not revert this
         if (window.cfg) {
           window.cfg.hpm = window.cfg.hpm || {};
           window.cfg.hpm.repositories = data.repositories;
           window.cfg.hpm.store_catalog_url = data.active_repository;
+          // CRITICAL: Keep token out of window.cfg so it is never committed to system.yaml
+          delete window.cfg.hpm.github_token;
         }
 
         // Sync dropdown in settings itself
@@ -249,6 +337,9 @@
         // Sync dropdown in Package Manager Store tab if present in DOM
         if (typeof window.hpmPopulateRepoSelect === 'function') {
           window.hpmPopulateRepoSelect('hpm-store-repo-select');
+        }
+        if (typeof window.hpmUpdateRepoNameDisplay === 'function') {
+          window.hpmUpdateRepoNameDisplay(data.active_repository);
         }
 
         // Invalidate store catalog cache so next visit will reload from active repo
@@ -283,7 +374,7 @@
   window.hpmResetDefaultRepositories = function() {
     const textEl = document.getElementById('hpm-settings-repos-text');
     if (textEl) {
-      textEl.value = DEFAULT_REPO;
+      textEl.value = 'Hecos Official | ' + DEFAULT_REPO;
       window.hpmSyncActiveRepoDropdown(DEFAULT_REPO);
     }
   };
@@ -330,6 +421,21 @@
         document.getElementById('hpm-settings-info-modal-text').innerHTML = "Error: " + e.message;
         infoModal.style.display = 'flex';
       }
+    }
+  };
+
+  window.hpmToggleTokenVisibility = function() {
+    const input = document.getElementById('hpm-settings-github-token');
+    const icon = document.getElementById('hpm-settings-token-toggle-icon');
+    if (!input || !icon) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.className = 'fas fa-eye-slash';
+      icon.title = 'Hide Token';
+    } else {
+      input.type = 'password';
+      icon.className = 'fas fa-eye';
+      icon.title = 'Show Token';
     }
   };
 

@@ -77,7 +77,10 @@ def save_config(yaml_path, plugins_path, widgets_path, config_dict, project_root
     from hecos.config.yaml_utils import save_yaml, save_dict_to_yaml
 
     system_save_dict = system_model.model_dump()
-    system_save_dict.pop("agent", None)  
+    system_save_dict.pop("agent", None)
+    # CRITICAL SECURITY: Never write tokens into system.yaml (which is tracked by git)
+    if "hpm" in system_save_dict and isinstance(system_save_dict["hpm"], dict):
+        system_save_dict["hpm"].pop("github_token", None)
     save_dict_to_yaml(yaml_path, system_save_dict)
 
     save_yaml(plugins_path, plugins_model)
@@ -101,7 +104,11 @@ def save_config(yaml_path, plugins_path, widgets_path, config_dict, project_root
 def update_config_logic(current_config, new_data):
     import copy
     temp_config = copy.deepcopy(current_config)
+    if isinstance(new_data, dict) and "hpm" in new_data and isinstance(new_data["hpm"], dict):
+        new_data["hpm"].pop("github_token", None)
     deep_update(temp_config, new_data)
+    if "hpm" in temp_config and isinstance(temp_config["hpm"], dict):
+        temp_config["hpm"]["github_token"] = ""
     
     from hecos.config.schemas.system_schema import SystemConfig
     from hecos.config.schemas.plugins_schema import PluginsFileConfig

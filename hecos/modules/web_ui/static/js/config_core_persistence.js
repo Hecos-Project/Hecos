@@ -25,9 +25,15 @@ async function saveConfig(silent = false) {
         window.cfg.hpm = window.cfg.hpm || {};
         window.cfg.hpm.store_catalog_url = window._hpmActiveRepoUrl;
       }
+      if (window.cfg.hpm) {
+        delete window.cfg.hpm.github_token;
+      }
     }
 
     const payload = buildPayload();
+    if (payload.hpm && 'github_token' in payload.hpm) {
+      delete payload.hpm.github_token;
+    }
     payload._force_restart = !silent;
 
     const audioPayload = (typeof buildAudioPayload === 'function') ? buildAudioPayload() : {};

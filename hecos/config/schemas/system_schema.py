@@ -7,7 +7,7 @@ DESCRIPTION: Pydantic v2 models for config/system.yaml (core system only).
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -223,12 +223,20 @@ class AgentInlineConfig(BaseModel):
 
 # ─── HPM (HECOS PACKAGE MANAGER) ──────────────────────────────────────────────
 
+class HpmRepoItem(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    name: str = ""
+    url: str
+
+
 class HpmConfig(BaseModel):
     model_config = ConfigDict(extra='ignore')
     store_catalog_url: str = "https://hecos-project.github.io/store/index.json"
-    repositories: List[str] = Field(default_factory=lambda: [
-        "https://hecos-project.github.io/store/index.json"
+    repositories: List[Union[HpmRepoItem, str, Dict[str, Any]]] = Field(default_factory=lambda: [
+        {"name": "Hecos Official", "url": "https://hecos-project.github.io/store/index.json"}
     ])
+    # Security: token is strictly stored in local untracked hpm_auth.json, never in system.yaml
+    github_token: str = Field(default="", exclude=True)
 
 
 # ─── ROOT ─────────────────────────────────────────────────────────────────────

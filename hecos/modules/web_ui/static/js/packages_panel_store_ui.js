@@ -89,13 +89,14 @@ function _hpmStoreBuildShell() {
       <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:260px;">
         <i class="fas fa-database" style="color:var(--accent);font-size:15px;"></i>
         <label for="hpm-store-repo-select" style="font-size:0.85em;color:var(--text);font-weight:600;white-space:nowrap;">Repository:</label>
-        <select id="hpm-store-repo-select" onchange="window.hpmSelectRepository(this.value)" style="flex:1;max-width:380px;background:var(--bg3);border:1px solid var(--border-color);border-radius:8px;padding:5px 10px;color:var(--text);font-size:0.82em;outline:none;cursor:pointer;">
+        <select id="hpm-store-repo-select" onchange="window.hpmSelectRepository(this.value)" style="flex:1;min-width:260px;max-width:520px;background:var(--bg3);border:1px solid var(--border-color);border-radius:8px;padding:6px 10px;color:var(--text);font-size:0.82em;outline:none;cursor:pointer;text-overflow:ellipsis;">
           <option value="">Loading repositories...</option>
         </select>
       </div>
-      <button type="button" class="btn btn-sm btn-outline" onclick="showTab('hpm-settings')" title="Configure repositories in HPM Settings" style="font-size:0.8em;padding:5px 12px;display:flex;align-items:center;gap:6px;">
-        <i class="fas fa-sliders-h"></i> Manage Repositories
-      </button>
+      <div id="hpm-store-active-repo-badge" style="display:inline-flex;align-items:center;gap:8px;background:rgba(102,252,241,0.08);border:1px solid rgba(102,252,241,0.25);border-radius:8px;padding:6px 14px;font-size:0.84em;font-weight:600;color:var(--accent);max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Active Repository">
+        <i class="fas fa-server" style="font-size:12px;opacity:0.85;"></i>
+        <span id="hpm-store-repo-name-text">Official Store</span>
+      </div>
     </div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
       <div style="position:relative;flex:1;min-width:220px;">

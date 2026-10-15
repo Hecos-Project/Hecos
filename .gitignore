@@ -573,7 +573,6 @@ hecos/modules/web_ui/templates/modules/docs_editor.html
 
 # WebUI Static Assets belonging to HPM packages
 hecos/modules/web_ui/static/js/config_mapper_drive.js
-hecos/modules/web_ui/static/js/config_mapper_plugins.js
 hecos/modules/web_ui/static/css/browser_automation.css
 hecos/modules/web_ui/static/js/browser_automation.js
 hecos/modules/web_ui/static/css/image_gen.css
@@ -697,4 +696,11 @@ hecos/hpm/playbooks/
 
 # HPM Store Cache
 hecos/data/store_cache*.json
+
+# HPM Secrets & Local Credentials (never commit tokens)
+hecos/data/hpm_auth.json
+hecos/data/*_auth.json
+hecos/data/*_token*
+*.env
+.env.*
 

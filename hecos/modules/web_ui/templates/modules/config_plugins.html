@@ -10,3 +10,8 @@
     </div>
   </div>
 </div>
+<script>
+if (typeof renderPlugins === 'function') {
+  renderPlugins(window.cfg?.plugins || {});
+}
+</script>
