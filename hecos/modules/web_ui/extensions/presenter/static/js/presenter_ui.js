@@ -280,7 +280,7 @@
 
             if (isRunning) {
                 dotStyle = 'background:#10b981; box-shadow:0 0 7px #10b981;';
-                simBadge = `<span style="font-size:9px; font-weight:700; color:#10b981; background:rgba(168,85,247,0.18); padding:1px 5px; border-radius:4px; border:1px solid rgba(16,185,129,0.3);">RUNNING (T${sim.turn_count || 0})</span>`;
+                simBadge = `<span style="font-size:9px; font-weight:700; color:#10b981; background:rgba(16,185,129,0.15); padding:2px 8px; border-radius:20px; border:1px solid rgba(16,185,129,0.3);">RUNNING (T${sim.turn_count || 0})</span>`;
                 simButtons = `
                     <button class="pb-sim-btn pb-sim-btn-pause" onclick="window.HBSPresenterUI.simAction('pause', event)" title="Pause Simulation">
                         <i class="fas fa-pause"></i>
@@ -294,7 +294,7 @@
                 `;
             } else if (isPaused) {
                 dotStyle = 'background:#f59e0b; box-shadow:0 0 7px #f59e0b;';
-                simBadge = `<span style="font-size:9px; font-weight:700; color:#fbbf24; background:rgba(245,158,11,0.18); padding:1px 5px; border-radius:4px; border:1px solid rgba(245,158,11,0.3);">PAUSED</span>`;
+                simBadge = `<span style="font-size:9px; font-weight:700; color:#fbbf24; background:rgba(245,158,11,0.15); padding:2px 8px; border-radius:20px; border:1px solid rgba(245,158,11,0.3);">PAUSED</span>`;
                 simButtons = `
                     <button class="pb-sim-btn pb-sim-btn-play" onclick="window.HBSPresenterUI.simAction('start', event)" title="Resume Simulation">
                         <i class="fas fa-play"></i>
@@ -308,7 +308,7 @@
                 `;
             } else {
                 dotStyle = 'background:#64748b;';
-                simBadge = `<span style="font-size:9px; color:#94a3b8; background:rgba(148,163,184,0.15); padding:1px 5px; border-radius:4px;">IDLE</span>`;
+                simBadge = `<span style="font-size:9px; color:#94a3b8; background:rgba(148,163,184,0.15); padding:2px 8px; border-radius:20px; border:1px solid rgba(148,163,184,0.25);">IDLE</span>`;
                 simButtons = `
                     <button class="pb-sim-btn pb-sim-btn-play" onclick="window.HBSPresenterUI.simAction('start', event)" title="Start Live Simulation (Activate Mission, Roles &amp; Rules)">
                         <i class="fas fa-play" style="font-size:8px;"></i> Start

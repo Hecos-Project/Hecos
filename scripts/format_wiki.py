@@ -61,19 +61,25 @@ def process_wiki(wiki_dir):
             label = LANGUAGES[l]["flag"] + " " + LANGUAGES[l]["label"].split(" ")[1]
             target = langs[l]["filename"]
             switcher_links.append(f"[[ {label} | {target} ]]")
-        switcher_line = " | ".join(switcher_links) + "\n\n---\n"
+        switcher_line = " | ".join(switcher_links) + "\n\n---\n\n"
 
         for lang_code, info in langs.items():
             content = info["content"]
-            first_line = content.split("\n")[0]
+            lines = content.split("\n")
+            first_line = lines[0] if lines else ""
             if " | " in first_line and "[[" in first_line:
-                lines = content.split("\n")
-                new_content = switcher_line + "\n".join(lines[2:])
+                idx = 1
+                while idx < len(lines) and (lines[idx].strip() == "" or lines[idx].strip() == "---"):
+                    idx += 1
+                body = "\n".join(lines[idx:])
+                new_content = switcher_line + body
             else:
-                new_content = switcher_line + "\n" + content
-            with open(info["path"], "w", encoding="utf-8") as f:
-                f.write(new_content)
-            updated += 1
+                new_content = switcher_line + content
+
+            if new_content != content:
+                with open(info["path"], "w", encoding="utf-8") as f:
+                    f.write(new_content)
+                updated += 1
 
     print(f"[OK] Processed {len(files)} files, updated {updated} with language switchers.")
 
