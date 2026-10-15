@@ -5,14 +5,14 @@
   <div class="card">
     <div class="card-title" style="display:flex;align-items:center;gap:10px;">
       {{ t('webui_km_title') }}
-      <span id="km-global-status" style="font-size:11px;font-weight:400;margin-left:auto;color:var(--muted)">{{ t('webui_km_loading') }}</span>
+      <span id="km-global-status" class="badge-pill badge-neutral" style="font-size:11px;font-weight:500;margin-left:auto;">{{ t('webui_km_loading') }}</span>
     </div>
     <p style="font-size:12px;color:var(--muted);margin:0 0 8px;">
       {{ t('webui_km_desc') }}
     </p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-primary" style="padding:4px 10px; font-size:11px;" onclick="kmRefresh()">⟳ {{ t('webui_km_btn_refresh') }}</button>
-      <button class="btn btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="kmReloadAll()">↺ {{ t('webui_km_btn_reload') }}</button>
+      <button class="btn btn-primary" onclick="kmRefresh()"><i class="fas fa-sync-alt"></i> {{ t('webui_km_btn_refresh') }}</button>
+      <button class="btn btn-secondary" onclick="kmReloadAll()"><i class="fas fa-redo-alt"></i> {{ t('webui_km_btn_reload') }}</button>
     </div>
   </div>
 
@@ -57,7 +57,7 @@
       <input type="checkbox" id="km-add-to-env" style="width:auto;margin:0;">
       <label for="km-add-to-env" style="font-weight:normal;color:var(--muted);font-size:11px;">{{ t('webui_km_add_env') }}</label>
     </div>
-    <button class="btn btn-primary" onclick="kmAddKey()" style="margin-top:8px;">{{ t('webui_km_add_btn') }}</button>
+    <button class="btn btn-primary" onclick="kmAddKey()" style="margin-top:8px;"><i class="fas fa-plus"></i> {{ t('webui_km_add_btn') }}</button>
     <div id="km-add-feedback" style="font-size:12px;margin-top:8px;"></div>
   </div>
   <!-- Advanced Settings Card -->
@@ -115,9 +115,9 @@
 
       </div>
 
-      <div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
-        <button class="btn btn-primary" onclick="kmSaveAdvanced()" style="padding:5px 14px;font-size:12px;">{{ t('webui_km_adv_save') }}</button>
-        <button class="btn btn-secondary" onclick="kmResetAdvanced()" style="padding:5px 14px;font-size:12px;">{{ t('webui_km_adv_reset') }}</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+        <button class="btn btn-primary" onclick="kmSaveAdvanced()"><i class="fas fa-save"></i> {{ t('webui_km_adv_save') }}</button>
+        <button class="btn btn-secondary" onclick="kmResetAdvanced()"><i class="fas fa-undo"></i> {{ t('webui_km_adv_reset') }}</button>
         <span id="km-adv-feedback" style="font-size:11px;color:var(--green);"></span>
       </div>
 
@@ -144,13 +144,25 @@
 }
 .km-key-row:last-child { border-bottom: none; }
 .km-badge {
-  font-size: 10px; font-weight: 600; padding: 2px 7px;
-  border-radius: 10px; white-space: nowrap; text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  line-height: 1;
+  min-height: 20px;
+  box-sizing: border-box;
 }
-.km-badge-valid     { background: rgba(var(--green-rgb), 0.15); color: var(--green); }
-.km-badge-unknown   { background: var(--glass-b); color: var(--muted); }
-.km-badge-rate      { background: rgba(var(--yellow-rgb), 0.15); color: var(--yellow); }
-.km-badge-invalid   { background: rgba(var(--red-rgb), 0.15); color: var(--red); }
+.km-badge-valid     { background: rgba(var(--green-rgb), 0.15); border-color: rgba(var(--green-rgb), 0.3); color: var(--green); }
+.km-badge-unknown   { background: var(--glass-b); border-color: var(--border); color: var(--muted); }
+.km-badge-rate      { background: rgba(var(--yellow-rgb), 0.15); border-color: rgba(var(--yellow-rgb), 0.3); color: var(--yellow); }
+.km-badge-invalid   { background: rgba(var(--red-rgb), 0.15); border-color: rgba(var(--red-rgb), 0.3); color: var(--red); }
 .km-key-info { flex: 1; min-width: 0; }
 .km-key-masked { font-family: monospace; font-size: 12px; color: var(--muted); }
 .km-key-desc  { font-size: 11px; color: var(--muted); opacity: 0.7; }
@@ -161,7 +173,7 @@
   display: flex; gap:6px; font-size: 11px; margin-bottom: 8px; flex-wrap: wrap;
 }
 .km-count-item { padding: 2px 8px; border-radius: 8px; background: var(--bg3); border: 1px solid var(--border); }
-.btn-km-sm { padding: 4px 10px !important; font-size: 11px !important; }
+.btn-km-sm { padding: 4px 10px !important; font-size: 11px !important; border-radius: 6px !important; }
 </style>
 
 <script>

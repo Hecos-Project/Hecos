@@ -102,7 +102,7 @@ window.hpmRenderHierarchy = function (packagesList) {
             <span style="font-size:10px;font-weight:800;letter-spacing:1.2px;
                          text-transform:uppercase;color:${meta.color};"><i class="fas ${meta.icon}"></i> ${meta.label}</span>
             <span style="margin-left:auto;font-size:10px;color:var(--muted);
-                         background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:10px;">
+                         background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:20px;">
               ${group.length}
             </span>
           </div>

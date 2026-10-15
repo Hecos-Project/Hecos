@@ -1,7 +1,7 @@
 <!-- PERSONA PANEL -->
 <div id="tab-ia" class="panel" data-search="intelligence persona avatar personality soul instructions custom ai">
   <div class="card">
-    <div class="card-title" style="display:flex; align-items:center;">{{ t('webui_conf_persona_ai_title') }} <span style="font-size:9px; padding: 2px 6px; background: rgba(255,255,255,0.07); color: var(--muted); border-radius: 4px; margin-left: 8px; font-weight: normal; letter-spacing: 0.5px; border: 1px solid rgba(255,255,255,0.05);"><i class="fas fa-globe" style="margin-right:4px;"></i>GLOBAL DEFAULTS</span></div>
+    <div class="card-title" style="display:flex; align-items:center;">{{ t('webui_conf_persona_ai_title') }} <span class="badge-pill badge-neutral" style="margin-left: 8px;"><i class="fas fa-globe"></i> GLOBAL DEFAULTS</span></div>
     <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 16px;">
         <div id="ia-avatar-wrapper" style="position: relative; width: 64px; height: 64px;">
             <img id="ia-avatar-preview" src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 2px solid var(--border); background: var(--bg3);">
@@ -10,7 +10,7 @@
         <div style="flex: 1;">
             <div class="field" style="margin-bottom: 8px;"><label>{{ t('webui_conf_persona') }}</label><select id="ia-personality-main"></select></div>
             <div style="display: flex; gap: 10px; align-items: center;">
-                <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 12px; flex: 1;" onclick="document.getElementById('ia-avatar-input').click()">{{ t('label_change_avatar') }}</button>
+                <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('ia-avatar-input').click()">{{ t('label_change_avatar') }}</button>
                 <div class="field" style="margin: 0; flex: 1;">
                     <select id="ia-avatar-size" class="config-input" style="padding: 4px; font-size: 11px;">
                         <option value="small">{{ t('label_size_small') }}</option>
@@ -38,13 +38,13 @@
             <label style="font-size: 10px; margin: 0; opacity: 0.7;">Max Size (MB):</label>
             <input type="number" id="ia-media-max-size" class="config-input" value="1024" style="width: 60px; padding: 2px 4px; font-size: 11px;">
           </div>
-          <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="document.getElementById('pm-upload-input').click()">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('pm-upload-input').click()">
             <i class="fas fa-upload"></i> Upload
           </button>
-          <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="pmOpenFolder()" title="Open Folder">
+          <button type="button" class="btn btn-secondary" onclick="pmOpenFolder()" title="Open Folder">
             <i class="fas fa-folder-open"></i> Folder
           </button>
-          <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="pmLoadMedia()" title="Refresh Library">
+          <button type="button" class="btn btn-secondary" onclick="pmLoadMedia()" title="Refresh Library">
             <i class="fas fa-sync"></i>
           </button>
         </div>
@@ -198,15 +198,18 @@
     background: #4CAF50;
     color: white;
     font-size: 9px;
-    padding: 2px 6px;
-    border-radius: 4px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   }
   .pm-filter {
     font-size: 11px;
-    padding: 4px 10px;
-    border-radius: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 20px;
     background: var(--bg3);
+    border: 1px solid var(--border);
     cursor: pointer;
     opacity: 0.7;
     transition: 0.2s;

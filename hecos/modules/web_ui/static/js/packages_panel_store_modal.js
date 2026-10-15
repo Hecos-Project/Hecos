@@ -52,7 +52,7 @@ function _hpmStoreBuildDetailModal() {
             </button>
             <div id="hpm-carousel-counter"
                  style="display:none;position:absolute;bottom:10px;right:12px;background:rgba(0,0,0,.65);
-                        color:#fff;font-size:0.72em;padding:3px 9px;border-radius:12px;
+                        color:#fff;font-size:0.72em;padding:3px 10px;border-radius:20px;
                         pointer-events:none;font-weight:600;letter-spacing:.4px;"></div>
           </div>
           <!-- Thumbnail strip -->
@@ -152,8 +152,8 @@ window.hpmStoreShowReadMe = async function (pkgId) {
       <div style="flex:1;min-width:0;">
         <div style="font-size:1.2em;font-weight:800;color:var(--text);line-height:1.2;">${_hesc(pkg.name)}</div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:7px;flex-wrap:wrap;">
-          <span style="font-size:0.7em;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
-                       color:${meta.color};background:${meta.color}18;padding:2px 8px;border-radius:5px;">
+          <span style="font-size:0.72em;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+                       color:${meta.color};background:${meta.color}18;padding:2px 8px;border-radius:20px;border:1px solid ${meta.color}44;display:inline-flex;align-items:center;line-height:1.2;">
             <i class="fas ${meta.icon}" style="margin-right:4px;"></i>${meta.shortLabel || meta.label}
           </span>
           <span style="font-size:0.75em;color:var(--muted);">v${_hesc(pkg.version)}</span>
@@ -163,7 +163,7 @@ window.hpmStoreShowReadMe = async function (pkgId) {
         ${pkg.description ? `<div style="font-size:0.83em;color:var(--muted);margin-top:9px;line-height:1.55;">${_hesc(pkg.description)}</div>` : ''}
         ${pkg.tags && pkg.tags.length ? `
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;">
-            ${pkg.tags.map(t => `<span style="font-size:0.67em;background:rgba(255,255,255,.07);color:var(--muted);padding:2px 7px;border-radius:5px;">#${_hesc(t)}</span>`).join('')}
+            ${pkg.tags.map(t => `<span style="font-size:0.68em;background:rgba(255,255,255,.07);color:var(--muted);padding:2px 8px;border-radius:20px;border:1px solid rgba(255,255,255,.1);">#${_hesc(t)}</span>`).join('')}
           </div>` : ''}
         ${(pkg.dependencies && pkg.dependencies.length > 0) || (pkg.pip_requirements && pkg.pip_requirements.length > 0) ? `
           <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.05);">
@@ -171,13 +171,13 @@ window.hpmStoreShowReadMe = async function (pkgId) {
               <div style="font-size:0.72em;color:var(--muted);display:flex;align-items:center;gap:6px;">
                 <i class="fas fa-boxes" style="color:#3b82f6;"></i>
                 <span style="font-weight:600;opacity:0.7;">${_t('Depends on:','Dipende da:','Depende de:')}</span>
-                ${pkg.dependencies.map(d => `<span style="background:rgba(59,130,246,0.15);color:#60a5fa;padding:2px 6px;border-radius:4px;font-weight:600;">${_hesc(d)}</span>`).join('')}
+                ${pkg.dependencies.map(d => `<span style="background:rgba(59,130,246,0.15);color:#60a5fa;padding:2px 8px;border-radius:20px;border:1px solid rgba(59,130,246,0.3);font-weight:600;">${_hesc(d)}</span>`).join('')}
               </div>` : ''}
             ${pkg.pip_requirements && pkg.pip_requirements.length ? `
               <div style="font-size:0.72em;color:var(--muted);display:flex;align-items:center;gap:6px;">
                 <i class="fab fa-python" style="color:#f59e0b;"></i>
                 <span style="font-weight:600;opacity:0.7;">PIP:</span>
-                ${pkg.pip_requirements.map(p => `<span style="background:rgba(245,158,11,0.15);color:#fbbf24;padding:2px 6px;border-radius:4px;font-weight:600;">${_hesc(p.split('==')[0].split('>=')[0])}</span>`).join('')}
+                ${pkg.pip_requirements.map(p => `<span style="background:rgba(245,158,11,0.15);color:#fbbf24;padding:2px 8px;border-radius:20px;border:1px solid rgba(245,158,11,0.3);font-weight:600;">${_hesc(p.split('==')[0].split('>=')[0])}</span>`).join('')}
               </div>` : ''}
           </div>` : ''}
       </div>
@@ -200,7 +200,7 @@ window.hpmStoreShowReadMe = async function (pkgId) {
     } else {
       installBtn.innerHTML = `
         <span style="display:inline-flex;align-items:center;gap:6px;font-size:0.82em;color:#10b981;
-                     background:rgba(16,185,129,.12);padding:7px 14px;border-radius:8px;font-weight:600;">
+                     background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);padding:5px 12px;border-radius:20px;font-weight:600;">
           <i class="fas fa-check-circle"></i> Installed</span>`;
     }
   }

@@ -73,17 +73,33 @@ header {
   left: 0;
   right: 0;
   background: var(--bg2);
+  backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
-  padding: 14px 32px;
+  padding: 10px 24px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 8px;
   z-index: 99;
   box-shadow: var(--shadow-up);
 }
 
-#save-msg { font-size: 13px; color: var(--muted); }
+.save-bar .btn {
+  height: 32px;
+  padding: 5px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: 1.4;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+#save-msg { font-size: 12px; color: var(--muted); margin-right: auto; }
 
 #status-dot {
   display: flex;

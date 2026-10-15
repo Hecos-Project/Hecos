@@ -87,8 +87,7 @@ window.HecosTextFilters = {
                 <option value="voice" ${target==='voice' ? 'selected':''}>Voice Only</option>
                 <option value="text"  ${target==='text'  ? 'selected':''}>Text Only</option>
             </select>
-            <button type="button" class="btn" onclick="HecosTextFilters.removeRow(this)"
-                    style="padding:4px 8px; font-size:10px; background:rgba(255,50,50,0.2); color:#ff5555;">X</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="HecosTextFilters.removeRow(this)" title="Remove"><i class="fas fa-trash"></i></button>
         `;
         container.appendChild(div);
     }

@@ -56,7 +56,7 @@ window._hpmCheckUpdatesBackground = async function (packages, showFeedback = fal
             badge.title = `Update to v${catalogVersion}`;
             badge.style.cssText = `
               background:linear-gradient(135deg,#f59e0b,#d97706);
-              color:#fff;border:none;border-radius:6px;
+              color:#fff;border:none;border-radius:8px;
               padding:4px 9px;font-size:10px;font-weight:700;
               cursor:pointer;margin-right:4px;display:inline-flex;
               align-items:center;gap:4px;`;
@@ -89,8 +89,8 @@ window._hpmCheckUpdatesBackground = async function (packages, showFeedback = fal
         updateBadge.style.cssText = `
           position:absolute;top:-6px;right:-6px;
           background:#f59e0b;color:#000;
-          font-size:0.55em;font-weight:800;padding:2px 5px;
-          border-radius:6px;letter-spacing:.5px;`;
+          font-size:0.55em;font-weight:800;padding:2px 6px;
+          border-radius:20px;letter-spacing:.5px;`;
         updateBadge.textContent = updatesFound;
         storeBtn.appendChild(updateBadge);
       }

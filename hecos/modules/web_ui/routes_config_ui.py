@@ -129,17 +129,22 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
 
             translations  = get_translator().get_translations()
             zconfig_data  = cfg_mgr.config
+            from flask import make_response
             rendered = render_template(
                 "index.html",
                 zconfig=zconfig_data,
                 zoptions={},
                 translations=translations,
+                version="20261015_4",
             )
             _ui_cache[cache_key] = (now_ts, rendered)
             if len(_ui_cache) > 10:
                 oldest_key = min(_ui_cache, key=lambda k: _ui_cache[k][0])
                 _ui_cache.pop(oldest_key, None)
-            return rendered
+            resp = make_response(rendered)
+            resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            resp.headers["Pragma"] = "no-cache"
+            return resp
         except Exception as e:
             return f"<h1>Errore: index.html non trovato</h1><p>{str(e)}</p>", 500
 
