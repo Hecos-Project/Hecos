@@ -65,6 +65,7 @@ class FishSpeechEngine(BaseTTSEngine):
 
     def _synthesize_chunk(self, text: str, p: FishSpeechParams) -> Optional[bytes]:
         """Sends a single synthesis request to Fish Speech API (with chunk-level cache check)."""
+        vol = getattr(p, "volume", 1.0)
         cache = None
         try:
             from hecos.core.audio.tts_cache import TTSCache
@@ -73,7 +74,7 @@ class FishSpeechEngine(BaseTTSEngine):
                 text=text,
                 engine="fish_speech",
                 voice=p.ref_audio or p.reference_id,
-                session_overrides={"fish_temperature": p.temperature, "fish_top_p": p.top_p, "fish_chunk_length": p.chunk_length}
+                session_overrides={"fish_temperature": p.temperature, "fish_top_p": p.top_p, "fish_chunk_length": p.chunk_length, "fish_volume": vol, "fish_norm": "v2"}
             )
             if cached_bytes:
                 return cached_bytes
@@ -97,6 +98,10 @@ class FishSpeechEngine(BaseTTSEngine):
             reference_id=p.reference_id
         )
 
+        if chunk_bytes:
+            # Normalize and amplify audio chunk to match broadcast / Piper loudness levels
+            chunk_bytes = FishSpeechAudio.normalize_wav_bytes(chunk_bytes, volume_factor=vol)
+
         if chunk_bytes and cache:
             try:
                 cache.put_bytes(
@@ -104,7 +109,7 @@ class FishSpeechEngine(BaseTTSEngine):
                     engine="fish_speech",
                     audio_bytes=chunk_bytes,
                     voice=p.ref_audio or p.reference_id,
-                    session_overrides={"fish_temperature": p.temperature, "fish_top_p": p.top_p, "fish_chunk_length": p.chunk_length}
+                    session_overrides={"fish_temperature": p.temperature, "fish_top_p": p.top_p, "fish_chunk_length": p.chunk_length, "fish_volume": vol, "fish_norm": "v2"}
                 )
             except Exception as _c_put_err:
                 logger.debug("FISH_SPEECH", f"Chunk cache store notice: {_c_put_err}")
@@ -262,7 +267,7 @@ class FishSpeechEngine(BaseTTSEngine):
                 return False
 
             logger.info("FISH_SPEECH", f"Merging {len(temp_files)} audio chunk(s) into final WAV: {filepath}")
-            self._merge_wav_files(temp_files, filepath)
+            self._merge_wav_files(temp_files, filepath, volume_factor=getattr(p, "volume", 1.0))
 
             if progress_callback:
                 try:
@@ -282,9 +287,9 @@ class FishSpeechEngine(BaseTTSEngine):
                 except Exception:
                     pass
 
-    def _merge_wav_files(self, file_list: list, output_path: str):
-        """Merges multiple WAV files into a single WAV file with silence pause."""
-        FishSpeechAudio.merge_wav_files(file_list, output_path)
+    def _merge_wav_files(self, file_list: list, output_path: str, volume_factor: float = 1.0):
+        """Merges multiple WAV files into a single WAV file with silence pause and volume normalization."""
+        FishSpeechAudio.merge_wav_files(file_list, output_path, volume_factor=volume_factor)
 
     def speak(self, text: str, state=None, _run_id=None, _timeout=0, _start=0, **kwargs):
         """Synthesizes text and plays it progressively chunk-by-chunk on the speaker."""

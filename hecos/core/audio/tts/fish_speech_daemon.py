@@ -54,8 +54,13 @@ class FishSpeechDaemon:
         self._spawned_by_me = False
         self._is_starting: bool = False
         self._start_thread: Optional[threading.Thread] = None
-        # Auto-shutdown child server when python process exits
-        atexit.register(self.stop)
+        # Auto-shutdown child server on exit ONLY if this Python instance spawned it
+        atexit.register(self._atexit_stop)
+
+    def _atexit_stop(self):
+        """Cleanly stops server process on exit ONLY if spawned by this process."""
+        if self._spawned_by_me and self._proc:
+            self.stop(force_all=False)
 
     def is_starting(self) -> bool:
         """Returns True if a background startup thread is currently active."""
@@ -299,6 +304,7 @@ class FishSpeechDaemon:
                     cwd=root,
                     creationflags=creationflags,
                 )
+                self._spawned_by_me = True
                 self._log_file_handle = log_file
 
             except Exception as launch_err:
@@ -344,9 +350,11 @@ class FishSpeechDaemon:
         except Exception as e:
             return f"Could not read log: {e}"
 
-    def stop(self):
+    def stop(self, force_all: bool = False):
         """Stops the local server process if running."""
         with self._lock:
+            was_spawned_by_me = self._spawned_by_me
+            self._spawned_by_me = False
             if self._proc and self._proc.poll() is None:
                 logger.info("FISH_SPEECH_DAEMON", "Stopping local Fish Speech server...")
                 try:
@@ -362,22 +370,23 @@ class FishSpeechDaemon:
                         pass
                 self._proc = None
 
-            # Also terminate any lingering fish_speech_server process on target port
-            try:
-                import psutil
-                for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-                    try:
-                        cmdline = " ".join(proc.info.get('cmdline') or [])
-                        if 'fish_speech_server.py' in cmdline and proc.pid != os.getpid():
-                            logger.info("FISH_SPEECH_DAEMON", f"Terminating process {proc.pid} running fish_speech_server.py...")
-                            if sys.platform == "win32":
-                                subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True, timeout=5)
-                            else:
-                                proc.kill()
-                    except Exception:
-                        pass
-            except Exception:
-                pass
+            # Only scan and terminate lingering processes if force_all is requested or if we were the owner
+            if force_all or was_spawned_by_me:
+                try:
+                    import psutil
+                    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                        try:
+                            cmdline = " ".join(proc.info.get('cmdline') or [])
+                            if 'fish_speech_server.py' in cmdline and proc.pid != os.getpid():
+                                logger.info("FISH_SPEECH_DAEMON", f"Terminating process {proc.pid} running fish_speech_server.py...")
+                                if sys.platform == "win32":
+                                    subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True, timeout=5)
+                                else:
+                                    proc.kill()
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
 
             if self._log_file_handle:
                 try:

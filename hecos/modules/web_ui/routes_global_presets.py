@@ -182,9 +182,8 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                         if 'voice' not in overrides: overrides['voice'] = {}
                         for k, v in soul.voice.model_dump(exclude_unset=True).items():
                             overrides['voice'][k] = v
-                else:
-                    # The user selected "No active global preset", so we clear all overrides
-                    overrides = {'active_global_preset': ""}
+                    # The user selected "No active global preset" or clicked Reset, so we clear all overrides
+                    overrides = {}
                 
                 set_session_config(session_id, overrides)
             

@@ -82,7 +82,7 @@ class TTSCache:
                 or overrides.get("tts_voice")
                 or ""
             )
-            for k in ("fish_temperature", "fish_top_p", "fish_repetition_penalty", "fish_chunk_length", "fish_chunk_sentences"):
+            for k in ("fish_temperature", "fish_top_p", "fish_repetition_penalty", "fish_chunk_length", "fish_chunk_sentences", "fish_volume", "fish_norm"):
                 if k in overrides and overrides[k] is not None:
                     params[k] = overrides[k]
         elif engine_clean in ("xtts2", "xtts"):

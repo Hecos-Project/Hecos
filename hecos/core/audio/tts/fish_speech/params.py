@@ -31,6 +31,7 @@ class FishSpeechParams(NamedTuple):
     normalize: bool = True
     use_memory_cache: bool = True
     reference_id: str = ""
+    volume: float = 1.0
 
 
 def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
@@ -59,6 +60,7 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
     seed = int(cfg.get("seed", 0))
     normalize = bool(cfg.get("normalize", True))
     use_memory_cache = bool(cfg.get("use_memory_cache", True))
+    volume = float(cfg.get("volume", 1.0))
 
     f_inf_presets = acfg.get("fish_speech_inference_presets", {})
     current_inf_preset = cfg.get("current_inference_preset")
@@ -80,6 +82,8 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
             normalize = bool(inf_data["normalize"])
         if inf_data.get("use_memory_cache") is not None:
             use_memory_cache = bool(inf_data["use_memory_cache"])
+        if inf_data.get("volume") is not None:
+            volume = float(inf_data["volume"])
 
     # Check session overrides if provided
     session = kwargs.get("session_overrides") or {}
@@ -119,6 +123,8 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
                     normalize = bool(preset_data["normalize"])
                 if preset_data.get("use_memory_cache") is not None:
                     use_memory_cache = bool(preset_data["use_memory_cache"])
+                if preset_data.get("volume") is not None:
+                    volume = float(preset_data["volume"])
                 logger.debug("FISH_SPEECH", f"Applied fish_preset '{p_name}'")
 
         # 2. Modular Inference Preset (overrides preset baseline parameters)
@@ -140,6 +146,8 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
                 normalize = bool(inf_data["normalize"])
             if inf_data.get("use_memory_cache") is not None:
                 use_memory_cache = bool(inf_data["use_memory_cache"])
+            if inf_data.get("volume") is not None:
+                volume = float(inf_data["volume"])
             logger.debug("FISH_SPEECH", f"Applied fish_inference_preset '{inf_preset_name}'")
 
         # 3. Explicit parameter overrides (highest priority)
@@ -173,6 +181,10 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
             chunk_sentences = bool(session["fish_chunk_sentences"])
         elif session.get("chunk_sentences") is not None:
             chunk_sentences = bool(session["chunk_sentences"])
+        if session.get("fish_volume") is not None:
+            volume = float(session["fish_volume"])
+        elif session.get("volume") is not None:
+            volume = float(session["volume"])
 
     # Resolve ref_audio path in assets/voice_clones if relative
     if ref_audio:
@@ -209,7 +221,7 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
         f"Params resolved: api_url='{api_url}', cloud_mode={bool(api_key)}, "
         f"ref='{ref_basename}', temp={temperature}, top_p={top_p}, "
         f"rep_pen={repetition_penalty}, max_tokens={max_new_tokens}, chunk_len={chunk_length}, "
-        f"norm={normalize}, cache={use_memory_cache}, seed={seed}"
+        f"norm={normalize}, cache={use_memory_cache}, seed={seed}, vol={volume}"
     )
 
     return FishSpeechParams(
@@ -226,5 +238,6 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
         seed=seed,
         normalize=normalize,
         use_memory_cache=use_memory_cache,
-        reference_id=reference_id
+        reference_id=reference_id,
+        volume=volume
     )

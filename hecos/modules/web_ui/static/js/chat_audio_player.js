@@ -213,10 +213,33 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
   };
 }
 
+// ── Consolidated Player Setup (without autoplay) ──
+function _setupConsolidatedPlayer(bubble, audioId) {
+  if (!bubble || !audioId) return;
+  const fullUrl = `/api/audio?id=${encodeURIComponent(audioId)}`;
+  window.HecosTTSPlayer.oncanplaythrough = null; // Do NOT autoplay on consolidated swap!
+  window.HecosTTSPlayer.src = fullUrl;
+  window.HecosTTSPlayer.onplay = () => {
+    window.showStopVoiceBtn(true);
+    if (typeof initOutVuMeter === 'function') initOutVuMeter(window.HecosTTSPlayer);
+    fetch('/api/audio/speaking/start', { method: 'POST' }).catch(() => {});
+  };
+  window.HecosTTSPlayer.onpause = () => {
+    window.showStopVoiceBtn(false);
+    fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
+  };
+  window.HecosTTSPlayer.onended = () => {
+    window.showStopVoiceBtn(false);
+    fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
+  };
+}
+
 // ── Progressive Audio Chunk Streaming & Playback ──
 function handleAudioChunk(bubble, ev) {
   if (!bubble) return;
   console.log("[Audio] Received chunk:", (ev.chunk_index || 0) + 1, "/", ev.total_chunks, "id=", ev.audio_id);
+
+  bubble._hasPlayedProgressive = true;
 
   if (!bubble._audioChunks) {
     bubble._audioChunks = [];
@@ -240,13 +263,8 @@ async function _playNextChunk(bubble) {
       window.showStopVoiceBtn(false);
       fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
       if (bubble.dataset.audioId) {
-        // Switch player to final consolidated audio for historical scrubbing/replay
-        const fullUrl = `/api/audio?id=${encodeURIComponent(bubble.dataset.audioId)}`;
-        window.HecosTTSPlayer.src = fullUrl;
-        window.HecosTTSPlayer.onended = () => {
-          window.showStopVoiceBtn(false);
-          fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
-        };
+        // Switch player to final consolidated audio for historical scrubbing/replay without autoplay
+        _setupConsolidatedPlayer(bubble, bubble.dataset.audioId);
       }
     }
     return;
@@ -287,6 +305,7 @@ async function _playNextChunk(bubble) {
     const blob = await res.blob();
     const blobUrl = URL.createObjectURL(blob);
 
+    window.HecosTTSPlayer.oncanplaythrough = null;
     window.HecosTTSPlayer.src = blobUrl;
     if (window.globalTTSVolume !== undefined) {
       window.HecosTTSPlayer.volume = window.globalTTSVolume;
@@ -332,7 +351,15 @@ function handleAudioReady(bubble, finalAudioId) {
   bubble.dataset.audioId = finalAudioId;
   bubble._chunksFinished = true;
 
-  // If nothing is playing and no chunks are waiting, finalize or fallback to tryLoadAudio
+  // If progressive chunks were already received / played, do NOT re-play via tryLoadAudio!
+  if (bubble._hasPlayedProgressive) {
+    if (!bubble._isCurrentlyPlaying && (!bubble._audioChunks || bubble._audioChunks.length === 0)) {
+      _setupConsolidatedPlayer(bubble, finalAudioId);
+    }
+    return;
+  }
+
+  // Non-progressive fallback (e.g. legacy engines with no chunks)
   if (!bubble._isCurrentlyPlaying && (!bubble._audioChunks || bubble._audioChunks.length === 0)) {
     tryLoadAudio(bubble);
   }

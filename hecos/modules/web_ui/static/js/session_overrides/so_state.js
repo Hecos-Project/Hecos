@@ -337,6 +337,7 @@ window.soLoadActiveSessionState = async function() {
                 setVal('so-fish-reppen', cfg.voice.fish_repetition_penalty);
                 if (cfg.voice.fish_chunk_length !== undefined) setVal('so-fish-chunk-length', cfg.voice.fish_chunk_length);
                 if (cfg.voice.fish_max_new_tokens !== undefined) setVal('so-fish-max-tokens', cfg.voice.fish_max_new_tokens);
+                if (cfg.voice.fish_volume !== undefined) setVal('so-fish-volume', cfg.voice.fish_volume);
             }
 
         }

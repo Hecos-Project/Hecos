@@ -30,7 +30,8 @@ window.saveFishPreset = function() {
             seed: parseInt(document.getElementById('v-fish-seed')?.value || 0),
             normalize: document.getElementById('v-fish-normalize')?.checked ?? true,
             use_memory_cache: document.getElementById('v-fish-memory-cache')?.checked ?? true,
-            chunk_sentences: document.getElementById('v-fish-chunk')?.checked ?? true
+            chunk_sentences: document.getElementById('v-fish-chunk')?.checked ?? true,
+            volume: parseFloat(document.getElementById('v-fish-volume')?.value || 1.0)
         };
 
         if (!audioConfig.fish_speech) audioConfig.fish_speech = {};
@@ -71,7 +72,8 @@ window.updateFishPreset = function() {
         seed: parseInt(document.getElementById('v-fish-seed')?.value || 0),
         normalize: document.getElementById('v-fish-normalize')?.checked ?? true,
         use_memory_cache: document.getElementById('v-fish-memory-cache')?.checked ?? true,
-        chunk_sentences: document.getElementById('v-fish-chunk')?.checked ?? true
+        chunk_sentences: document.getElementById('v-fish-chunk')?.checked ?? true,
+        volume: parseFloat(document.getElementById('v-fish-volume')?.value || 1.0)
     };
 
     if (!audioConfig.fish_speech) audioConfig.fish_speech = {};
@@ -116,6 +118,8 @@ window.loadFishPreset = function() {
             if (document.getElementById('v-fish-normalize')) document.getElementById('v-fish-normalize').checked = true;
             if (document.getElementById('v-fish-memory-cache')) document.getElementById('v-fish-memory-cache').checked = true;
             if (document.getElementById('v-fish-chunk')) document.getElementById('v-fish-chunk').checked = true;
+            if (document.getElementById('v-fish-volume')) document.getElementById('v-fish-volume').value = 1.0;
+            if (document.getElementById('v-fish-volume-range')) document.getElementById('v-fish-volume-range').value = 1.0;
 
             if (!audioConfig.fish_speech) audioConfig.fish_speech = {};
             audioConfig.fish_speech.current_preset = 'default';
@@ -148,6 +152,10 @@ window.loadFishPreset = function() {
     if (document.getElementById('v-fish-normalize')) document.getElementById('v-fish-normalize').checked = p.normalize ?? true;
     if (document.getElementById('v-fish-memory-cache')) document.getElementById('v-fish-memory-cache').checked = p.use_memory_cache ?? true;
     if (document.getElementById('v-fish-chunk')) document.getElementById('v-fish-chunk').checked = p.chunk_sentences ?? true;
+    if (p.volume !== undefined) {
+        if (document.getElementById('v-fish-volume')) document.getElementById('v-fish-volume').value = p.volume;
+        if (document.getElementById('v-fish-volume-range')) document.getElementById('v-fish-volume-range').value = p.volume;
+    }
 
     // Resolve associated inference preset
     let matchedInf = p.inference_preset || '';
@@ -327,6 +335,10 @@ window.loadFishInferencePreset = function() {
     if (document.getElementById('v-fish-seed')) document.getElementById('v-fish-seed').value = p.seed ?? 0;
     if (document.getElementById('v-fish-normalize')) document.getElementById('v-fish-normalize').checked = p.normalize ?? true;
     if (document.getElementById('v-fish-memory-cache')) document.getElementById('v-fish-memory-cache').checked = p.use_memory_cache ?? true;
+    if (p.volume !== undefined) {
+        if (document.getElementById('v-fish-volume')) document.getElementById('v-fish-volume').value = p.volume;
+        if (document.getElementById('v-fish-volume-range')) document.getElementById('v-fish-volume-range').value = p.volume;
+    }
 
     document.getElementById('v-fish-temperature')?.dispatchEvent(new Event('input'));
     document.getElementById('v-fish-topp')?.dispatchEvent(new Event('input'));

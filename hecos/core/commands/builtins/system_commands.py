@@ -285,7 +285,7 @@ def _cmd_speak(raw_args_str="", config=None, config_manager=None, **kwargs) -> s
     """Direct TTS speech synthesis bypassing the LLM."""
     text = raw_args_str.strip()
     if not text:
-        return "🗣️ **Direct TTS Command (LLM Bypass):**\n`/speak <text to pronounce>` (aliases: `speak`, `/tts`, `/say`, `/parla`, `/voce`)\n*Example:* `/speak Hello Tony, I am Urania!`"
+        return "🗣️ **Direct TTS Command (LLM Bypass):**\n`/speak <text to pronounce>` (aliases: `/tts`, `/say`, `/parla`, `/voce`)\n*Example:* `/speak Hello Tony, I am Urania!`"
     try:
         from hecos.modules.web_ui.routes_chat_tts import _maybe_generate_tts
         out, audio_id = _maybe_generate_tts(text, config_manager)
@@ -505,7 +505,7 @@ SYSTEM_COMMANDS = [
     },
     {
         "id": "speak",
-        "aliases": ["/speak", "speak", "/tts", "tts", "/say", "say", "/parla", "parla", "/voce", "voce"],
+        "aliases": ["/speak", "/tts", "/say", "/parla", "/voce"],
         "description": "Direct TTS speech synthesis bypassing the LLM",
         "usage": "/speak <text to pronounce>",
         "example": "/speak Hello Tony, I am Urania!",

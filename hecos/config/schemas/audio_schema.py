@@ -52,6 +52,7 @@ class FishSpeechConfig(BaseModel):
     current_preset: str = "default"
     current_inference_preset: str = ""
     model_checkpoint: str = "s2-pro"  # Subfolder in hecos/engines/fish_speech/checkpoints/
+    volume: float = 1.0               # Audio output loudness normalization and volume factor
 
 class AudioConfig(BaseModel):
     """Root schema for config/audio.yaml"""

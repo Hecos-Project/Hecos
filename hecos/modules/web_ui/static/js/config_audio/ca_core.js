@@ -53,6 +53,8 @@ function populateAudioUI() {
     setCheck('v-fish-normalize', (v.fish_speech && v.fish_speech.normalize !== undefined) ? v.fish_speech.normalize : true);
     setCheck('v-fish-memory-cache', (v.fish_speech && v.fish_speech.use_memory_cache !== undefined) ? v.fish_speech.use_memory_cache : true);
     setCheck('v-fish-chunk', (v.fish_speech && v.fish_speech.chunk_sentences !== undefined) ? v.fish_speech.chunk_sentences : true);
+    setVal('v-fish-volume', (v.fish_speech && v.fish_speech.volume !== undefined) ? v.fish_speech.volume : 1.0);
+    setVal('v-fish-volume-range', (v.fish_speech && v.fish_speech.volume !== undefined) ? v.fish_speech.volume : 1.0);
     
     // Update value displays
     const spVal = document.getElementById('v-xtts-speed-val'); if(spVal) spVal.textContent = getV('v-xtts-speed');
@@ -263,6 +265,7 @@ function buildAudioPayload() {
             normalize:          getC('v-fish-normalize', v.fish_speech?.normalize ?? true),
             use_memory_cache:   getC('v-fish-memory-cache', v.fish_speech?.use_memory_cache ?? true),
             chunk_sentences:    getC('v-fish-chunk', v.fish_speech?.chunk_sentences ?? true),
+            volume:             parseFloat(getV('v-fish-volume', v.fish_speech?.volume ?? 1.0)),
             current_preset:     getV('v-fish-preset', 'default'),
             current_inference_preset: getV('v-fish-inference-preset', '')
         },

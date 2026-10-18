@@ -430,6 +430,7 @@ window.soApplySoulToUI = async function(soul) {
         resetVal('so-fish-reppen', 1.2);
         resetVal('so-fish-chunk-length', 200);
         resetVal('so-fish-max-tokens', 1024);
+        resetVal('so-fish-volume', 1.0);
         
         document.getElementById('so-xtts-controls').style.display = 'none';
         const fishControls = document.getElementById('so-fish-controls');
@@ -644,7 +645,8 @@ window.soCollectUIState = function() {
             fish_top_p: getNum('so-fish-topp'),
             fish_repetition_penalty: getNum('so-fish-reppen'),
             fish_chunk_length: getNum('so-fish-chunk-length'),
-            fish_max_new_tokens: getNum('so-fish-max-tokens')
+            fish_max_new_tokens: getNum('so-fish-max-tokens'),
+            fish_volume: getNum('so-fish-volume')
         }
     };
 };
@@ -808,6 +810,7 @@ window.soApplyFishInferencePreset = function(presetName) {
     setVal('so-fish-reppen', p.repetition_penalty);
     setVal('so-fish-chunk-length', p.chunk_length ?? 200);
     setVal('so-fish-max-tokens', p.max_new_tokens ?? 1024);
+    if (p.volume !== undefined) setVal('so-fish-volume', p.volume);
     
     window.soDirty();
 };

@@ -86,16 +86,18 @@ window.initEvents = function() {
       }
       
     } else if (ev.type === 'voice_detected' && ev.text) {
-      console.log("[Audio] Voice command received:", ev.text);
+      let voiceCmd = (ev.text || '').trim();
+      voiceCmd = voiceCmd.replace(/^(slash\s+|barra\s+|\/\s*)/i, '/');
+      console.log("[Audio] Voice command received:", voiceCmd);
       if (window.hideWelcome) window.hideWelcome();
       // Save to input history so ArrowUp can recall voice messages
-      if (typeof window.saveInputHistory === 'function') window.saveInputHistory(ev.text);
+      if (typeof window.saveInputHistory === 'function') window.saveInputHistory(voiceCmd);
       
       if (ev.standalone) {
           // In standalone mode, the frontend orchestrates generation
-          if (window.addBubble) window.addBubble('user', ev.text);
-          if (window.chatHistory) window.chatHistory.push({role: 'user', content: ev.text, images: []});
-          if (window.sendInternalMessage) window.sendInternalMessage(ev.text);
+          if (window.addBubble) window.addBubble('user', voiceCmd);
+          if (window.chatHistory) window.chatHistory.push({role: 'user', content: voiceCmd, images: []});
+          if (window.sendInternalMessage) window.sendInternalMessage(voiceCmd);
       } else {
           // Native system is already processing it, just show the bubbles
           if (window.addBubble) window.addBubble('user', ev.text);

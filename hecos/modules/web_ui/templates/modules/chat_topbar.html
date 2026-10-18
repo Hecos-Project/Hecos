@@ -398,7 +398,7 @@
                           if (data.config.voice?.xtts_speaker_wav) {
                               selectedVoice = 'custom';
                           }
-                          await window.updateSessionTTSVoices(selectedVoice);
+                          await window.updateSessionTTSVoices(selectedVoice, true);
                       }
                   } else {
                       if (tEngSel) tEngSel.value = "";

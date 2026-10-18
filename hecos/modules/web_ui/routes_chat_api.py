@@ -125,10 +125,10 @@ def init_chat_api_routes(app, cfg_mgr, logger):
             _chat_log.warning(f"[Chat] Flow intercept check failed: {_ie}")
         # ── End flow intercept ────────────────────────────────────────────────
 
-        # ── Direct TTS commands (/speak, speak, /tts, tts, /say, say, /parla, parla, /voce, voce) ───────
+        # ── Direct TTS commands (/speak, /tts, /say, /parla, /voce) ─────────────────
         raw_cmd = user_msg.strip()
         first_token = raw_cmd.split()[0].lower() if raw_cmd else ""
-        if first_token in ("/speak", "speak", "/tts", "tts", "/say", "say", "/parla", "parla", "/voce", "voce"):
+        if first_token in ("/speak", "/tts", "/say", "/parla", "/voce"):
             parts = raw_cmd.split(maxsplit=1)
             text_to_speak = parts[1].strip() if len(parts) > 1 else ""
 
@@ -142,7 +142,7 @@ def init_chat_api_routes(app, cfg_mgr, logger):
                     if not text_to_speak:
                         msg = (
                             "🗣️ **Direct TTS Command (LLM Bypass)**\n\n"
-                            "Usage: `/speak <text to pronounce>` (or `speak`, `/parla`, `/tts`)\n\n"
+                            "Usage: `/speak <text to pronounce>` (or `/parla`, `/tts`)\n\n"
                             "*Example:*\n"
                             "`/speak Hello Tony, I am Urania. This is a direct voice test.`"
                         )

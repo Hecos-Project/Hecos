@@ -354,6 +354,16 @@ window.sendMessage = async function() {
 window.sendInternalMessage = async function(text) {
   if(!text || window.isStreaming) return;
   
+  // Intercept voice dictation triggers for slash commands
+  const triggers = ["comando ", "command ", "slash ", "barra "];
+  for (const t of triggers) {
+      if (text.toLowerCase().startsWith(t)) {
+          text = "/" + text.substring(t.length);
+          break;
+      }
+  }
+  text = text.replace(/^\/\s+/, '/');
+
   if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
   if (window.hideWelcome) window.hideWelcome();
   

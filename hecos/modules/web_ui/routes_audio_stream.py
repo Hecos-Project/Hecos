@@ -67,8 +67,9 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 recognizer = sr.Recognizer()
                 with sr.AudioFile(tmp_in_path) as source:
                     audio_data = recognizer.record(source)
-                    logger.info("[WebUI] Transcribing WebRTC audio via Google STT...")
-                    text = recognizer.recognize_google(audio_data, language="it-IT", show_all=False)
+                    raw_text = recognizer.recognize_google(audio_data, language="it-IT", show_all=False)
+                    import re
+                    text = re.sub(r'^(slash\s*|barra\s*|/\s*)', '/', (raw_text or "").strip(), flags=re.IGNORECASE)
             except sr.UnknownValueError:
                 logger.warning("[WebUI] WebRTC audio transcription could not understand audio.")
             except Exception as e:

@@ -270,6 +270,20 @@
     </div>
   </div>
 
+  <!-- Inference Controls: Row 3 (Audio Volume / Loudness Normalization) -->
+  <div class="grid-2" style="margin-top:12px;">
+    <div class="field">
+      <label>
+        <i class="fas fa-volume-up"></i> Output Volume / Gain Normalization
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Audio output volume multiplier and loudness normalization. 1.0 = standard normalized level matching Piper and system audio. Range: 0.5 to 2.0."></i>
+      </label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-fish-volume-range" min="0.5" max="2.0" step="0.05" value="1.0" style="flex:1;" oninput="document.getElementById('v-fish-volume').value = this.value">
+        <input type="number" id="v-fish-volume" min="0.5" max="2.0" step="0.05" value="1.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-fish-volume-range').value = this.value">
+      </div>
+    </div>
+  </div>
+
   <!-- Advanced Optimization Toggles -->
   <div style="margin-top:14px; display:flex; flex-direction:column; gap:8px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:6px; padding:10px 14px;">
     <div class="toggle-row" style="margin:0;">

@@ -54,6 +54,7 @@ async function testVoice(mode, engine = null) {
                 fish_normalize: document.getElementById('v-fish-normalize')?.checked ?? true,
                 fish_use_memory_cache: document.getElementById('v-fish-memory-cache')?.checked ?? true,
                 fish_chunk_sentences: document.getElementById('v-fish-chunk')?.checked ?? false,
+                fish_volume: parseFloat(document.getElementById('v-fish-volume')?.value || 1.0),
             };
         }
         const r = await fetch('/api/audio/test', {
