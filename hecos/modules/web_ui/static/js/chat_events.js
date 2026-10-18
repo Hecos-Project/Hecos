@@ -144,12 +144,11 @@ window.initEvents = function() {
       if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
 
     } else if (ev.type === 'audio_ready') {
-      console.log("[Audio] Global audio ready from backend");
-      // Use _lastAiBubble tracked at bubble creation time.
-      // The old .msg.ai:last-child selector broke when action-log divs were inserted after.
+      console.log("[Audio] Global audio ready from backend", ev);
       const targetBubble = window._lastAiBubble;
       if (targetBubble && window.tryLoadAudio) {
-        window.tryLoadAudio(targetBubble);
+        if (ev.audio_id) targetBubble.dataset.audioId = ev.audio_id;
+        window.tryLoadAudio(targetBubble, true);
       }
 
     } else if (ev.type === 'chat_background_append') {

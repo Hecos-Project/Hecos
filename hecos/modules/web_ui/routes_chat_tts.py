@@ -469,21 +469,13 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None, on_chunk
         except Exception as _c_err:
             _chat_log.debug(f"[Audio] TTS Cache check notice: {_c_err}")
 
-        # Progressive chunk handler
+        # Chunk progress handler
         def _handle_chunk_ready(idx, total, chunk_path, chunk_bytes):
             try:
-                import shutil
-                chunk_id = f"{audio_id}_c{idx}"
-                dest_chunk = os.path.join(HISTORY_DIR, f"{chunk_id}.wav")
-                if chunk_path and os.path.exists(chunk_path):
-                    shutil.copyfile(chunk_path, dest_chunk)
-                elif chunk_bytes:
-                    with open(dest_chunk, "wb") as _cf:
-                        _cf.write(chunk_bytes)
                 if on_chunk_ready:
-                    on_chunk_ready(idx, total, chunk_id, dest_chunk)
+                    on_chunk_ready(idx, total, None, None)
             except Exception as _c_save_err:
-                _chat_log.warning(f"[Audio] Error saving chunk {idx}: {_c_save_err}")
+                _chat_log.warning(f"[Audio] Error in chunk callback {idx}: {_c_save_err}")
 
         if _engine in ['xtts2', 'xtts']:
             _chat_log.info("[Audio] Intercepted XTTS2 request. Using isolated bypass...")

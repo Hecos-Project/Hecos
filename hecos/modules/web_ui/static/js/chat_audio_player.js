@@ -86,41 +86,56 @@ window.unlockAudioContext = function() {
 };
 
 async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
+  if (!bubble) return;
+
   // Prefer the persistent audio_id stored on the bubble (survives page refresh)
   const audioId = bubble.dataset?.audioId || null;
   const url = forceUrl ? forceUrl : (audioId
     ? `/api/audio?id=${encodeURIComponent(audioId)}`
     : `/api/audio?t=${Date.now()}`);
+
+  // Prevent duplicate load calls on the same bubble for the same audio
+  if (audioId && bubble.dataset.audioLoaded === audioId && bubble.querySelector('audio')) {
+    console.log("[Audio] Audio already loaded for bubble:", audioId);
+    return;
+  }
+
   console.log("[Audio] Attempting to load audio from:", url, "autoplay:", autoplay);
   
-  // Remove existing audio badges to prevent duplicates
+  // Remove existing audio badges and any rogue audio elements to guarantee a single player
   const existingBadges = bubble.querySelectorAll('.audio-badge');
   existingBadges.forEach(b => b.remove());
+  bubble.querySelectorAll('audio').forEach(a => {
+    if (a !== window.HecosTTSPlayer) a.remove();
+  });
 
   const badge = document.createElement('div');
   badge.className='audio-badge';
   badge.innerHTML = '<i class="fas fa-volume-up"></i> ';
   
   // Under HTTPS, sometimes the browser blocks direct src assignment for self-signed
-  // Let's try to fetch it as a blob to see if it's a network/security error
+  // Fetch it as a blob to prevent CORS/SSL playback issues
   let blobUrl = "";
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
     const blob = await response.blob();
     blobUrl = URL.createObjectURL(blob);
-    console.log("[Audio] Blob created successfully");
+    console.log("[Audio] Blob created successfully for:", audioId || 'live');
   } catch (e) {
     console.error("[Audio] Fetch failed (possibly SSL/CORS):", e);
     badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Audio Error (Click to retry)';
     badge.style.cursor = 'pointer';
-    badge.onclick = () => tryLoadAudio(bubble, autoplay);
+    badge.onclick = () => tryLoadAudio(bubble, autoplay, forceUrl);
     bubble.appendChild(badge);
     return;
   }
 
+  if (audioId) {
+    bubble.dataset.audioLoaded = audioId;
+  }
+
   // If this is a historical message (no autoplay), we don't need the global singleton player.
-  // Using the singleton causes race conditions when loading multiple historical messages concurrently.
   if (!autoplay) {
       const historicalPlayer = document.createElement('audio');
       historicalPlayer.controls = true;
@@ -153,17 +168,30 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
   }
 
   // ── Live Audio (Autoplay = true) ──
-  // If the global player is already in another bubble, clone it there so the user keeps a play button for history
-  if (window.HecosTTSPlayer.parentNode) {
+  // If the global player is currently attached to another bubble in the document,
+  // leave a static clone on that other bubble so the user can replay earlier messages.
+  const oldParent = window.HecosTTSPlayer.parentNode;
+  const isAttachedToAnotherBubble = oldParent && 
+                                   document.body.contains(window.HecosTTSPlayer) && 
+                                   !bubble.contains(window.HecosTTSPlayer);
+
+  if (isAttachedToAnotherBubble) {
       const oldSrc = window.HecosTTSPlayer.src;
-      const clone = document.createElement('audio');
-      clone.controls = true;
-      clone.style.display = 'block';
-      clone.style.marginTop = '10px';
-      clone.src = oldSrc;
-      window.HecosTTSPlayer.parentNode.replaceChild(clone, window.HecosTTSPlayer);
+      if (oldSrc && !oldSrc.startsWith('data:')) {
+          const clone = document.createElement('audio');
+          clone.controls = true;
+          clone.style.display = 'block';
+          clone.style.marginTop = '10px';
+          clone.src = oldSrc;
+          oldParent.replaceChild(clone, window.HecosTTSPlayer);
+      } else {
+          oldParent.removeChild(window.HecosTTSPlayer);
+      }
+  } else if (oldParent && oldParent !== badge) {
+      oldParent.removeChild(window.HecosTTSPlayer);
   }
 
+  window.HecosTTSPlayer.oncanplaythrough = null;
   window.HecosTTSPlayer.src = blobUrl;
   if (window.globalTTSVolume !== undefined) {
       window.HecosTTSPlayer.volume = window.globalTTSVolume;
@@ -173,8 +201,7 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
   bubble.appendChild(badge);
   
   window.HecosTTSPlayer.oncanplaythrough = () => {
-    console.log("[Audio] Can play through...");
-    console.log("[Audio] Attempting autoplay...");
+    console.log("[Audio] Can play through, attempting autoplay...");
     window.HecosTTSPlayer.play().then(() => {
         console.log("[Audio] Autoplay success");
     }).catch(err => {
@@ -213,156 +240,18 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
   };
 }
 
-// ── Consolidated Player Setup (without autoplay) ──
-function _setupConsolidatedPlayer(bubble, audioId) {
-  if (!bubble || !audioId) return;
-  const fullUrl = `/api/audio?id=${encodeURIComponent(audioId)}`;
-  window.HecosTTSPlayer.oncanplaythrough = null; // Do NOT autoplay on consolidated swap!
-  window.HecosTTSPlayer.src = fullUrl;
-  window.HecosTTSPlayer.onplay = () => {
-    window.showStopVoiceBtn(true);
-    if (typeof initOutVuMeter === 'function') initOutVuMeter(window.HecosTTSPlayer);
-    fetch('/api/audio/speaking/start', { method: 'POST' }).catch(() => {});
-  };
-  window.HecosTTSPlayer.onpause = () => {
-    window.showStopVoiceBtn(false);
-    fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
-  };
-  window.HecosTTSPlayer.onended = () => {
-    window.showStopVoiceBtn(false);
-    fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
-  };
-}
-
-// ── Progressive Audio Chunk Streaming & Playback ──
-function handleAudioChunk(bubble, ev) {
-  if (!bubble) return;
-  console.log("[Audio] Received chunk:", (ev.chunk_index || 0) + 1, "/", ev.total_chunks, "id=", ev.audio_id);
-
-  bubble._hasPlayedProgressive = true;
-
-  if (!bubble._audioChunks) {
-    bubble._audioChunks = [];
-  }
-  bubble._audioChunks.push(ev.audio_id);
-
-  // If not currently playing audio, start playback of next chunk in queue immediately
-  if (!bubble._isCurrentlyPlaying) {
-    _playNextChunk(bubble);
-  }
-}
-
-async function _playNextChunk(bubble) {
-  if (!bubble || !bubble._audioChunks) return;
-
-  // Queue is currently empty
-  if (bubble._audioChunks.length === 0) {
-    bubble._isCurrentlyPlaying = false;
-    if (bubble._chunksFinished) {
-      console.log("[Audio] All progressive chunks finished playback.");
-      window.showStopVoiceBtn(false);
-      fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
-      if (bubble.dataset.audioId) {
-        // Switch player to final consolidated audio for historical scrubbing/replay without autoplay
-        _setupConsolidatedPlayer(bubble, bubble.dataset.audioId);
-      }
-    }
-    return;
-  }
-
-  bubble._isCurrentlyPlaying = true;
-  const nextId = bubble._audioChunks.shift();
-  const chunkUrl = `/api/audio?id=${encodeURIComponent(nextId)}`;
-  console.log("[Audio] Playing chunk:", nextId, "remaining in queue:", bubble._audioChunks.length);
-
-  // Ensure audio badge exists
-  let badge = bubble.querySelector('.audio-badge');
-  if (!badge) {
-    badge = document.createElement('div');
-    badge.className = 'audio-badge';
-    badge.innerHTML = '<i class="fas fa-volume-up"></i> ';
-    bubble.appendChild(badge);
-  }
-
-  // Clone old player if attached to a previous bubble
-  if (window.HecosTTSPlayer.parentNode && window.HecosTTSPlayer.parentNode !== badge) {
-    const oldSrc = window.HecosTTSPlayer.src;
-    const clone = document.createElement('audio');
-    clone.controls = true;
-    clone.style.display = 'block';
-    clone.style.marginTop = '10px';
-    clone.src = oldSrc;
-    window.HecosTTSPlayer.parentNode.replaceChild(clone, window.HecosTTSPlayer);
-  }
-
-  if (!badge.contains(window.HecosTTSPlayer)) {
-    badge.appendChild(window.HecosTTSPlayer);
-  }
-
-  try {
-    const res = await fetch(chunkUrl);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-
-    window.HecosTTSPlayer.oncanplaythrough = null;
-    window.HecosTTSPlayer.src = blobUrl;
-    if (window.globalTTSVolume !== undefined) {
-      window.HecosTTSPlayer.volume = window.globalTTSVolume;
-    }
-    window.currentAudio = window.HecosTTSPlayer;
-
-    window.HecosTTSPlayer.onended = () => {
-      bubble._isCurrentlyPlaying = false;
-      _playNextChunk(bubble);
-    };
-
-    window.HecosTTSPlayer.onerror = (e) => {
-      console.warn("[Audio] Chunk error, skipping to next:", e);
-      bubble._isCurrentlyPlaying = false;
-      _playNextChunk(bubble);
-    };
-
-    window.HecosTTSPlayer.play().then(() => {
-      window.showStopVoiceBtn(true);
-      if (typeof initOutVuMeter === 'function') initOutVuMeter(window.HecosTTSPlayer);
-      fetch('/api/audio/speaking/start', { method: 'POST' }).catch(() => {});
-    }).catch(err => {
-      console.warn("[Audio] Progressive autoplay blocked by browser:", err);
-      bubble._isCurrentlyPlaying = false;
-      const hint = document.createElement('span');
-      hint.style.fontSize = '11px';
-      hint.style.color = 'var(--accent)';
-      hint.style.display = 'block';
-      hint.style.marginTop = '4px';
-      hint.textContent = '👆 Clicca Play per ascoltare (Blocco Autoplay Browser)';
-      badge.appendChild(hint);
-    });
-  } catch (err) {
-    console.error("[Audio] Could not fetch chunk blob:", err);
-    bubble._isCurrentlyPlaying = false;
-    _playNextChunk(bubble);
-  }
-}
-
+// ── Audio Ready Handler (Single File) ──
 function handleAudioReady(bubble, finalAudioId) {
-  if (!bubble) return;
-  console.log("[Audio] Final audio consolidated ready:", finalAudioId);
+  if (!bubble || !finalAudioId) return;
+  console.log("[Audio] Single consolidated audio ready:", finalAudioId);
   bubble.dataset.audioId = finalAudioId;
-  bubble._chunksFinished = true;
+  tryLoadAudio(bubble, true);
+}
 
-  // If progressive chunks were already received / played, do NOT re-play via tryLoadAudio!
-  if (bubble._hasPlayedProgressive) {
-    if (!bubble._isCurrentlyPlaying && (!bubble._audioChunks || bubble._audioChunks.length === 0)) {
-      _setupConsolidatedPlayer(bubble, finalAudioId);
-    }
-    return;
-  }
-
-  // Non-progressive fallback (e.g. legacy engines with no chunks)
-  if (!bubble._isCurrentlyPlaying && (!bubble._audioChunks || bubble._audioChunks.length === 0)) {
-    tryLoadAudio(bubble);
-  }
+// ── Deprecated progressive chunk stub ──
+function handleAudioChunk(bubble, ev) {
+  // Ignored: audio is consolidated into a single WAV file before playback
+  console.log("[Audio] Chunk progress:", (ev.chunk_index || 0) + 1, "/", ev.total_chunks);
 }
 
 function showStopVoiceBtn(visible) {

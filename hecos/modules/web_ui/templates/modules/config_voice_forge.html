@@ -1,0 +1,565 @@
+<!-- ==========================================================================
+     Voice Forge - Vocal Timbre Sculpting & Forging Studio
+     Loaded by Hecos WebUI Package Manager (tab: voice_forge)
+     ========================================================================== -->
+
+<div id="tab-voice-forge" class="panel" style="padding: 10px;">
+  <div class="vf-container">
+
+    <!-- Topbar Hero -->
+    <div class="vf-hero">
+      <div class="vf-hero-title">
+        <div class="vf-hero-icon">
+          <i class="fas fa-wave-square"></i>
+        </div>
+        <div class="vf-hero-text">
+          <h2>Voice Forge Studio</h2>
+          <p>Acoustic Timbre Sculptor &amp; Physical Reference Synthesizer for Fish Speech S2-Pro</p>
+        </div>
+      </div>
+      <div class="vf-hero-actions">
+        <button type="button" class="vf-btn vf-btn-accent" onclick="window.vfOpenPresets ? window.vfOpenPresets() : (window.VFPresets && window.VFPresets.openModal ? window.VFPresets.openModal() : null)">
+          <i class="fas fa-layer-group"></i>
+          Presets: <span id="vf-current-preset-name" style="font-weight:700; margin-left:4px;">Man 1 (Deep &amp; Resonant)</span>
+        </button>
+        <button type="button" class="vf-btn" onclick="window.VFMixer && window.VFMixer.syncSlidersToRecipe ? window.VFMixer.syncSlidersToRecipe() : null" title="Reset Sliders to Current Preset">
+          <i class="fas fa-undo"></i> Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- Source & Language Configuration Bar -->
+    <div class="vf-card" style="padding: 14px 18px;">
+      <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end;">
+        
+        <!-- Language Selector -->
+        <div class="vf-field" style="min-width: 150px;">
+          <label class="vf-label"><i class="fas fa-globe"></i> Language</label>
+          <select id="vf-sel-lang" class="vf-select" onchange="window.vfOnLanguageChange ? window.vfOnLanguageChange(this.value) : (window.VFMixer && window.VFMixer.onLanguageSelect ? window.VFMixer.onLanguageSelect(this.value) : null)">
+            <option value="it" selected>🇮🇹 Italiano</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="zh">🇨🇳 中文</option>
+          </select>
+        </div>
+
+        <!-- Calibration Sentence Picker (Pre-populated defaults for immediate availability) -->
+        <div class="vf-field" style="flex: 1; min-width: 260px;">
+          <label class="vf-label"><i class="fas fa-quote-left"></i> Calibration Corpus Sample</label>
+          <select id="vf-sel-corpus" class="vf-select" onchange="window.VFMixer.onCorpusSelect(this.value)">
+            <option value="Ma%20la%20volpe%20col%20suo%20balzo%20ha%20raggiunto%20il%20quieto%20fante%20all'ombra%20del%20tiglio%20fiorito.">Narrativo (Pangramma fonetico equilibrato)</option>
+            <option value="Buongiorno!%20Ho%20preparato%20tutto%20per%20la%20giornata%20di%20oggi.%20Possiamo%20iniziare%20subito%20con%20il%20nostro%20lavoro.">Conversazionale naturale</option>
+            <option value="Ascoltami%20bene%3A%20questo%20%C3%A8%20un%20momento%20straordinario%2C%20e%20ogni%20dettaglio%20pu%C3%B2%20fare%20davvero%20la%20differenza!">Dinamico ed espressivo</option>
+          </select>
+        </div>
+
+        <!-- Source Origin -->
+        <div class="vf-field" style="min-width: 170px;">
+          <label class="vf-label"><i class="fas fa-microchip"></i> Voice Foundation</label>
+          <select id="vf-sel-source-type" class="vf-select">
+            <option value="synthetic_fish" selected>Fish Speech (Seed)</option>
+            <option value="synthetic_kokoro">Kokoro TTS</option>
+            <option value="file">Upload Audio File</option>
+          </select>
+        </div>
+
+        <!-- Seed input if synthetic_fish -->
+        <div id="vf-box-seed" class="vf-field" style="min-width: 120px;">
+          <label class="vf-label"><i class="fas fa-dice"></i> Random Seed</label>
+          <div style="display:flex; gap:6px;">
+            <input type="number" id="vf-inp-seed" class="vf-input" style="width:75px;" value="42" onchange="window.VFMixer.recipe.source_seed = parseInt(this.value, 10)">
+            <button type="button" class="vf-btn" style="padding:6px 10px;" onclick="document.getElementById('vf-inp-seed').value = Math.floor(Math.random()*100000); window.VFMixer.recipe.source_seed = parseInt(document.getElementById('vf-inp-seed').value, 10);" title="Randomize Seed">
+              <i class="fas fa-random"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- File Upload if custom file -->
+        <div id="vf-box-file" class="vf-field" style="display:none; min-width: 160px;">
+          <label class="vf-label"><i class="fas fa-upload"></i> Custom Voice File</label>
+          <label class="vf-btn vf-btn-cyan" style="cursor:pointer; margin:0; padding:6px 12px; font-size:0.78rem;">
+            <i class="fas fa-folder-open"></i> <span id="vf-btn-upload-label">Upload Audio</span>
+            <input type="file" id="vf-file-upload" accept="audio/*" style="display:none;">
+          </label>
+        </div>
+
+      </div>
+
+      <!-- Editable Reference Text Preview -->
+      <div style="margin-top: 10px;">
+        <label class="vf-label" style="font-size:0.68rem; color:#64748b;">REFERENCE PHONETIC TEXT (MUST MATCH REFERENCE AUDIO)</label>
+        <input type="text" id="vf-txt-reference" class="vf-input" style="width:100%; font-size:0.8rem; background:rgba(0,0,0,0.35);" value="Ma la volpe col suo balzo ha raggiunto il quieto fante all'ombra del tiglio fiorito." placeholder="Phonetically balanced reference text...">
+      </div>
+    </div>
+
+    <!-- Main Workspace Studio Grid -->
+    <div class="vf-studio-grid">
+
+      <!-- LEFT: Sculpting Console Strips -->
+      <div style="display:flex; flex-direction:column; gap:14px;">
+
+        <!-- Channel Group: Pitch, Dynamics & Vocal Tract -->
+        <div class="vf-channels-grid">
+          
+          <!-- Pitch & Dynamics Strip -->
+          <div class="vf-channel-box">
+            <div class="vf-channel-title">
+              <span><i class="fas fa-music" style="color:var(--vf-accent); margin-right:6px;"></i> Pitch &amp; Dynamics</span>
+            </div>
+
+            <!-- Pitch Shift -->
+            <div class="vf-slider-row">
+              <div class="vf-slider-head">
+                <span class="vf-slider-label">Musical Pitch Shift</span>
+                <span id="vf-val-pitch" class="vf-slider-val">0.0 st</span>
+              </div>
+              <input type="range" id="vf-sl-pitch" class="vf-range" min="-12.0" max="12.0" step="0.5" value="0.0">
+            </div>
+
+            <!-- Dynamics / Intonation -->
+            <div class="vf-slider-row">
+              <div class="vf-slider-head">
+                <span class="vf-slider-label">Intonation Dynamics</span>
+                <span id="vf-val-dyn" class="vf-slider-val">1.00x</span>
+              </div>
+              <input type="range" id="vf-sl-dyn" class="vf-range" min="0.0" max="2.0" step="0.05" value="1.0">
+              <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:#64748b;">
+                <span>0.0 Robot Monotone</span>
+                <span>1.0 Normal</span>
+                <span>2.0 Theatric</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vocal Tract / Formant Warping Strip -->
+          <div class="vf-channel-box">
+            <div class="vf-channel-title">
+              <span><i class="fas fa-bullhorn" style="color:var(--vf-cyan); margin-right:6px;"></i> Vocal Tract &amp; Formants</span>
+            </div>
+
+            <!-- Formant Ratio -->
+            <div class="vf-slider-row">
+              <div class="vf-slider-head">
+                <span class="vf-slider-label">Cavity / Tract Length</span>
+                <span id="vf-val-tract" class="vf-slider-val">1.00x</span>
+              </div>
+              <input type="range" id="vf-sl-tract" class="vf-range vf-range-cyan" min="0.65" max="1.45" step="0.02" value="1.0">
+              <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:#64748b;">
+                <span>0.65 Giant / Ogre</span>
+                <span>1.0 Human</span>
+                <span>1.45 Child / Fairy</span>
+              </div>
+            </div>
+
+            <!-- Dominant Formants Indicator -->
+            <div style="margin-top:4px;">
+              <div class="vf-label" style="font-size:0.65rem; margin-bottom:4px;">Acoustic Formants (F1 - F4)</div>
+              <div id="vf-formants-container"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Channel Group: Physicality & Texture -->
+        <div class="vf-card">
+          <div class="vf-card-header">
+            <div class="vf-card-title">
+              <i class="fas fa-fingerprint"></i> Physicality &amp; Vocal Texture
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px;">
+            <!-- Breathiness -->
+            <div class="vf-slider-row">
+              <div class="vf-slider-head">
+                <span class="vf-slider-label"><i class="fas fa-wind" style="color:#06b6d4; margin-right:4px;"></i> Breathiness / Whisper</span>
+                <span id="vf-val-breath" class="vf-slider-val">0%</span>
+              </div>
+              <input type="range" id="vf-sl-breath" class="vf-range vf-range-cyan" min="0.0" max="1.0" step="0.02" value="0.0">
+            </div>
+
+            <!-- Roughness / Fry / Jitter -->
+            <div class="vf-slider-row">
+              <div class="vf-slider-head">
+                <span class="vf-slider-label"><i class="fas fa-bolt" style="color:#f59e0b; margin-right:4px;"></i> Roughness / Gravel Fry</span>
+                <span id="vf-val-rough" class="vf-slider-val">0%</span>
+              </div>
+              <input type="range" id="vf-sl-rough" class="vf-range" min="0.0" max="1.0" step="0.02" value="0.0">
+            </div>
+
+            <!-- Physiological Tremor -->
+            <div class="vf-slider-row">
+              <div class="vf-slider-head">
+                <span class="vf-slider-label"><i class="fas fa-heartbeat" style="color:#f43f5e; margin-right:4px;"></i> Frail Vocal Tremor (5.5 Hz)</span>
+                <span id="vf-val-trem" class="vf-slider-val">0%</span>
+              </div>
+              <input type="range" id="vf-sl-trem" class="vf-range" min="0.0" max="1.0" step="0.02" value="0.0">
+            </div>
+          </div>
+        </div>
+
+        <!-- Channel Group: 4-Band Acoustic EQ Console -->
+        <div class="vf-card">
+          <div class="vf-card-header">
+            <div class="vf-card-title">
+              <i class="fas fa-sliders-h"></i> 4-Band Acoustic Console Equalizer
+            </div>
+          </div>
+
+          <div class="vf-eq-rack">
+            <!-- Band 1: Body (150 Hz) -->
+            <div class="vf-eq-fader-col">
+              <span class="vf-eq-fader-label">Body</span>
+              <span class="vf-eq-fader-freq">150 Hz</span>
+              <span id="vf-val-body" class="vf-eq-fader-val">0.0 dB</span>
+              <input type="range" id="vf-sl-body" class="vf-range" min="-12.0" max="12.0" step="0.5" value="0.0" style="margin-top:6px;">
+            </div>
+
+            <!-- Band 2: Warmth (400 Hz) -->
+            <div class="vf-eq-fader-col">
+              <span class="vf-eq-fader-label">Warmth</span>
+              <span class="vf-eq-fader-freq">400 Hz</span>
+              <span id="vf-val-warmth" class="vf-eq-fader-val">0.0 dB</span>
+              <input type="range" id="vf-sl-warmth" class="vf-range" min="-12.0" max="12.0" step="0.5" value="0.0" style="margin-top:6px;">
+            </div>
+
+            <!-- Band 3: Presence (3000 Hz) -->
+            <div class="vf-eq-fader-col">
+              <span class="vf-eq-fader-label">Presence</span>
+              <span class="vf-eq-fader-freq">3000 Hz</span>
+              <span id="vf-val-presence" class="vf-eq-fader-val">0.0 dB</span>
+              <input type="range" id="vf-sl-presence" class="vf-range vf-range-cyan" min="-12.0" max="12.0" step="0.5" value="0.0" style="margin-top:6px;">
+            </div>
+
+            <!-- Band 4: Air (10000 Hz) -->
+            <div class="vf-eq-fader-col">
+              <span class="vf-eq-fader-label">Air</span>
+              <span class="vf-eq-fader-freq">10 kHz</span>
+              <span id="vf-val-air" class="vf-eq-fader-val">0.0 dB</span>
+              <input type="range" id="vf-sl-air" class="vf-range vf-range-cyan" min="-12.0" max="12.0" step="0.5" value="0.0" style="margin-top:6px;">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: Visual Feedback Center -->
+      <div class="vf-sidebar">
+        
+        <!-- Voice DNA 6-Axis Radar Chart -->
+        <div class="vf-card vf-canvas-card">
+          <div class="vf-card-header" style="width:100%;">
+            <div class="vf-card-title">
+              <i class="fas fa-atom"></i> Voice DNA Fingerprint
+            </div>
+          </div>
+          <div class="vf-canvas-container">
+            <canvas id="vf-canvas-radar" class="vf-canvas" width="280" height="280"></canvas>
+          </div>
+        </div>
+
+        <!-- Mel-Spectrogram & Pitch Contour -->
+        <div class="vf-card vf-canvas-card">
+          <div class="vf-card-header" style="width:100%;">
+            <div class="vf-card-title">
+              <i class="fas fa-chart-area"></i> Mel-Spectrogram &amp; F0
+            </div>
+          </div>
+          <div style="width:100%; height:120px; border-radius:8px; overflow:hidden; border:1px solid var(--vf-border); background:#0f172a;">
+            <canvas id="vf-canvas-spectro" style="width:100%; height:100%; display:block;" width="320" height="120"></canvas>
+          </div>
+        </div>
+
+        <!-- Measured Acoustic HUD Metrics -->
+        <div class="vf-card">
+          <div class="vf-card-header">
+            <div class="vf-card-title">
+              <i class="fas fa-tachometer-alt"></i> Acoustic Metrics HUD
+            </div>
+          </div>
+          <div class="vf-hud-grid">
+            <div class="vf-hud-item">
+              <span class="vf-hud-label">Median Pitch (F0)</span>
+              <span id="vf-hud-f0" class="vf-hud-val">-- Hz</span>
+            </div>
+            <div class="vf-hud-item">
+              <span class="vf-hud-label">Spectral Centroid</span>
+              <span id="vf-hud-centroid" class="vf-hud-val">-- Hz</span>
+            </div>
+            <div class="vf-hud-item">
+              <span class="vf-hud-label">Harmonic / Noise</span>
+              <span id="vf-hud-hnr" class="vf-hud-val">-- dB</span>
+            </div>
+            <div class="vf-hud-item">
+              <span class="vf-hud-label">Formants F1 / F2</span>
+              <span id="vf-hud-f1f2" class="vf-hud-val">-- / -- Hz</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Master Transport Bar -->
+    <div class="vf-transport-bar">
+      <div class="vf-transport-controls">
+        <button type="button" id="vf-btn-preview" class="vf-btn vf-btn-accent" style="padding:10px 22px; font-size:0.95rem;" onclick="window.VFMixer.triggerPreview()">
+          <i class="fas fa-play"></i> Listen Preview
+        </button>
+        <audio id="vf-audio-player" class="vf-audio-player" controls preload="none"></audio>
+      </div>
+
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button type="button" id="vf-btn-bake" class="vf-btn vf-btn-bake" style="padding:10px 22px; font-size:0.95rem;" onclick="window.VFMixer.triggerBake()">
+          <i class="fas fa-fire"></i> Bake to Fish Speech
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Presets Catalog Modal -->
+<div id="vf-preset-modal" class="vf-modal-overlay" onclick="if(event.target === this) window.vfClosePresets()">
+  <div class="vf-modal-content">
+    <div class="vf-modal-header">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <i class="fas fa-layer-group" style="color:var(--vf-accent); font-size:1.2rem;"></i>
+        <span style="font-weight:700; font-size:1rem; color:#fff;">Preset Timbre Library</span>
+      </div>
+      <button type="button" class="vf-btn" style="padding:4px 10px;" onclick="window.vfClosePresets()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="vf-preset-tabs">
+      <button type="button" class="vf-preset-tab active" data-cat="base" onclick="if(window.VFPresets) window.VFPresets.setCategory('base')">
+        Base Presets (24)
+      </button>
+      <button type="button" class="vf-preset-tab" data-cat="cinematic" onclick="if(window.VFPresets) window.VFPresets.setCategory('cinematic')">
+        Cinematic Characters (16)
+      </button>
+      <button type="button" class="vf-preset-tab" data-cat="custom" onclick="if(window.VFPresets) window.VFPresets.setCategory('custom')">
+        My Custom Profiles
+      </button>
+    </div>
+
+    <div id="vf-preset-list" class="vf-preset-list">
+      <!-- Injected dynamically -->
+    </div>
+  </div>
+</div>
+
+<!-- Embedded Corpus for Instant 0ms Language Switching -->
+<script>
+window.VF_CORPUS_DATA = {
+  "it": {
+    "name": "Italiano",
+    "flag": "🇮🇹",
+    "default_text": "Ma la volpe col suo balzo ha raggiunto il quieto fante all'ombra del tiglio fiorito.",
+    "samples": [
+      {
+        "id": "it_narrative_1",
+        "label": "Narrativo (Pangramma fonetico equilibrato)",
+        "text": "Ma la volpe col suo balzo ha raggiunto il quieto fante all'ombra del tiglio fiorito."
+      },
+      {
+        "id": "it_conversational_1",
+        "label": "Conversazionale naturale",
+        "text": "Buongiorno! Ho preparato tutto per la giornata di oggi. Possiamo iniziare subito con il nostro lavoro."
+      },
+      {
+        "id": "it_dynamic_1",
+        "label": "Dinamico ed espressivo",
+        "text": "Ascoltami bene: questo è un momento straordinario, e ogni dettaglio può fare davvero la differenza!"
+      }
+    ]
+  },
+  "en": {
+    "name": "English",
+    "flag": "🇬🇧",
+    "default_text": "The quick brown fox jumps over the lazy dog near the vibrant riverbank.",
+    "samples": [
+      {
+        "id": "en_narrative_1",
+        "label": "Narrative (Classic phonetic pangram)",
+        "text": "The quick brown fox jumps over the lazy dog near the vibrant riverbank."
+      },
+      {
+        "id": "en_conversational_1",
+        "label": "Natural Conversational",
+        "text": "Hello there! Everything is ready for our session today. Let's get started whenever you are ready."
+      },
+      {
+        "id": "en_dynamic_1",
+        "label": "Dynamic & Expressive",
+        "text": "Listen carefully: this is an incredible opportunity, and every single step counts towards our goal."
+      }
+    ]
+  },
+  "de": {
+    "name": "Deutsch",
+    "flag": "🇩🇪",
+    "default_text": "Zwölf Boxkämpfer jagen Viktor quer über den großen Sylter Deich.",
+    "samples": [
+      {
+        "id": "de_narrative_1",
+        "label": "Klassisches Pangramm",
+        "text": "Zwölf Boxkämpfer jagen Viktor quer über den großen Sylter Deich."
+      },
+      {
+        "id": "de_conversational_1",
+        "label": "Natürliche Konversation",
+        "text": "Guten Tag! Ich habe alles für heute vorbereitet. Wir können jederzeit mit der Arbeit beginnen."
+      }
+    ]
+  },
+  "fr": {
+    "name": "Français",
+    "flag": "🇫🇷",
+    "default_text": "Portez ce vieux whisky au juge blond qui fume un cigare près du grand pont.",
+    "samples": [
+      {
+        "id": "fr_narrative_1",
+        "label": "Pangramme classique",
+        "text": "Portez ce vieux whisky au juge blond qui fume un cigare près du grand pont."
+      },
+      {
+        "id": "fr_conversational_1",
+        "label": "Conversation naturelle",
+        "text": "Bonjour ! Tout est prêt pour notre séance d'aujourd'hui. Nous pouvons commencer dès que vous le souhaitez."
+      }
+    ]
+  },
+  "es": {
+    "name": "Español",
+    "flag": "🇪🇸",
+    "default_text": "El veloz murciélago hindú comía feliz cardillo y kiwi bajo la sombra del pinar.",
+    "samples": [
+      {
+        "id": "es_narrative_1",
+        "label": "Pangrama fonético",
+        "text": "El veloz murciélago hindú comía feliz cardillo y kiwi bajo la sombra del pinar."
+      },
+      {
+        "id": "es_conversational_1",
+        "label": "Conversacional natural",
+        "text": "¡Hola! He preparado todo para la jornada de hoy. Podemos comenzar en cuanto estés listo."
+      }
+    ]
+  },
+  "ja": {
+    "name": "日本語 (Japanese)",
+    "flag": "🇯🇵",
+    "default_text": "いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす。",
+    "samples": [
+      {
+        "id": "ja_iroha",
+        "label": "いろは歌 (Iroha classic)",
+        "text": "いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす。"
+      },
+      {
+        "id": "ja_conversational",
+        "label": "日常会話 (Natural conversation)",
+        "text": "こんにちは！本日の準備はすべて整いました。いつでも作業を始められますよ。"
+      }
+    ]
+  },
+  "zh": {
+    "name": "中文 (Chinese)",
+    "flag": "🇨🇳",
+    "default_text": "天地玄黄，宇宙洪荒。日月盈昃，辰宿列张。寒来暑往，秋收冬藏。",
+    "samples": [
+      {
+        "id": "zh_qianziwen",
+        "label": "千字文 (Qianziwen)",
+        "text": "天地玄黄，宇宙洪荒。日月盈昃，辰宿列张。寒来暑往，秋收冬藏。"
+      },
+      {
+        "id": "zh_conversational",
+        "label": "日常对话 (Natural conversation)",
+        "text": "你好！今天的所有准备工作都已经完成了。我们随时可以开始。"
+      }
+    ]
+  }
+};
+
+window.vfOnLanguageChange = function(lang) {
+  if (window.VFMixer && window.VFMixer.onLanguageSelect) {
+    window.VFMixer.onLanguageSelect(lang);
+    return;
+  }
+  // Immediate UI fallback
+  const cData = window.VF_CORPUS_DATA && window.VF_CORPUS_DATA[lang];
+  if (cData && cData.samples) {
+    const sel = document.getElementById("vf-sel-corpus");
+    if (sel) {
+      sel.innerHTML = cData.samples.map(s => 
+        '<option value="' + encodeURIComponent(s.text) + '">' + s.label + '</option>'
+      ).join("");
+    }
+    const txt = document.getElementById("vf-txt-reference");
+    if (txt && cData.samples[0]) {
+      txt.value = cData.samples[0].text;
+    }
+  }
+};
+
+window.vfOpenPresets = function() {
+  if (window.VFPresets && window.VFPresets.openModal) {
+    window.VFPresets.openModal();
+    return;
+  }
+  const modal = document.getElementById("vf-preset-modal");
+  if (modal) {
+    if (modal.parentElement !== document.body) document.body.appendChild(modal);
+    modal.classList.add("active");
+    modal.style.display = "flex";
+    modal.style.opacity = "1";
+    modal.style.pointerEvents = "auto";
+    modal.style.zIndex = "999999";
+    if (window.VFPresets && window.VFPresets.renderList) window.VFPresets.renderList();
+  }
+};
+
+window.vfClosePresets = function() {
+  if (window.VFPresets && window.VFPresets.closeModal) {
+    window.VFPresets.closeModal();
+    return;
+  }
+  const modal = document.getElementById("vf-preset-modal");
+  if (modal) {
+    modal.classList.remove("active");
+    modal.style.display = "none";
+    modal.style.opacity = "0";
+    modal.style.pointerEvents = "none";
+  }
+};
+</script>
+
+<!-- Voice Forge Script Assets (Sequential Loading for Lazy Fragments) -->
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_api.js?v=1.0.1"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_presets.js?v=1.0.1"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_radar.js?v=1.0.1"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_spectro.js?v=1.0.1"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_formants.js?v=1.0.1"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_mixer.js?v=1.0.1"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_core.js?v=1.0.1"></script>
+
+<!-- Auto-Init Trigger -->
+<script>
+(function() {
+  function ensureVoiceForgeInit() {
+    if (window.initVoiceForge) {
+      window.initVoiceForge();
+    } else {
+      setTimeout(ensureVoiceForgeInit, 60);
+    }
+  }
+  setTimeout(ensureVoiceForgeInit, 60);
+})();
+</script>

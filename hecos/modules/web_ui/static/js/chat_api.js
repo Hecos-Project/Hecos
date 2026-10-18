@@ -277,11 +277,10 @@ window.sendMessage = async function() {
         if (window.sendBtn) window.sendBtn.disabled = false;
         
       } else if(ev.type === 'audio_chunk') {
-        if (window.handleAudioChunk) window.handleAudioChunk(aiBubble, ev);
+        // Ignored: single consolidated audio player used per message
       } else if(ev.type === 'audio_ready') {
         if (ev.audio_id) aiBubble.dataset.audioId = ev.audio_id;
-        if (window.handleAudioReady) window.handleAudioReady(aiBubble, ev.audio_id);
-        else if (window.tryLoadAudio) window.tryLoadAudio(aiBubble);
+        if (window.tryLoadAudio) window.tryLoadAudio(aiBubble, true);
       } else if(ev.type === 'system_audio_playing') {
         if (window.showStopVoiceBtn) window.showStopVoiceBtn(true);
         if (window._stopTimeout) clearTimeout(window._stopTimeout);
@@ -442,11 +441,10 @@ window.sendInternalMessage = async function(text) {
         if (window.sendBtn) window.sendBtn.disabled = false;
 
       } else if(ev.type === 'audio_chunk') {
-        if (window.handleAudioChunk) window.handleAudioChunk(aiBubble, ev);
+        // Ignored: single consolidated audio player used per message
       } else if(ev.type === 'audio_ready') {
         if (ev.audio_id) aiBubble.dataset.audioId = ev.audio_id;
-        if (window.handleAudioReady) window.handleAudioReady(aiBubble, ev.audio_id);
-        else if (window.tryLoadAudio) window.tryLoadAudio(aiBubble);
+        if (window.tryLoadAudio) window.tryLoadAudio(aiBubble, true);
       } else if(ev.type === 'system_audio_playing') {
         if (window.showStopVoiceBtn) window.showStopVoiceBtn(true);
         if (window._stopTimeout) clearTimeout(window._stopTimeout);

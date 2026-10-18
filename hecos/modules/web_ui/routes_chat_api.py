@@ -175,13 +175,8 @@ def init_chat_api_routes(app, cfg_mgr, logger):
 
                     active_cfg = DirectCfgMgr(cfg_mgr, merged_cfg)
 
-                    def _on_chunk_ready(chunk_idx, total_chunks, chunk_audio_id, dest_chunk):
-                        sess["queue"].put({
-                            "type": "audio_chunk",
-                            "chunk_index": chunk_idx,
-                            "total_chunks": total_chunks,
-                            "audio_id": chunk_audio_id
-                        })
+                    def _on_chunk_ready(chunk_idx, total_chunks, *args):
+                        pass
 
                     _chat_log.info(f"[Chat] Direct TTS requested for '{text_to_speak[:50]}'...")
                     audio_status, audio_id = _maybe_generate_tts(text_to_speak, active_cfg, on_chunk_ready=_on_chunk_ready)

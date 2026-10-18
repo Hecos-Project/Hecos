@@ -333,14 +333,8 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
 
         from hecos.core.processing import filtri
         voice_text_target = filtri.clean_for_voice(full_text) if full_text else clean_voice
-        def _on_chunk_ready(chunk_idx, total_chunks, chunk_audio_id, dest_chunk):
-            _last_activity[0] = time.monotonic()  # Keep watchdog alive during TTS synthesis
-            sess["queue"].put({
-                "type": "audio_chunk",
-                "chunk_index": chunk_idx,
-                "total_chunks": total_chunks,
-                "audio_id": chunk_audio_id
-            })
+        def _on_chunk_ready(chunk_idx, total_chunks, *args):
+            _last_activity[0] = time.monotonic()  # Keep watchdog alive during multi-sentence synthesis
 
         t_tts_start = time.monotonic()
         audio_status, audio_id = _maybe_generate_tts(voice_text_target, active_cfg_mgr, on_chunk_ready=_on_chunk_ready)

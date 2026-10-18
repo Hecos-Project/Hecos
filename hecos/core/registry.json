@@ -294,5 +294,18 @@
         "icon": "",
         "category": "PLUGINS",
         "slash_commands": []
+    },
+    "VOICE_FORGE": {
+        "description": "Vocal Timbre Sculpting & Forging Studio for Fish Speech S2-Pro. Crafts custom, original acoustic voice profiles via WORLD vocoder analysis-synthesis, pitch, formant warping, aperiodicity and spectral morphing without using existing human voices.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"fas fa-wave-square\"></i>",
+        "category": "MULTIMEDIA",
+        "module_type": "hpm",
+        "slash_commands": []
     }
 }
