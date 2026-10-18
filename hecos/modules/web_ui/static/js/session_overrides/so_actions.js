@@ -68,6 +68,7 @@ window.soSaveGlobalInlineToActive = async function() {
             document.getElementById('so-status-msg').textContent = "Global preset updated successfully.";
             setTimeout(() => document.getElementById('so-status-msg').textContent = "", 3000);
             window.soState.isDirty = false;
+            if (window.sfUpdateTooltip) window.sfUpdateTooltip(newData);
             
             const topBtn = document.getElementById('so-top-save-global-btn');
             if (topBtn) {

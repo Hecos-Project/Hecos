@@ -33,6 +33,27 @@ function populateAudioUI() {
     setVal('v-xtts-topp', (v.xtts && v.xtts.top_p !== undefined) ? v.xtts.top_p : 0.85);
     setVal('v-xtts-length-penalty', (v.xtts && v.xtts.length_penalty !== undefined) ? v.xtts.length_penalty : 1.0);
     
+    // Fish Speech
+    setVal('v-fish-api-url', (v.fish_speech && v.fish_speech.api_url) ? v.fish_speech.api_url : 'http://127.0.0.1:8080/v1/tts');
+    setVal('v-fish-api-key', (v.fish_speech && v.fish_speech.api_key) ? v.fish_speech.api_key : '');
+    setVal('v-fish-speaker-wav', (v.fish_speech && v.fish_speech.reference_audio) ? v.fish_speech.reference_audio : '');
+    setVal('v-fish-reference-id', (v.fish_speech && v.fish_speech.reference_id) ? v.fish_speech.reference_id : '');
+    setVal('v-fish-reference-text', (v.fish_speech && v.fish_speech.reference_text) ? v.fish_speech.reference_text : '');
+    setVal('v-fish-temperature', (v.fish_speech && v.fish_speech.temperature !== undefined) ? v.fish_speech.temperature : 0.7);
+    setVal('v-fish-temperature-range', (v.fish_speech && v.fish_speech.temperature !== undefined) ? v.fish_speech.temperature : 0.7);
+    setVal('v-fish-topp', (v.fish_speech && v.fish_speech.top_p !== undefined) ? v.fish_speech.top_p : 0.7);
+    setVal('v-fish-topp-range', (v.fish_speech && v.fish_speech.top_p !== undefined) ? v.fish_speech.top_p : 0.7);
+    setVal('v-fish-repetition', (v.fish_speech && v.fish_speech.repetition_penalty !== undefined) ? v.fish_speech.repetition_penalty : 1.2);
+    setVal('v-fish-repetition-range', (v.fish_speech && v.fish_speech.repetition_penalty !== undefined) ? v.fish_speech.repetition_penalty : 1.2);
+    setVal('v-fish-chunk-length', (v.fish_speech && v.fish_speech.chunk_length !== undefined) ? v.fish_speech.chunk_length : 200);
+    setVal('v-fish-chunk-length-range', (v.fish_speech && v.fish_speech.chunk_length !== undefined) ? v.fish_speech.chunk_length : 200);
+    setVal('v-fish-max-tokens', (v.fish_speech && v.fish_speech.max_new_tokens !== undefined) ? v.fish_speech.max_new_tokens : 1024);
+    setVal('v-fish-max-tokens-range', (v.fish_speech && v.fish_speech.max_new_tokens !== undefined) ? v.fish_speech.max_new_tokens : 1024);
+    setVal('v-fish-seed', (v.fish_speech && v.fish_speech.seed !== undefined) ? v.fish_speech.seed : 0);
+    setCheck('v-fish-normalize', (v.fish_speech && v.fish_speech.normalize !== undefined) ? v.fish_speech.normalize : true);
+    setCheck('v-fish-memory-cache', (v.fish_speech && v.fish_speech.use_memory_cache !== undefined) ? v.fish_speech.use_memory_cache : true);
+    setCheck('v-fish-chunk', (v.fish_speech && v.fish_speech.chunk_sentences !== undefined) ? v.fish_speech.chunk_sentences : true);
+    
     // Update value displays
     const spVal = document.getElementById('v-xtts-speed-val'); if(spVal) spVal.textContent = getV('v-xtts-speed');
     const tpVal = document.getElementById('v-xtts-temperature-val'); if(tpVal) tpVal.textContent = getV('v-xtts-temperature');
@@ -74,9 +95,46 @@ function populateAudioUI() {
         }
     }
 
+    // Populate Fish Speech Presets
+    const fishPresetSel = document.getElementById('v-fish-preset');
+    if (fishPresetSel) {
+        fishPresetSel.innerHTML = '<option value="default">Default (Base / Zero-Shot)</option>';
+        if (v.fish_speech_presets) {
+            for (const pName in v.fish_speech_presets) {
+                const opt = document.createElement('option');
+                opt.value = pName;
+                opt.textContent = pName;
+                fishPresetSel.appendChild(opt);
+            }
+        }
+        if (v.fish_speech && v.fish_speech.current_preset && v.fish_speech_presets && v.fish_speech_presets[v.fish_speech.current_preset]) {
+            fishPresetSel.value = v.fish_speech.current_preset;
+        } else {
+            fishPresetSel.value = 'default';
+        }
+    }
+
+    // Populate Fish Speech Inference Presets
+    const fishInfPresetSel = document.getElementById('v-fish-inference-preset');
+    if (fishInfPresetSel) {
+        fishInfPresetSel.innerHTML = '<option value="">-- No Preset Selected --</option>';
+        if (v.fish_speech_inference_presets) {
+            for (const pName in v.fish_speech_inference_presets) {
+                const opt = document.createElement('option');
+                opt.value = pName;
+                opt.textContent = pName;
+                fishInfPresetSel.appendChild(opt);
+            }
+        }
+        if (v.fish_speech && v.fish_speech.current_inference_preset && v.fish_speech_inference_presets && v.fish_speech_inference_presets[v.fish_speech.current_inference_preset]) {
+            fishInfPresetSel.value = v.fish_speech.current_inference_preset;
+        }
+    }
+
     refreshAudioHistoryCount();
     checkTTSEngineStatus();
     if (typeof loadVoiceCloneList === 'function') loadVoiceCloneList();
+    if (typeof loadFishVoiceCloneList === 'function') loadFishVoiceCloneList();
     // Activate the tab matching the current engine
     const activeEngine = (v.active_engine || 'piper');
     if (typeof switchAudioEngineTab === 'function') switchAudioEngineTab(activeEngine, false);
@@ -118,12 +176,18 @@ function populateAudioUI() {
     if (typeof window.onVoiceClonePathInput === 'function') {
         window.onVoiceClonePathInput();
     }
+    if (typeof window.onFishVoiceClonePathInput === 'function') {
+        window.onFishVoiceClonePathInput();
+    }
+    if (typeof window.checkFishServerStatus === 'function') {
+        window.checkFishServerStatus();
+    }
 }
 
 // ── Engine Tab Switcher ──────────────────────────────────────────────────────
 
 window.switchAudioEngineTab = function(engine, saveEngine = true) {
-    const engines = ['piper', 'kokoro', 'xtts2'];
+    const engines = ['piper', 'kokoro', 'xtts2', 'fish_speech'];
 
     // Show/hide engine cards
     engines.forEach(e => {
@@ -148,7 +212,10 @@ window.switchAudioEngineTab = function(engine, saveEngine = true) {
         }
     });
 
-    // removed active engine syncing
+    if (engine === 'fish_speech') {
+        if (typeof window.checkFishServerStatus === 'function') window.checkFishServerStatus();
+        if (typeof window.loadFishModelList === 'function') window.loadFishModelList();
+    }
 };
 
 
@@ -181,7 +248,28 @@ function buildAudioPayload() {
             length_penalty: parseFloat(getV('v-xtts-length-penalty', v.xtts?.length_penalty ?? 1.0)),
             current_preset: getV('v-xtts-preset', 'default')
         },
-        xtts_presets:     v.xtts_presets || {},
+        fish_speech:      {
+            api_url:            getV('v-fish-api-url', v.fish_speech?.api_url || 'http://127.0.0.1:8080/v1/tts'),
+            api_key:            getV('v-fish-api-key', v.fish_speech?.api_key || ''),
+            reference_id:       getV('v-fish-reference-id', v.fish_speech?.reference_id || ''),
+            reference_audio:    getV('v-fish-speaker-wav', v.fish_speech?.reference_audio || ''),
+            reference_text:     getV('v-fish-reference-text', v.fish_speech?.reference_text || ''),
+            temperature:        parseFloat(getV('v-fish-temperature', v.fish_speech?.temperature ?? 0.7)),
+            top_p:              parseFloat(getV('v-fish-topp', v.fish_speech?.top_p ?? 0.7)),
+            repetition_penalty: parseFloat(getV('v-fish-repetition', v.fish_speech?.repetition_penalty ?? 1.2)),
+            chunk_length:       parseInt(getV('v-fish-chunk-length', v.fish_speech?.chunk_length ?? 200)),
+            max_new_tokens:     parseInt(getV('v-fish-max-tokens', v.fish_speech?.max_new_tokens ?? 1024)),
+            seed:               parseInt(getV('v-fish-seed', v.fish_speech?.seed ?? 0)),
+            normalize:          getC('v-fish-normalize', v.fish_speech?.normalize ?? true),
+            use_memory_cache:   getC('v-fish-memory-cache', v.fish_speech?.use_memory_cache ?? true),
+            chunk_sentences:    getC('v-fish-chunk', v.fish_speech?.chunk_sentences ?? true),
+            current_preset:     getV('v-fish-preset', 'default'),
+            current_inference_preset: getV('v-fish-inference-preset', '')
+        },
+        xtts_presets:                  v.xtts_presets || {},
+        xtts_inference_presets:        v.xtts_inference_presets || {},
+        fish_speech_presets:           v.fish_speech_presets || {},
+        fish_speech_inference_presets: v.fish_speech_inference_presets || {},
         listening_status: getC('sys-mic-status', v.listening_status ?? false),
         voice_status:     getC('sys-voice-status', v.voice_status ?? false),
         piper_path:       getV('v-piper', v.piper_path || ''),

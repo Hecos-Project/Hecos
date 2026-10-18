@@ -34,11 +34,30 @@ class XttsConfig(BaseModel):
     length_penalty: float = 1.0
     current_preset: str = "default"
 
+class FishSpeechConfig(BaseModel):
+    api_url: str = "http://127.0.0.1:8080/v1/tts"
+    api_key: str = ""
+    reference_id: str = ""            # Local folder in references/ or Fish Audio cloud model ID
+    reference_audio: str = ""         # Path or filename in assets/voice_clones
+    reference_text: str = ""          # Transcript of reference audio
+    temperature: float = 0.7
+    top_p: float = 0.7
+    repetition_penalty: float = 1.2
+    max_new_tokens: int = 1024
+    chunk_length: int = 200           # Iterative prompt window length (100 - 300)
+    seed: int = 0                     # 0 = random, >0 = deterministic
+    normalize: bool = True            # Text normalization
+    use_memory_cache: bool = True     # In-memory VQ-GAN cache for fast repeat inference
+    chunk_sentences: bool = True
+    current_preset: str = "default"
+    current_inference_preset: str = ""
+    model_checkpoint: str = "s2-pro"  # Subfolder in hecos/engines/fish_speech/checkpoints/
+
 class AudioConfig(BaseModel):
     """Root schema for config/audio.yaml"""
 
     # --- TTS Engine Routing ---
-    active_engine: str = "piper"  # 'piper', 'kokoro', 'xtts2'
+    active_engine: str = "piper"  # 'piper', 'kokoro', 'xtts2', 'fish_speech'
     
     # --- TTS (Piper) ---
     voice_status: bool = True
@@ -64,6 +83,17 @@ class AudioConfig(BaseModel):
         "Stable & Monotone": {"speed": 1.0, "temperature": 0.1, "repetition_penalty": 10.0, "top_k": 10, "top_p": 0.5, "length_penalty": 1.0}
     }
 
+    # --- TTS (Fish Speech) ---
+    fish_speech: FishSpeechConfig = FishSpeechConfig()
+    fish_speech_presets: dict = {}
+    fish_speech_inference_presets: dict = {
+        "Standard & Balanced": {"temperature": 0.7, "top_p": 0.7, "repetition_penalty": 1.2, "max_new_tokens": 512, "chunk_length": 200, "normalize": True, "use_memory_cache": True},
+        "Expressive & Dynamic": {"temperature": 0.75, "top_p": 0.8, "repetition_penalty": 1.25, "max_new_tokens": 512, "chunk_length": 220, "normalize": True, "use_memory_cache": True},
+        "Fast & Direct": {"temperature": 0.5, "top_p": 0.6, "repetition_penalty": 1.15, "max_new_tokens": 384, "chunk_length": 160, "normalize": True, "use_memory_cache": True},
+        "Creative & Wild": {"temperature": 0.75, "top_p": 0.8, "repetition_penalty": 1.25, "max_new_tokens": 512, "chunk_length": 220, "normalize": True, "use_memory_cache": True},
+        "Stable & Monotone": {"temperature": 0.4, "top_p": 0.5, "repetition_penalty": 1.3, "max_new_tokens": 512, "chunk_length": 200, "normalize": True, "use_memory_cache": True}
+    }
+
     # --- STT / Listening ---
     listening_status: bool = False
     energy_threshold: int = 450
@@ -76,5 +106,7 @@ class AudioConfig(BaseModel):
     ptt_sources:    PttSources = PttSources()
     custom_ptt_key: str = ""           # e.g. "f8" or "ctrl+alt+space"
 
-    # --- TTS Audio History ---
+    # --- TTS Audio History & Cache ---
     tts_history_max_files: int = 100   # Max WAV files to keep in media/audio/history/
+    tts_cache_enabled: bool = True     # Persistent cache for synthesized TTS audio
+    tts_cache_max_mb: int = 500        # Maximum size in MB for TTS cache folder

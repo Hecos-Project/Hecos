@@ -11,7 +11,7 @@ function _clearTestUI(prefix) {
 }
 
 async function testVoice(mode, engine = null) {
-    const prefix = engine === 'xtts2' ? 'v-xtts' : (engine === 'kokoro' ? 'v-kokoro' : 'v');
+    const prefix = engine === 'xtts2' ? 'v-xtts' : (engine === 'kokoro' ? 'v-kokoro' : (engine === 'fish_speech' ? 'v-fish' : 'v'));
     const vTextEl = document.getElementById(prefix + '-test-text');
     const text = (vTextEl ? vTextEl.value : '') || 'Hecos test, everything is working correctly.';
     const sts = document.getElementById(prefix + '-test-status');
@@ -37,10 +37,29 @@ async function testVoice(mode, engine = null) {
     }, 100);
 
     try {
+        const reqPayload = { text: text, mode: mode, engine: engine };
+        if (engine === 'fish_speech') {
+            const fishWav = (document.getElementById('v-fish-speaker-wav')?.value || document.getElementById('v-fish-clone-select')?.value || '').trim();
+            reqPayload.voice = {
+                fish_reference_audio: fishWav,
+                tts_voice: fishWav,
+                fish_reference_id: document.getElementById('v-fish-reference-id')?.value || '',
+                fish_reference_text: document.getElementById('v-fish-reference-text')?.value || '',
+                fish_temperature: parseFloat(document.getElementById('v-fish-temperature')?.value || 0.7),
+                fish_top_p: parseFloat(document.getElementById('v-fish-topp')?.value || 0.7),
+                fish_repetition_penalty: parseFloat(document.getElementById('v-fish-repetition')?.value || 1.2),
+                fish_chunk_length: parseInt(document.getElementById('v-fish-chunk-length')?.value || 200),
+                fish_max_new_tokens: parseInt(document.getElementById('v-fish-max-tokens')?.value || 1024),
+                fish_seed: parseInt(document.getElementById('v-fish-seed')?.value || 0),
+                fish_normalize: document.getElementById('v-fish-normalize')?.checked ?? true,
+                fish_use_memory_cache: document.getElementById('v-fish-memory-cache')?.checked ?? true,
+                fish_chunk_sentences: document.getElementById('v-fish-chunk')?.checked ?? false,
+            };
+        }
         const r = await fetch('/api/audio/test', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text, mode: mode, engine: engine })
+            body: JSON.stringify(reqPayload)
         });
         const data = await r.json();
         if (!data.ok) {
@@ -135,7 +154,7 @@ async function stopVoice(engine = null) {
         currentTestAudio.src = '';
         currentTestAudio = null;
     }
-    const prefix = engine === 'xtts2' ? 'v-xtts' : (engine === 'kokoro' ? 'v-kokoro' : 'v');
+    const prefix = engine === 'xtts2' ? 'v-xtts' : (engine === 'kokoro' ? 'v-kokoro' : (engine === 'fish_speech' ? 'v-fish' : 'v'));
     _clearTestUI(prefix);
     try { await fetch('/api/audio/stop', { method: 'POST' }); } catch (e) {}
     
@@ -264,6 +283,11 @@ async function checkTTSEngineStatus() {
             } catch(e) { console.warn("Failed to fetch XTTS voices"); }
         }
 
+        // Dynamically populate voices for Fish Speech
+        if (typeof window.loadFishVoiceCloneList === 'function') {
+            await window.loadFishVoiceCloneList();
+        }
+
         // 2. Fetch status and update badges
         const r = await fetch('/api/audio/tts-status');
         const d = await r.json();
@@ -291,14 +315,49 @@ async function checkTTSEngineStatus() {
             }
         }
 
+        // Fish Speech badge
+        const fishBadge = document.getElementById('fish_speech-status-badge');
+        if (fishBadge) {
+            if (d.fish_speech_ready) {
+                fishBadge.textContent = '✅ Server Ready & Connected';
+                fishBadge.style.color = 'var(--green, #2ecc71)';
+            } else if (d.fish_speech) {
+                fishBadge.textContent = '⏳ Client ready (Server offline on port 8080 / Enter Cloud Key)';
+                fishBadge.style.color = 'var(--yellow, #f1c40f)';
+            } else {
+                fishBadge.textContent = '⚠️ Not installed';
+                fishBadge.style.color = 'var(--yellow, #f1c40f)';
+            }
+        }
+
         // XTTS and Kokoro download their voices automatically or they are built-in.
         // No per-voice download indicators are needed here.
     } catch(e) {}
 }
 
+// Purge TTS disk cache
+async function clearTTSCache() {
+    try {
+        const res = await fetch('/api/audio/cache/clear', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+            if (window.showToast) {
+                window.showToast(`TTS Cache cleared (${data.deleted_count} files removed).`, 'info');
+            } else {
+                alert(`TTS Cache cleared (${data.deleted_count} files removed).`);
+            }
+        } else {
+            if (window.showToast) window.showToast('Failed to clear TTS cache: ' + data.error, 'error');
+        }
+    } catch(e) {
+        if (window.showToast) window.showToast('Error clearing cache: ' + e.message, 'error');
+    }
+}
+
 // Exports for Global Scope
 window.testVoice             = testVoice;
 window.stopVoice             = stopVoice;
+window.clearTTSCache         = clearTTSCache;
 window.autoFixPiperPath      = autoFixPiperPath;
 window.browsePiperPath       = browsePiperPath;
 window.installTTSEngine      = installTTSEngine;

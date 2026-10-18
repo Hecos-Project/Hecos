@@ -213,6 +213,131 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
   };
 }
 
+// ── Progressive Audio Chunk Streaming & Playback ──
+function handleAudioChunk(bubble, ev) {
+  if (!bubble) return;
+  console.log("[Audio] Received chunk:", (ev.chunk_index || 0) + 1, "/", ev.total_chunks, "id=", ev.audio_id);
+
+  if (!bubble._audioChunks) {
+    bubble._audioChunks = [];
+  }
+  bubble._audioChunks.push(ev.audio_id);
+
+  // If not currently playing audio, start playback of next chunk in queue immediately
+  if (!bubble._isCurrentlyPlaying) {
+    _playNextChunk(bubble);
+  }
+}
+
+async function _playNextChunk(bubble) {
+  if (!bubble || !bubble._audioChunks) return;
+
+  // Queue is currently empty
+  if (bubble._audioChunks.length === 0) {
+    bubble._isCurrentlyPlaying = false;
+    if (bubble._chunksFinished) {
+      console.log("[Audio] All progressive chunks finished playback.");
+      window.showStopVoiceBtn(false);
+      fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
+      if (bubble.dataset.audioId) {
+        // Switch player to final consolidated audio for historical scrubbing/replay
+        const fullUrl = `/api/audio?id=${encodeURIComponent(bubble.dataset.audioId)}`;
+        window.HecosTTSPlayer.src = fullUrl;
+        window.HecosTTSPlayer.onended = () => {
+          window.showStopVoiceBtn(false);
+          fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
+        };
+      }
+    }
+    return;
+  }
+
+  bubble._isCurrentlyPlaying = true;
+  const nextId = bubble._audioChunks.shift();
+  const chunkUrl = `/api/audio?id=${encodeURIComponent(nextId)}`;
+  console.log("[Audio] Playing chunk:", nextId, "remaining in queue:", bubble._audioChunks.length);
+
+  // Ensure audio badge exists
+  let badge = bubble.querySelector('.audio-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.className = 'audio-badge';
+    badge.innerHTML = '<i class="fas fa-volume-up"></i> ';
+    bubble.appendChild(badge);
+  }
+
+  // Clone old player if attached to a previous bubble
+  if (window.HecosTTSPlayer.parentNode && window.HecosTTSPlayer.parentNode !== badge) {
+    const oldSrc = window.HecosTTSPlayer.src;
+    const clone = document.createElement('audio');
+    clone.controls = true;
+    clone.style.display = 'block';
+    clone.style.marginTop = '10px';
+    clone.src = oldSrc;
+    window.HecosTTSPlayer.parentNode.replaceChild(clone, window.HecosTTSPlayer);
+  }
+
+  if (!badge.contains(window.HecosTTSPlayer)) {
+    badge.appendChild(window.HecosTTSPlayer);
+  }
+
+  try {
+    const res = await fetch(chunkUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    window.HecosTTSPlayer.src = blobUrl;
+    if (window.globalTTSVolume !== undefined) {
+      window.HecosTTSPlayer.volume = window.globalTTSVolume;
+    }
+    window.currentAudio = window.HecosTTSPlayer;
+
+    window.HecosTTSPlayer.onended = () => {
+      bubble._isCurrentlyPlaying = false;
+      _playNextChunk(bubble);
+    };
+
+    window.HecosTTSPlayer.onerror = (e) => {
+      console.warn("[Audio] Chunk error, skipping to next:", e);
+      bubble._isCurrentlyPlaying = false;
+      _playNextChunk(bubble);
+    };
+
+    window.HecosTTSPlayer.play().then(() => {
+      window.showStopVoiceBtn(true);
+      if (typeof initOutVuMeter === 'function') initOutVuMeter(window.HecosTTSPlayer);
+      fetch('/api/audio/speaking/start', { method: 'POST' }).catch(() => {});
+    }).catch(err => {
+      console.warn("[Audio] Progressive autoplay blocked by browser:", err);
+      bubble._isCurrentlyPlaying = false;
+      const hint = document.createElement('span');
+      hint.style.fontSize = '11px';
+      hint.style.color = 'var(--accent)';
+      hint.style.display = 'block';
+      hint.style.marginTop = '4px';
+      hint.textContent = '👆 Clicca Play per ascoltare (Blocco Autoplay Browser)';
+      badge.appendChild(hint);
+    });
+  } catch (err) {
+    console.error("[Audio] Could not fetch chunk blob:", err);
+    bubble._isCurrentlyPlaying = false;
+    _playNextChunk(bubble);
+  }
+}
+
+function handleAudioReady(bubble, finalAudioId) {
+  if (!bubble) return;
+  console.log("[Audio] Final audio consolidated ready:", finalAudioId);
+  bubble.dataset.audioId = finalAudioId;
+  bubble._chunksFinished = true;
+
+  // If nothing is playing and no chunks are waiting, finalize or fallback to tryLoadAudio
+  if (!bubble._isCurrentlyPlaying && (!bubble._audioChunks || bubble._audioChunks.length === 0)) {
+    tryLoadAudio(bubble);
+  }
+}
+
 function showStopVoiceBtn(visible) {
   const btn1 = document.getElementById('sidebar-stop-voice-btn');
   const btn2 = document.getElementById('topbar-stop-voice-btn');
@@ -222,6 +347,26 @@ function showStopVoiceBtn(visible) {
   if (window.updateStopAllBtn) window.updateStopAllBtn();
 }
 
+window.stopVoice = function(engine = null) {
+  if (window.HecosTTSPlayer) {
+    try { window.HecosTTSPlayer.pause(); } catch(e) {}
+  }
+  if (window.currentAudio) {
+    try { window.currentAudio.pause(); } catch(e) {}
+    window.currentAudio = null;
+  }
+  if (window._lastAiBubble) {
+    window._lastAiBubble._audioChunks = [];
+    window._lastAiBubble._isCurrentlyPlaying = false;
+    window._lastAiBubble._chunksFinished = true;
+  }
+  window.showStopVoiceBtn(false);
+  fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
+  fetch('/api/audio/stop', { method: 'POST' }).catch(() => {});
+};
+
 // Global Exports
 window.tryLoadAudio = tryLoadAudio;
+window.handleAudioChunk = handleAudioChunk;
+window.handleAudioReady = handleAudioReady;
 window.showStopVoiceBtn = showStopVoiceBtn;

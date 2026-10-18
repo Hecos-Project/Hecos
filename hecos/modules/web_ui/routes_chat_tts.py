@@ -61,7 +61,7 @@ def get_audio_history_path(audio_id: str) -> str | None:
 
 # ── Text Sanitization for TTS ──────────────────────────────────────────────────
 
-def sanitize_text_for_tts(text: str) -> str:
+def sanitize_text_for_tts(text: str, engine: str = None) -> str:
     """
     Cleans up prompt residues, image tags, Markdown syntax, and unwanted characters
     before sending text to the TTS engine.
@@ -81,11 +81,37 @@ def sanitize_text_for_tts(text: str) -> str:
 
     custom_chars = acfg.get("tts_excluded_chars", "*#_~><|-=\\/^@$%&")
 
-    # 1. Remove think blocks if any leaked from reasoning models
-    text = re.sub(r'<think>[\s\S]*?</think>', '', text, flags=re.IGNORECASE)
+    # Protect Fish Speech tags and prosody ellipses if Fish Speech engine
+    fish_tags = []
+    is_fish = (engine in ("fish_speech", "fish")) or bool(re.search(r'\[(whisper|laughing|excited|calm|sigh|surprised|angry|sad|dramatic)\]', text, re.IGNORECASE))
+    if is_fish:
+        def _save_tag(m):
+            fish_tags.append(m.group(0))
+            return f"\uE000FISHTAG{len(fish_tags)-1}\uE001"
+        text = re.sub(r'\[[a-zA-Z\s_-]+\]', _save_tag, text)
+        text = text.replace("...", "\uE000FISHELLIPSIS\uE001")
 
-    # 2. Remove leading control/role labels (e.g. SYNCHRONIZED, COACH:, PRESENTER:, etc.)
-    text = re.sub(r'^(SYNCHRONIZED|COACH|PRESENTER|AI|ASSISTANT|SYSTEM|USER)\s*[:\-]?\s*', '', text, flags=re.IGNORECASE).strip()
+    # 1. Remove think/thought blocks leaked from reasoning models
+    text = re.sub(r'<think>[\s\S]*?</think>', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'<thought>[\s\S]*?</thought>', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\[(THINK|THOUGHT|REASONING)\][\s\S]*?\[/(THINK|THOUGHT|REASONING)\]', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'⚙️[\s\S]*?Response formulated\.?', '', text, flags=re.IGNORECASE)
+    if '🌊' in text:
+        parts = text.split('🌊')
+        text = parts[-1].strip()
+
+    # 2. Remove leading control/role labels and persona names (e.g. SYNCHRONIZED, COACH:, PRESENTER:, Urania 9800:, etc.)
+    # Strip few-shot user turn lines if model leaked multi-turn prompt
+    if re.search(r'^(User|Utente)\s*[:\-]', text, re.IGNORECASE):
+        lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+        filtered = [ln for ln in lines if not re.match(r'^(User|Utente)\s*[:\-]', ln, re.IGNORECASE)]
+        text = " ".join(filtered).strip()
+
+    # Repeatedly strip leading role/persona labels (handles repeated prefixes like "Urania 9800: Urania 9800:")
+    prev_text = None
+    while prev_text != text:
+        prev_text = text
+        text = re.sub(r'^(SYNCHRONIZED|COACH|PRESENTER|AI|ASSISTANT|SYSTEM|USER|UTENTE|ASSISTENTE|[A-Za-z0-9_\-\s]{2,30})\s*[:\-]\s*', '', text, flags=re.IGNORECASE).strip()
 
     # 3. Remove agent image tags (e.g. IMG:gen_...)
     text = re.sub(r'IMG:\S+', '', text)
@@ -120,8 +146,19 @@ def sanitize_text_for_tts(text: str) -> str:
     text = re.sub(r'^["\'«»“”‘’]+\s*', '', text)
     text = re.sub(r'\s*["\'«»“”‘’]+$', '', text)
 
+    # Restore Fish Speech tags and ellipsis
+    if is_fish:
+        text = text.replace("\uE000FISHELLIPSIS\uE001", "...")
+        for idx, tag in enumerate(fish_tags):
+            text = text.replace(f"\uE000FISHTAG{idx}\uE001", tag)
+
     # 11. Final normalization
     text = re.sub(r'\s+', ' ', text).strip()
+
+    # If the text has no alphanumeric characters or fewer than 2 letters, treat as empty
+    alpha_chars = re.findall(r'[a-zA-Z\d]', text)
+    if len(alpha_chars) < 2:
+        return ""
 
     return text
 
@@ -383,23 +420,14 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict, job_id: str = N
 
 # ── Core generation ────────────────────────────────────────────────────────────
 
-def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple[str | None, str | None]:
+def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None, on_chunk_ready: callable = None) -> tuple[str | None, str | None]:
     """
     Runs TTSManager or XTTS2 Bypass synthesis and stores the WAV in media/audio/history/.
+    Supports on_chunk_ready for progressive streaming.
     Returns (absolute_path, audio_id) on success, or (None, None) on failure.
     """
     try:
         _ensure_dirs()
-
-        from hecos.core.audio.tts_filter import sanitize_text
-        text = sanitize_text(text)
-        text = sanitize_text_for_tts(text)
-        if not text:
-            _chat_log.warning("[Audio] Text empty after sanitization. Generation skipped.")
-            return None, None
-
-        audio_id = uuid.uuid4().hex
-        out = os.path.join(HISTORY_DIR, f"{audio_id}.wav")
 
         session_overrides = voice_cfg.get('session_overrides') or {}
         override_engine = session_overrides.get('tts_engine')
@@ -412,14 +440,75 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
         except Exception:
             _engine = override_engine or 'unknown'
 
+        from hecos.core.audio.tts_filter import sanitize_text
+        text = sanitize_text(text, engine=_engine)
+        text = sanitize_text_for_tts(text, engine=_engine)
+        if not text:
+            _chat_log.warning("[Audio] Text empty after sanitization. Generation skipped.")
+            return None, None
+
+        audio_id = uuid.uuid4().hex
+        out = os.path.join(HISTORY_DIR, f"{audio_id}.wav")
+
         if job_id:
             _tts_jobs[job_id] = {"current": 0, "total": 1, "status": "generating"}
+
+        # Fast persistent TTS Cache lookup (<1ms return)
+        try:
+            from hecos.core.audio.tts_cache import TTSCache
+            if TTSCache.get_instance().get_to_file(text, engine=_engine, out_filepath=out, session_overrides=session_overrides):
+                if job_id:
+                    _tts_jobs[job_id] = {"current": 1, "total": 1, "status": "done", "audio_id": audio_id}
+                _chat_log.info(f"[Audio] ⚡ TTS Cache HIT (instant): {out}")
+                try:
+                    max_f = int(_acfg.get("tts_history_max_files", 100))
+                except Exception:
+                    max_f = 100
+                cleanup_audio_history(max_f)
+                return out, audio_id
+        except Exception as _c_err:
+            _chat_log.debug(f"[Audio] TTS Cache check notice: {_c_err}")
+
+        # Progressive chunk handler
+        def _handle_chunk_ready(idx, total, chunk_path, chunk_bytes):
+            try:
+                import shutil
+                chunk_id = f"{audio_id}_c{idx}"
+                dest_chunk = os.path.join(HISTORY_DIR, f"{chunk_id}.wav")
+                if chunk_path and os.path.exists(chunk_path):
+                    shutil.copyfile(chunk_path, dest_chunk)
+                elif chunk_bytes:
+                    with open(dest_chunk, "wb") as _cf:
+                        _cf.write(chunk_bytes)
+                if on_chunk_ready:
+                    on_chunk_ready(idx, total, chunk_id, dest_chunk)
+            except Exception as _c_save_err:
+                _chat_log.warning(f"[Audio] Error saving chunk {idx}: {_c_save_err}")
 
         if _engine in ['xtts2', 'xtts']:
             _chat_log.info("[Audio] Intercepted XTTS2 request. Using isolated bypass...")
             if job_id and job_id in _tts_jobs:
                 _tts_jobs[job_id]["total"] = 100  # set scale for XTTS
             success = _run_xtts2_bypass(text, out, voice_cfg, job_id=job_id)
+        elif _engine in ['fish_speech', 'fish']:
+            _chat_log.info(f"[Audio] Routing TTS request to Fish Speech engine (job_id={job_id})...")
+            from hecos.core.audio.tts_manager import TTSManager
+            if job_id:
+                def progress_callback(current, total):
+                    _tts_jobs[job_id]["current"] = current
+                    _tts_jobs[job_id]["total"]   = max(total, 1)
+
+                success = TTSManager.generate_wav_chunked(
+                    text, out, progress_callback,
+                    on_chunk_ready=_handle_chunk_ready,
+                    session_overrides=session_overrides
+                )
+            else:
+                success = TTSManager.generate_wav_chunked(
+                    text, out,
+                    on_chunk_ready=_handle_chunk_ready,
+                    session_overrides=session_overrides
+                )
         else:
             from hecos.core.audio.tts_manager import TTSManager
 
@@ -430,11 +519,13 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
 
                 success = TTSManager.generate_wav_chunked(
                     text, out, progress_callback,
+                    on_chunk_ready=_handle_chunk_ready,
                     session_overrides=session_overrides
                 )
             else:
                 success = TTSManager.generate_wav_chunked(
                     text, out,
+                    on_chunk_ready=_handle_chunk_ready,
                     session_overrides=session_overrides
                 )
 
@@ -442,6 +533,12 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
             if job_id:
                 _tts_jobs[job_id].update({"current": 1, "total": 1, "status": "done", "audio_id": audio_id})
             _chat_log.info(f"[Audio] WAV generation successful: {out}")
+            
+            try:
+                from hecos.core.audio.tts_cache import TTSCache
+                TTSCache.get_instance().put_from_file(text, engine=_engine, source_filepath=out, session_overrides=session_overrides)
+            except Exception as _c_put_err:
+                _chat_log.debug(f"[Audio] TTS Cache store notice: {_c_put_err}")
             
             try:
                 from hecos.core.audio.device_manager import get_audio_config
@@ -482,7 +579,7 @@ def stop_voice_generation():
         _chat_log.error(f"[Audio] Failed to terminate web TTS: {e}")
 
 
-def _maybe_generate_tts(text: str, cfg_mgr, session_overrides: dict = None) -> tuple[str | None, str | None]:
+def _maybe_generate_tts(text: str, cfg_mgr, session_overrides: dict = None, on_chunk_ready: callable = None) -> tuple[str | None, str | None]:
     """
     Generate TTS audio for the WebUI.
     Returns ("web", audio_id) if the WAV was generated, (None, None) otherwise.
@@ -493,7 +590,7 @@ def _maybe_generate_tts(text: str, cfg_mgr, session_overrides: dict = None) -> t
         voice_cfg = get_audio_config()
         
         if session_overrides is None:
-            ai_cfg = cfg_mgr.config.get("ai", {})
+            ai_cfg = cfg_mgr.config.get("ai", {}) if (cfg_mgr and hasattr(cfg_mgr, "config")) else {}
             session_overrides = {
                 "tts_engine": ai_cfg.get("tts_engine"),
                 "tts_voice": ai_cfg.get("tts_voice")
@@ -503,14 +600,14 @@ def _maybe_generate_tts(text: str, cfg_mgr, session_overrides: dict = None) -> t
             session_overrides.update(voice_overrides)
             
             # The UI sends live overrides under the 'voice' key, so merge those on top
-            ui_voice_overrides = cfg_mgr.config.get("voice", {})
+            ui_voice_overrides = cfg_mgr.config.get("voice", {}) if (cfg_mgr and hasattr(cfg_mgr, "config")) else {}
             if ui_voice_overrides:
                 if "tts_engine" in ui_voice_overrides and ui_voice_overrides["tts_engine"]:
                     session_overrides["tts_engine"] = ui_voice_overrides["tts_engine"]
                 if "tts_voice" in ui_voice_overrides and ui_voice_overrides["tts_voice"]:
                     session_overrides["tts_voice"] = ui_voice_overrides["tts_voice"]
                 for k, v in ui_voice_overrides.items():
-                    if k.startswith("xtts_") or k.startswith("piper_") or k.startswith("kokoro_"):
+                    if k.startswith("xtts_") or k.startswith("piper_") or k.startswith("kokoro_") or k.startswith("fish_"):
                         session_overrides[k] = v
             
         voice_cfg['session_overrides'] = session_overrides
@@ -519,7 +616,7 @@ def _maybe_generate_tts(text: str, cfg_mgr, session_overrides: dict = None) -> t
             _chat_log.debug("[Chat] TTS skipped: voice_status=False.")
             return None, None
 
-        path, audio_id = generate_voice_file(text, voice_cfg)
+        path, audio_id = generate_voice_file(text, voice_cfg, on_chunk_ready=on_chunk_ready)
         if path:
             _last_audio_path = path
             _last_audio_id   = audio_id

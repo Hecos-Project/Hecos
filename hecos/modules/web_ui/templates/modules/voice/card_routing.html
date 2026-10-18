@@ -1,0 +1,31 @@
+<div class="card">
+  <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+    <div><i class="fas fa-globe"></i> GLOBAL DEFAULTS</div>
+    <span class="badge-pill badge-neutral">TTS Routing</span>
+  </div>
+  <div class="field">
+    <label>Active TTS Engine</label>
+    <select id="v-active-engine" onchange="if(window.switchAudioEngineTab) window.switchAudioEngineTab(this.value); if(window.saveAudioConfig) window.saveAudioConfig();">
+      <option value="piper">Piper (Default - Fast)</option>
+      <option value="kokoro">Kokoro (Balanced)</option>
+      <option value="xtts2">XTTSv2 (High Quality)</option>
+      <option value="fish_speech">Fish Speech (Voice Clone / Expressive)</option>
+    </select>
+  </div>
+
+  <!-- TABS -->
+  <div style="display:flex; border-bottom:1px solid var(--border); margin-top:20px; gap:4px;">
+    <button id="btn-tab-piper" class="btn btn-secondary active" onclick="switchAudioEngineTab('piper')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:var(--bg3);">
+      <i class="fas fa-volume-up"></i> Piper (Fast)
+    </button>
+    <button id="btn-tab-kokoro" class="btn btn-secondary" onclick="switchAudioEngineTab('kokoro')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:transparent;">
+      <i class="fas fa-wave-square"></i> Kokoro (Balanced)
+    </button>
+    <button id="btn-tab-xtts2" class="btn btn-secondary" onclick="switchAudioEngineTab('xtts2')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:transparent;">
+      <i class="fas fa-microchip"></i> XTTSv2 (High Quality)
+    </button>
+    <button id="btn-tab-fish_speech" class="btn btn-secondary" onclick="switchAudioEngineTab('fish_speech')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:transparent;">
+      <i class="fas fa-fish"></i> Fish Speech (Expressive)
+    </button>
+  </div>
+</div>

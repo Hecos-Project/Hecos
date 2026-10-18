@@ -281,6 +281,24 @@ def _cmd_diagnostics(raw_args_str="", config=None, config_manager=None, **kwargs
         return f"❌ Error during diagnostics: {e}"
 
 
+def _cmd_speak(raw_args_str="", config=None, config_manager=None, **kwargs) -> str:
+    """Direct TTS speech synthesis bypassing the LLM."""
+    text = raw_args_str.strip()
+    if not text:
+        return "🗣️ **Direct TTS Command (LLM Bypass):**\n`/speak <text to pronounce>` (aliases: `speak`, `/tts`, `/say`, `/parla`, `/voce`)\n*Example:* `/speak Hello Tony, I am Urania!`"
+    try:
+        from hecos.modules.web_ui.routes_chat_tts import _maybe_generate_tts
+        out, audio_id = _maybe_generate_tts(text, config_manager)
+        if audio_id:
+            return f"🗣️ **Direct Voice Test (LLM Bypass):**\n\n> {text}\n\n✅ Audio generated (`{audio_id}`)"
+        else:
+            return f"⚠️ Unable to generate audio for: '{text}'. Check TTS server logs."
+    except Exception as e:
+        return f"❌ Error during voice synthesis: {e}"
+
+_cmd_parla = _cmd_speak
+
+
 # ── Command descriptors ───────────────────────────────────────────────────────
 
 
@@ -484,5 +502,18 @@ SYSTEM_COMMANDS = [
         "requires_args": False,
         "save_to_memory": False,
         "_handler": _cmd_docs_list,
+    },
+    {
+        "id": "speak",
+        "aliases": ["/speak", "speak", "/tts", "tts", "/say", "say", "/parla", "parla", "/voce", "voce"],
+        "description": "Direct TTS speech synthesis bypassing the LLM",
+        "usage": "/speak <text to pronounce>",
+        "example": "/speak Hello Tony, I am Urania!",
+        "icon": "🗣️",
+        "category": "AUDIO",
+        "requires_auth": "any",
+        "requires_args": True,
+        "save_to_memory": True,
+        "_handler": _cmd_speak,
     },
 ]

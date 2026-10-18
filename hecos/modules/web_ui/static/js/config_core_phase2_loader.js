@@ -40,6 +40,7 @@
             `/static/js/config_audio/ca_voice_clones.js${VER}`,
             `/static/js/config_audio/ca_xtts_presets.js${VER}`,
             `/static/js/config_audio/ca_xtts_inference.js${VER}`,
+            `/static/js/config_audio/ca_fish_presets.js${VER}`,
             `/static/js/config_audio/ca_history.js${VER}`,
             `/static/js/config_media_logic.js${VER}`,
             `/static/js/config_system_logic.js${VER}`,

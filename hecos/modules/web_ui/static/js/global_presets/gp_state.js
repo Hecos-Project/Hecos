@@ -87,6 +87,8 @@ window.sfLoadData = async function() {
         if (audioConfData.ok) {
             window.sfState.xttsPresets = audioConfData.config.xtts_presets || {};
             window.sfState.xttsInferencePresets = audioConfData.config.xtts_inference_presets || {};
+            window.sfState.fishSpeechPresets = audioConfData.config.fish_speech_presets || {};
+            window.sfState.fishSpeechInferencePresets = audioConfData.config.fish_speech_inference_presets || {};
         }
         
         // Populate select lists
@@ -146,7 +148,24 @@ window.sfLoadGlobalState = async function() {
                 voice: {
                     tts_engine: ttsEngine,
                     tts_voice: cfg.ai?.tts_voice,
-                    xtts_preset: cfg.ai?.xtts_preset
+                    xtts_preset: cfg.ai?.xtts_preset || (cfg.audio?.xtts?.current_preset !== 'default' ? cfg.audio?.xtts?.current_preset : "") || "",
+                    xtts_inference_preset: cfg.audio?.xtts?.current_inference_preset || "",
+                    xtts_speaker_wav: cfg.audio?.xtts?.speaker_wav || "",
+                    xtts_temperature: cfg.audio?.xtts?.temperature,
+                    xtts_speed: cfg.audio?.xtts?.speed,
+                    xtts_top_k: cfg.audio?.xtts?.top_k,
+                    xtts_repetition_penalty: cfg.audio?.xtts?.repetition_penalty,
+                    xtts_top_p: cfg.audio?.xtts?.top_p,
+                    xtts_length_penalty: cfg.audio?.xtts?.length_penalty,
+                    fish_preset: cfg.ai?.fish_preset || (cfg.audio?.fish_speech?.current_preset !== 'default' ? cfg.audio?.fish_speech?.current_preset : "") || "",
+                    fish_inference_preset: cfg.audio?.fish_speech?.current_inference_preset || "",
+                    fish_reference_audio: cfg.audio?.fish_speech?.reference_audio || "",
+                    fish_reference_text: cfg.audio?.fish_speech?.reference_text || "",
+                    fish_temperature: cfg.audio?.fish_speech?.temperature,
+                    fish_top_p: cfg.audio?.fish_speech?.top_p,
+                    fish_repetition_penalty: cfg.audio?.fish_speech?.repetition_penalty,
+                    fish_chunk_length: cfg.audio?.fish_speech?.chunk_length,
+                    fish_max_new_tokens: cfg.audio?.fish_speech?.max_new_tokens
                 },
                 inference: {
                     temperature: bdict.temperature,

@@ -1,4 +1,4 @@
-active_engine: xtts2
+active_engine: fish_speech
 voice_status: true
 piper_path: C:\Hecos\bin\piper\piper.exe
 onnx_model: C:\Hecos\bin\piper\it_IT-paola-medium.onnx
@@ -13,17 +13,17 @@ kokoro:
   sentence_silence: 0.0
   model_path: ''
 xtts:
-  speed: 1.4
+  speed: 1.1
   language: it
-  speaker: Camilla Holmström
+  speaker: Claribel Dervla
   gpu_acceleration: gpu
   chunk_sentences: true
-  speaker_wav: C:\Hecos\hecos\assets\voice_clones\voce antonio 1.wav
-  temperature: 0.6
-  repetition_penalty: 4.0
-  top_k: 40
-  top_p: 0.8
-  length_penalty: 0.9
+  speaker_wav: C:\Hecos\hecos\assets\voice_clones\Emanuela Pacotto voce 3 .wav
+  temperature: 1.2
+  repetition_penalty: 8.0
+  top_k: 90
+  top_p: 0.95
+  length_penalty: 1.5
   current_preset: default
 xtts_presets:
   8bitMamma 1:
@@ -75,41 +75,149 @@ xtts_presets:
     top_k: 70
     top_p: 0.9
 xtts_inference_presets:
-  Fast & Direct:
-    speed: 1.4
-    temperature: 0.6
-    repetition_penalty: 4
-    top_k: 40
-    top_p: 0.8
-    length_penalty: 0.9
-  Expressive & Dynamic:
-    speed: 1
-    temperature: 0.9
-    repetition_penalty: 6
-    top_k: 70
-    top_p: 0.9
-    length_penalty: 1.2
-  Slow & Clear:
-    speed: 0.8
-    temperature: 0.4
-    repetition_penalty: 3
-    top_k: 30
-    top_p: 0.7
-    length_penalty: 0.8
   Creative & Wild:
+    length_penalty: 1.5
+    repetition_penalty: 8
     speed: 1.1
     temperature: 1.2
-    repetition_penalty: 8
     top_k: 90
     top_p: 0.95
-    length_penalty: 1.5
+  Expressive & Dynamic:
+    length_penalty: 1.2
+    repetition_penalty: 6
+    speed: 1
+    temperature: 0.9
+    top_k: 70
+    top_p: 0.9
+  Fast & Direct:
+    length_penalty: 0.9
+    repetition_penalty: 4
+    speed: 1.4
+    temperature: 0.6
+    top_k: 40
+    top_p: 0.8
+  Slow & Clear:
+    length_penalty: 0.8
+    repetition_penalty: 3
+    speed: 0.8
+    temperature: 0.4
+    top_k: 30
+    top_p: 0.7
   Stable & Monotone:
+    length_penalty: 1
+    repetition_penalty: 10
     speed: 1
     temperature: 0.1
-    repetition_penalty: 10
     top_k: 10
     top_p: 0.5
-    length_penalty: 1
+fish_speech:
+  api_url: http://127.0.0.1:8080/v1/tts
+  api_key: ''
+  reference_id: ''
+  reference_audio: audio_voce_ragazza1_tedesco.wav
+  reference_text: da eent metter zeide treveilli ik gamee zeide mamme en zette har
+    hoedscheef opschoot haar montel aan de ging mee turrellie vloekte een cinner maar
+    mama ging mee
+  temperature: 0.7
+  top_p: 0.7
+  repetition_penalty: 1.2
+  max_new_tokens: 512
+  chunk_length: 200
+  seed: 0
+  normalize: true
+  use_memory_cache: true
+  chunk_sentences: true
+  current_preset: Young Woman 1 (German)
+  current_inference_preset: Standard & Balanced
+  model_checkpoint: s2-pro
+fish_speech_presets:
+  Boy 1 (Icelandic):
+    chunk_sentences: true
+    inference_preset: Fast & Direct
+    max_new_tokens: 512
+    reference_audio: audio_voce_bambino1_iceland.wav
+    reference_text: hennar missir er mikill
+    repetition_penalty: 1.15
+    temperature: 0.5
+    top_p: 0.6
+  Girl 1 (Icelandic):
+    chunk_sentences: true
+    inference_preset: Expressive & Dynamic
+    max_new_tokens: 512
+    reference_audio: audio_voce_bambina1_iceland.wav
+    reference_text: grunur minn er alltaf á rökum reistur
+    repetition_penalty: 1.25
+    temperature: 0.7
+    top_p: 0.75
+  Man 1 (German):
+    chunk_sentences: true
+    inference_preset: Standard & Balanced
+    max_new_tokens: 512
+    reference_audio: audio_voce_uomo1_tedesco.wav
+    reference_text: Intusschen was de beminnelijke ULRICA bij haren vader terug gekomen,
+      beide hadden reeds een' geruimen tijd sterk naar elkanderen verlangd en waren
+      recht verheugd en gelukkig van zich weder bijeen te vinden
+    repetition_penalty: 1.2
+    temperature: 0.7
+    top_p: 0.7
+  Young Woman 1 (German):
+    reference_audio: audio_voce_ragazza1_tedesco.wav
+    reference_id: ''
+    reference_text: da eent metter zeide treveilli ik gamee zeide mamme en zette har
+      hoedscheef opschoot haar montel aan de ging mee turrellie vloekte een cinner
+      maar mama ging mee
+    inference_preset: Standard & Balanced
+    temperature: 0.7
+    top_p: 0.7
+    repetition_penalty: 1.2
+    chunk_length: 200
+    max_new_tokens: 512
+    seed: 0
+    normalize: true
+    use_memory_cache: true
+    chunk_sentences: true
+fish_speech_inference_presets:
+  Creative & Wild:
+    chunk_length: 220
+    max_new_tokens: 512
+    normalize: true
+    repetition_penalty: 1.25
+    seed: 0
+    temperature: 0.75
+    top_p: 0.8
+    use_memory_cache: true
+  Expressive & Dynamic:
+    chunk_length: 220
+    max_new_tokens: 1024
+    normalize: true
+    repetition_penalty: 1.25
+    temperature: 0.85
+    top_p: 0.8
+    use_memory_cache: true
+  Fast & Direct:
+    chunk_length: 160
+    max_new_tokens: 1024
+    normalize: true
+    repetition_penalty: 1.15
+    temperature: 0.5
+    top_p: 0.6
+    use_memory_cache: true
+  Stable & Monotone:
+    chunk_length: 200
+    max_new_tokens: 1024
+    normalize: true
+    repetition_penalty: 1.4
+    temperature: 0.3
+    top_p: 0.5
+    use_memory_cache: true
+  Standard & Balanced:
+    chunk_length: 200
+    max_new_tokens: 1024
+    normalize: true
+    repetition_penalty: 1.2
+    temperature: 0.7
+    top_p: 0.7
+    use_memory_cache: true
 listening_status: true
 energy_threshold: 450
 silence_timeout: 5
@@ -124,3 +232,5 @@ ptt_sources:
   custom_key: false
 custom_ptt_key: ''
 tts_history_max_files: 100
+tts_cache_enabled: true
+tts_cache_max_mb: 500

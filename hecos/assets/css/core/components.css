@@ -74,6 +74,12 @@
   box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.1);
 }
 
+.field select option,
+select option {
+  background: var(--bg3, #181920);
+  color: var(--text, #f0f0f5);
+}
+
 /* Slider + Number combo */
 .slider-field {
   display: flex;

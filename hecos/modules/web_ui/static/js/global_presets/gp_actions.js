@@ -44,6 +44,9 @@ window.sfSaveInlineToActive = async function() {
             setTimeout(() => document.getElementById('sf-status-msg').textContent = "", 3000);
             window.sfState.isDirty = false;
             
+            Object.assign(soulObj, newData);
+            if (window.sfUpdateTooltip) window.sfUpdateTooltip(newData);
+            
             const topBtn = document.getElementById('sf-top-save-btn');
             if (topBtn) {
                 topBtn.innerHTML = '<i class="fas fa-save"></i>';

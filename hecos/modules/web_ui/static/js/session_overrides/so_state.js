@@ -145,11 +145,10 @@ window.soLoadData = async function() {
         if (infData.ok) window.soState.inferencePresets = infData.presets;
 
         if (audioConfData.ok) {
-
             window.soState.xttsPresets = audioConfData.config.xtts_presets || {};
-
             window.soState.xttsInferencePresets = audioConfData.config.xtts_inference_presets || {};
-
+            window.soState.fishSpeechPresets = audioConfData.config.fish_speech_presets || {};
+            window.soState.fishSpeechInferencePresets = audioConfData.config.fish_speech_inference_presets || {};
         }
 
         
@@ -258,18 +257,20 @@ window.soLoadActiveSessionState = async function() {
 
             }
 
-            if (cfg.ai?.tts_engine) {
-
-                document.getElementById('so-tts-engine-select').value = cfg.ai.tts_engine;
-
+            const ttsEng = cfg.voice?.tts_engine || cfg.ai?.tts_engine;
+            if (ttsEng) {
+                document.getElementById('so-tts-engine-select').value = ttsEng;
                 await window.soUpdateVoicesDropdown();
-
             }
 
-            if (cfg.ai?.tts_voice) {
-
-                document.getElementById('so-tts-voice-select').value = cfg.ai.tts_voice;
-
+            const ttsV = cfg.voice?.tts_voice || cfg.ai?.tts_voice;
+            if (ttsV) {
+                const voiceSel = document.getElementById('so-tts-voice-select');
+                if (voiceSel) {
+                    const match = Array.from(voiceSel.options).find(o => o.value === ttsV || o.value.split(/[/\\]/).pop() === ttsV);
+                    if (match) voiceSel.value = match.value;
+                    else voiceSel.value = ttsV;
+                }
             }
 
             
@@ -322,12 +323,26 @@ window.soLoadActiveSessionState = async function() {
 
             }
 
+            if (cfg.voice?.fish_preset) document.getElementById('so-fish-preset-select').value = cfg.voice.fish_preset;
+
+            if (cfg.voice?.fish_inference_preset) document.getElementById('so-fish-inference-preset-select').value = cfg.voice.fish_inference_preset;
+
+            if (cfg.voice?.fish_reference_audio || cfg.voice?.fish_speaker_wav) document.getElementById('so-fish-speaker-wav').value = cfg.voice.fish_reference_audio || cfg.voice.fish_speaker_wav;
+
+            if (cfg.voice?.fish_reference_text) document.getElementById('so-fish-ref-text').value = cfg.voice.fish_reference_text;
+
+            if (cfg.voice) {
+                setVal('so-fish-temp', cfg.voice.fish_temperature);
+                setVal('so-fish-topp', cfg.voice.fish_top_p);
+                setVal('so-fish-reppen', cfg.voice.fish_repetition_penalty);
+                if (cfg.voice.fish_chunk_length !== undefined) setVal('so-fish-chunk-length', cfg.voice.fish_chunk_length);
+                if (cfg.voice.fish_max_new_tokens !== undefined) setVal('so-fish-max-tokens', cfg.voice.fish_max_new_tokens);
+            }
+
         }
 
-        
-
+        if (window.soUpdateCloneState) window.soUpdateCloneState();
         window.soState.isDirty = false;
-
         const inlineBtn = document.getElementById('so-save-inline-btn');
 
         if (inlineBtn) inlineBtn.style.display = 'none';

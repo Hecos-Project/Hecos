@@ -121,46 +121,58 @@ window.soDirty = function() {
     // Toggle XTTS settings visibility
     const ttsEngine = document.getElementById('so-tts-engine-select').value;
     document.getElementById('so-xtts-controls').style.display = (ttsEngine === 'xtts2') ? 'block' : 'none';
+    const fishControls = document.getElementById('so-fish-controls');
+    if (fishControls) fishControls.style.display = (ttsEngine === 'fish_speech' || ttsEngine === 'fish') ? 'block' : 'none';
     
+    // Check and update clone / preset disabled state on voice select
+    if (window.soUpdateCloneState) window.soUpdateCloneState();
+
     // Visually update the topbar in the background so the user gets instant feedback
-    const pSel = document.getElementById('chat-persona-select');
-    const pVal = document.getElementById('so-persona-select')?.value || "";
-    if (pSel) pSel.value = pVal;
+    window._soIsSyncing = true;
+    try {
+        const pSel = document.getElementById('chat-persona-select');
+        const pVal = document.getElementById('so-persona-select')?.value || "";
+        if (pSel) pSel.value = pVal;
 
-    const mSel = document.getElementById('chat-model-select');
-    const mVal = document.getElementById('so-model-select')?.value || "";
-    if (mSel) mSel.value = mVal;
+        const mSel = document.getElementById('chat-model-select');
+        const mVal = document.getElementById('so-model-select')?.value || "";
+        if (mSel) mSel.value = mVal;
 
-    const tEngSel = document.getElementById('chat-tts-engine-select');
-    const tEngVal = document.getElementById('so-tts-engine-select')?.value || "";
-    let engineChanged = false;
-    if (tEngSel && tEngSel.value !== tEngVal) {
-        tEngSel.value = tEngVal;
-        engineChanged = true;
-    }
-
-    const tVoiceSel = document.getElementById('chat-tts-voice-select');
-    let tVoiceVal = document.getElementById('so-tts-voice-select')?.value || "";
-    const soXttsWav = document.getElementById('so-xtts-speaker-wav')?.value;
-    if (soXttsWav) {
-        tVoiceVal = 'custom';
-    }
-    
-    let voiceMissing = false;
-    if (tVoiceSel && !engineChanged) {
-        tVoiceSel.value = tVoiceVal;
-        if (tVoiceVal && tVoiceSel.value !== tVoiceVal) {
-            voiceMissing = true;
+        const tEngSel = document.getElementById('chat-tts-engine-select');
+        const tEngVal = document.getElementById('so-tts-engine-select')?.value || "";
+        let engineChanged = false;
+        if (tEngSel && tEngSel.value !== tEngVal) {
+            tEngSel.value = tEngVal;
+            engineChanged = true;
         }
-    }
 
-    if (engineChanged || voiceMissing) {
-        if (window.updateSessionTTSVoices) {
-            window.updateSessionTTSVoices(tVoiceVal);
+        const tVoiceSel = document.getElementById('chat-tts-voice-select');
+        let tVoiceVal = document.getElementById('so-tts-voice-select')?.value || "";
+        const isCloneActive = (tVoiceVal === 'CLONE') || 
+            (tEngVal === 'xtts2' && document.getElementById('so-xtts-speaker-wav')?.value) ||
+            ((tEngVal === 'fish_speech' || tEngVal === 'fish') && (document.getElementById('so-fish-speaker-wav')?.value || document.getElementById('so-fish-preset-select')?.value));
+        if (isCloneActive) {
+            tVoiceVal = 'custom';
         }
+        
+        let voiceMissing = false;
+        if (tVoiceSel && !engineChanged) {
+            tVoiceSel.value = tVoiceVal;
+            if (tVoiceVal && tVoiceSel.value !== tVoiceVal) {
+                voiceMissing = true;
+            }
+        }
+
+        if (engineChanged || voiceMissing) {
+            if (window.updateSessionTTSVoices) {
+                window.updateSessionTTSVoices(tVoiceVal, true); // skipSave = true
+            }
+        }
+        
+        if (window.updateSessionDropdownTitles) window.updateSessionDropdownTitles();
+    } finally {
+        setTimeout(() => { window._soIsSyncing = false; }, 200);
     }
-    
-    if (window.updateSessionDropdownTitles) window.updateSessionDropdownTitles();
     
     // Visually update the avatar and persona name instantly and flip the card if it changed
     if (window._lastSoPersonaVal !== pVal) {
@@ -232,6 +244,17 @@ window.soPopulateDropdowns = function(optData) {
             xttsSel.appendChild(opt);
         });
     }
+
+    const fishSel = document.getElementById('so-fish-preset-select');
+    if (fishSel) {
+        fishSel.innerHTML = '<option value="">-- No Fish Preset --</option>';
+        Object.keys(window.soState.fishSpeechPresets || {}).forEach(k => {
+            const opt = document.createElement('option');
+            opt.value = k;
+            opt.textContent = k;
+            fishSel.appendChild(opt);
+        });
+    }
     
     const xttsInfSel = document.getElementById('so-xtts-inference-preset-select');
     if (xttsInfSel) {
@@ -241,6 +264,17 @@ window.soPopulateDropdowns = function(optData) {
             opt.value = k;
             opt.textContent = k;
             xttsInfSel.appendChild(opt);
+        });
+    }
+
+    const fishInfSel = document.getElementById('so-fish-inference-preset-select');
+    if (fishInfSel) {
+        fishInfSel.innerHTML = '<option value="">-- No Inference Preset --</option>';
+        Object.keys(window.soState.fishSpeechInferencePresets || {}).forEach(k => {
+            const opt = document.createElement('option');
+            opt.value = k;
+            opt.textContent = k;
+            fishInfSel.appendChild(opt);
         });
     }
     
@@ -317,8 +351,9 @@ window.soUpdateModelsDropdown = function() {
 
 
 window.soUpdateVoicesDropdown = async function() {
-    const engine = document.getElementById('so-tts-engine-select').value;
+    const engine = document.getElementById('so-tts-engine-select')?.value;
     const vSel = document.getElementById('so-tts-voice-select');
+    if (!vSel) return;
     vSel.innerHTML = '';
     if (!engine) return;
     
@@ -326,11 +361,12 @@ window.soUpdateVoicesDropdown = async function() {
         const res = await fetch(`/api/audio/voices?engine=${engine}`);
         if (res.ok) {
             const voices = await res.json();
-            const list = Array.isArray(voices) ? voices : (voices[engine] || Object.keys(voices));
-            list.forEach(v => {
+            const voiceMap = (!Array.isArray(voices) && voices[engine]) ? voices[engine] : voices;
+            const keys = Array.isArray(voiceMap) ? voiceMap : Object.keys(voiceMap);
+            keys.forEach(v => {
                 const opt = document.createElement('option');
                 opt.value = v;
-                opt.textContent = v;
+                opt.textContent = (!Array.isArray(voiceMap) && voiceMap[v]) ? voiceMap[v] : v;
                 vSel.appendChild(opt);
             });
         }
@@ -385,8 +421,19 @@ window.soApplySoulToUI = async function(soul) {
         resetVal('so-xtts-reppen', 5.0);
         resetVal('so-xtts-topp', 0.85);
         resetVal('so-xtts-length-penalty', 1.0);
+
+        if (document.getElementById('so-fish-preset-select')) document.getElementById('so-fish-preset-select').value = "";
+        if (document.getElementById('so-fish-speaker-wav')) document.getElementById('so-fish-speaker-wav').value = "";
+        if (document.getElementById('so-fish-ref-text')) document.getElementById('so-fish-ref-text').value = "";
+        resetVal('so-fish-temp', 0.7);
+        resetVal('so-fish-topp', 0.7);
+        resetVal('so-fish-reppen', 1.2);
+        resetVal('so-fish-chunk-length', 200);
+        resetVal('so-fish-max-tokens', 1024);
         
-        window.soDirty();
+        document.getElementById('so-xtts-controls').style.display = 'none';
+        const fishControls = document.getElementById('so-fish-controls');
+        if (fishControls) fishControls.style.display = 'none';
         if (window.soUpdateCloneState) window.soUpdateCloneState();
         window.soState.isDirty = false;
         
@@ -420,9 +467,30 @@ window.soApplySoulToUI = async function(soul) {
     document.getElementById('so-model-select').value = soul.model?.model_name || fallbacks.model || "";
     
     // Voice
-    document.getElementById('so-tts-engine-select').value = soul.voice?.tts_engine || fallbacks.tts_engine || "piper";
+    const currentEng = soul.voice?.tts_engine || fallbacks.tts_engine || "";
+    document.getElementById('so-tts-engine-select').value = currentEng;
     await window.soUpdateVoicesDropdown();
-    document.getElementById('so-tts-voice-select').value = soul.voice?.tts_voice || fallbacks.tts_voice || "";
+    
+    let targetVoice = soul.voice?.tts_voice || fallbacks.tts_voice || "";
+    if (currentEng === 'fish_speech' || currentEng === 'fish') {
+        const refAudio = soul.voice?.fish_reference_audio || soul.voice?.fish_speaker_wav;
+        if (refAudio) {
+            targetVoice = refAudio.split(/[/\\]/).pop();
+        }
+    }
+    const voiceSel = document.getElementById('so-tts-voice-select');
+    if (voiceSel) {
+        if (targetVoice) {
+            let match = Array.from(voiceSel.options).find(o => o.value === targetVoice || o.value.split(/[/\\]/).pop() === targetVoice);
+            if (match) {
+                voiceSel.value = match.value;
+            } else {
+                voiceSel.value = targetVoice;
+            }
+        } else {
+            voiceSel.value = "";
+        }
+    }
     
     // Inference
     document.getElementById('so-inference-preset-select').value = soul.inference?.preset_name || "";
@@ -465,8 +533,23 @@ window.soApplySoulToUI = async function(soul) {
     setVal('so-xtts-reppen', soul.voice?.xtts_repetition_penalty);
     setVal('so-xtts-topp', soul.voice?.xtts_top_p);
     setVal('so-xtts-length-penalty', soul.voice?.xtts_length_penalty);
+
+    const soFishPresetSel = document.getElementById('so-fish-preset-select');
+    if (soFishPresetSel) soFishPresetSel.value = soul.voice?.fish_preset || "";
+    const soFishInfSel = document.getElementById('so-fish-inference-preset-select');
+    if (soFishInfSel) soFishInfSel.value = soul.voice?.fish_inference_preset || "";
+    if (document.getElementById('so-fish-speaker-wav')) document.getElementById('so-fish-speaker-wav').value = soul.voice?.fish_reference_audio || soul.voice?.fish_speaker_wav || "";
+    if (document.getElementById('so-fish-ref-text')) document.getElementById('so-fish-ref-text').value = soul.voice?.fish_reference_text || "";
+    setVal('so-fish-temp', soul.voice?.fish_temperature ?? 0.7);
+    setVal('so-fish-topp', soul.voice?.fish_top_p ?? 0.7);
+    setVal('so-fish-reppen', soul.voice?.fish_repetition_penalty ?? 1.2);
+    setVal('so-fish-chunk-length', soul.voice?.fish_chunk_length ?? 200);
+    setVal('so-fish-max-tokens', soul.voice?.fish_max_new_tokens ?? 1024);
     
-    window.soDirty();
+    const curEng = soul.voice?.tts_engine || fallbacks.tts_engine || "";
+    document.getElementById('so-xtts-controls').style.display = (curEng === 'xtts2') ? 'block' : 'none';
+    const fishControls = document.getElementById('so-fish-controls');
+    if (fishControls) fishControls.style.display = (curEng === 'fish_speech' || curEng === 'fish') ? 'block' : 'none';
     if (window.soUpdateCloneState) window.soUpdateCloneState();
     window.soState.isDirty = false; // reset dirty flag as we just loaded
     
@@ -499,12 +582,30 @@ window.soApplySoulToUI = async function(soul) {
 
 
 window.soCollectUIState = function() {
-    const getVal = (id) => { const v = document.getElementById(id).value; return v === "" ? null : v; };
-    const getNum = (id) => { const v = document.getElementById(id).value; return v ? parseFloat(v) : null; };
-    const getCheck = (id) => document.getElementById(id).checked;
+    const getVal = (id) => { const el = document.getElementById(id); return el ? (el.value === "" ? null : el.value) : null; };
+    const getNum = (id) => { const el = document.getElementById(id); return (el && el.value) ? parseFloat(el.value) : null; };
+    const getCheck = (id) => { const el = document.getElementById(id); return el ? el.checked : false; };
     
+    const resolvedVoice = (() => {
+        const eng = getVal('so-tts-engine-select');
+        const rawVoice = getVal('so-tts-voice-select');
+        const cleanVoice = (rawVoice === 'CLONE') ? '' : rawVoice;
+        if (eng === 'fish_speech' || eng === 'fish') {
+            return getVal('so-fish-speaker-wav') || cleanVoice || 'default';
+        }
+        if (eng === 'xtts2' && getVal('so-xtts-speaker-wav')) {
+            return getVal('so-xtts-speaker-wav');
+        }
+        return cleanVoice;
+    })();
+
     return {
         active_global_preset: window.soState ? window.soState.activeSoulId : null,
+        ai: {
+            tts_engine: getVal('so-tts-engine-select'),
+            tts_voice: resolvedVoice,
+            active_personality: getVal('so-persona-select')
+        },
         persona: { 
             soul_file: getVal('so-persona-select'),
             use_global_direct_instructions: getCheck('so-use-global-direct'),
@@ -525,7 +626,7 @@ window.soCollectUIState = function() {
         },
         voice: {
             tts_engine: getVal('so-tts-engine-select'),
-            tts_voice: getVal('so-tts-voice-select'),
+            tts_voice: resolvedVoice,
             xtts_preset: getVal('so-xtts-preset-select'),
             xtts_inference_preset: getVal('so-xtts-inference-preset-select'),
             xtts_speaker_wav: getVal('so-xtts-speaker-wav'),
@@ -534,7 +635,16 @@ window.soCollectUIState = function() {
             xtts_top_k: parseInt(getNum('so-xtts-topk')),
             xtts_repetition_penalty: getNum('so-xtts-reppen'),
             xtts_top_p: getNum('so-xtts-topp'),
-            xtts_length_penalty: getNum('so-xtts-length-penalty')
+            xtts_length_penalty: getNum('so-xtts-length-penalty'),
+            fish_preset: getVal('so-fish-preset-select'),
+            fish_inference_preset: getVal('so-fish-inference-preset-select'),
+            fish_reference_audio: getVal('so-fish-speaker-wav'),
+            fish_reference_text: getVal('so-fish-ref-text'),
+            fish_temperature: getNum('so-fish-temp'),
+            fish_top_p: getNum('so-fish-topp'),
+            fish_repetition_penalty: getNum('so-fish-reppen'),
+            fish_chunk_length: getNum('so-fish-chunk-length'),
+            fish_max_new_tokens: getNum('so-fish-max-tokens')
         }
     };
 };
@@ -563,6 +673,9 @@ window.soApplyInferencePreset = function(presetName) {
 window.soApplyXttsPreset = function(presetName) {
     if (!presetName || !window.soState.xttsPresets[presetName]) {
         document.getElementById('so-xtts-speaker-wav').value = "";
+        const xttsInfSel = document.getElementById('so-xtts-inference-preset-select');
+        if (xttsInfSel) xttsInfSel.value = "";
+        window.soUpdateCloneState();
         window.soDirty();
         return;
     }
@@ -580,10 +693,6 @@ window.soApplyXttsPreset = function(presetName) {
     setVal('so-xtts-topk', p.top_k);
     setVal('so-xtts-reppen', p.repetition_penalty);
     setVal('so-xtts-topp', p.top_p);
-    
-    if (p.speaker !== undefined && p.speaker !== null) {
-        document.getElementById('so-tts-voice-select').value = p.speaker;
-    }
     
     document.getElementById('so-xtts-speaker-wav').value = p.speaker_wav || "";
 
@@ -607,6 +716,7 @@ window.soApplyXttsPreset = function(presetName) {
         xttsInfSel.value = matchedInf;
     }
     
+    window.soUpdateCloneState();
     window.soDirty();
 };
 
@@ -632,32 +742,118 @@ window.soApplyXttsInferencePreset = function(presetName) {
     window.soDirty();
 };
 
+window.soApplyFishPreset = function(presetName) {
+    if (!presetName || !window.soState.fishSpeechPresets || !window.soState.fishSpeechPresets[presetName]) {
+        // User selected "-- No Fish Preset --"
+        if (document.getElementById('so-fish-speaker-wav')) document.getElementById('so-fish-speaker-wav').value = "";
+        if (document.getElementById('so-fish-ref-text')) document.getElementById('so-fish-ref-text').value = "";
+        const fishInfSel = document.getElementById('so-fish-inference-preset-select');
+        if (fishInfSel) fishInfSel.value = "";
+        window.soUpdateCloneState();
+        window.soDirty();
+        return;
+    }
+    const p = window.soState.fishSpeechPresets[presetName];
+    if (document.getElementById('so-fish-speaker-wav')) document.getElementById('so-fish-speaker-wav').value = p.reference_audio || "";
+    if (document.getElementById('so-fish-ref-text')) document.getElementById('so-fish-ref-text').value = p.reference_text || "";
 
+    if (p.temperature !== undefined) {
+        const el = document.getElementById('so-fish-temp');
+        if (el) { el.value = p.temperature; window.soUpdateSliderVal(el, 'so-val-fish-temp'); }
+    }
+    if (p.top_p !== undefined) {
+        const el = document.getElementById('so-fish-topp');
+        if (el) { el.value = p.top_p; window.soUpdateSliderVal(el, 'so-val-fish-topp'); }
+    }
+    if (p.repetition_penalty !== undefined) {
+        const el = document.getElementById('so-fish-reppen');
+        if (el) { el.value = p.repetition_penalty; window.soUpdateSliderVal(el, 'so-val-fish-reppen'); }
+    }
+
+    let matchedInf = p.inference_preset || "";
+    if (!matchedInf && window.soState.fishSpeechInferencePresets) {
+        for (const [k, inf] of Object.entries(window.soState.fishSpeechInferencePresets)) {
+            if (
+                (!p.temperature || Math.abs(inf.temperature - p.temperature) < 0.01) &&
+                (!p.top_p || Math.abs(inf.top_p - p.top_p) < 0.01) &&
+                (!p.repetition_penalty || Math.abs(inf.repetition_penalty - p.repetition_penalty) < 0.01)
+            ) {
+                matchedInf = k;
+                break;
+            }
+        }
+    }
+    const fishInfSel = document.getElementById('so-fish-inference-preset-select');
+    if (fishInfSel) {
+        fishInfSel.value = matchedInf;
+    }
+
+    window.soUpdateCloneState();
+    window.soDirty();
+};
+
+window.soApplyFishInferencePreset = function(presetName) {
+    if (!presetName || !window.soState.fishSpeechInferencePresets || !window.soState.fishSpeechInferencePresets[presetName]) return;
+    const p = window.soState.fishSpeechInferencePresets[presetName];
+    
+    const setVal = (id, val) => {
+        if (val !== undefined && val !== null) {
+            const el = document.getElementById(id);
+            if (el) { el.value = val; window.soUpdateSliderVal(el, id.replace('so-', 'so-val-')); }
+        }
+    };
+    
+    setVal('so-fish-temp', p.temperature);
+    setVal('so-fish-topp', p.top_p);
+    setVal('so-fish-reppen', p.repetition_penalty);
+    setVal('so-fish-chunk-length', p.chunk_length ?? 200);
+    setVal('so-fish-max-tokens', p.max_new_tokens ?? 1024);
+    
+    window.soDirty();
+};
 
 
 window.soUpdateCloneState = function() {
-    const wavInput = document.getElementById('so-xtts-speaker-wav');
+    const engine = document.getElementById('so-tts-engine-select')?.value;
     const voiceSelect = document.getElementById('so-tts-voice-select');
-    if (wavInput && voiceSelect) {
-        if (wavInput.value.trim() !== '') {
-            voiceSelect.disabled = true;
-            voiceSelect.title = "Using Voice Clone (.wav)";
-            // Add a temporary option so it shows the clone text
-            let cloneOpt = Array.from(voiceSelect.options).find(o => o.value === "CLONE");
-            if (!cloneOpt) {
-                cloneOpt = document.createElement('option');
-                cloneOpt.value = "CLONE";
-                cloneOpt.textContent = "-- Voice Clone Active --";
-                voiceSelect.appendChild(cloneOpt);
-            }
-            voiceSelect.value = "CLONE";
-        } else {
-            voiceSelect.disabled = false;
-            voiceSelect.title = "";
-            const cloneOpt = Array.from(voiceSelect.options).find(o => o.value === "CLONE");
-            if (cloneOpt) {
-                cloneOpt.remove();
-            }
+    if (!voiceSelect) return;
+    
+    let isCloneOrPreset = false;
+    let titleDesc = "";
+
+    if (engine === 'xtts2') {
+        const wavInput = document.getElementById('so-xtts-speaker-wav');
+        const presetSel = document.getElementById('so-xtts-preset-select');
+        if ((wavInput && wavInput.value.trim() !== '') || (presetSel && presetSel.value.trim() !== '')) {
+            isCloneOrPreset = true;
+            titleDesc = "Using XTTS Preset / Voice Clone (.wav)";
+        }
+    } else if (engine === 'fish_speech' || engine === 'fish') {
+        const fishWav = document.getElementById('so-fish-speaker-wav');
+        const fishPresetSel = document.getElementById('so-fish-preset-select');
+        if ((fishPresetSel && fishPresetSel.value.trim() !== '') || (fishWav && fishWav.value.trim() !== '')) {
+            isCloneOrPreset = true;
+            titleDesc = "Using Fish Speech Preset / Voice Clone (.wav)";
+        }
+    }
+
+    if (isCloneOrPreset) {
+        voiceSelect.disabled = true;
+        voiceSelect.title = titleDesc;
+        let cloneOpt = Array.from(voiceSelect.options).find(o => o.value === "CLONE");
+        if (!cloneOpt) {
+            cloneOpt = document.createElement('option');
+            cloneOpt.value = "CLONE";
+            cloneOpt.textContent = "-- Voice Clone Active --";
+            voiceSelect.appendChild(cloneOpt);
+        }
+        voiceSelect.value = "CLONE";
+    } else {
+        voiceSelect.disabled = false;
+        voiceSelect.title = "";
+        const cloneOpt = Array.from(voiceSelect.options).find(o => o.value === "CLONE");
+        if (cloneOpt) {
+            cloneOpt.remove();
         }
     }
 };

@@ -1,0 +1,80 @@
+<div class="card" id="card-kokoro" style="border-top-left-radius:0; margin-top:-20px; display:none;">
+  <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+    <div><i class="fas fa-wave-square"></i> Kokoro Engine</div>
+    <span class="badge-pill badge-accent">Balanced</span>
+  </div>
+  <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 16px; font-family: monospace; font-size: 11px; color: var(--muted);">
+    <div style="margin-bottom: 8px;">
+      Kokoro uses the <code>kokoro</code> PyTorch package — lightweight model, great quality on CPU. Voices are downloaded on the fly.
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span id="kokoro-status-badge" class="badge-pill badge-ok">✅ Installed</span>
+      <span id="v-kokoro-timer" style="color: var(--accent); display: none;">0.0s</span>
+    </div>
+    <div id="v-kokoro-progress-container" style="display: none; width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden; margin-top: 8px;">
+      <div id="v-kokoro-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s ease;"></div>
+    </div>
+    <div id="v-kokoro-progress-text" style="display: none; margin-top: 4px; color: var(--accent); text-align: right;">0%</div>
+  </div>
+  <div class="grid-2">
+    <div class="field">
+      <label>Speed</label>
+      <input type="number" id="v-kokoro-speed" min="0.5" max="3" step="0.05">
+    </div>
+    <div class="field">
+      <label>Sentence Silence (s)</label>
+      <input type="number" id="v-kokoro-silence" min="0" max="2" step="0.05">
+    </div>
+    <div class="field">
+      <label>Default Voice</label>
+      <select id="v-kokoro-voice">
+        <option value="af_heart">Heart (Female, US)</option>
+        <option value="af_alloy">Alloy (Female, US)</option>
+        <option value="af_bella">Bella (Female, US)</option>
+        <option value="af_jessica">Jessica (Female, US)</option>
+        <option value="af_nicole">Nicole (Female, US)</option>
+        <option value="af_sarah">Sarah (Female, US)</option>
+        <option value="af_sky">Sky (Female, US)</option>
+        <option value="am_adam">Adam (Male, US)</option>
+        <option value="am_echo">Echo (Male, US)</option>
+        <option value="am_michael">Michael (Male, US)</option>
+        <option value="bf_emma">Emma (Female, GB)</option>
+        <option value="bf_isabella">Isabella (Female, GB)</option>
+        <option value="bm_george">George (Male, GB)</option>
+        <option value="bm_lewis">Lewis (Male, GB)</option>
+        <option value="if_sara">Sara (Female, IT)</option>
+        <option value="im_nicola">Nicola (Male, IT)</option>
+      </select>
+    </div>
+  </div>
+  <div class="field" style="margin-top: 10px;">
+    <label>Offline Model Path (Optional)</label>
+    <input type="text" id="v-kokoro-model" placeholder="Leave empty to use HuggingFace cache">
+  </div>
+  <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+    <button type="button" class="btn btn-secondary btn-sm" onclick="installTTSEngine('kokoro')">
+      <i class="fas fa-download"></i> Install / Update Kokoro
+    </button>
+    <span id="kokoro-install-status" style="font-size:12px; color:var(--muted);"></span>
+  </div>
+
+  <!-- Test Voice Section (Kokoro) -->
+  <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+    <div class="card-title" style="font-size:14px; margin-bottom:12px;">{{ t('webui_voice_test_title') }}</div>
+    <div class="field" style="margin-bottom:8px;">
+      <input type="text" id="v-kokoro-test-text" placeholder="{{ t('webui_voice_test_ph') }}" value="Hecos system test, voice generation is operational.">
+    </div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button type="button" class="btn btn-primary btn-sm" onclick="testVoice('web', 'kokoro')">
+        <i class="fas fa-play"></i> {{ t('webui_voice_test_web') }}
+      </button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="testVoice('console', 'kokoro')">
+        <i class="fas fa-desktop"></i> {{ t('webui_voice_test_pc') }}
+      </button>
+      <button type="button" class="btn btn-danger btn-sm" id="v-kokoro-test-stop" style="display:none;" onclick="stopVoice('kokoro')">
+        <i class="fas fa-stop"></i> {{ t('webui_voice_test_stop') }}
+      </button>
+      <span id="v-kokoro-test-status" style="font-size:12px; color:var(--muted); margin-left:auto;"></span>
+    </div>
+  </div>
+</div>

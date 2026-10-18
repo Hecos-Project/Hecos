@@ -125,6 +125,143 @@ window.uploadVoiceClone = async function(fileInput) {
     fileInput.value = ''; // reset so same file can be re-uploaded
 };
 
+// ── Fish Speech Voice Clone Helpers ─────────────────────────────────────────
+
+window.openFishVoiceClonePicker = function() {
+    const current = document.getElementById('v-fish-speaker-wav')?.value || 'C:\\';
+    let initDir = current;
+    if (current.includes('\\') || current.includes('/')) {
+        const lastSlash = Math.max(current.lastIndexOf('\\'), current.lastIndexOf('/'));
+        initDir = lastSlash > 0 ? current.substring(0, lastSlash) : current;
+    }
+    
+    if (typeof HecosFilePicker !== 'undefined') {
+        HecosFilePicker.open({
+            title: 'Select Fish Speech Voice Clone WAV',
+            initialPath: initDir,
+            mode: 'file',
+            onSelect: function(p) {
+                const inp = document.getElementById('v-fish-speaker-wav');
+                if(inp) inp.value = p;
+                if (typeof window.onFishVoiceClonePathInput === 'function') {
+                    window.onFishVoiceClonePathInput();
+                }
+            }
+        });
+    } else {
+        console.error("HecosFilePicker is not defined!");
+    }
+};
+
+window._voiceClonesTranscriptMap = {};
+
+window.loadFishVoiceCloneList = async function() {
+    try {
+        const [voicesRes, clonesRes] = await Promise.all([
+            fetch('/api/audio/voices?engine=fish_speech').then(r => r.json()).catch(() => ({})),
+            fetch('/api/audio/voice-clones').then(r => r.json()).catch(() => ({ ok: false }))
+        ]);
+        
+        if (clonesRes && clonesRes.ok && clonesRes.files) {
+            window._voiceClonesTranscriptMap = {};
+            for (const f of clonesRes.files) {
+                window._voiceClonesTranscriptMap[f.filename] = f.transcript || '';
+                window._voiceClonesTranscriptMap[f.path] = f.transcript || '';
+                window._voiceClonesTranscriptMap[f.name] = f.transcript || '';
+            }
+        }
+
+        const sel = document.getElementById('v-fish-clone-select');
+        if (!sel) return;
+        const currentPath = (document.getElementById('v-fish-speaker-wav')?.value || '').trim();
+        const list = voicesRes.fish_speech || voicesRes;
+        sel.innerHTML = '';
+        for (const [key, label] of Object.entries(list)) {
+            const opt = document.createElement('option');
+            opt.value = key === 'default' ? '' : key;
+            opt.textContent = label;
+            
+            if (opt.value && (currentPath === opt.value || currentPath.endsWith(opt.value) || currentPath.split('\\').pop() === opt.value || currentPath.split('/').pop() === opt.value)) {
+                opt.selected = true;
+            } else if (!opt.value && !currentPath) {
+                opt.selected = true;
+            }
+            sel.appendChild(opt);
+        }
+    } catch(e) {
+        console.error('[AudioConfig] loadFishVoiceCloneList error:', e);
+    }
+};
+
+window.onFishVoiceCloneSelect = function() {
+    const sel = document.getElementById('v-fish-clone-select');
+    const input = document.getElementById('v-fish-speaker-wav');
+    const refTextInput = document.getElementById('v-fish-reference-text');
+    if (!sel || !input) return;
+    input.value = sel.value;
+
+    if (sel.value && window._voiceClonesTranscriptMap) {
+        const base = sel.value.split('\\').pop().split('/').pop();
+        const transcript = window._voiceClonesTranscriptMap[sel.value] || window._voiceClonesTranscriptMap[base];
+        if (transcript !== undefined && refTextInput) {
+            refTextInput.value = transcript;
+        }
+    }
+
+    if (typeof saveAudioConfig === 'function') saveAudioConfig();
+};
+
+window.onFishVoiceClonePathInput = function() {
+    const input = document.getElementById('v-fish-speaker-wav');
+    const sel = document.getElementById('v-fish-clone-select');
+    const refTextInput = document.getElementById('v-fish-reference-text');
+    if (!sel || !input) return;
+    const typed = input.value.trim();
+    const matched = Array.from(sel.options).find(o => o.value && (o.value === typed || typed.endsWith(o.value)));
+    sel.value = matched ? matched.value : '';
+
+    if (typed && window._voiceClonesTranscriptMap && refTextInput && !refTextInput.value.trim()) {
+        const base = typed.split('\\').pop().split('/').pop();
+        const transcript = window._voiceClonesTranscriptMap[typed] || window._voiceClonesTranscriptMap[base];
+        if (transcript) {
+            refTextInput.value = transcript;
+        }
+    }
+};
+
+window.uploadFishVoiceClone = async function(fileInput) {
+    if (!fileInput.files.length) return;
+    const file = fileInput.files[0];
+    if (!file.name.toLowerCase().endsWith('.wav')) {
+        if (window.showToast) window.showToast('Only WAV files are accepted.', 'error');
+        return;
+    }
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+        if (window.showToast) window.showToast('Uploading...', 'info');
+        const r = await fetch('/api/audio/voice-clones/upload', { method: 'POST', body: fd });
+        const data = await r.json();
+        if (data.ok) {
+            await loadFishVoiceCloneList();
+            if (typeof loadVoiceCloneList === 'function') await loadVoiceCloneList();
+            const sel = document.getElementById('v-fish-clone-select');
+            const input = document.getElementById('v-fish-speaker-wav');
+            if (sel && data.path) {
+                sel.value = data.path;
+                if (input) input.value = data.path;
+                if (typeof saveAudioConfig === 'function') saveAudioConfig();
+            }
+            if (window.showToast) window.showToast(`Uploaded: ${data.filename}`, 'success');
+        } else {
+            if (window.showToast) window.showToast('Upload failed: ' + data.error, 'error');
+        }
+    } catch(e) {
+        if (window.showToast) window.showToast('Upload error: ' + e.message, 'error');
+    }
+    fileInput.value = '';
+};
+
 
 
 // ── Custom Modals for Audio Panel ───────────────────────────────────────────

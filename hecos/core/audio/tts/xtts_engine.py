@@ -78,22 +78,24 @@ class XttsEngine(BaseTTSEngine):
     @staticmethod
     def model_ready() -> bool:
         """Returns True only if the XTTSv2 model files are already downloaded on disk."""
+        import os
+        home = os.path.expanduser("~")
+        possible_paths = [
+            os.path.join(home, "AppData", "Local", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
+            os.path.join(home, ".local", "share", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
+            os.path.join(home, "AppData", "Roaming", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
+        ]
+        # Fast local disk check: avoid network requests to scarf.sh/HuggingFace during status polling
+        if any(os.path.isdir(p) and (os.path.exists(os.path.join(p, "config.json")) or os.path.exists(os.path.join(p, "model.pth"))) for p in possible_paths):
+            return True
+
         try:
-            import os
             from TTS.utils.manage import ModelManager
             manager = ModelManager()
             model_path, _, _ = manager.download_model("tts_models/multilingual/multi-dataset/xtts_v2")
             return os.path.exists(model_path)
         except Exception:
-            # Fallback: check common HuggingFace/TTS cache paths
-            import os
-            home = os.path.expanduser("~")
-            possible_paths = [
-                os.path.join(home, ".local", "share", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
-                os.path.join(home, "AppData", "Local", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
-                os.path.join(home, "AppData", "Roaming", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
-            ]
-            return any(os.path.isdir(p) and os.listdir(p) for p in possible_paths)
+            return False
 
     # ── Lazy model loading ────────────────────────────────────────────────────
 

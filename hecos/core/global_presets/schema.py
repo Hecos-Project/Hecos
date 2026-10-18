@@ -73,6 +73,20 @@ class SoulVoice(BaseModel):
     piper_noise_w: Optional[float] = None
     kokoro_speed: Optional[float] = None
     kokoro_voice: Optional[str] = None
+    fish_preset: Optional[str] = None
+    fish_inference_preset: Optional[str] = None
+    fish_api_url: Optional[str] = None
+    fish_reference_audio: Optional[str] = None
+    fish_reference_text: Optional[str] = None
+    fish_temperature: Optional[float] = None
+    fish_top_p: Optional[float] = None
+    fish_repetition_penalty: Optional[float] = None
+    fish_max_new_tokens: Optional[int] = None
+    fish_chunk_length: Optional[int] = None
+    fish_seed: Optional[int] = None
+    fish_normalize: Optional[bool] = None
+    fish_use_memory_cache: Optional[bool] = None
+    fish_reference_id: Optional[str] = None
 
 class SoulModel(BaseModel):
     backend_type: Optional[str] = None

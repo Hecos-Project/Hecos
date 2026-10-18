@@ -1,0 +1,43 @@
+<div class="card" id="card-piper" style="border-top-left-radius:0; margin-top:-20px;">
+  <div class="card-title"><i class="fas fa-volume-up"></i> Piper Engine (Default)</div>
+  <div class="field">
+    <label>{{ t('webui_conf_voice_path') }}</label>
+    <div style="display:flex; gap:6px; width:100%;">
+      <input type="text" id="v-piper" placeholder="C:\Hecos\bin\piper\piper.exe" style="flex:1;">
+      <button type="button" class="btn btn-secondary" onclick="browsePiperPath()" title="{{ t('webui_conf_voice_browse_title') }}"><i class="fas fa-folder-open"></i></button>
+      <button type="button" class="btn btn-secondary" onclick="autoFixPiperPath()" title="{{ t('webui_conf_voice_detect_title') }}"><i class="fas fa-search"></i> Auto</button>
+    </div>
+  </div>
+  <div class="field">
+    <label>{{ t('webui_conf_voice_onnx') }}</label>
+    <select id="v-onnx-model"></select>
+    <p style="font-size:12px;color:var(--muted);margin-top:4px;">{{ t('webui_conf_voice_info') }}</p>
+  </div>
+  <div class="grid-2">
+    <div class="field"><label>{{ t('webui_conf_voice_speed') }}</label><input type="number" id="v-speed" min="0.5" max="3" step="0.05"></div>
+    <div class="field"><label>{{ t('webui_conf_voice_noise') }}</label><input type="number" id="v-noise" min="0" max="1" step="0.01"></div>
+    <div class="field"><label>{{ t('webui_conf_voice_noisew') }}</label><input type="number" id="v-noisew" min="0" max="1" step="0.01"></div>
+    <div class="field"><label>{{ t('webui_conf_voice_silence') }}</label><input type="number" id="v-silence" min="0" max="2" step="0.05"></div>
+    <div class="field"><label>Piper Timeout (sec)</label><input type="number" id="v-timeout" min="10" max="600" step="10"></div>
+  </div>
+  
+  <!-- Test Voice Section -->
+  <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+    <div class="card-title" style="font-size:14px; margin-bottom:12px;">{{ t('webui_voice_test_title') }}</div>
+    <div class="field" style="margin-bottom:8px;">
+      <input type="text" id="v-test-text" placeholder="{{ t('webui_voice_test_ph') }}" value="Hecos system test, voice generation is operational.">
+    </div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button type="button" class="btn btn-primary btn-sm" onclick="testVoice('web')">
+        <i class="fas fa-play"></i> {{ t('webui_voice_test_web') }}
+      </button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="testVoice('console')">
+        <i class="fas fa-desktop"></i> {{ t('webui_voice_test_pc') }}
+      </button>
+      <button type="button" class="btn btn-danger btn-sm" id="v-test-stop" style="display:none;" onclick="stopVoice()">
+        <i class="fas fa-stop"></i> {{ t('webui_voice_test_stop') }}
+      </button>
+      <span id="v-test-status" style="font-size:12px; color:var(--muted); margin-left:auto;"></span>
+    </div>
+  </div>
+</div>

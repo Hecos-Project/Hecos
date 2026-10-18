@@ -1,0 +1,460 @@
+<div class="card" id="card-fish_speech" style="border-top-left-radius:0; margin-top:-20px; display:none;">
+  <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+    <div><i class="fas fa-fish"></i> Fish Speech Engine</div>
+    <span class="badge-pill badge-accent">Voice Clone / Expressive</span>
+  </div>
+  <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+      <div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-weight:600; font-size:13px; color:var(--text);"><i class="fas fa-server"></i> Local Fish Speech Server</span>
+          <span id="fish-server-status-pill" class="badge-pill badge-ok">🟢 Checking Server...</span>
+        </div>
+        <div id="fish-server-desc" style="font-size: 11px; color: var(--muted); margin-top: 3px; font-family: monospace;">
+          Port 8080 · Model: Fish Speech S2-Pro (Dual-AR FP16 on CUDA)
+        </div>
+      </div>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-fish-server-restart" onclick="fishServerAction('restart')" title="Restart local Fish Speech server process and reload weights">
+          <i class="fas fa-sync-alt"></i> Restart Server
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-fish-server-stop" onclick="fishServerAction('stop')" title="Stop server process and release VRAM">
+          <i class="fas fa-power-off"></i> Stop (Free VRAM)
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-fish-server-start" onclick="fishServerAction('start')" style="display:none;" title="Start local Fish Speech server">
+          <i class="fas fa-play"></i> Start Server
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="checkFishServerStatus(true)" title="Ping server health endpoint">
+          <i class="fas fa-heartbeat"></i> Check
+        </button>
+      </div>
+    </div>
+
+    <!-- Client-Server architecture banner -->
+    <div style="font-size:10px; color:var(--muted); border-top:1px dashed var(--border); padding-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+      <span>
+        <i class="fas fa-info-circle"></i> <b>Client-Server Architecture:</b> Hecos connects to Fish Speech on port <code>8080</code>. Use <b>Restart Server</b> if you reconfigure neural weights, or restart Hecos if backend scripts change.
+      </span>
+      <span id="v-fish-timer" style="color: var(--accent); display: none; font-weight: bold; font-family: monospace;">0.0s</span>
+    </div>
+
+    <div id="v-fish-progress-container" style="display: none; width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden; margin-top: 8px;">
+      <div id="v-fish-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s ease;"></div>
+    </div>
+    <div id="v-fish-progress-text" style="display: none; margin-top: 4px; color: var(--accent); text-align: right; font-size:11px;">0%</div>
+  </div>
+
+  <!-- Model Selection & Architecture Checkpoint -->
+  <div class="field" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+      <label style="margin:0; font-weight:600; font-size:13px; color:var(--text); display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-brain" style="color:var(--accent);"></i> Neural Model Architecture & Local Checkpoint
+      </label>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="openFishCheckpointsFolder()" title="Open checkpoints directory in Windows File Explorer">
+          <i class="fas fa-folder-open"></i> Open Folder
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="copyFishCheckpointsPath()" title="Copy checkpoints folder path to clipboard">
+          <i class="fas fa-copy"></i>
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="loadFishModelList()" title="Refresh installed checkpoints list">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <div class="field" style="flex:2; min-width:240px; margin:0;">
+        <select id="v-fish-model-checkpoint" class="form-control" onchange="onFishModelSelectChange()" style="background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:8px;">
+          <option value="s2-pro" style="background:var(--bg3); color:var(--text);">Fish Speech S2-Pro (Dual-AR 36L FP16) — [Active]</option>
+          <option value="fish-speech-1.5" style="background:var(--bg3); color:var(--text);">Fish Speech 1.5 (Dual-AR + Firefly GAN)</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-primary btn-sm" id="btn-fish-apply-model" onclick="applyFishModelSelection()" title="Load selected model weights into local server" style="white-space:nowrap; padding:10px 16px;">
+        <i class="fas fa-check"></i> Apply & Reload Model
+      </button>
+    </div>
+
+    <!-- Model Details & Specs Card -->
+    <div id="v-fish-model-info" style="font-size:11px; color:var(--muted); margin-top:10px; line-height:1.5; border-top:1px dashed var(--border); padding-top:8px;">
+      <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+        <span id="v-fish-model-path-display">📁 Path: <code>hecos/engines/fish_speech/checkpoints/s2-pro</code> (~10.5 GB)</span>
+        <span id="v-fish-model-family-pill" class="badge-pill badge-accent" style="font-size:9px;">Dual-AR S2-Pro</span>
+      </div>
+      <div id="v-fish-model-desc-display" style="margin-top:4px; color:var(--text);">
+        High-fidelity local model with native support for expressive emotion tags ([whisper], [laughing], etc.) and zero-shot voice cloning.
+      </div>
+      <div style="margin-top:6px; font-size:11px; color:var(--muted); background:rgba(0,0,0,0.25); padding:8px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+        💡 <b>Drama 3 Model Info:</b> <i>Fish Audio Drama 3</i> is the next-generation 35-billion parameter Mixture-of-Experts (MoE) theatrical model designed for multi-character dialogue (up to 16 distinct voices) and complex dramatic acting notes. Running it locally requires ~70 GB VRAM or heavy 4-bit quantization; to use Drama 3 without overloading your local GPU, simply enter your free Cloud API key in the <i>API Key</i> field below.
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuration Presets -->
+  <div class="grid-2" style="margin-bottom:12px;">
+    <div class="field" style="grid-column: span 2;">
+      <label>Configuration Preset</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select id="v-fish-preset" onchange="loadFishPreset()" style="flex:1;">
+          <option value="default">Default</option>
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" onclick="saveFishPreset()" title="Save as New Preset"><i class="fas fa-plus"></i> New</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="updateFishPreset()" title="Update Current Preset"><i class="fas fa-sync-alt"></i> Update</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetFishConfig()" title="Reset to Defaults"><i class="fas fa-undo"></i> Reset</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deleteFishPreset()" title="Delete Preset"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Server Endpoint -->
+  <div class="grid-2">
+    <div class="field">
+      <label>Server Endpoint URL</label>
+      <input type="text" id="v-fish-api-url" placeholder="http://127.0.0.1:8080/v1/tts">
+      <p style="font-size:10px; color:var(--muted); margin-top:3px;">
+        Local server: <code>http://127.0.0.1:8080/v1/tts</code> | Cloud API: <code>https://api.fish.audio/v1/tts</code>
+      </p>
+    </div>
+    <div class="field">
+      <label>API Key (Required for Cloud)</label>
+      <input type="password" id="v-fish-api-key" placeholder="Enter Fish Audio API Key (leave empty for local server)">
+      <p style="font-size:10px; color:var(--muted); margin-top:3px;">
+        Get your free API key at <a href="https://fish.audio" target="_blank" style="color:var(--accent); text-decoration:underline;">fish.audio</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Timbre Studio: Voice / Reference Timbre & Clones -->
+  <div class="field" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+      <label style="margin:0;"><i class="fas fa-microphone-alt"></i> Timbre Studio & Voice Clones</label>
+      <span class="badge-pill" style="font-size:10px; background:rgba(0,180,216,0.15); color:var(--accent); border:1px solid rgba(0,180,216,0.3);">
+        Zero-Shot Cloning
+      </span>
+    </div>
+    <p style="font-size:11px; color:var(--muted); margin:0 0 10px;">
+      Instantly clone any voice timbre using a clean audio sample (5–20s), or record your voice directly from the browser microphone.
+    </p>
+
+    <!-- Library dropdown & Studio Toolbar -->
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+      <select id="v-fish-clone-select" onchange="onFishVoiceCloneSelect()" style="flex:2; min-width:200px;">
+        <option value="">Default Voice (Zero-Shot / Base Model)</option>
+      </select>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="loadFishVoiceCloneList()" title="Refresh voice list">
+        <i class="fas fa-sync-alt"></i>
+      </button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="openFishRecordTimbreModal()" title="Record a new voice timbre directly from microphone">
+        <i class="fas fa-microphone"></i> Record Voice
+      </button>
+      <label class="btn btn-secondary btn-sm" title="Upload a WAV file to clone a new voice" style="cursor:pointer; margin:0; display:flex; align-items:center; gap:4px;">
+        <i class="fas fa-upload"></i> Upload WAV
+        <input type="file" accept=".wav" style="display:none;" onchange="uploadFishVoiceClone(this)">
+      </label>
+      <button type="button" class="btn btn-danger btn-sm" onclick="deleteFishVoiceClone()" title="Delete selected voice timbre from library">
+        <i class="fas fa-trash-alt"></i>
+      </button>
+    </div>
+
+    <!-- Manual path override + file system browse -->
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+      <input type="text" id="v-fish-speaker-wav" placeholder="Reference WAV file path (auto-filled or custom)" style="flex:1;" oninput="onFishVoiceClonePathInput()">
+      <button type="button" class="btn btn-secondary btn-sm" title="Browse filesystem" style="margin:0;" onclick="window.openFishVoiceClonePicker()">
+        <i class="fas fa-folder-open"></i> Browse
+      </button>
+    </div>
+
+    <!-- Reference ID (Cloud model or local multi-sample ID) -->
+    <div class="field" style="margin-bottom:8px;">
+      <label style="display:flex; justify-content:space-between; align-items:center;">
+        <span>
+          Reference ID / Cloud Model ID (Optional)
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Use a specific Fish Audio Cloud model ID (e.g. fish.audio/m/<id>) or a pre-indexed local multi-sample voice folder ID. If set, this overrides or pairs with the reference audio."></i>
+        </span>
+      </label>
+      <input type="text" id="v-fish-reference-id" placeholder="e.g. 7f92e554160a4048bb661994a50d4373 or model ID" style="font-size:11px;">
+    </div>
+
+    <!-- Reference Audio Transcript -->
+    <div class="field" style="margin-top: 8px;">
+      <label style="display:flex; justify-content:space-between; align-items:center;">
+        <span>
+          Reference Audio Transcript (Optional)
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Providing the exact text spoken in the reference WAV sample significantly improves phoneme alignment and cloning fidelity."></i>
+        </span>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="saveFishVoiceTranscript()" title="Save transcript as companion .txt for this voice WAV" style="font-size:10px; padding:2px 8px;">
+          <i class="fas fa-save"></i> Save Transcript (.txt)
+        </button>
+      </label>
+      <textarea id="v-fish-reference-text" rows="2" placeholder="e.g. Exact text spoken in the reference audio clip" style="width:100%; font-size:11px; font-family:inherit; resize:vertical;"></textarea>
+    </div>
+  </div>
+
+  <!-- Inference Parameters Preset -->
+  <div class="grid-2" style="margin-top:12px; margin-bottom:12px;">
+    <div class="field" style="grid-column: span 2;">
+      <label>Inference Parameters Preset</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select id="v-fish-inference-preset" onchange="loadFishInferencePreset()" style="flex:1;">
+          <option value="">-- No Preset Selected --</option>
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" onclick="saveFishInferencePreset()" title="Save as New Inference Preset"><i class="fas fa-plus"></i> New</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="updateFishInferencePreset()" title="Update Current Inference Preset"><i class="fas fa-sync-alt"></i> Update</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deleteFishInferencePreset()" title="Delete Inference Preset"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inference Controls: Row 1 (Sampling & Stability) -->
+  <div class="grid-3" style="margin-top:12px;">
+    <div class="field">
+      <label>
+        Temperature
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Sampling temperature. Controls expressiveness vs stability. Higher = more emotional variance, lower = more robotic/stable. Range: 0.1 to 2.0 (default 0.7)"></i>
+      </label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-fish-temperature-range" min="0.1" max="2.0" step="0.05" value="0.7" style="flex:1;" oninput="document.getElementById('v-fish-temperature').value = this.value">
+        <input type="number" id="v-fish-temperature" min="0.1" max="2.0" step="0.05" value="0.7" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-fish-temperature-range').value = this.value">
+      </div>
+    </div>
+    <div class="field">
+      <label>
+        Top P
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Nucleus sampling probability threshold. Range: 0.1 to 1.0 (default 0.7)"></i>
+      </label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-fish-topp-range" min="0.1" max="1.0" step="0.01" value="0.7" style="flex:1;" oninput="document.getElementById('v-fish-topp').value = this.value">
+        <input type="number" id="v-fish-topp" min="0.1" max="1.0" step="0.01" value="0.7" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-fish-topp-range').value = this.value">
+      </div>
+    </div>
+    <div class="field">
+      <label>
+        Repetition Penalty
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Penalizes repetitive speech tokens. Range: 1.0 to 3.0 (default 1.2)"></i>
+      </label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-fish-repetition-range" min="1.0" max="3.0" step="0.05" value="1.2" style="flex:1;" oninput="document.getElementById('v-fish-repetition').value = this.value">
+        <input type="number" id="v-fish-repetition" min="1.0" max="3.0" step="0.05" value="1.2" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-fish-repetition-range').value = this.value">
+      </div>
+    </div>
+  </div>
+
+  <!-- Inference Controls: Row 2 (Chunking, Tokens, Seed) -->
+  <div class="grid-3" style="margin-top:12px;">
+    <div class="field">
+      <label>
+        Chunk Length (Tokens)
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Iterative inference context length inside Fish Speech. Range: 100 to 300 (default 200). Lower = lower VRAM and faster first byte, higher = better global prosody."></i>
+      </label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-fish-chunk-length-range" min="100" max="300" step="10" value="200" style="flex:1;" oninput="document.getElementById('v-fish-chunk-length').value = this.value">
+        <input type="number" id="v-fish-chunk-length" min="100" max="300" step="10" value="200" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-fish-chunk-length-range').value = this.value">
+      </div>
+    </div>
+    <div class="field">
+      <label>
+        Max Tokens
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Maximum new audio tokens generated per sentence chunk. Range: 256 to 2048 (default 1024)."></i>
+      </label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-fish-max-tokens-range" min="256" max="2048" step="64" value="1024" style="flex:1;" oninput="document.getElementById('v-fish-max-tokens').value = this.value">
+        <input type="number" id="v-fish-max-tokens" min="256" max="2048" step="64" value="1024" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-fish-max-tokens-range').value = this.value">
+      </div>
+    </div>
+    <div class="field">
+      <label>
+        Random Seed
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="RNG seed for reproducibility. Set 0 for fully randomized expressive generation, or any positive integer for deterministic voice output."></i>
+      </label>
+      <input type="number" id="v-fish-seed" min="0" max="9999999" step="1" value="0" style="font-size:11px; padding: 6px 8px;" placeholder="0 = Random">
+    </div>
+  </div>
+
+  <!-- Advanced Optimization Toggles -->
+  <div style="margin-top:14px; display:flex; flex-direction:column; gap:8px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:6px; padding:10px 14px;">
+    <div class="toggle-row" style="margin:0;">
+      <div class="toggle-info">
+        <strong>
+          Text Normalization
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Normalizes numbers, dates, currency, and symbols into spoken phonemic forms before synthesis. Recommended ON."></i>
+        </strong>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Automatically converts numbers, abbreviations, and symbols into spoken phonemic text</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="v-fish-normalize" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row" style="margin:0; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05);">
+      <div class="toggle-info">
+        <strong>
+          Memory Cache (KV Acceleration)
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Caches prompt audio embeddings in memory to accelerate repeated zero-shot generations. Recommended ON."></i>
+        </strong>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Caches reference prompt audio embeddings in memory for ultra-fast iterative synthesis</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="v-fish-memory-cache" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row" style="margin:0; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05);">
+      <div class="toggle-info">
+        <strong>
+          Chunk Sentences
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Splits long paragraphs into individual sentences and tracks progress. Recommended for long texts."></i>
+        </strong>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Splits long paragraphs into sentence chunks for rock-solid stability and zero hallucinations</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="v-fish-chunk" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div style="margin-top:14px; display:flex; gap:10px; align-items:center;">
+    <button type="button" class="btn btn-secondary btn-sm" onclick="installTTSEngine('fish_speech')">
+      <i class="fas fa-download"></i> Install / Update Fish Speech
+    </button>
+    <span id="fish_speech-install-status" style="font-size:12px; color:var(--muted);"></span>
+  </div>
+
+  <!-- Laboratory Section & Expressiveness Studio -->
+  <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--border);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <div class="card-title" style="font-size:14px; margin:0;">
+        <i class="fas fa-vial"></i> Laboratory (Test Voice & Expressive Directing)
+      </div>
+      <!-- Scenario Selector -->
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="font-size:11px; color:var(--muted);">Test Scenarios:</span>
+        <select id="v-fish-test-scenarios" onchange="loadFishTestScenario(this.value)" style="font-size:11px; padding:3px 8px; border-radius:4px; background:var(--bg3); border:1px solid var(--border); color:var(--text);">
+          <option value="">-- Select Expressive Scenario --</option>
+          <option value="laugh">😄 Ironic / Laughing</option>
+          <option value="whisper">🤫 Whispered / Mystery</option>
+          <option value="excited">🎉 Excited / Happy</option>
+          <option value="dramatic">🎭 Dramatic / Storyteller</option>
+          <option value="calm">🧘 Calm / Professional</option>
+          <option value="surprised">😲 Surprised / Incredulous</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Emotion Tags Palette -->
+    <div style="margin-bottom:8px;">
+      <div style="font-size:10px; color:var(--muted); margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+        <span><i class="fas fa-tags"></i> Directing & Prosody Cues:</span>
+        <span class="badge-pill" style="font-size:9px; background:rgba(0,180,216,0.15); color:var(--accent); border:1px solid rgba(0,180,216,0.3);" title="Inline bracket tags like [whisper], [laughing], [excited], [sigh] are natively understood by both local Fish Speech S2-Pro and Fish Audio Cloud (S2.1-Pro) to dynamically direct emotion and vocal acting.">
+          S2-Pro & S2.1-Pro Expressive Tags
+        </span>
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <!-- Natural Prosody Marks (Local & Cloud) -->
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px; padding:2px 8px; border-radius:12px; border:1px dashed var(--accent); color:var(--accent);" onclick="insertFishProsodyMark('...')" title="Inserts an acoustic suspense pause">
+          ⏸️ Pause (...)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px; padding:2px 8px; border-radius:12px; border:1px dashed var(--accent); color:var(--accent);" onclick="insertFishProsodyMark('!')" title="Inserts acoustic vocal emphasis and higher pitch">
+          💥 Emphasis (!)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px; padding:2px 8px; border-radius:12px; border:1px dashed var(--accent); color:var(--accent);" onclick="insertFishProsodyMark('?')" title="Inserts rising intonation question contour">
+          ❓ Rise (?)
+        </button>
+        <!-- S2-Pro & Cloud Expressive Emotion Tags -->
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px; padding:2px 8px; border-radius:12px;" onclick="insertFishEmotionTag('whisper')" title="S2-Pro Emotion directive [whisper]">
+          🤫 [whisper]
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px; padding:2px 8px; border-radius:12px;" onclick="insertFishEmotionTag('laughing')" title="S2-Pro Emotion directive [laughing]">
+          😆 [laughing]
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px; padding:2px 8px; border-radius:12px;" onclick="insertFishEmotionTag('excited')" title="S2-Pro Emotion directive [excited]">
+          🤩 [excited]
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px; padding:2px 8px; border-radius:12px;" onclick="insertFishEmotionTag('calm')" title="S2-Pro Emotion directive [calm]">
+          😌 [calm]
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px; padding:2px 8px; border-radius:12px;" onclick="insertFishEmotionTag('sigh')" title="S2-Pro Emotion directive [sigh]">
+          😮‍💨 [sigh]
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px; padding:2px 8px; border-radius:12px;" onclick="insertFishEmotionTag('surprised')" title="S2-Pro Emotion directive [surprised]">
+          😲 [surprised]
+        </button>
+      </div>
+    </div>
+
+    <!-- Test Input -->
+    <div class="field" style="margin-bottom:8px;">
+      <input type="text" id="v-fish-test-text" placeholder="{{ t('webui_voice_test_ph') }}" value="Hello! Fish Speech is fully operational with high-fidelity voice cloning.">
+    </div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button type="button" class="btn btn-primary btn-sm" onclick="testVoice('web', 'fish_speech')">
+        <i class="fas fa-play"></i> Generate & Play
+      </button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="testVoice('console', 'fish_speech')">
+        <i class="fas fa-desktop"></i> Server Speakers
+      </button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="clearTTSCache()" title="Clear persistent audio cache to force fresh neural generation">
+        <i class="fas fa-trash-alt"></i> Clear Cache
+      </button>
+      <button type="button" class="btn btn-danger btn-sm" id="v-fish-test-stop" style="display:none;" onclick="stopVoice('fish_speech')">
+        <i class="fas fa-stop"></i> {{ t('webui_voice_test_stop') }}
+      </button>
+      <span id="v-fish-test-status" style="font-size:12px; color:var(--muted); margin-left:auto;"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Record Timbre from Microphone (Timbre Studio) -->
+<div id="modal-fish-record-timbre" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(5px);">
+  <div style="background:var(--bg2, #1e1e1e); border:1px solid var(--border); border-radius:12px; padding:22px; max-width:500px; width:92%; box-shadow:0 12px 36px rgba(0,0,0,0.6); display:flex; flex-direction:column; gap:14px;">
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px;">
+      <h3 style="margin:0; font-size:15px; color:var(--text); display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-microphone" style="color:var(--accent);"></i>
+        Record Custom Timbre from Microphone
+      </h3>
+      <button type="button" onclick="closeFishRecordTimbreModal()" style="background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer;">&times;</button>
+    </div>
+
+    <p style="font-size:11px; color:var(--muted); margin:0;">
+      Speak clearly for 10–15 seconds in a quiet room. Fish Speech will extract your unique vocal characteristics to instantly clone your voice.
+    </p>
+
+    <div class="field">
+      <label style="font-size:12px; font-weight:600;">Timbre Name</label>
+      <input type="text" id="fish-rec-name" placeholder="e.g. Melo_Natural_Voice" style="width:100%; font-size:12px;">
+    </div>
+
+    <div class="field">
+      <label style="font-size:12px; font-weight:600; display:flex; justify-content:space-between;">
+        <span>Spoken Transcript (Highly Recommended)</span>
+      </label>
+      <textarea id="fish-rec-transcript" rows="2" placeholder="Enter the exact words you will read aloud during recording..." style="width:100%; font-size:11px; resize:vertical;"></textarea>
+      <p style="font-size:10px; color:var(--muted); margin-top:2px;">
+        Suggested reading: <em>"The sun is shining brightly today and the Hecos system responds with natural expression."</em>
+      </p>
+    </div>
+
+    <!-- Recorder Controls & Timer -->
+    <div style="background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:12px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+      <div id="fish-rec-timer" style="font-family:monospace; font-size:22px; font-weight:bold; color:var(--accent);">
+        00:00
+      </div>
+      <button type="button" id="fish-rec-btn" class="btn btn-secondary" onclick="toggleFishTimbreRecording()">
+        <i class="fas fa-circle" style="color:var(--danger, #ff4d4f);"></i> Start Recording
+      </button>
+      <audio id="fish-rec-audio" controls style="display:none; width:100%; margin-top:6px;"></audio>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
+      <button type="button" class="btn btn-secondary" onclick="closeFishRecordTimbreModal()">Cancel</button>
+      <button type="button" id="fish-rec-save-btn" class="btn btn-primary" onclick="saveFishRecordedTimbre()" disabled>
+        <i class="fas fa-save"></i> Save Timbre to Library
+      </button>
+    </div>
+
+  </div>
+</div>

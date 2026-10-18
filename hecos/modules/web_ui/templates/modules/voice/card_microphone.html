@@ -1,0 +1,40 @@
+<div class="card">
+  <div class="card-title"><i class="fas fa-volume-up"></i> {{ t('webui_conf_voice_mic_title') }}</div>
+  <div class="grid-2">
+    <div class="field"><label>{{ t('webui_conf_voice_energy') }}</label><input type="number" id="a-threshold" min="50" max="5000" step="50"></div>
+    <div class="field"><label>{{ t('webui_conf_voice_timeout') }}</label><input type="number" id="a-timeout" min="1" max="30" step="1"></div>
+    <div class="field"><label>{{ t('webui_conf_voice_limit') }}</label><input type="number" id="a-limit" min="5" max="60" step="1"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title"><i class="fas fa-volume-up"></i> {{ t('webui_voice_mic_btn_title') }}</div>
+  <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">
+    {{ t('webui_voice_mic_btn_desc') }}
+  </p>
+  <div class="toggle-row">
+    <div class="toggle-info">
+      <strong>{{ t('webui_voice_ptt_mode') }}</strong> <span style="font-size:11px;color:var(--muted);">{{ t('webui_voice_ptt_hint') }}</span>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">{{ t('webui_voice_preview_label') }}</div>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="webptt-ptt-preview"
+        onchange="window.webptt_setPref('webptt_ptt_preview', this.checked)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="toggle-row" style="margin-top:10px;">
+    <div class="toggle-info">
+      <strong>{{ t('webui_voice_toggle_mode') }}</strong> <span style="font-size:11px;color:var(--muted);">{{ t('webui_voice_toggle_hint') }}</span>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">{{ t('webui_voice_preview_label') }}</div>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="webptt-toggle-preview"
+        onchange="window.webptt_setPref('webptt_toggle_preview', this.checked)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <p style="font-size:11px; color:var(--muted); margin-top:10px; padding-top:8px; border-top:1px solid var(--border);">
+    {{ t('webui_voice_preview_tip') | safe }}
+  </p>
+</div>

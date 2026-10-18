@@ -50,6 +50,7 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
 
     app.hecos_config_manager = config_manager
     app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     app.jinja_env.auto_reload = True
     # FIX: Force CSS/JS mimetypes
     import mimetypes
@@ -67,8 +68,9 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
         except Exception as e:
             return False
 
-    # Inject translation system, version, and HPM helper into Jinja2 templates
-    app.jinja_env.globals.update(t=t, version=VERSION, is_hpm_installed=_is_hpm_installed)
+    # Inject translation system, version (with start timestamp to bust browser cache on updates), and HPM helper into Jinja2 templates
+    import time
+    app.jinja_env.globals.update(t=t, version=f"{VERSION}_{int(time.time())}", is_hpm_installed=_is_hpm_installed)
 
     # ── Extend Jinja loader to include WEB_UI extension template dirs ──
     try:
