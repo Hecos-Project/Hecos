@@ -190,13 +190,20 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
     if ref_audio:
         if not os.path.isabs(ref_audio):
             root = get_project_root()
-            clone_path = os.path.join(root, "hecos", "assets", "voice_clones", ref_audio)
-            if not os.path.exists(clone_path):
-                clone_path_alt = os.path.join(root, "assets", "voice_clones", ref_audio)
-                if os.path.exists(clone_path_alt):
-                    clone_path = clone_path_alt
-            if os.path.exists(clone_path):
-                ref_audio = clone_path
+            candidates = [
+                os.path.join(root, "assets", "voice_clones", ref_audio),
+                os.path.join(root, "..", "hecos", "assets", "voice_clones", ref_audio),
+                os.path.join(root, "hecos", "assets", "voice_clones", ref_audio),
+            ]
+            found_path = None
+            for cand in candidates:
+                cand_norm = os.path.normpath(cand)
+                if os.path.isfile(cand_norm):
+                    found_path = cand_norm
+                    break
+
+            if found_path:
+                ref_audio = found_path
             else:
                 logger.warning("FISH_SPEECH", f"Reference audio not found in library: '{ref_audio}'")
                 ref_audio = ""

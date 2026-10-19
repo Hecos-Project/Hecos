@@ -136,7 +136,7 @@ window._hpmShowUpdateToast = function (msg, type) {
   document.getElementById('hpm-update-toast')?.remove();
 
   const colors = {
-    ok:     { bg: 'rgba(16,185,129,.12)', border: '#10b981', text: '#10b981' },
+    ok:     { bg: 'rgba(99,102,241,.12)', border: 'var(--accent, #6366f1)', text: 'var(--accent, #6366f1)' },
     update: { bg: 'rgba(245,158,11,.12)', border: '#f59e0b', text: '#f59e0b' },
     warn:   { bg: 'rgba(239,68,68,.1)',   border: '#ef4444', text: '#ef4444' },
   };

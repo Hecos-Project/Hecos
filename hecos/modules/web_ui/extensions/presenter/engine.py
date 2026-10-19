@@ -29,8 +29,7 @@ class PresenterEngine:
             bus.subscribe("message_exchange", self._on_message_exchange)
             bus.subscribe("user_message_sent", self._on_user_message_sent)
             bus.subscribe("assistant_response", self._on_assistant_response)
-            bus.subscribe("hpm:package_installed", self._on_package_event)
-            bus.subscribe("hpm:package_uninstalled", self._on_package_event)
+            bus.subscribe("progress", self._on_progress_event)
             logger.info("[Presenter] Engine started. Subscribed to events.")
 
     def _generate_commentary(self, event_type: str, system_prompt: str, user_prompt: str, session_id: str = None):
@@ -190,21 +189,60 @@ class PresenterEngine:
         self._generate_commentary("new_chat", sys_prompt, user_prompt, session_id=session_id)
 
     def _on_package_event(self, event: Dict[str, Any]):
-        """Direct feed entry for package events — no LLM needed."""
-        if not self.cfg.enabled: return
-        
-        event_type = event.get("type", "")
+        """Deprecated: Replaced by unified progress_milestone system."""
+        pass
+
+    def _on_progress_event(self, event: Dict[str, Any]):
+        """Direct feed entries for system progress milestones (downloads, installations, tasks)."""
+        if not self.cfg.enabled:
+            return
+
         payload = event.get("payload", {})
-        pkg_id = payload.get("id", "Unknown")
-        
-        if event_type == "hpm:package_installed":
-            text = f"Package '{pkg_id}' installed successfully."
-        elif event_type == "hpm:package_uninstalled":
-            text = f"Package '{pkg_id}' uninstalled."
-        else:
-            text = f"Package event: {pkg_id}"
-        
-        add_feed_entry("package_event", text, session_id=None, persist=self.cfg.feed.persist)
+        task_id = payload.get("id", "")
+        title = payload.get("title", task_id)
+        state = payload.get("state", "running")
+        phase = payload.get("phase") or {}
+        phase_key = phase.get("key") or ""
+        phase_label = phase.get("label") or phase_key
+        percent = payload.get("percent", 0.0)
+        source = payload.get("source", "SYSTEM")
+
+        if not hasattr(self, "_progress_seen"):
+            self._progress_seen = {}
+
+        last_state, last_phase = self._progress_seen.get(task_id, (None, None))
+
+        try:
+            from hecos.core.progress.sinks.logger_sink import _render_bar
+        except Exception:
+            def _render_bar(pct, width=20):
+                return ""
+
+        # 1. Terminal events
+        if state in ("done", "error", "cancelled"):
+            if last_state != state:
+                self._progress_seen[task_id] = (state, phase_key)
+                if state == "done":
+                    text = f"✅ [{source}] '{title}' {_render_bar(100.0, 16)} 100% - completed successfully."
+                elif state == "cancelled":
+                    text = f"⚠️ [{source}] '{title}' {_render_bar(percent, 16)} {percent:.0f}% - cancelled by user."
+                else:
+                    err_msg = payload.get("error") or payload.get("message") or "Unknown error"
+                    text = f"❌ [{source}] '{title}' {_render_bar(percent, 16)} {percent:.0f}% - failed: {err_msg}"
+                add_feed_entry("progress_milestone", text, session_id=None, persist=self.cfg.feed.persist)
+            return
+
+        # 2. Start or Phase change
+        if last_state is None:
+            self._progress_seen[task_id] = (state, phase_key)
+            msg = f"⏳ [{source}] Operation started: '{title}' {_render_bar(percent, 16)} {percent:.0f}%"
+            add_feed_entry("progress_milestone", msg, session_id=None, persist=self.cfg.feed.persist)
+        elif phase_key and phase_key != last_phase:
+            self._progress_seen[task_id] = (state, phase_key)
+            phase_msg = phase.get("message") or ""
+            detail = f" - {phase_msg}" if phase_msg else ""
+            msg = f"⚙️ [{source}] {title} {_render_bar(percent, 16)} {percent:.0f}% - Phase '{phase_label}'{detail}"
+            add_feed_entry("progress_milestone", msg, session_id=None, persist=self.cfg.feed.persist)
 
     # ── Full Commentary Mode handlers ────────────────────────────────
     

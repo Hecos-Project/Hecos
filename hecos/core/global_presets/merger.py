@@ -107,7 +107,7 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
         'xtts_preset', 'xtts_inference_preset', 'xtts_temperature', 'xtts_repetition_penalty', 'xtts_top_k', 
         'xtts_top_p', 'xtts_speed', 'xtts_length_penalty', 'xtts_speaker_wav',
         'piper_speed', 'piper_noise_scale', 'piper_noise_w',
-        'kokoro_speed', 'kokoro_voice',
+        'kokoro_speed', 'kokoro_voice', 'kokoro_volume', 'kokoro_normalize',
         'fish_preset', 'fish_inference_preset', 'fish_api_url', 'fish_reference_audio', 'fish_reference_text',
         'fish_temperature', 'fish_top_p', 'fish_repetition_penalty', 'fish_max_new_tokens',
         'fish_chunk_length', 'fish_seed', 'fish_normalize', 'fish_use_memory_cache', 'fish_reference_id'

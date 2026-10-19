@@ -13,6 +13,7 @@ DESCRIPTION: Implementation for Kokoro using the `kokoro` PyTorch package.
 """
 
 import gc
+import math
 import os
 import shutil
 import subprocess
@@ -22,6 +23,56 @@ import time
 
 from hecos.core.logging import logger
 from hecos.core.audio.tts.base_engine import BaseTTSEngine
+
+
+def normalize_float32_audio(audio_f32, target_rms_db: float = -14.0, volume_factor: float = 1.0):
+    """
+    Normalizes float32 audio loudness to match broadcast / Piper / Fish-Speech levels (~ -14 to -16 dBFS RMS).
+    Uses speech-active RMS detection (ignoring silence) and smooth soft-knee tanh compression
+    for peaks to avoid clipping while maintaining maximum clarity and dynamic range.
+    """
+    if audio_f32 is None:
+        return audio_f32
+    import numpy as np
+    if hasattr(audio_f32, "detach"):
+        data = audio_f32.detach().cpu().numpy().astype(np.float32)
+    else:
+        data = np.asarray(audio_f32, dtype=np.float32)
+    if data.size == 0:
+        return data
+
+    abs_data = np.abs(data)
+    non_silent = data[abs_data > 0.01]
+    if len(non_silent) == 0:
+        non_silent = data
+
+    current_rms = float(np.sqrt(np.mean(non_silent**2)))
+    if current_rms <= 1e-6:
+        return data
+
+    effective_target_db = target_rms_db
+    if volume_factor > 0 and volume_factor != 1.0:
+        effective_target_db += 20.0 * math.log10(volume_factor)
+
+    target_rms = 10.0 ** (effective_target_db / 20.0)
+    gain = target_rms / current_rms
+    gain = float(np.clip(gain, 0.5, 12.0))
+
+    amplified = data * gain
+    thresh = 0.70
+    limit = 0.98
+    headroom = limit - thresh
+
+    signs = np.sign(amplified)
+    abs_amp = np.abs(amplified)
+    mask = abs_amp > thresh
+    compressed = abs_amp.copy()
+    if np.any(mask):
+        excess = abs_amp[mask] - thresh
+        compressed[mask] = thresh + headroom * np.tanh(excess / headroom)
+
+    out = signs * compressed
+    return np.clip(out, -1.0, 1.0).astype(np.float32)
 
 try:
     import sounddevice as sd
@@ -131,10 +182,9 @@ class KokoroEngine(BaseTTSEngine):
 
     def get_available_voices(self) -> dict:
         """Returns the full dictionary of all known Kokoro voices, appending a cloud icon if not cached."""
+        result = {}
         try:
             from huggingface_hub import try_to_load_from_cache
-            import os
-            result = {}
             for k, v in KOKORO_VOICES.items():
                 is_cached = try_to_load_from_cache("hexgrad/Kokoro-82M", f"voices/{k}.pt")
                 # Also check local voices folder if user manually downloaded them there
@@ -144,9 +194,17 @@ class KokoroEngine(BaseTTSEngine):
                     result[k] = f"{v} ☁️"
                 else:
                     result[k] = v
-            return result
-        except ImportError:
-            return KOKORO_VOICES.copy()
+        except Exception:
+            result = KOKORO_VOICES.copy()
+
+        # Merge local custom cloned voices (.pt)
+        try:
+            from .kokoro.voice_manager import KokoroVoiceManager
+            result.update(KokoroVoiceManager.get_custom_voice_dict())
+        except Exception as _cve:
+            logger.debug("KOKORO", f"Notice checking custom Kokoro voices: {_cve}")
+
+        return result
 
     # ── Memory management ─────────────────────────────────────────────────────
 
@@ -203,8 +261,36 @@ class KokoroEngine(BaseTTSEngine):
                 lang_name = _LANG_NAMES.get(lang_code, lang_code)
                 logger.info("KOKORO", f"Loading Kokoro pipeline for '{lang_name}'…")
                 if model_path:
-                    logger.info("KOKORO", f"Using custom model path/repo: {model_path}")
-                    pipeline = KPipeline(lang_code=lang_code, repo_id=model_path)
+                    logger.info("KOKORO", f"Using custom model path: {model_path}")
+                    if os.path.isdir(model_path):
+                        config_file = os.path.join(model_path, "config.json")
+                        pth_file = os.path.join(model_path, "kokoro-v1_0.pth")
+                        if not os.path.exists(pth_file):
+                            import glob
+                            pths = glob.glob(os.path.join(model_path, "*.pth"))
+                            if pths:
+                                pth_file = pths[0]
+                        if os.path.exists(config_file) and os.path.exists(pth_file):
+                            from kokoro.model import KModel
+                            import torch
+                            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+                            kmodel = KModel(config=config_file, model=pth_file).to(device).eval()
+                            pipeline = KPipeline(lang_code=lang_code, model=kmodel)
+                        else:
+                            pipeline = KPipeline(lang_code=lang_code, repo_id=model_path)
+                    elif os.path.isfile(model_path) and model_path.endswith(".pth"):
+                        parent_dir = os.path.dirname(model_path)
+                        config_file = os.path.join(parent_dir, "config.json")
+                        if os.path.exists(config_file):
+                            from kokoro.model import KModel
+                            import torch
+                            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+                            kmodel = KModel(config=config_file, model=model_path).to(device).eval()
+                            pipeline = KPipeline(lang_code=lang_code, model=kmodel)
+                        else:
+                            pipeline = KPipeline(lang_code=lang_code, repo_id=model_path)
+                    else:
+                        pipeline = KPipeline(lang_code=lang_code, repo_id=model_path)
                 else:
                     pipeline = KPipeline(lang_code=lang_code)
                 self._pipeline = pipeline
@@ -233,13 +319,42 @@ class KokoroEngine(BaseTTSEngine):
                 voice = cfg.get("kokoro", {}).get("voice", "af_heart")
             except Exception:
                 voice = "af_heart"
-        resolved = voice if voice in KOKORO_VOICES else "af_heart"
+
+        # Check against standard and custom voices
+        custom_dict = {}
+        try:
+            from .kokoro.voice_manager import KokoroVoiceManager
+            custom_dict = KokoroVoiceManager.get_custom_voice_dict()
+        except Exception:
+            pass
+
+        if voice in KOKORO_VOICES or voice in custom_dict or (voice and (voice.endswith(".pt") or os.path.isabs(voice))):
+            resolved = voice
+        else:
+            resolved = "af_heart"
+
         logger.info("KOKORO", f"Voice resolved: '{resolved}' (requested: '{voice}')")
         return resolved
+
+    def _resolve_voice_and_lang(self, voice_id: str):
+        """Resolves voice identifier to (voice_pack_or_name, lang_code)."""
+        try:
+            from .kokoro.voice_manager import KokoroVoiceManager
+            pack, lang = KokoroVoiceManager.resolve_voice_pack(voice_id)
+            if pack is not None:
+                return pack, lang or "i"
+        except Exception as _rve:
+            logger.debug("KOKORO", f"Voice pack resolution notice: {_rve}")
+
+        lang_code = voice_id[0] if (voice_id and len(voice_id) > 0 and voice_id[0] in "abefhijpz") else "a"
+        return voice_id, lang_code
 
     def _get_speed(self, kwargs: dict) -> float:
         """Resolve speech speed from kwargs or global audio config."""
         speed = kwargs.get("speed")
+        if not speed:
+            overrides = kwargs.get("session_overrides") or {}
+            speed = overrides.get("speed")
         if speed:
             try:
                 return float(speed)
@@ -252,6 +367,42 @@ class KokoroEngine(BaseTTSEngine):
         except Exception:
             return 1.0
 
+    def _get_volume(self, kwargs: dict) -> float:
+        """Resolve output volume factor from kwargs, session_overrides or audio config."""
+        import numpy as np
+        vol = kwargs.get("volume") or kwargs.get("kokoro_volume")
+        if vol is None:
+            overrides = kwargs.get("session_overrides") or {}
+            vol = overrides.get("volume") or overrides.get("kokoro_volume")
+        if vol is None:
+            try:
+                from hecos.core.audio.device_manager import get_audio_config
+                cfg = get_audio_config()
+                vol = cfg.get("kokoro", {}).get("volume", 1.0)
+            except Exception:
+                vol = 1.0
+        try:
+            return float(np.clip(float(vol), 0.1, 3.0))
+        except (TypeError, ValueError):
+            return 1.0
+
+    def _get_normalize(self, kwargs: dict) -> bool:
+        """Resolve loudness normalization flag from kwargs, session_overrides or audio config."""
+        norm = kwargs.get("normalize")
+        if norm is None:
+            norm = kwargs.get("kokoro_normalize")
+        if norm is None:
+            overrides = kwargs.get("session_overrides") or {}
+            norm = overrides.get("normalize") if overrides.get("normalize") is not None else overrides.get("kokoro_normalize")
+        if norm is None:
+            try:
+                from hecos.core.audio.device_manager import get_audio_config
+                cfg = get_audio_config()
+                norm = cfg.get("kokoro", {}).get("normalize", True)
+            except Exception:
+                norm = True
+        return bool(norm)
+
     # ── Core synthesis ────────────────────────────────────────────────────────
 
     def generate_wav(self, text: str, filepath: str, **kwargs) -> bool:
@@ -259,11 +410,13 @@ class KokoroEngine(BaseTTSEngine):
             return False
 
         voice = self._get_voice(kwargs)
+        voice_target, lang_code = self._resolve_voice_and_lang(voice)
         speed = self._get_speed(kwargs)
-        lang_code = voice[0] if voice else "a"
+        volume = self._get_volume(kwargs)
+        normalize = self._get_normalize(kwargs)
         lang_name = _LANG_NAMES.get(lang_code, lang_code)
 
-        logger.info("KOKORO", f"generate_wav: voice='{voice}', lang='{lang_name}', speed={speed}")
+        logger.info("KOKORO", f"generate_wav: voice='{voice}', lang='{lang_name}', speed={speed}, volume={volume}, norm={normalize}")
 
         # Italian (and other non-native langs) require espeak-ng
         if lang_code not in _MISAKI_NATIVE_LANGS and not _espeak_available():
@@ -296,9 +449,19 @@ class KokoroEngine(BaseTTSEngine):
             silence_chunk = np.zeros(silence_samples, dtype=np.float32) if silence_samples > 0 else None
 
             chunks = []
-            for _, _, audio in pipeline(text, voice=voice, speed=speed, split_pattern=r"\n+"):
+            for _, _, audio in pipeline(text, voice=voice_target, speed=speed, split_pattern=r"\n+"):
                 if audio is not None:
-                    chunks.append(audio)
+                    if hasattr(audio, "detach"):
+                        arr = audio.detach().cpu().numpy().astype(np.float32)
+                    else:
+                        arr = np.asarray(audio, dtype=np.float32)
+
+                    if normalize:
+                        arr = normalize_float32_audio(arr, target_rms_db=-14.0, volume_factor=volume)
+                    elif volume != 1.0:
+                        arr = np.clip(arr * volume, -1.0, 1.0).astype(np.float32)
+
+                    chunks.append(arr)
                     if silence_chunk is not None:
                         chunks.append(silence_chunk)
                         
@@ -333,16 +496,20 @@ class KokoroEngine(BaseTTSEngine):
         # Kokoro handles chunking internally via split_pattern
         return self.generate_wav(text, filepath, **kwargs)
 
-    def speak(self, text: str, state=None, _run_id=None, _timeout=0, _start=0, **kwargs):
+    def speak(self, text: str, state=None, _run_id=None, _timeout=0, _start=0, session_overrides=None, **kwargs):
         if not text:
             return
 
+        if session_overrides:
+            kwargs["session_overrides"] = session_overrides
         voice = self._get_voice(kwargs)
+        voice_target, lang_code = self._resolve_voice_and_lang(voice)
         speed = self._get_speed(kwargs)
-        lang_code = voice[0] if voice else "a"
+        volume = self._get_volume(kwargs)
+        normalize = self._get_normalize(kwargs)
         lang_name = _LANG_NAMES.get(lang_code, lang_code)
 
-        logger.info("KOKORO", f"speak: voice='{voice}', lang='{lang_name}'")
+        logger.info("KOKORO", f"speak: voice='{voice}', lang='{lang_name}', speed={speed}, volume={volume}, norm={normalize}")
 
         if lang_code not in _MISAKI_NATIVE_LANGS and not _espeak_available():
             logger.error(
@@ -366,15 +533,25 @@ class KokoroEngine(BaseTTSEngine):
         try:
             import numpy as np
 
-            for _, _, audio in pipeline(text, voice=voice, speed=speed, split_pattern=r"[.!?。]\s*"):
+            for _, _, audio in pipeline(text, voice=voice_target, speed=speed, split_pattern=r"[.!?。]\s*"):
                 if self._stop_flag:
                     break
                 if audio is None:
                     continue
 
+                if hasattr(audio, "detach"):
+                    arr = audio.detach().cpu().numpy().astype(np.float32)
+                else:
+                    arr = np.asarray(audio, dtype=np.float32)
+
+                if normalize:
+                    arr = normalize_float32_audio(arr, target_rms_db=-14.0, volume_factor=volume)
+                elif volume != 1.0:
+                    arr = np.clip(arr * volume, -1.0, 1.0).astype(np.float32)
+
                 if SOUNDDEVICE_AVAILABLE:
-                    sd.play(audio, samplerate=24000)
-                    duration = len(audio) / 24000
+                    sd.play(arr, samplerate=24000)
+                    duration = len(arr) / 24000
                     end_time = time.time() + duration
                     while time.time() < end_time:
                         if self._stop_flag:
@@ -385,7 +562,7 @@ class KokoroEngine(BaseTTSEngine):
                     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
                         tmp_path = tmp.name
                     if SOUNDFILE_AVAILABLE:
-                        sf.write(tmp_path, audio, 24000)
+                        sf.write(tmp_path, arr, 24000)
                     try:
                         import winsound
                         winsound.PlaySound(tmp_path, winsound.SND_FILENAME)

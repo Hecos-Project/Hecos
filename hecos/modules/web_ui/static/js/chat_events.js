@@ -191,9 +191,12 @@ window.initEvents = function() {
       console.log('[Reminder] SSE reminder_stop received:', ev);
       const existing = document.getElementById('hecos-reminder-banner');
       if (existing) existing.remove();
+    } else if (ev.type === 'progress') {
+      if (window.HecosProgress) window.HecosProgress.handleSSE(ev.data || ev);
     } else if (ev.type === 'hpm:progress') {
       const payload = ev.data || ev;
       document.dispatchEvent(new CustomEvent('hpmProgressUpdate', { detail: payload }));
+      if (window.HecosProgress) window.HecosProgress.handleSSE(payload);
     } else if (ev.type === 'widgets_refresh' || ev.type === 'hpm:package_uninstalled' || ev.type === 'hpm:package_installed' || ev.type === 'hpm:package_status_changed') {
       console.log(`[WIDGETS/HPM] SSE refresh signal received: ${ev.type}`);
       // 1. Sidebar refresh

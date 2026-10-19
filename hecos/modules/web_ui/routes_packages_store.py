@@ -263,9 +263,10 @@ def _enrich_catalog(catalog: dict, registry) -> dict:
     return {**catalog, "packages": enriched}
 
 
-def _download_hpkg(url: str, dest_dir: str, gh_token: str | None = None) -> str:
+def _download_hpkg(url: str, dest_dir: str, gh_token: str | None = None, on_progress=None) -> str:
     """
     Download a .hpkg file from a URL or copy from local path into dest_dir.
+    Reports progress via on_progress(bytes_done, total_bytes).
     Returns the local file path.
     """
     filename = url.split("/")[-1].split("?")[0] or "package.hpkg"
@@ -281,6 +282,9 @@ def _download_hpkg(url: str, dest_dir: str, gh_token: str | None = None) -> str:
             local_path = local_path[1:]
         import shutil
         shutil.copy2(local_path, dest_path)
+        if on_progress and os.path.exists(dest_path):
+            sz = os.path.getsize(dest_path)
+            on_progress(sz, sz)
         return dest_path
 
     headers = {"User-Agent": "Hecos-HPM/1.0"}
@@ -292,12 +296,18 @@ def _download_hpkg(url: str, dest_dir: str, gh_token: str | None = None) -> str:
         headers=headers,
     )
     with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT_SECONDS) as resp:
+        content_length = resp.headers.get("Content-Length")
+        total_size = int(content_length) if content_length and content_length.isdigit() else 0
+        done_size = 0
         with open(dest_path, "wb") as out:
             while True:
                 chunk = resp.read(65536)
                 if not chunk:
                     break
                 out.write(chunk)
+                done_size += len(chunk)
+                if on_progress:
+                    on_progress(done_size, total_size)
 
     return dest_path
 
@@ -450,33 +460,48 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
 
             try:
                 with tempfile.TemporaryDirectory(prefix="hecos_hpm_store_") as tmpdir:
-                    yield _sse("progress", {"step": "download", "message": "Fetching from remote..."})
-
-                    try:
-                        gh_token = _read_local_github_token()
-                        hpkg_path = _download_hpkg(download_url, tmpdir, gh_token=gh_token)
-                    except Exception as e:
-                        yield _sse("error", {"message": f"Download failed: {e}"})
-                        return
-
-                    yield _sse("progress", {"step": "install", "message": "Installing package..."})
-
                     registry, installer, _ = _get_hpm_components(_hecos_src)
-                    
                     q = queue.Queue()
-                    
+
+                    def _dl_progress(done, tot):
+                        pct = round(done / tot * 100, 1) if tot > 0 else 0
+                        scaled = round(pct * 0.35, 1)
+                        msg = f"Downloading package ({done // 1024} KB" + (f" / {tot // 1024} KB - {pct:.0f}%)" if tot > 0 else ")")
+                        q.put(("hpm:progress", {
+                            "step": "download",
+                            "bytes_done": done,
+                            "bytes_total": tot,
+                            "percent": scaled,
+                            "message": msg
+                        }))
+
                     original_cb = installer._event_callback
                     def _hpm_event_cb(evt_name, payload):
+                        # Map installer phases to 35% - 95%
+                        if evt_name == "hpm:progress" and isinstance(payload, dict):
+                            step = payload.get("step")
+                            if step == "validation": payload["percent"] = 40
+                            elif step == "signature": payload["percent"] = 45
+                            elif step == "dependencies": payload["percent"] = 55
+                            elif step == "pip_progress":
+                                pip_p = payload.get("percent", 0)
+                                payload["percent"] = round(55 + (pip_p * 0.25), 1)
+                            elif step == "extract": payload["percent"] = 80
+                            elif step == "copy_code": payload["percent"] = 85
+                            elif step == "register": payload["percent"] = 92
+                            elif step == "hooks": payload["percent"] = 96
                         q.put((evt_name, payload))
                         if original_cb:
                             original_cb(evt_name, payload)
 
-                    # Inject our callback so the installer streams events to our queue
                     installer._event_callback = _hpm_event_cb
 
                     result_box = []
                     def _worker():
                         try:
+                            gh_token = _read_local_github_token()
+                            hpkg_path = _download_hpkg(download_url, tmpdir, gh_token=gh_token, on_progress=_dl_progress)
+                            q.put(("hpm:progress", {"step": "install", "percent": 38, "message": "Extracting package files..."}))
                             res = installer.install_file(
                                 hpkg_path=hpkg_path,
                                 require_signature=not allow_unsigned,
@@ -486,7 +511,7 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
                         except Exception as e:
                             result_box.append(e)
                         finally:
-                            q.put(None)  # Sentinel to tell generator we are done
+                            q.put(None)
 
                     t = threading.Thread(target=_worker)
                     t.start()
@@ -503,7 +528,6 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
                         elif evt_name == "hpm:error":
                             yield _sse("error", payload)
                         else:
-                            # Forward other events generically if needed
                             yield _sse(evt_name.replace("hpm:", ""), payload)
 
                     t.join()

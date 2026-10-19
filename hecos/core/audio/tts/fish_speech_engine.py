@@ -377,11 +377,26 @@ class FishSpeechEngine(BaseTTSEngine):
         """
         voices = {"default": "Default Voice (Zero-Shot / Base)"}
         try:
-            clones_dir = os.path.join(get_project_root(), "hecos", "assets", "voice_clones")
-            if not os.path.exists(clones_dir):
-                clones_dir = os.path.join(get_project_root(), "assets", "voice_clones")
+            candidates = [
+                os.path.join(get_project_root(), "assets", "voice_clones"),
+                os.path.join(get_project_root(), "..", "hecos", "assets", "voice_clones"),
+                os.path.join(get_project_root(), "hecos", "assets", "voice_clones"),
+            ]
+            clones_dir = None
+            for cand in candidates:
+                cand_norm = os.path.normpath(cand)
+                if os.path.isdir(cand_norm) and any(f.lower().endswith(".wav") for f in os.listdir(cand_norm)):
+                    clones_dir = cand_norm
+                    break
 
-            if os.path.exists(clones_dir):
+            if not clones_dir:
+                for cand in candidates:
+                    cand_norm = os.path.normpath(cand)
+                    if os.path.isdir(cand_norm):
+                        clones_dir = cand_norm
+                        break
+
+            if clones_dir and os.path.exists(clones_dir):
                 for wav in sorted(glob.glob(os.path.join(clones_dir, "*.wav"))):
                     bname = os.path.basename(wav)
                     name = os.path.splitext(bname)[0].strip()

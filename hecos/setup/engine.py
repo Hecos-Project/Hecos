@@ -202,17 +202,14 @@ def download_voice(voice_key):
         if os.path.exists(target_path):
             print(T("already_exists", filename=filename))
         else:
-            print(T("downloading", filename=filename))
             final_url = base_url + rel_path
             try:
-                def progress(block_num, block_size, total_size):
-                    if total_size > 0:
-                        percent = int(block_num * block_size * 100 / total_size)
-                        print(f"\r    {percent}% complete...", end="", flush=True)
-                urllib.request.urlretrieve(final_url, target_path, reporthook=progress)
-                print(f"\n" + T("success_dl", filename=filename))
+                from hecos.core.progress import progress
+                with progress.task(f"setup_voice_{filename}", title=f"Voce {filename}", source="SETUP") as pt:
+                    progress.download(final_url, target_path, task=pt)
+                print(T("success_dl", filename=filename))
             except Exception as e:
-                print(f"\n" + T("err_dl", filename=filename, err=str(e)))
+                print(T("err_dl", filename=filename, err=str(e)))
                 return False
 
     # Update audio.yaml
@@ -245,23 +242,23 @@ def download_piper_engine():
     
     try:
         tmp_path = os.path.join(tempfile.gettempdir(), filename)
-        
-        def progress(block_num, block_size, total_size):
-            if total_size > 0:
-                percent = int(block_num * block_size * 100 / total_size)
-                print(f"\r    {percent}% complete...", end="", flush=True)
-                
-        urllib.request.urlretrieve(url, tmp_path, reporthook=progress)
-        print("\n[*] Extracting Piper engine...")
-        
-        extract_dir = os.path.join(tempfile.gettempdir(), "piper_extracted")
-        os.makedirs(extract_dir, exist_ok=True)
-        
-        if is_zip:
-            import zipfile
-            with zipfile.ZipFile(tmp_path, 'r') as zip_ref:
-                zip_ref.extractall(extract_dir)
-        else:
+        from hecos.core.progress import progress
+        phases = [("download", 75, "Download"), ("extract", 25, "Estrazione")]
+        with progress.task("setup_piper_engine", title="Piper TTS Engine", source="SETUP", phases=phases) as pt:
+            pt.phase("download")
+            progress.download(url, tmp_path, task=pt)
+            pt.phase("extract", message="Estrazione Piper engine...")
+            extract_dir = os.path.join(tempfile.gettempdir(), "piper_extracted")
+            os.makedirs(extract_dir, exist_ok=True)
+            
+            if is_zip:
+                import zipfile
+                with zipfile.ZipFile(tmp_path, 'r') as zip_ref:
+                    zip_ref.extractall(extract_dir)
+            else:
+                import tarfile
+                with tarfile.open(tmp_path, 'r:gz') as tar_ref:
+                    tar_ref.extractall(extract_dir)
             import tarfile
             with tarfile.open(tmp_path, 'r:gz') as tar_ref:
                 tar_ref.extractall(extract_dir)
@@ -302,28 +299,19 @@ def _run_pip_install(engine_name, packages):
 
     logger.info(f"[SETUP] Starting {engine_name} dependencies installation: {packages}")
     try:
-        import subprocess, sys
-        cmd = [sys.executable, "-m", "pip", "install"] + packages
-        process = subprocess.Popen(
-            cmd, 
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.STDOUT, 
-            text=True, 
-            encoding='utf-8', 
-            errors='replace'
-        )
-        
-        for line in process.stdout:
-            line = line.strip()
-            if line:
-                logger.debug(f"[{engine_name.upper()}_INSTALL] {line}")
-                
-        process.wait()
-        if process.returncode == 0:
+        from hecos.core.progress import progress
+        with progress.task(
+            f"setup_pip_{engine_name.lower().replace(' ', '_')}",
+            title=f"Dipendenze {engine_name}",
+            source="SETUP",
+        ) as pt:
+            retcode, output = progress.pip(packages, task=pt)
+
+        if retcode == 0:
             logger.info(f"[SETUP] {engine_name} installed successfully.")
             return True
         else:
-            logger.error(f"[SETUP] Failed to install {engine_name}. Exit code: {process.returncode}")
+            logger.error(f"[SETUP] Failed to install {engine_name}. Exit code: {retcode}")
             if engine_name.upper() == "XTTSV2":
                 logger.error("[SETUP] ❌ XTTSv2 installation failed (usually due to missing build dependencies).")
                 logger.error("[SETUP] 💡 TO FIX THIS, YOU PROBABLY NEED MICROSOFT C++ BUILD TOOLS:")
@@ -399,6 +387,15 @@ def download_kokoro_engine():
     _patch_espeak_path()   # Ensure espeak-ng is usable even before re-install
     pip_ok = _run_pip_install("Kokoro", ["kokoro", "misaki[en]", "soundfile"])
     esp_ok = _install_espeak_ng()
+    try:
+        from huggingface_hub import hf_hub_download
+        from hecos.core.audio.tts.kokoro_engine import KOKORO_VOICES
+        hf_hub_download(repo_id="hexgrad/Kokoro-82M", filename="config.json")
+        hf_hub_download(repo_id="hexgrad/Kokoro-82M", filename="kokoro-v1_0.pth")
+        for voice_key in KOKORO_VOICES:
+            hf_hub_download(repo_id="hexgrad/Kokoro-82M", filename=f"voices/{voice_key}.pt")
+    except Exception as e:
+        print(f"[SETUP] Note: pre-caching Kokoro voices encountered: {e}")
     return pip_ok and esp_ok
 
 def _patch_python_headers():

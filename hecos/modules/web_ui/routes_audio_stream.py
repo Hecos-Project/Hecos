@@ -205,7 +205,11 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def list_voice_clones():
         """List all WAV files in the assets/voice_clones directory, with companion transcripts."""
         try:
-            clones_dir = os.path.join(root_dir, "hecos", "assets", "voice_clones")
+            candidates = [
+                os.path.join(root_dir, "hecos", "assets", "voice_clones"),
+                os.path.join(root_dir, "assets", "voice_clones")
+            ]
+            clones_dir = next((c for c in candidates if os.path.isdir(c) and any(f.lower().endswith(".wav") for f in os.listdir(c))), candidates[0])
             os.makedirs(clones_dir, exist_ok=True)
             files = []
             for fname in sorted(os.listdir(clones_dir)):

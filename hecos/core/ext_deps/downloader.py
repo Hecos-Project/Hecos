@@ -49,6 +49,7 @@ def download(
     dep: ExternalDep,
     progress_cb: Optional[ProgressCallback] = None,
     local_fallback_dir: Optional[Path] = None,
+    force_download: bool = False,
 ) -> Path:
     """
     Downloads the installer for the given dep to a temp staging dir.
@@ -58,6 +59,7 @@ def download(
         progress_cb:       Optional callback(bytes_done, total_bytes) for UI updates.
         local_fallback_dir: If provided and the installer is already there,
                             skip downloading (offline/manual mode).
+        force_download:    If True, ignores existing cached installer and forces re-download.
 
     Returns:
         Path to the local installer file (ready to be passed to installer.py).
@@ -74,7 +76,7 @@ def download(
         )
 
     # ── 1. Check local fallback first (e.g. user's manual dependencies/ folder) ──
-    if local_fallback_dir:
+    if local_fallback_dir and not force_download:
         local_file = Path(local_fallback_dir) / filename
         if local_file.exists():
             logger.info("EDM", f"Found local fallback for '{dep.name}' at {local_file}")
@@ -85,15 +87,26 @@ def download(
     dest = _STAGING_DIR / filename
 
     if dest.exists():
-        # Verify checksum if available
-        if dep.checksum_sha256:
-            actual = _sha256(dest)
-            if actual == dep.checksum_sha256:
-                logger.debug("EDM", f"Found valid cached installer for '{dep.name}'")
+        if force_download:
+            try:
+                dest.unlink(missing_ok=True)
+            except Exception:
+                pass
+        else:
+            # Verify checksum if available
+            if dep.checksum_sha256:
+                actual = _sha256(dest)
+                if actual == dep.checksum_sha256:
+                    logger.debug("EDM", f"Found valid cached installer for '{dep.name}'")
+                    return dest
+                # Checksum mismatch — delete and re-download
+                logger.warning("EDM", f"Cached installer for '{dep.name}' has invalid checksum. Re-downloading.")
+                try:
+                    dest.unlink(missing_ok=True)
+                except Exception:
+                    pass
+            else:
                 return dest
-            # Checksum mismatch — delete and re-download
-            logger.warning("EDM", f"Cached installer for '{dep.name}' has invalid checksum. Re-downloading.")
-            dest.unlink()
 
     # ── 3. Download with retries ─────────────────────────────────────────────────
     last_error: Optional[Exception] = None

@@ -174,7 +174,20 @@ window.loadFishVoiceCloneList = async function() {
         const sel = document.getElementById('v-fish-clone-select');
         if (!sel) return;
         const currentPath = (document.getElementById('v-fish-speaker-wav')?.value || '').trim();
-        const list = voicesRes.fish_speech || voicesRes;
+        const list = (voicesRes && voicesRes.fish_speech) ? { ...voicesRes.fish_speech } : { ...(voicesRes || {}) };
+
+        // Fallback merge: ensure all files from voice-clones endpoint are included
+        if (clonesRes && clonesRes.ok && clonesRes.files) {
+            for (const f of clonesRes.files) {
+                if (!list[f.filename]) {
+                    list[f.filename] = `Clone: ${f.name}`;
+                }
+            }
+        }
+        if (!list['default']) {
+            list['default'] = 'Default Voice (Zero-Shot / Base)';
+        }
+
         sel.innerHTML = '';
         for (const [key, label] of Object.entries(list)) {
             const opt = document.createElement('option');

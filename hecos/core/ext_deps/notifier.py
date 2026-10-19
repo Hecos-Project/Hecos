@@ -34,14 +34,38 @@ def _console(msg: str) -> None:
 
 def _emit_sse(event_type: str, payload: dict) -> None:
     """
-    Pushes an event to the Hecos SSE/module bus if available.
-    Silently no-ops if the bus isn't running yet.
+    Pushes an event to the Hecos Core Event Bus and WebUI StateManager.
+    Silently no-ops if WebUI/bus isn't running yet.
     """
     try:
-        from hecos.core.module_bus import emit
-        emit(f"ext_deps:{event_type}", payload)
+        from hecos.core.events import bus
+        bus.emit(f"ext_deps:{event_type}", payload)
     except Exception:
-        pass  # WebUI not running or bus not initialized — silent
+        pass
+    try:
+        from hecos.modules.web_ui.server import get_state_manager
+        sm = get_state_manager()
+        if sm is not None:
+            sm.add_event(f"ext_deps:{event_type}", payload)
+    except Exception:
+        pass
+
+
+_active_tasks: dict = {}
+
+def _get_or_create_dep_task(dep: ExternalDep):
+    try:
+        from hecos.core.progress import progress
+        task_id = f"edm:{dep.id}"
+        if dep.id in _active_tasks:
+            return _active_tasks[dep.id][1]
+        phases = [("download", 65, "Download"), ("install", 35, "Installation")]
+        ctx = progress.task(task_id, title=f"Dependency {dep.name}", source="EDM", phases=phases)
+        t = ctx.__enter__()
+        _active_tasks[dep.id] = (ctx, t)
+        return t
+    except Exception:
+        return None
 
 
 # ── Public notification functions ──────────────────────────────────────────────
@@ -78,9 +102,14 @@ def notify_missing(dep: ExternalDep) -> None:
 def notify_downloading(dep: ExternalDep, bytes_done: int, total_bytes: int) -> None:
     """
     Called during download to report progress.
-    Sends a progress event to the WebUI.
+    Sends a progress event to the WebUI and updates the unified progress task.
     """
     pct = int(bytes_done / total_bytes * 100) if total_bytes > 0 else 0
+    t = _get_or_create_dep_task(dep)
+    if t:
+        t.phase("download")
+        t.advance(bytes_done=bytes_done, total_bytes=total_bytes, message=f"Downloading {dep.name}...")
+
     _emit_sse("download_progress", {
         "id":         dep.id,
         "name":       dep.name,
@@ -93,6 +122,10 @@ def notify_downloading(dep: ExternalDep, bytes_done: int, total_bytes: int) -> N
 def notify_installing(dep: ExternalDep) -> None:
     """Called when the installer is being executed."""
     _console(f"{_CYAN}[EDM] Installing {dep.name}...{_RESET}")
+    t = _get_or_create_dep_task(dep)
+    if t:
+        t.phase("install")
+        t.advance(message=f"Installing {dep.name} in progress...", percent=50.0)
     _emit_sse("installing", {"id": dep.id, "name": dep.name})
 
 
@@ -108,6 +141,17 @@ def notify_done(dep: ExternalDep, success: bool, message: str = "") -> None:
             f"   → Please install manually: {dep.download_url}{_RESET}\n"
         )
         logger.error("EDM", f"Failed to install {dep.name}: {message}")
+
+    if dep.id in _active_tasks:
+        try:
+            ctx, t = _active_tasks.pop(dep.id)
+            if success:
+                t.done(f"{dep.name} installed successfully.")
+            else:
+                t.fail(message or f"Installation of {dep.name} failed.")
+            ctx.__exit__(None, None, None)
+        except Exception:
+            pass
 
     _emit_sse("install_done", {
         "id":      dep.id,

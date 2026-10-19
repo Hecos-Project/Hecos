@@ -37,6 +37,7 @@ dependencies = [
     "beautifulsoup4",
     "pypdf",
     "python-docx",
+    "rich>=13.0.0",
 ]
 
 [project.optional-dependencies]

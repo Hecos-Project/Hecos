@@ -3,6 +3,7 @@
     "hpm_subtitle": "Manage and install .hpkg packages. Built-in Hecos modules cannot be uninstalled.",
     "hpm_btn_refresh": "Refresh List",
     "hpm_tab_all": "All Modules",
+    "hpm_tab_install": "Installation",
     "hpm_col_name": "Hecos Package (L1-8)",
     "hpm_col_version": "Version",
     "hpm_col_author": "Author",

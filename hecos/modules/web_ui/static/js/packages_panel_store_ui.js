@@ -183,7 +183,7 @@ function _hpmStoreRenderCard(pkg) {
       ? `<button onclick="window.hpmStoreInstall('${pkg.id}','${pkg.download_url}','${pkg.name}')"
                 style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:0.78em;font-weight:700;cursor:pointer;">
            <i class="fas fa-arrow-up" style="margin-right:4px;"></i>Update to v${pkg.version}</button>`
-      : `<span style="display:inline-flex;align-items:center;gap:5px;font-size:0.78em;color:#10b981;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);padding:3px 10px;border-radius:20px;font-weight:600;">
+      : `<span style="display:inline-flex;align-items:center;gap:5px;font-size:0.78em;color:var(--accent);background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);padding:3px 10px;border-radius:20px;font-weight:600;">
            <i class="fas fa-check-circle"></i> Installed</span>`
     : `<button onclick="window.hpmStoreInstall('${pkg.id}','${pkg.download_url}','${pkg.name}')"
               style="background:linear-gradient(135deg,var(--accent),var(--accent2,#7c3aed));color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:0.78em;font-weight:700;cursor:pointer;transition:opacity .2s;"

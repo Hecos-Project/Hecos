@@ -38,6 +38,7 @@
             `/static/js/config_audio/ca_modals.js${VER}`,
             `/static/js/config_audio/ca_tts_utils.js${VER}`,
             `/static/js/config_audio/ca_voice_clones.js${VER}`,
+            `/static/js/config_audio/ca_kokoro_clones.js${VER}`,
             `/static/js/config_audio/ca_xtts_presets.js${VER}`,
             `/static/js/config_audio/ca_xtts_inference.js${VER}`,
             `/static/js/config_audio/ca_fish_presets.js${VER}`,

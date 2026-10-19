@@ -1,4 +1,4 @@
-active_engine: fish_speech
+active_engine: piper
 voice_status: true
 piper_path: C:\Hecos\bin\piper\piper.exe
 onnx_model: C:\Hecos\bin\piper\it_IT-paola-medium.onnx
@@ -9,9 +9,11 @@ sentence_silence: 0.2
 piper_timeout: 180
 kokoro:
   speed: 1.0
-  voice: af_heart
+  voice: im_voce_antonio_1
   sentence_silence: 0.0
   model_path: ''
+  volume: 1.0
+  normalize: true
 xtts:
   speed: 1.1
   language: it
@@ -114,9 +116,8 @@ fish_speech:
   api_url: http://127.0.0.1:8080/v1/tts
   api_key: ''
   reference_id: ''
-  reference_audio: cine_witch.wav
-  reference_text: 'Ascoltami bene: questo è un momento straordinario, e ogni dettaglio
-    può fare davvero la differenza!'
+  reference_audio: voce antonio 1.wav
+  reference_text: ''
   temperature: 0.7
   top_p: 0.7
   repetition_penalty: 1.2

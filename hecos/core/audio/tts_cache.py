@@ -92,8 +92,9 @@ class TTSCache:
                     params[k] = overrides[k]
         elif engine_clean == "kokoro":
             voice = overrides.get("kokoro_voice") or overrides.get("voice") or overrides.get("tts_voice") or ""
-            if "speed" in overrides:
-                params["speed"] = overrides["speed"]
+            for k in ("speed", "volume", "normalize"):
+                if k in overrides and overrides[k] is not None:
+                    params[k] = overrides[k]
         elif engine_clean == "piper":
             voice = overrides.get("onnx_model") or overrides.get("tts_voice") or ""
             for k in ("speed", "noise_scale", "noise_w"):

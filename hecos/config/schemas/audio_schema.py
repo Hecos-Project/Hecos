@@ -19,6 +19,8 @@ class KokoroConfig(BaseModel):
     voice: str = "af_heart"   # Default kokoro voice ID
     sentence_silence: float = 0.0 # Pause in seconds between chunks
     model_path: str = ""      # Optional offline model path
+    volume: float = 1.0       # Audio output volume factor / gain (0.5 - 2.0)
+    normalize: bool = True    # Loudness normalization to match broadcast / system levels
 
 class XttsConfig(BaseModel):
     speed: float = 1.0

@@ -155,16 +155,26 @@
       </div>
     </div>
 
-    <!-- Progress bar (hidden by default) -->
-    <div id="hpm-install-progress" style="display:none;margin-top:12px;">
-      <div style="background:var(--border-color);border-radius:6px;height:6px;overflow:hidden;">
-        <div id="hpm-progress-bar"
-             style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2,#7c3aed));
-                    border-radius:6px;transition:width .3s ease;"></div>
+    <!-- Unified Progress widget for Drag & Drop / Local installs -->
+    <link rel="stylesheet" href="/static/css/hecos_progress.css?v={{ version or '20261018_purple' }}">
+    <div id="hpm-install-progress" class="hp-widget" style="display:none;margin-top:16px;background:var(--bg2, #181824);border:1px solid var(--border-color, rgba(255,255,255,0.12));border-radius:12px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+      <div class="hp-header">
+        <div class="hp-title-wrap">
+          <i id="hpm-progress-icon" class="fas fa-box hp-icon"></i>
+          <div id="hpm-progress-title" class="hp-title">{{ 'Installazione' if t('hpm_tab_install') == 'hpm_tab_install' else t('hpm_tab_install') }}</div>
+        </div>
+        <div id="hpm-progress-pct" class="hp-pct">0%</div>
       </div>
-      <div id="hpm-progress-label" style="font-size:0.78em;color:var(--muted);margin-top:4px;text-align:center;">
-        {{ t('hpm_preparing') or 'Preparing...' }}
+      <div class="hp-track" style="margin:12px 0;">
+        <div id="hpm-progress-bar" class="hp-fill"></div>
       </div>
+      <div class="hp-meta-row" style="margin-top:2px;">
+        <div id="hpm-progress-msg" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.82em;color:var(--muted);">
+          {{ t('hpm_preparing') or 'Preparing...' }}
+        </div>
+      </div>
+      <div id="hpm-progress-log" class="hp-log-line" style="display:none;margin-top:6px;"></div>
+      <div id="hpm-progress-label" style="margin-top:12px;"></div>
     </div>
   </div>
 

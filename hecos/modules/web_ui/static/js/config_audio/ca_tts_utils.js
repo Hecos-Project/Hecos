@@ -56,6 +56,14 @@ async function testVoice(mode, engine = null) {
                 fish_chunk_sentences: document.getElementById('v-fish-chunk')?.checked ?? false,
                 fish_volume: parseFloat(document.getElementById('v-fish-volume')?.value || 1.0),
             };
+        } else if (engine === 'kokoro') {
+            reqPayload.voice = {
+                tts_voice: document.getElementById('v-kokoro-voice')?.value || 'af_heart',
+                speed: parseFloat(document.getElementById('v-kokoro-speed')?.value || 1.0),
+                sentence_silence: parseFloat(document.getElementById('v-kokoro-silence')?.value || 0.0),
+                volume: parseFloat(document.getElementById('v-kokoro-volume')?.value || 1.0),
+                normalize: document.getElementById('v-kokoro-normalize')?.checked ?? true,
+            };
         }
         const r = await fetch('/api/audio/test', {
             method: 'POST',
@@ -205,23 +213,184 @@ async function browsePiperPath() {
     });
 }
 
+// ── Kokoro Neural Model Management & Folder Browsing ─────────────────────────
+async function loadKokoroModelList() {
+    const select = document.getElementById('v-kokoro-model-select');
+    const hiddenInput = document.getElementById('v-kokoro-model');
+    if (!select) return;
+
+    try {
+        const res = await fetch('/api/audio/kokoro/models');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok || !Array.isArray(data.models)) return;
+
+        const currentVal = hiddenInput ? (hiddenInput.value || '').trim() : '';
+        select.innerHTML = '';
+
+        let foundMatch = false;
+        data.models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.name;
+            opt.dataset.path = m.path;
+            opt.dataset.type = m.type;
+            if (m.id === currentVal) {
+                opt.selected = true;
+                foundMatch = true;
+            }
+            select.appendChild(opt);
+        });
+
+        if (currentVal && !foundMatch) {
+            const opt = document.createElement('option');
+            opt.value = currentVal;
+            opt.textContent = `Custom: ${currentVal.split('\\').pop().split('/').pop()}`;
+            opt.dataset.path = currentVal;
+            opt.dataset.type = 'custom';
+            opt.selected = true;
+            select.appendChild(opt);
+        }
+
+        updateKokoroModelUI();
+    } catch (e) {
+        console.warn("Failed to load Kokoro model list:", e);
+    }
+}
+
+function updateKokoroModelUI() {
+    const select = document.getElementById('v-kokoro-model-select');
+    const hiddenInput = document.getElementById('v-kokoro-model');
+    const pathDisplay = document.getElementById('v-kokoro-model-path-display');
+    const badge = document.getElementById('v-kokoro-model-badge');
+    if (!select) return;
+
+    const val = select.value || '';
+    if (hiddenInput) hiddenInput.value = val;
+
+    if (!val) {
+        if (pathDisplay) pathDisplay.innerHTML = '📁 Active Path: <code>Default integrated local model</code>';
+        if (badge) {
+            badge.textContent = 'Kokoro-82M v1.0';
+            badge.className = 'badge-pill badge-accent';
+        }
+    } else {
+        if (pathDisplay) pathDisplay.innerHTML = `📁 Active Path: <code>${val}</code>`;
+        if (badge) {
+            badge.textContent = 'Custom Model';
+            badge.className = 'badge-pill badge-ok';
+        }
+    }
+}
+
+function onKokoroModelSelectChange() {
+    updateKokoroModelUI();
+}
+
+function setKokoroModelPath(path) {
+    const select = document.getElementById('v-kokoro-model-select');
+    const hiddenInput = document.getElementById('v-kokoro-model');
+    if (hiddenInput) hiddenInput.value = path || '';
+
+    let found = false;
+    if (select) {
+        for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].value === path) {
+                select.selectedIndex = i;
+                found = true;
+                break;
+            }
+        }
+        if (!found && path) {
+            const opt = document.createElement('option');
+            opt.value = path;
+            opt.textContent = `Custom: ${path.split('\\').pop().split('/').pop()}`;
+            opt.selected = true;
+            select.appendChild(opt);
+        }
+    }
+    updateKokoroModelUI();
+}
+
+async function browseKokoroModelPath() {
+    const currentVal = document.getElementById('v-kokoro-model')?.value || '';
+    const initialPath = currentVal || 'C:\\Hecos\\hecos\\models\\kokoro';
+    if (typeof HecosFilePicker !== 'undefined') {
+        HecosFilePicker.open({
+            title: 'Select Kokoro Model Weights (.pth) or Model Folder',
+            initialPath: initialPath,
+            onSelect: (path) => {
+                if (path) {
+                    setKokoroModelPath(path);
+                    if (window.showToast) window.showToast('Selected model: ' + path.split('\\').pop(), 'info');
+                }
+            }
+        });
+    } else {
+        const customPath = prompt("Enter full path to Kokoro model (.pth) or directory:", initialPath);
+        if (customPath !== null) {
+            setKokoroModelPath(customPath.trim());
+        }
+    }
+}
+
+async function openKokoroModelsFolder() {
+    try {
+        const res = await fetch('/api/audio/kokoro/open-folder', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+            if (window.showToast) window.showToast("Opened Kokoro models folder in File Explorer!", "info");
+        } else {
+            if (window.showToast) window.showToast("Error opening folder: " + data.error, "error");
+        }
+    } catch (e) {
+        if (window.showToast) window.showToast("Error opening folder: " + e.message, "error");
+    }
+}
+
+function copyKokoroModelsPath() {
+    const p = "C:\\Hecos\\hecos\\models\\kokoro";
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(p).then(() => {
+            if (window.showToast) window.showToast("Copied path to clipboard: " + p, "success");
+        }).catch(() => {
+            prompt("Kokoro models directory path:", p);
+        });
+    } else {
+        prompt("Kokoro models directory path:", p);
+    }
+}
+
 // ── Audio History Helpers ──────────────────────────────────────────────────────
 async function installTTSEngine(engine) {
     const statusEl = document.getElementById(`${engine}-install-status`);
-    if (statusEl) statusEl.textContent = '⏳ Installazione in corso...';
+    const taskId = `tts_engine_${engine}`;
+
+    if (statusEl && window.HecosProgress) {
+        statusEl.innerHTML = '';
+        window.HecosProgress.attach(statusEl, {
+            taskId: taskId,
+            title: `Installazione ${engine.toUpperCase()}`,
+            variant: 'inline',
+            showCancel: true,
+            onDone: () => {
+                const badge = document.getElementById(`${engine}-status-badge`);
+                if (badge) badge.textContent = '✅ Available';
+            }
+        });
+    } else if (statusEl) {
+        statusEl.textContent = '⏳ Installazione in corso...';
+    }
+
     try {
         const r = await fetch('/api/audio/install-engine', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ engine })
+            body: JSON.stringify({ engine, async: true })
         });
         const d = await r.json();
-        if (d.ok) {
-            if (statusEl) statusEl.textContent = '✅ Installed successfully!';
-            const badge = document.getElementById(`${engine}-status-badge`);
-            if (badge) badge.textContent = '✅ Available';
-        } else {
-            if (statusEl) statusEl.textContent = '❌ ' + (d.error || 'Installation failed.');
+        if (!d.ok && statusEl) {
+            statusEl.textContent = '❌ ' + (d.error || 'Installation failed.');
         }
     } catch (e) {
         if (statusEl) statusEl.textContent = '❌ Request failed: ' + e.message;
@@ -243,22 +412,20 @@ async function checkTTSEngineStatus() {
                 const res = await fetch(`/api/audio/voices?engine=kokoro`);
                 if (res.ok) {
                     const voices = await res.json();
-                    const list = Array.isArray(voices) ? voices : (voices.kokoro || Object.keys(voices));
-                    const iter = Array.isArray(list) ? list : Object.keys(list);
-                    if (iter.length > 0) {
+                    const voiceMap = (!Array.isArray(voices) && voices.kokoro) ? voices.kokoro : voices;
+                    const keys = Array.isArray(voiceMap) ? voiceMap : Object.keys(voiceMap);
+                    if (keys.length > 0) {
                         kokoroVoiceSel.innerHTML = '';
-                        iter.forEach(voice => {
+                        keys.forEach(k => {
                             const opt = document.createElement('option');
-                            opt.value = voice;
-                            let text = voice;
-                            if (!Array.isArray(list) && typeof list[voice] === 'string') text = list[voice];
-                            opt.textContent = text;
+                            opt.value = k;
+                            opt.textContent = (!Array.isArray(voiceMap) && voiceMap[k]) ? voiceMap[k] : k;
                             kokoroVoiceSel.appendChild(opt);
                         });
-                        kokoroVoiceSel.value = selKokoro;
+                        if (selKokoro) kokoroVoiceSel.value = selKokoro;
                     }
                 }
-            } catch(e) { console.warn("Failed to fetch Kokoro voices"); }
+            } catch(e) { console.warn("Failed to fetch Kokoro voices", e); }
         }
         
         if (xttsSpeakerSel) {
@@ -266,27 +433,30 @@ async function checkTTSEngineStatus() {
                 const res = await fetch(`/api/audio/voices?engine=xtts2`);
                 if (res.ok) {
                     const voices = await res.json();
-                    const list = Array.isArray(voices) ? voices : (voices.xtts2 || Object.keys(voices));
-                    const iter = Array.isArray(list) ? list : Object.keys(list);
-                    if (iter.length > 0) {
+                    const voiceMap = (!Array.isArray(voices) && voices.xtts2) ? voices.xtts2 : voices;
+                    const keys = Array.isArray(voiceMap) ? voiceMap : Object.keys(voiceMap);
+                    if (keys.length > 0) {
                         xttsSpeakerSel.innerHTML = '';
-                        iter.forEach(voice => {
+                        keys.forEach(k => {
                             const opt = document.createElement('option');
-                            opt.value = voice;
-                            let text = voice;
-                            if (!Array.isArray(list) && typeof list[voice] === 'string') text = list[voice];
-                            opt.textContent = text;
+                            opt.value = k;
+                            opt.textContent = (!Array.isArray(voiceMap) && voiceMap[k]) ? voiceMap[k] : k;
                             xttsSpeakerSel.appendChild(opt);
                         });
-                        xttsSpeakerSel.value = selXtts;
+                        if (selXtts) xttsSpeakerSel.value = selXtts;
                     }
                 }
-            } catch(e) { console.warn("Failed to fetch XTTS voices"); }
+            } catch(e) { console.warn("Failed to fetch XTTS voices", e); }
         }
 
         // Dynamically populate voices for Fish Speech
         if (typeof window.loadFishVoiceCloneList === 'function') {
             await window.loadFishVoiceCloneList();
+        }
+
+        // Dynamically populate models for Kokoro
+        if (typeof loadKokoroModelList === 'function') {
+            await loadKokoroModelList();
         }
 
         // 2. Fetch status and update badges
@@ -363,5 +533,11 @@ window.autoFixPiperPath      = autoFixPiperPath;
 window.browsePiperPath       = browsePiperPath;
 window.installTTSEngine      = installTTSEngine;
 window.checkTTSEngineStatus  = checkTTSEngineStatus;
+window.loadKokoroModelList      = loadKokoroModelList;
+window.updateKokoroModelUI      = updateKokoroModelUI;
+window.onKokoroModelSelectChange = onKokoroModelSelectChange;
+window.browseKokoroModelPath    = browseKokoroModelPath;
+window.openKokoroModelsFolder   = openKokoroModelsFolder;
+window.copyKokoroModelsPath     = copyKokoroModelsPath;
 // saveAudioConfig is a lazy wrapper: resolves saveConfig at call-time, not at load-time
 // (saveConfig lives in config_core_persistence.js which may load after this file)

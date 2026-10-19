@@ -5,16 +5,16 @@
   </div>
   <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 16px; font-family: monospace; font-size: 11px; color: var(--muted);">
     <div style="margin-bottom: 8px;">
-      Kokoro uses the <code>kokoro</code> PyTorch package — lightweight model, great quality on CPU. Voices are downloaded on the fly.
+      Kokoro TTS is a lightweight neural speech synthesizer running locally on CPU or GPU with studio-quality audio.
     </div>
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <span id="kokoro-status-badge" class="badge-pill badge-ok">✅ Installed</span>
       <span id="v-kokoro-timer" style="color: var(--accent); display: none;">0.0s</span>
     </div>
-    <div id="v-kokoro-progress-container" style="display: none; width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden; margin-top: 8px;">
-      <div id="v-kokoro-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s ease;"></div>
+    <div id="v-kokoro-progress-container" class="hp-track" style="display: none; margin-top: 8px;">
+      <div id="v-kokoro-progress-bar" class="hp-fill" style="width: 0%;"></div>
     </div>
-    <div id="v-kokoro-progress-text" style="display: none; margin-top: 4px; color: var(--accent); text-align: right;">0%</div>
+    <div id="v-kokoro-progress-text" style="display: none; margin-top: 4px; color: var(--accent); text-align: right; font-size:11px; font-weight:600;">0%</div>
   </div>
   <div class="grid-2">
     <div class="field">
@@ -25,7 +25,7 @@
       <label>Sentence Silence (s)</label>
       <input type="number" id="v-kokoro-silence" min="0" max="2" step="0.05">
     </div>
-    <div class="field">
+    <div class="field" style="grid-column: span 2;">
       <label>Default Voice</label>
       <select id="v-kokoro-voice">
         <option value="af_heart">Heart (Female, US)</option>
@@ -37,7 +37,12 @@
         <option value="af_sky">Sky (Female, US)</option>
         <option value="am_adam">Adam (Male, US)</option>
         <option value="am_echo">Echo (Male, US)</option>
+        <option value="am_eric">Eric (Male, US)</option>
+        <option value="am_fenrir">Fenrir (Male, US)</option>
+        <option value="am_liam">Liam (Male, US)</option>
         <option value="am_michael">Michael (Male, US)</option>
+        <option value="am_onyx">Onyx (Male, US)</option>
+        <option value="am_puck">Puck (Male, US)</option>
         <option value="bf_emma">Emma (Female, GB)</option>
         <option value="bf_isabella">Isabella (Female, GB)</option>
         <option value="bm_george">George (Male, GB)</option>
@@ -47,10 +52,82 @@
       </select>
     </div>
   </div>
-  <div class="field" style="margin-top: 10px;">
-    <label>Offline Model Path (Optional)</label>
-    <input type="text" id="v-kokoro-model" placeholder="Leave empty to use HuggingFace cache">
+
+  <!-- Output Volume / Gain Normalization -->
+  <div class="grid-2" style="margin-top:12px;">
+    <div class="field">
+      <label>
+        <i class="fas fa-volume-up"></i> Output Volume / Gain Normalization
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Audio output volume multiplier and loudness normalization. 1.0 = standard normalized level matching Piper and system audio. Range: 0.5 to 2.0."></i>
+      </label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-kokoro-volume-range" min="0.5" max="2.0" step="0.05" value="1.0" style="flex:1;" oninput="document.getElementById('v-kokoro-volume').value = this.value">
+        <input type="number" id="v-kokoro-volume" min="0.5" max="2.0" step="0.05" value="1.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-kokoro-volume-range').value = this.value">
+      </div>
+    </div>
+    <div class="field">
+      <label>
+        <i class="fas fa-sliders-h"></i> Loudness Normalization (dBFS)
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Automatically amplifies Kokoro speech to broadcast / system levels (~ -14 dBFS) with soft-knee limiting to prevent clipping."></i>
+      </label>
+      <div class="toggle-row" style="margin:0; padding:6px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; min-height:36px; display:flex; align-items:center;">
+        <span style="font-size:11px; color:var(--text);">Auto-align with System Volume</span>
+        <label class="switch" style="margin-left:auto;">
+          <input type="checkbox" id="v-kokoro-normalize" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
   </div>
+  <!-- Kokoro Neural Model Selection & Local Checkpoint -->
+  <div class="field" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-top: 14px; margin-bottom: 14px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+      <label style="margin:0; font-weight:600; font-size:13px; color:var(--text); display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-brain" style="color:var(--accent);"></i> Kokoro Neural Model & Local Checkpoint
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Leave empty or choose the default integrated local model. Select or place custom fine-tuned weights in your models directory to switch checkpoints."></i>
+      </label>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="openKokoroModelsFolder()" title="Open Kokoro models directory in Windows File Explorer">
+          <i class="fas fa-folder-open"></i> Open Folder
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="browseKokoroModelPath()" title="Browse for a custom model (.pth) or weights folder">
+          <i class="fas fa-search"></i> Browse...
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="copyKokoroModelsPath()" title="Copy models directory path to clipboard">
+          <i class="fas fa-copy"></i>
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="loadKokoroModelList()" title="Refresh detected models list">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <div class="field" style="flex:1; min-width:260px; margin:0;">
+        <select id="v-kokoro-model-select" class="form-control" onchange="onKokoroModelSelectChange()" style="background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:6px; width:100%; padding:6px 10px;">
+          <option value="">Kokoro-82M v1.0 (Integrated Default)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Hidden input to store model_path value for automatic form serialization -->
+    <input type="hidden" id="v-kokoro-model" value="">
+
+    <!-- Model Details & Path Display Card -->
+    <div id="v-kokoro-model-info" style="font-size:11px; color:var(--muted); margin-top:10px; line-height:1.5; border-top:1px dashed var(--border); padding-top:8px;">
+      <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; align-items:center;">
+        <span id="v-kokoro-model-path-display">📁 Active Path: <code>Default integrated local model</code></span>
+        <span id="v-kokoro-model-badge" class="badge-pill badge-accent" style="font-size:9px;">Kokoro-82M v1.0</span>
+      </div>
+      <div style="margin-top:6px; font-size:11px; color:var(--muted); background:rgba(0,0,0,0.2); padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+        💡 Place custom Kokoro weights (<code>.pth</code> files or subfolders with <code>config.json</code>) in <code>hecos/models/kokoro</code> to use them.
+      </div>
+    </div>
+  </div>
+
+  <!-- Kokoro Voice Cloning & Custom Timbres Sub-Module -->
+  {% include 'modules/voice/card_kokoro_clones.html' %}
+
   <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
     <button type="button" class="btn btn-secondary btn-sm" onclick="installTTSEngine('kokoro')">
       <i class="fas fa-download"></i> Install / Update Kokoro

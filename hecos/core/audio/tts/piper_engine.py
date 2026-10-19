@@ -284,7 +284,7 @@ class PiperEngine(BaseTTSEngine):
             
         return success and os.path.exists(filepath)
 
-    def speak(self, text: str, state=None, _run_id=None, _timeout=0, _start=0):
+    def speak(self, text: str, state=None, _run_id=None, _timeout=0, _start=0, session_overrides=None, **kwargs):
         """
         Main PC TTS. Splits text into phrases, generates temp wav files
         virtually instantly via the IPC daemon, and streams playback natively.

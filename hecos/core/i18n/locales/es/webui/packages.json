@@ -3,6 +3,7 @@
     "hpm_subtitle": "Administra e instala paquetes .hpkg. Los módulos integrados de Hecos no se pueden desinstalar.",
     "hpm_btn_refresh": "Actualizar Lista",
     "hpm_tab_all": "Todos los Módulos",
+    "hpm_tab_install": "Instalación",
     "hpm_col_name": "Paquete Hecos (L1-8)",
     "hpm_col_version": "Versión",
     "hpm_col_author": "Autor",

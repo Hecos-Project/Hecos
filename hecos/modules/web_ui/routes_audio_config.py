@@ -316,22 +316,40 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             return jsonify({"ok": False, "error": f"Unknown engine: {engine}"}), 400
         try:
             from hecos.setup.engine import download_kokoro_engine, download_xtts_engine, download_fish_speech_engine
+            from hecos.core.progress import progress
             import threading
 
-            logger.info(f"[WebUI] Request to install TTS engine: '{engine}' - Starting installation thread...")
+            task_id = f"tts_engine_{engine}"
+            existing_task = progress.get_task(task_id)
+            if existing_task and existing_task.state in ("pending", "running"):
+                return jsonify({"ok": True, "engine": engine, "task_id": task_id, "status": "already_running"})
+
+            logger.info(f"[WebUI] Request to install TTS engine: '{engine}' - Starting progress task...")
 
             def _install():
                 logger.info(f"[WebUI] Installation thread active for: {engine}")
-                if engine == "kokoro":
-                    download_kokoro_engine()
-                elif engine == "xtts2":
-                    download_xtts_engine()
-                else:
-                    download_fish_speech_engine()
+                phases = [
+                    ("deps", 85, "Installing dependencies"),
+                    ("verify", 15, "Verifying engine availability"),
+                ]
+                with progress.task(task_id, title=f"TTS Engine {engine.upper()}", source="AUDIO", phases=phases) as pt:
+                    pt.phase("deps")
+                    if engine == "kokoro":
+                        download_kokoro_engine()
+                    elif engine == "xtts2":
+                        download_xtts_engine()
+                    else:
+                        download_fish_speech_engine()
+                    pt.phase("verify", message="Verifying engine availability...")
 
             t = threading.Thread(target=_install, daemon=True)
             t.start()
-            t.join(timeout=1800)  # Max 30 min wait (XTTS + MSVC are huge)
+
+            # Return immediately so the client can track via SSE / HecosProgress
+            if data.get("async", True):
+                return jsonify({"ok": True, "engine": engine, "task_id": task_id, "status": "started"})
+
+            t.join(timeout=1800)  # Max 30 min wait for synchronous calls
 
             if t.is_alive():
                 return jsonify({"ok": False, "error": "Installation timed out after 30 minutes. It may still be running in the background."}), 500
@@ -612,5 +630,79 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         except Exception as exc:
             logger.error(f"[WebUI] fish_open_checkpoints_folder error: {exc}")
             return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.route('/api/audio/kokoro/open-folder', methods=['POST'])
+    def kokoro_open_models_folder():
+        """Opens the Kokoro models directory in Windows File Explorer."""
+        try:
+            import subprocess
+            models_dir = os.path.join(root_dir, "hecos", "models", "kokoro")
+            models_dir = os.path.normpath(os.path.abspath(models_dir))
+            os.makedirs(models_dir, exist_ok=True)
+            if sys.platform == "win32":
+                try:
+                    subprocess.Popen(f'explorer.exe "{models_dir}"', shell=True)
+                except Exception:
+                    os.startfile(models_dir)
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", models_dir])
+            else:
+                subprocess.Popen(["xdg-open", models_dir])
+            return jsonify({"ok": True, "path": models_dir})
+        except Exception as exc:
+            logger.error(f"[WebUI] kokoro_open_models_folder error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.route('/api/audio/kokoro/models', methods=['GET'])
+    def kokoro_get_models():
+        """Lists available local Kokoro models and checkpoints."""
+        try:
+            import glob
+            models_dir = os.path.join(root_dir, "hecos", "models", "kokoro")
+            models_dir = os.path.normpath(os.path.abspath(models_dir))
+            os.makedirs(models_dir, exist_ok=True)
+
+            models = [
+                {
+                    "id": "",
+                    "name": "Kokoro-82M v1.0 (Integrated Default)",
+                    "path": "Default integrated local model",
+                    "type": "integrated"
+                }
+            ]
+
+            # Scan .pth files in models_dir
+            for pth in glob.glob(os.path.join(models_dir, "*.pth")):
+                fname = os.path.basename(pth)
+                size_mb = round(os.path.getsize(pth) / (1024 * 1024), 1)
+                models.append({
+                    "id": pth,
+                    "name": f"{fname} ({size_mb} MB)",
+                    "path": pth,
+                    "type": "file"
+                })
+
+            # Scan subdirectories in models_dir
+            for item in os.listdir(models_dir):
+                item_path = os.path.join(models_dir, item)
+                if os.path.isdir(item_path):
+                    pths = glob.glob(os.path.join(item_path, "*.pth"))
+                    if pths or os.path.exists(os.path.join(item_path, "config.json")):
+                        models.append({
+                            "id": item_path,
+                            "name": f"{item} (Directory)",
+                            "path": item_path,
+                            "type": "directory"
+                        })
+
+            return jsonify({
+                "ok": True,
+                "models": models,
+                "folder": models_dir
+            })
+        except Exception as exc:
+            logger.error(f"[WebUI] kokoro_get_models error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
 
 

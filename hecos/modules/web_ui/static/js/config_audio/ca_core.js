@@ -20,6 +20,9 @@ function populateAudioUI() {
     setVal('v-kokoro-voice', (v.kokoro && v.kokoro.voice) ? v.kokoro.voice : 'af_heart');
     setVal('v-kokoro-silence', (v.kokoro && v.kokoro.sentence_silence) ? v.kokoro.sentence_silence : 0.0);
     setVal('v-kokoro-model', (v.kokoro && v.kokoro.model_path) ? v.kokoro.model_path : '');
+    setVal('v-kokoro-volume', (v.kokoro && v.kokoro.volume !== undefined) ? v.kokoro.volume : 1.0);
+    setVal('v-kokoro-volume-range', (v.kokoro && v.kokoro.volume !== undefined) ? v.kokoro.volume : 1.0);
+    setCheck('v-kokoro-normalize', (v.kokoro && v.kokoro.normalize !== undefined) ? v.kokoro.normalize : true);
     // XTTS
     setVal('v-xtts-speed', (v.xtts && v.xtts.speed) ? v.xtts.speed : 1.0);
     setVal('v-xtts-lang', (v.xtts && v.xtts.language) ? v.xtts.language : 'it');
@@ -217,6 +220,10 @@ window.switchAudioEngineTab = function(engine, saveEngine = true) {
     if (engine === 'fish_speech') {
         if (typeof window.checkFishServerStatus === 'function') window.checkFishServerStatus();
         if (typeof window.loadFishModelList === 'function') window.loadFishModelList();
+        if (typeof window.loadFishVoiceCloneList === 'function') window.loadFishVoiceCloneList();
+    } else if (engine === 'kokoro') {
+        if (typeof window.loadKokoroModelList === 'function') window.loadKokoroModelList();
+        if (typeof window.refreshKokoroClonesAll === 'function') window.refreshKokoroClonesAll();
     }
 };
 
@@ -234,7 +241,9 @@ function buildAudioPayload() {
             speed: parseFloat(getV('v-kokoro-speed', v.kokoro?.speed ?? 1.0)),
             voice: getV('v-kokoro-voice', v.kokoro?.voice || 'af_heart'),
             sentence_silence: parseFloat(getV('v-kokoro-silence', v.kokoro?.sentence_silence ?? 0.0)),
-            model_path: getV('v-kokoro-model', v.kokoro?.model_path || '')
+            model_path: getV('v-kokoro-model', v.kokoro?.model_path || ''),
+            volume: parseFloat(getV('v-kokoro-volume', v.kokoro?.volume ?? 1.0)),
+            normalize: getC('v-kokoro-normalize', v.kokoro?.normalize ?? true)
         },
         xtts:             { 
             speed: parseFloat(getV('v-xtts-speed', v.xtts?.speed ?? 1.0)), 

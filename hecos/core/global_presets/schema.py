@@ -73,6 +73,8 @@ class SoulVoice(BaseModel):
     piper_noise_w: Optional[float] = None
     kokoro_speed: Optional[float] = None
     kokoro_voice: Optional[str] = None
+    kokoro_volume: Optional[float] = None
+    kokoro_normalize: Optional[bool] = None
     fish_preset: Optional[str] = None
     fish_inference_preset: Optional[str] = None
     fish_api_url: Optional[str] = None

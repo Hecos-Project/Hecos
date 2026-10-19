@@ -1,0 +1,138 @@
+<!-- KOKORO VOICE CLONING & CUSTOM TIMBRES SUB-MODULE -->
+<div class="field" style="background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-top: 14px; margin-bottom: 14px;" id="kokoro-cloning-container">
+  
+  <!-- Header with Badges & Quick Tools -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <label style="margin:0; font-weight:600; font-size:13px; color:var(--text); display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-magic" style="color:var(--accent);"></i> Kokoro Voice Cloner & Style Library
+      </label>
+      <span class="badge-pill badge-accent" style="font-size:10px;">Zero-Shot StyleTTS 2</span>
+      <span class="badge-pill badge-ok" style="font-size:10px;">⚡ &lt;200ms</span>
+    </div>
+    <div style="display:flex; gap:6px; align-items:center;">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="openKokoroClonesFolder('sources')" title="Open reference audio directory (assets/voice_clones)">
+        <i class="fas fa-folder-open"></i> Source Audio
+      </button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="openKokoroClonesFolder('voices')" title="Open Kokoro voices directory (.pt)">
+        <i class="fas fa-archive"></i> Voices (.pt)
+      </button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="refreshKokoroClonesAll()" title="Refresh source audio tracks and installed voice packs">
+        <i class="fas fa-sync-alt"></i>
+      </button>
+    </div>
+  </div>
+
+  <p style="font-size:11px; color:var(--muted); margin:0 0 12px; line-height:1.4;">
+    Extract style embedding tensors (<code>.pt</code>) from any reference WAV audio in <code>assets/voice_clones/</code> (including timbres crafted with Voice Forge). 
+    Registered voice packs are immediately integrated into Kokoro's native voice selector with sub-second generation and authentic phoneme mapping.
+  </p>
+
+  <!-- Conversion Panel -->
+  <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 14px;">
+    <div style="font-weight:600; font-size:12px; color:var(--text); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+      <i class="fas fa-bolt" style="color:var(--accent);"></i> New Style & Voice Extraction
+    </div>
+
+    <div class="grid-2" style="gap:10px; margin-bottom:10px;">
+      <!-- Source WAV Dropdown -->
+      <div class="field" style="margin:0;">
+        <label style="font-size:11px;">1. Reference Audio Track (WAV)</label>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <select id="kokoro-clone-source-select" class="form-control" onchange="onKokoroCloneSourceChange()" style="flex:1; background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:11px;">
+            <option value="">Loading audio files...</option>
+          </select>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="loadKokoroCloneSources()" title="Refresh assets/voice_clones folder" style="padding:6px 10px;">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Language & Gender Selection -->
+      <div class="field" style="margin:0;">
+        <label style="font-size:11px;">2. Language & Accent Profile</label>
+        <select id="kokoro-clone-lang-select" class="form-control" onchange="onKokoroCloneLangChange()" style="background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:11px; width:100%;">
+          <optgroup label="English (US)">
+            <option value="af" selected>af_ · American English (Female)</option>
+            <option value="am">am_ · American English (Male)</option>
+          </optgroup>
+          <optgroup label="English (GB / UK)">
+            <option value="bf">bf_ · British English (Female)</option>
+            <option value="bm">bm_ · British English (Male)</option>
+          </optgroup>
+          <optgroup label="Italian (eSpeak-NG it)">
+            <option value="if">if_ · Italian (Female)</option>
+            <option value="im">im_ · Italian (Male)</option>
+          </optgroup>
+          <optgroup label="Spanish">
+            <option value="ef">ef_ · Spanish (Female)</option>
+            <option value="em">em_ · Spanish (Male)</option>
+          </optgroup>
+          <optgroup label="French">
+            <option value="ff">ff_ · French (Female)</option>
+            <option value="fm">fm_ · French (Male)</option>
+          </optgroup>
+          <optgroup label="Japanese & Chinese">
+            <option value="jf">jf_ · Japanese (Female)</option>
+            <option value="jm">jm_ · Japanese (Male)</option>
+            <option value="zf">zf_ · Chinese (Female)</option>
+            <option value="zm">zm_ · Chinese (Male)</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-2" style="gap:10px; margin-bottom:12px;">
+      <!-- Voice ID / Custom Name -->
+      <div class="field" style="margin:0;">
+        <label style="font-size:11px;">3. Voice Identifier (auto-prefixed)</label>
+        <div style="display:flex; align-items:center; background:var(--bg3); border:1px solid var(--border); border-radius:6px; overflow:hidden;">
+          <span id="kokoro-clone-prefix-badge" style="padding:6px 10px; font-family:monospace; font-size:11px; color:var(--accent); font-weight:bold; background:rgba(0,180,216,0.1); border-right:1px solid var(--border);">af_</span>
+          <input type="text" id="kokoro-clone-name-input" placeholder="e.g. cine_witch" style="flex:1; border:none; background:transparent; color:var(--text); padding:6px 8px; font-size:11px; font-family:monospace;" oninput="updateKokoroCloneVoiceIdPreview()">
+        </div>
+      </div>
+
+      <!-- Display Title -->
+      <div class="field" style="margin:0;">
+        <label style="font-size:11px;">4. Descriptive Title (optional)</label>
+        <input type="text" id="kokoro-clone-title-input" placeholder="e.g. Cine Witch (Enchantress)" style="background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:11px; width:100%;">
+      </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-kokoro-convert" onclick="convertKokoroClone()" style="padding:7px 16px; font-weight:600;">
+          <i class="fas fa-bolt"></i> Extract Style Embedding (.pt)
+        </button>
+        <span id="kokoro-clone-status" style="font-size:11px; color:var(--muted);"></span>
+      </div>
+      <div id="kokoro-clone-target-preview" style="font-size:10px; color:var(--muted); font-family:monospace;">
+        Target Voice ID: <code id="kokoro-clone-target-code" style="color:var(--accent);">af_</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Installed Voices Library Table / Grid -->
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div style="font-weight:600; font-size:12px; color:var(--text); display:flex; align-items:center; gap:6px;">
+        <i class="fas fa-record-vinyl" style="color:var(--accent);"></i> Installed Custom Voice Packs
+        <span id="kokoro-clones-count" class="badge-pill" style="font-size:10px; background:var(--bg2);">0</span>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="loadKokoroInstalledClones()" title="Refresh list of installed custom voices" style="font-size:10px; padding:3px 8px;">
+        <i class="fas fa-sync-alt"></i> Refresh
+      </button>
+    </div>
+
+    <!-- List Container -->
+    <div id="kokoro-clones-list" style="display:flex; flex-direction:column; gap:6px; max-height:280px; overflow-y:auto; padding-right:4px;">
+      <div style="text-align:center; padding:16px; color:var(--muted); font-size:11px; border:1px dashed var(--border); border-radius:6px;">
+        <i class="fas fa-spinner fa-spin"></i> Loading cloned voices...
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Player Element for Instant Previews -->
+  <audio id="kokoro-preview-audio" style="display:none;"></audio>
+</div>

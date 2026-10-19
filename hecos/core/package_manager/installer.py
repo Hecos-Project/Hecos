@@ -89,7 +89,7 @@ class PackageInstaller:
 
     def install_bytes(self, data: bytes, require_signature: bool = True, skip_dep_check: bool = False) -> InstallResult:
         # ── Step 1: Validate ─────────────────────────────────────────────────
-        self._emit("hpm:progress", {"step": "validation", "message": "Validating package schema..."})
+        self._emit("hpm:progress", {"step": "validation", "message": "Validating package schema...", "percent": 10})
         val_result = self._validator.validate_bytes(data)
         if not val_result.valid:
             return InstallResult(success=False, error=f"Validation failed: {val_result.error_summary}")
@@ -98,7 +98,7 @@ class PackageInstaller:
         result = InstallResult(package_id=manifest.id)
 
         # ── Step 2: Signature check ──────────────────────────────────────────
-        self._emit("hpm:progress", {"step": "signature", "message": "Verifying package signature..."})
+        self._emit("hpm:progress", {"step": "signature", "message": "Verifying package signature...", "percent": 20})
         import tomllib
         with zipfile.ZipFile(io.BytesIO(data)) as zf:
             try:
@@ -113,7 +113,7 @@ class PackageInstaller:
             return InstallResult(success=False, error="Signature verification failed. Package is untrusted or tampered with.")
 
         # ── Step 3: Dependency resolution ────────────────────────────────────
-        self._emit("hpm:progress", {"step": "dependencies", "message": "Resolving dependencies..."})
+        self._emit("hpm:progress", {"step": "dependencies", "message": "Resolving dependencies...", "percent": 35})
         
         # Calculate install path early to pass to the resolver (needed for venv creation).
         # For widget-only packages (type='widget'), _resolve_target_dir returns None because
@@ -152,7 +152,7 @@ class PackageInstaller:
             result.warnings.append(f"Some pip requirements failed to install: {dep_report.pip_failures}")
 
         # ── Step 4: Extract to staging ───────────────────────────────────────
-        self._emit("hpm:progress", {"step": "extract", "message": "Extracting package files..."})
+        self._emit("hpm:progress", {"step": "extract", "message": "Extracting package files...", "percent": 55})
         staging_dir = tempfile.mkdtemp(prefix="hpm_staging_")
         installed_files: List[str] = []
 
@@ -161,7 +161,7 @@ class PackageInstaller:
                 zf.extractall(staging_dir)
 
             # ── Step 4.5: File Hashes Verification ───────────────────────────
-            self._emit("hpm:progress", {"step": "hash_check", "message": "Verifying file integrity..."})
+            self._emit("hpm:progress", {"step": "hash_check", "message": "Verifying file integrity...", "percent": 65})
             import hashlib
             expected_hashes = manifest.file_hashes or {}
             
@@ -192,13 +192,11 @@ class PackageInstaller:
                         raise RuntimeError(f"Hash mismatch for '{rel_path}'. File corrupted or tampered.")
 
             # ── Step 5: pre_install hook ─────────────────────────────────────
-            self._emit("hpm:progress", {"step": "hooks", "message": "Running pre-install hook..."})
+            self._emit("hpm:progress", {"step": "hooks", "message": "Running pre-install hook...", "percent": 75})
             run_hook(staging_dir, "pre_install", manifest)
 
-
-
             # ── Step 6: Copy plugin/module code ──────────────────────────────
-            self._emit("hpm:progress", {"step": "copy_code", "message": "Installing core logic..."})
+            self._emit("hpm:progress", {"step": "copy_code", "message": "Installing core logic & assets...", "percent": 82})
             installed_files.extend(install_plugin_code(staging_dir, manifest, self._hecos_root))
 
             # ── Step 7: Copy WebUI assets ─────────────────────────────────────
@@ -217,7 +215,7 @@ class PackageInstaller:
             installed_files.extend(install_assets(staging_dir, manifest, self._hecos_root))
 
             # ── Step 10: Register in DB ───────────────────────────────────────
-            self._emit("hpm:progress", {"step": "register", "message": "Registering in database..."})
+            self._emit("hpm:progress", {"step": "register", "message": "Registering in database...", "percent": 90})
             is_update = self._registry.is_installed(manifest.id)
             manifest_dict = manifest.model_dump()
             ok = self._registry.register(manifest_dict, install_path, installed_files)
@@ -231,10 +229,11 @@ class PackageInstaller:
             hot_reload(self._hecos_root)
 
             # ── Step 12: post_install hook ────────────────────────────────────
-            self._emit("hpm:progress", {"step": "hooks", "message": "Running post-install hook..."})
+            self._emit("hpm:progress", {"step": "hooks", "message": "Running post-install hook...", "percent": 96})
             run_hook(staging_dir, "post_install", manifest)
 
             # ── Step 13: Emit event ───────────────────────────────────────────
+            self._emit("hpm:progress", {"step": "done", "message": "Installed successfully", "percent": 100})
             self._emit("hpm:package_installed", {
                 "id": manifest.id,
                 "name": manifest.name,
@@ -263,6 +262,29 @@ class PackageInstaller:
         return result
 
     def _emit(self, event_name: str, payload: Dict[str, Any]) -> None:
+        try:
+            from hecos.core.progress.main import current_task
+            task = current_task()
+            if task and event_name == "hpm:progress":
+                step = payload.get("step")
+                msg = payload.get("message", "")
+                pct = payload.get("percent")
+                if step == "pip_log":
+                    task.advance(log=msg)
+                else:
+                    if step in ("validation", "signature", "dependencies", "extract", "register"):
+                        phase_name = "install" if step == "extract" else step
+                        try:
+                            task.phase(phase_name, message=msg)
+                        except Exception:
+                            pass
+                    if pct is not None:
+                        task.advance(percent=pct, message=msg)
+                    elif msg:
+                        task.advance(message=msg)
+        except Exception:
+            pass
+
         if callable(self._event_callback):
             try:
                 self._event_callback(event_name, payload)

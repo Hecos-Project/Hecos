@@ -5,6 +5,15 @@
  */
 
 window._isHpmInstalling = false;
+
+// ── Translation Helper ────────────────────────────────────────────────────────
+function _ti(en, it, es) {
+  const l = (document.documentElement.lang || localStorage.getItem('hecos_language') || 'it').toLowerCase();
+  if (l.startsWith('it')) return it;
+  if (l.startsWith('es')) return es || it;
+  return en;
+}
+
 window.addEventListener('beforeunload', (e) => {
   if (window._isHpmInstalling) {
     e.preventDefault();
@@ -118,126 +127,122 @@ window.hpmCancelQueueItem = function(id) {
 };
 
 window.hpmRenderInstallQueue = function() {
-    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
-    let html = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:260px; overflow-y:auto; font-size:13px; border:1px solid rgba(255,255,255,0.05);">`;
+    let html = `<div style="text-align:left; background:rgba(0,0,0,0.3); border-radius:10px; padding:12px; margin-top:8px; max-height:260px; overflow-y:auto; font-size:13px; border:1px solid rgba(255,255,255,0.08);">`;
     
     let total = window._hpmInstallQueue.length;
     let completed = 0;
 
     window._hpmInstallQueue.forEach(item => {
-        let icon = '';
-        let rowContent = '';
+        let badge = '';
         let action = '';
 
         if (item.status === 'pending') {
-            icon = '<i class="far fa-circle" style="color:var(--muted); margin-right:8px; width:16px;"></i>';
-            const pendingLabel = `<span style="color:var(--muted); font-size:13px;">${_ti('Waiting...', 'In attesa...', 'Esperando...')}</span>`;
+            badge = `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;background:rgba(255,255,255,0.05);color:var(--muted);font-size:11px;font-weight:600;"><i class="far fa-clock"></i> ${_ti('Waiting...', 'In attesa...', 'Esperando...')}</span>`;
             action = `<button onclick="window.hpmCancelQueueItem('${item.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0 5px;" title="${_ti('Cancel', 'Annulla', 'Cancelar')}"><i class="fas fa-times"></i></button>`;
-            rowContent = `
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                    <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
-                    <div style="display:flex; align-items:center; gap:8px;">${pendingLabel}${action}</div>
-                </div>`;
         } else if (item.status === 'installing') {
-            icon = '<span class="hpm-spinner" style="margin-right:8px;"></span>';
             const stepTxt = item.progressMsg ? item.progressMsg : _ti('Installing...', 'Installazione...', 'Instalando...');
-            // Row 1: filename + spinner + step label
-            const row1 = `
-                <div style="display:flex; align-items:center; width:100%;">
-                    ${icon}
-                    <span style="color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;" title="${item.file.name}">${item.file.name}</span>
-                    <span style="color:var(--accent); font-family:monospace; font-size:13px; white-space:nowrap; margin-left:10px; flex-shrink:0;" title="${stepTxt}">${stepTxt}</span>
-                </div>`;
-            // Row 2: HPM log (shown only when present, same font size as rest)
-            const row2 = item.pipLogMsg
-                ? `<div style="font-size:13px; color:var(--muted); font-family:monospace; white-space:normal; word-break:break-all; width:100%; margin-top:5px; padding:4px 8px; background:rgba(0,0,0,0.25); border-radius:4px; border-left:2px solid var(--accent); opacity:0.9;">${item.pipLogMsg}</div>`
-                : '';
-            rowContent = `${row1}${row2}`;
+            badge = `<span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:12px;background:rgba(99,102,241,0.18);border:1px solid rgba(99,102,241,0.3);color:var(--accent);font-size:11px;font-weight:600;"><i class="fas fa-spinner fa-spin"></i> <span id="hpm-queue-step-${item.id}">${stepTxt}</span></span>`;
         } else if (item.status === 'done') {
-            icon = '<i class="fas fa-check" style="color:#10b981; margin-right:8px; width:16px;"></i>';
             const statusLabel = item.result?.is_update ? _ti('Updated', 'Aggiornato', 'Actualizado') : _ti('Installed', 'Installato', 'Instalado');
-            const installPath = item.result?.install_path ? `<div style="margin-left:24px; font-size:11px; font-family:monospace; color:var(--accent); opacity:0.85; margin-top:3px;">${_ti('Installed in:', 'Installato in:', 'Instalado en:')} ${item.result.install_path}</div>` : '';
-            rowContent = `
-                <div style="display:flex; flex-direction:column; width:100%;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                        <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
-                        <span style="color:#10b981; font-size:13px;">${statusLabel}</span>
-                    </div>
-                    ${installPath}
-                </div>`;
+            badge = `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;background:rgba(99,102,241,0.18);border:1px solid rgba(99,102,241,0.3);color:var(--accent);font-size:11px;font-weight:600;"><i class="fas fa-check"></i> ${statusLabel}</span>`;
             completed++;
         } else if (item.status === 'failed') {
-            icon = '<i class="fas fa-times" style="color:#ef4444; margin-right:8px; width:16px;"></i>';
-            rowContent = `
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                    <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
-                    <span style="color:#ef4444; font-size:13px;" title="${item.result?.error || ''}">${_ti('Error', 'Errore', 'Error')}</span>
-                </div>`;
+            badge = `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;font-size:11px;font-weight:600;" title="${item.result?.error || ''}"><i class="fas fa-times"></i> ${_ti('Error', 'Errore', 'Error')}</span>`;
             completed++;
         } else if (item.status === 'canceled') {
-            icon = '<i class="fas fa-ban" style="color:var(--muted); margin-right:8px; width:16px;"></i>';
-            rowContent = `
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                    <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
-                    <span style="color:var(--muted); font-size:13px;">${_ti('Canceled', 'Annullato', 'Cancelado')}</span>
-                </div>`;
+            badge = `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;background:rgba(255,255,255,0.05);color:var(--muted);font-size:11px;font-weight:600;"><i class="fas fa-ban"></i> ${_ti('Canceled', 'Annullato', 'Cancelado')}</span>`;
             completed++;
         }
 
-        html += `<div style="margin-bottom:8px; padding:6px 8px; border-radius:6px; ${item.status==='installing' ? 'background:rgba(255,255,255,0.06); border:1px solid rgba(var(--accent-rgb,99,102,241),0.2);' : 'border:1px solid transparent;'}">
-            ${rowContent}
-        </div>`;
+        const logRow = (item.status === 'installing') ? `
+            <div id="hpm-queue-log-${item.id}" class="hp-log-line" style="${item.pipLogMsg ? 'display:block;' : 'display:none;'} margin-top:6px; font-size:12px;">${item.pipLogMsg || ''}</div>` : '';
+
+        const installPath = (item.status === 'done' && item.result?.install_path) ? `
+            <div style="margin-left:24px; font-size:11px; font-family:monospace; color:var(--accent); opacity:0.85; margin-top:4px;">${_ti('Installed in:', 'Installato in:', 'Instalado en:')} ${item.result.install_path}</div>` : '';
+
+        const isCurrent = item.status === 'installing';
+        html += `
+          <div style="margin-bottom:8px; padding:8px 12px; border-radius:8px; transition:all 0.2s ease; ${isCurrent ? 'background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.25);' : 'background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05);'}">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+              <span style="color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%; font-size:13px;" title="${item.file.name}">
+                <i class="fas fa-file-archive" style="color:var(--accent); margin-right:8px;"></i>${item.file.name}
+              </span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                ${badge}
+                ${action}
+              </div>
+            </div>
+            ${logRow}
+            ${installPath}
+          </div>
+        `;
     });
     
     html += `</div>`;
     
     let pct = total > 0 ? Math.round((completed / total) * 100) : 0;
     
-    const header = `<div style="font-weight:bold; color:var(--text); margin-bottom:8px; font-size:1.05em;">${_ti('Installation Queue', 'Coda di installazione', 'Cola de instalación')} (${completed}/${total})</div>`;
+    const header = `<div style="font-weight:700; color:var(--text); margin-bottom:6px; font-size:1.05em; display:flex; justify-content:space-between; align-items:center;">
+        <span><i class="fas fa-layer-group" style="color:var(--accent); margin-right:8px;"></i>${_ti('Installation Queue', 'Coda di installazione', 'Cola de instalación')}</span>
+        <span style="font-size:0.85em; color:var(--muted); font-weight:normal;">(${completed}/${total})</span>
+    </div>`;
     
     window.hpmSetProgress(true, header + html, pct);
 };
 
 async function _hpmProcessQueue() {
-    let hasPending = true;
-    while (hasPending) {
-        const item = window._hpmInstallQueue.find(i => i.status === 'pending');
-        if (!item) {
-            hasPending = false;
-            break;
-        }
-
-        item.status = 'installing';
-        window.hpmRenderInstallQueue();
-
-        const formData = new FormData();
-        formData.append('hpkg_files[]', item.file);
-        formData.append('allow_unsigned', item.allowUnsigned ? 'true' : 'false');
-        if (item.skipDepCheck) formData.append('skip_dep_check', 'true');
-
-        try {
-            const resp = await fetch('/api/packages/install/batch', { method: 'POST', body: formData });
-            const data = await resp.json();
-            
-            if (data.ok && data.results && data.results.length > 0) {
-                const r = data.results[0];
-                item.status = r.ok ? 'done' : 'failed';
-                item.result = r;
-            } else {
-                item.status = 'failed';
-                item.result = { ok: false, error: data.error || 'Unknown error' };
+    try {
+        let hasPending = true;
+        while (hasPending) {
+            const item = window._hpmInstallQueue.find(i => i.status === 'pending');
+            if (!item) {
+                hasPending = false;
+                break;
             }
-        } catch (err) {
-            item.status = 'failed';
-            item.result = { ok: false, error: err.message };
+
+            item.status = 'installing';
+            const titleEl = document.getElementById('hpm-progress-title');
+            if (titleEl) {
+                titleEl.textContent = `${_ti('Installing', 'Installazione', 'Instalando')} ${item.file.name}…`;
+            }
+            const iconEl = document.getElementById('hpm-progress-icon');
+            if (iconEl) {
+                iconEl.className = 'fas fa-spinner fa-spin hp-icon';
+                iconEl.style.color = 'var(--accent)';
+            }
+            window.hpmRenderInstallQueue();
+
+            const formData = new FormData();
+            formData.append('hpkg_files[]', item.file);
+            formData.append('allow_unsigned', item.allowUnsigned ? 'true' : 'false');
+            if (item.skipDepCheck) formData.append('skip_dep_check', 'true');
+
+            try {
+                const resp = await fetch('/api/packages/install/batch', { method: 'POST', body: formData });
+                const data = await resp.json();
+                
+                if (data.ok && data.results && data.results.length > 0) {
+                    const r = data.results[0];
+                    item.status = r.ok ? 'done' : 'failed';
+                    item.result = r;
+                } else {
+                    item.status = 'failed';
+                    item.result = { ok: false, error: data.error || 'Unknown error' };
+                }
+            } catch (err) {
+                item.status = 'failed';
+                item.result = { ok: false, error: err.message };
+            }
+
+            window.hpmRenderInstallQueue();
         }
-
-        window.hpmRenderInstallQueue();
+    } catch (e) {
+        console.error('[HPM:Queue] Unexpected error in _hpmProcessQueue:', e);
+    } finally {
+        window._hpmInstallRunning = false;
+        window._isHpmInstalling = false;
+        _hpmShowFinalSummary();
     }
-
-    window._hpmInstallRunning = false;
-    window._isHpmInstalling = false;
-    _hpmShowFinalSummary();
 }
 
 function _hpmShowFinalSummary() {
@@ -322,7 +327,7 @@ function _hpmShowFinalSummary() {
         window._hpmInstallQueue.forEach(item => {
             let icon = '', msg = '';
             if (item.status === 'done') {
-                icon = '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>';
+                icon = '<i class="fas fa-check" style="color:var(--accent); margin-right:6px; width:14px;"></i>';
                 const rr = item.result;
                 const pathSnippet = (rr?.install_path)
                     ? ` <code style="font-size:1em;color:var(--accent);opacity:0.8;">${rr.install_path}</code>`
@@ -368,10 +373,20 @@ function _hpmShowFinalSummary() {
         else lblSuccess = _ti('Completed with some issues', 'Completato con problemi', 'Completado con problemas');
     }
     
-    const mainIconColor = (failed === 0 && canceled === 0) ? '#10b981' : (succeeded > 0 ? '#f59e0b' : '#ef4444');
+    const mainIconColor = (failed === 0 && canceled === 0) ? 'var(--accent, #6366f1)' : (succeeded > 0 ? '#f59e0b' : '#ef4444');
     const mainIcon = (failed === 0 && canceled === 0) ? 'fa-check-circle' : (succeeded > 0 ? 'fa-exclamation-circle' : 'fa-times-circle');
     
-    const batchStatsHtml = isSingle ? '' : `<div style="font-size:1em; color:var(--muted); margin-top:4px;">${succeeded} ${_ti('succeeded','installati','completados')} • ${failed} ${_ti('failed','falliti','fallidos')} • ${canceled} ${_ti('canceled','annullati','cancelados')}</div>`;
+    const titleEl = document.getElementById('hpm-progress-title');
+    if (titleEl) titleEl.textContent = lblSuccess;
+    const iconEl = document.getElementById('hpm-progress-icon');
+    if (iconEl) {
+        iconEl.className = `fas ${mainIcon} hp-icon`;
+        iconEl.style.color = mainIconColor;
+    }
+    const msgEl = document.getElementById('hpm-progress-msg');
+    if (msgEl) msgEl.textContent = '';
+    const logEl = document.getElementById('hpm-progress-log');
+    if (logEl) { logEl.textContent = ''; logEl.style.display = 'none'; }
 
     window.hpmSetProgress(true, `
       <div style="text-align:center; padding: 10px 0;">
@@ -463,30 +478,119 @@ function _handleMissingDepsDialogue(file, missing_deps, forceAllowUnsigned) {
     };
 }
 
-window.hpmSetProgress = function(visible, label = '', pct = 0) {
+window.hpmSetProgress = function(visible, contentOrLabel = '', pct = 0) {
   const container = document.getElementById('hpm-install-progress');
   const bar       = document.getElementById('hpm-progress-bar');
+  const pctEl     = document.getElementById('hpm-progress-pct');
   const lbl       = document.getElementById('hpm-progress-label');
+  const msg       = document.getElementById('hpm-progress-msg');
+  const logEl     = document.getElementById('hpm-progress-log');
   if (!container) return;
-  container.style.display = visible ? 'block' : 'none';
-  if (bar) bar.style.width = `${pct}%`;
-  if (lbl) lbl.innerHTML = label;
+
+  if (!visible) {
+    container.style.display = 'none';
+    container.classList.remove('hp-state-running', 'hp-state-done', 'hp-state-error');
+    if (bar) bar.style.width = '0%';
+    if (pctEl) pctEl.textContent = '0%';
+    if (msg) msg.textContent = '';
+    if (logEl) { logEl.textContent = ''; logEl.style.display = 'none'; }
+    if (lbl) lbl.innerHTML = '';
+    return;
+  }
+
+  container.style.display = 'block';
+  const p = Math.min(100, Math.max(0, Math.round(pct || 0)));
+  if (bar) bar.style.width = `${p}%`;
+  if (pctEl) pctEl.textContent = `${p}%`;
+
+  container.classList.remove('hp-state-running', 'hp-state-done', 'hp-state-error');
+  if (p >= 100) {
+    container.classList.add('hp-state-done');
+  } else if (p > 0) {
+    container.classList.add('hp-state-running');
+  }
+
+  if (contentOrLabel) {
+    if (typeof contentOrLabel === 'string' && (contentOrLabel.includes('<div') || contentOrLabel.includes('<b') || contentOrLabel.includes('<i') || contentOrLabel.includes('<code'))) {
+      if (lbl) lbl.innerHTML = contentOrLabel;
+    } else {
+      if (msg) msg.textContent = contentOrLabel;
+    }
+  }
 };
 
 document.addEventListener('hpmProgressUpdate', (e) => {
-    if (window._hpmInstallQueue) {
-        const item = window._hpmInstallQueue.find(i => i.status === 'installing');
-        if (item) {
-            const step = e.detail.step || '';
-            if (step === 'pip_log') {
-                // Only update row 2 (pip log), leave row 1 (step label) intact
-                item.pipLogMsg = e.detail.message || '';
-            } else {
-                // Update row 1 (step label) and clear row 2
-                item.progressMsg = e.detail.message || e.detail.step || '';
-                item.pipLogMsg   = '';
+    const detail = e.detail || {};
+    const bar = document.getElementById('hpm-progress-bar');
+    const pctEl = document.getElementById('hpm-progress-pct');
+    const msg = document.getElementById('hpm-progress-msg');
+    const logEl = document.getElementById('hpm-progress-log');
+    const container = document.getElementById('hpm-install-progress');
+
+    // 1. Identify active installing item in queue
+    const currentItem = window._hpmInstallQueue.find(i => i.status === 'installing');
+    if (currentItem) {
+        if (detail.step === 'pip_log') {
+            currentItem.pipLogMsg = detail.message || '';
+        } else {
+            if (detail.message) currentItem.progressMsg = detail.message;
+            if (detail.step !== 'pip_log') currentItem.pipLogMsg = '';
+        }
+        if (detail.percent != null && !isNaN(detail.percent)) {
+            currentItem.percent = Math.min(100, Math.max(0, Math.round(detail.percent)));
+        }
+        // Update item in the queue UI if present
+        const queueStepEl = document.getElementById(`hpm-queue-step-${currentItem.id}`);
+        if (queueStepEl && currentItem.progressMsg) {
+            queueStepEl.textContent = currentItem.progressMsg;
+        }
+        const queueLogEl = document.getElementById(`hpm-queue-log-${currentItem.id}`);
+        if (queueLogEl) {
+            if (currentItem.pipLogMsg) {
+                queueLogEl.textContent = currentItem.pipLogMsg;
+                queueLogEl.style.display = 'block';
+            } else if (detail.step !== 'pip_log') {
+                queueLogEl.style.display = 'none';
             }
-            window.hpmRenderInstallQueue();
+        }
+    }
+
+    // 2. Secondary log row
+    if (detail.step === 'pip_log') {
+        if (logEl) {
+            logEl.textContent = detail.message || '';
+            logEl.style.display = detail.message ? 'block' : 'none';
+        }
+        return;
+    } else if (logEl && detail.message) {
+        logEl.textContent = '';
+        logEl.style.display = 'none';
+    }
+
+    // 3. Primary message row
+    if (msg && detail.message) {
+        msg.textContent = detail.message;
+    }
+
+    // 4. Progress percentage
+    if (detail.percent != null && !isNaN(detail.percent)) {
+        const itemP = Math.min(100, Math.max(0, Math.round(detail.percent)));
+        let overallP = itemP;
+        const total = window._hpmInstallQueue.length;
+        if (total > 1) {
+            const completed = window._hpmInstallQueue.filter(i => i.status === 'done' || i.status === 'failed' || i.status === 'canceled').length;
+            overallP = Math.min(100, Math.round(((completed + (itemP / 100)) / total) * 100));
+        }
+        if (bar) bar.style.width = `${overallP}%`;
+        if (pctEl) pctEl.textContent = `${overallP}%`;
+        if (container) {
+            if (overallP >= 100) {
+                container.classList.remove('hp-state-running');
+                container.classList.add('hp-state-done');
+            } else {
+                container.classList.remove('hp-state-done');
+                container.classList.add('hp-state-running');
+            }
         }
     }
 });
