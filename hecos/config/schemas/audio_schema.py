@@ -17,10 +17,16 @@ class PttSources(BaseModel):
 class KokoroConfig(BaseModel):
     speed: float = 1.0
     voice: str = "af_heart"   # Default kokoro voice ID
+    lang_code: str = "auto"   # Auto-detect or explicit G2P language ('i', 'a', 'b', 'e', 'f', 'j', 'z', 'p', 'h')
+    blend_voice: str = ""     # Secondary voice for StyleTTS 2 voice blending
+    alpha: float = 1.0        # Timbre / Style weight (0.0 - 2.0, 1.0 = standard / 100% primary)
+    beta: float = 1.0         # Prosody / Cadence weight (0.0 - 2.0, 1.0 = standard / 100% primary)
     sentence_silence: float = 0.0 # Pause in seconds between chunks
     model_path: str = ""      # Optional offline model path
     volume: float = 1.0       # Audio output volume factor / gain (0.5 - 2.0)
     normalize: bool = True    # Loudness normalization to match broadcast / system levels
+    current_preset: str = "default"
+    current_inference_preset: str = "" # Selected inference preset
 
 class XttsConfig(BaseModel):
     speed: float = 1.0
@@ -70,10 +76,27 @@ class AudioConfig(BaseModel):
     noise_scale: float = 0.817
     noise_w: float = 0.9
     sentence_silence: float = 0.1
+    volume: float = 1.0
     piper_timeout: int = 180
+    piper_current_inference_preset: str = ""
+    piper_inference_presets: dict = {
+        "Standard & Balanced": {"speed": 1.0, "sentence_silence": 0.2, "noise_scale": 0.67, "noise_w": 0.8, "volume": 1.0},
+        "Expressive & Dynamic": {"speed": 1.05, "sentence_silence": 0.25, "noise_scale": 1.2, "noise_w": 1.2, "volume": 1.0},
+        "Fast & Direct": {"speed": 1.35, "sentence_silence": 0.05, "noise_scale": 0.6, "noise_w": 0.7, "volume": 1.0},
+        "Stable & Monotone": {"speed": 1.0, "sentence_silence": 0.15, "noise_scale": 0.0, "noise_w": 0.0, "volume": 1.0},
+        "Creative & Wild": {"speed": 1.15, "sentence_silence": 0.35, "noise_scale": 1.6, "noise_w": 1.5, "volume": 1.0}
+    }
 
     # --- TTS (Kokoro) ---
     kokoro: KokoroConfig = KokoroConfig()
+    kokoro_presets: dict = {}
+    kokoro_inference_presets: dict = {
+        "Standard & Balanced": {"speed": 1.0, "alpha": 1.0, "beta": 1.0, "sentence_silence": 0.0, "blend_voice": "", "lang_code": "auto", "volume": 1.0, "normalize": True},
+        "Fast & Direct": {"speed": 1.35, "alpha": 1.0, "beta": 1.0, "sentence_silence": 0.05, "blend_voice": "", "lang_code": "auto", "volume": 1.0, "normalize": True},
+        "Slow & Articulated": {"speed": 0.85, "alpha": 1.0, "beta": 1.1, "sentence_silence": 0.2, "blend_voice": "", "lang_code": "auto", "volume": 1.0, "normalize": True},
+        "Hyper-Speed Assistant": {"speed": 1.6, "alpha": 1.0, "beta": 1.0, "sentence_silence": 0.0, "blend_voice": "", "lang_code": "auto", "volume": 1.0, "normalize": True},
+        "Dynamic Prosody": {"speed": 1.0, "alpha": 1.0, "beta": 1.25, "sentence_silence": 0.1, "blend_voice": "", "lang_code": "auto", "volume": 1.0, "normalize": True}
+    }
     
     # --- TTS (XTTS2) ---
     xtts: XttsConfig = XttsConfig()

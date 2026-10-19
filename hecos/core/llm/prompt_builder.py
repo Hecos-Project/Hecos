@@ -25,9 +25,10 @@ class PromptBuilder:
     def build_system_prompt(user_text, images, config, user_id, session_id, backend_config):
         PromptBuilder._inject_vision_avatars(user_text, images, config, user_id)
         
-        personality_name = config.get('ai', {}).get('active_personality', 'Hecos_System_Soul').replace('.yaml', '')
-        if not personality_name:
-            personality_name = "Hecos_System_Soul"
+        raw_pname = (config.get('ai') or {}).get('active_personality') or (config.get('persona') or {}).get('soul_file') or 'Hecos_System_Soul'
+        if not isinstance(raw_pname, str):
+            raw_pname = 'Hecos_System_Soul'
+        personality_name = raw_pname.replace('.yaml', '').strip() or 'Hecos_System_Soul'
         
         personality_prompt, visual_identity_block = PromptBuilder._load_personality(personality_name)
         
@@ -140,7 +141,8 @@ class PromptBuilder:
         # 2. AI SELF-PERCEPTION TRIGGER
         ai_id_keywords = r'\b(how do you look|describe yourself|describe your face|your photo|your picture|your avatar|che aspetto hai|descriviti|il tuo volto|la tua foto|come sei fatt[oa])\b'
         if re.search(ai_id_keywords, user_text, re.IGNORECASE):
-            personality_name = config.get('ai', {}).get('active_personality', 'Hecos_System_Soul').replace(".yaml", "")
+            raw_pname = (config.get('ai') or {}).get('active_personality') or (config.get('persona') or {}).get('soul_file') or 'Hecos_System_Soul'
+            personality_name = raw_pname.replace(".yaml", "").strip() if isinstance(raw_pname, str) and raw_pname.strip() else 'Hecos_System_Soul'
             persona_avatar_dir = os.path.join(_HECOS_DIR, "personas", personality_name, "avatars")
             if os.path.exists(persona_avatar_dir):
                 try:

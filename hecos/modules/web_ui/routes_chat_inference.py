@@ -301,6 +301,26 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
                                 _m_info_dict["tts_voice"] = "Default Voice (Base)"
                     except Exception:
                         pass
+                elif _eng == "kokoro":
+                    try:
+                        preset = voice_overrides.get("kokoro_preset") or voice_cfg.get("kokoro_preset") or ai_cfg.get("kokoro_preset")
+                        if not preset:
+                            from hecos.core.audio.device_manager import get_audio_config
+                            aud_cfg = get_audio_config().get("kokoro", {})
+                            curr = aud_cfg.get("current_preset", "").strip()
+                            if curr and curr != "default":
+                                preset = curr
+                        if preset and preset != "default":
+                            _m_info_dict["tts_voice"] = preset
+                        else:
+                            k_voice = voice_overrides.get("kokoro_voice") or voice_cfg.get("kokoro_voice") or _m_info_dict.get("tts_voice")
+                            if k_voice:
+                                import os
+                                bname = os.path.basename(k_voice)
+                                name = os.path.splitext(bname)[0]
+                                _m_info_dict["tts_voice"] = name
+                    except Exception:
+                        pass
                 
                 _m_info = json.dumps(_m_info_dict)
         except Exception as e:

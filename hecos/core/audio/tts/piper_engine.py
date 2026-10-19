@@ -59,6 +59,11 @@ class PiperEngine(BaseTTSEngine):
         self._noise_scale = 0.667
         self._noise_w = 0.8
         self._sentence_silence = 0.2
+        self._daemon_model = None
+        self._daemon_length_scale = None
+        self._daemon_noise_scale = None
+        self._daemon_noise_w = None
+        self._daemon_sentence_silence = None
 
     def preload(self, delay: float = 3.0):
         threading.Thread(target=self._start_daemon_delayed, args=(delay,), daemon=True).start()
@@ -69,9 +74,6 @@ class PiperEngine(BaseTTSEngine):
 
     def _ensure_running(self):
         with self._lock:
-            if self._proc is not None and self._proc.poll() is None:
-                return
-
             try:
                 from hecos.core.audio.device_manager import get_audio_config
                 audio_cfg = get_audio_config()
@@ -97,16 +99,37 @@ class PiperEngine(BaseTTSEngine):
                     return
                     
                 self._sample_rate = _get_sample_rate(model_path)
-                speed = audio_cfg.get("speed", 1.0)
+                speed = float(audio_cfg.get("speed", 1.0) if audio_cfg.get("speed") is not None else 1.0)
                 self._length_scale = round(1.0 / speed, 3) if speed > 0 else 1.0
-                self._noise_scale = round(audio_cfg.get("noise_scale", 0.667), 3)
-                self._noise_w = round(audio_cfg.get("noise_w", 0.8), 3)
-                self._sentence_silence = round(audio_cfg.get("sentence_silence", 0.2), 3)
+                self._noise_scale = round(float(audio_cfg.get("noise_scale", 0.667) if audio_cfg.get("noise_scale") is not None else 0.667), 3)
+                self._noise_w = round(float(audio_cfg.get("noise_w", 0.8) if audio_cfg.get("noise_w") is not None else 0.8), 3)
+                self._sentence_silence = round(float(audio_cfg.get("sentence_silence", 0.2) if audio_cfg.get("sentence_silence") is not None else 0.2), 3)
 
-                logger.info("PIPER_DAEMON", "Booting background JSON IPC Daemon...")
+                if self._proc is not None and self._proc.poll() is None:
+                    if (self._daemon_model == model_path and
+                        self._daemon_length_scale == self._length_scale and
+                        self._daemon_noise_scale == self._noise_scale and
+                        self._daemon_noise_w == self._noise_w and
+                        self._daemon_sentence_silence == self._sentence_silence):
+                        return
+                    logger.info("PIPER_DAEMON", "Piper settings changed — recycling IPC daemon...")
+                    try:
+                        self._proc.terminate()
+                        self._proc.wait(timeout=2.0)
+                    except Exception:
+                        try: self._proc.kill()
+                        except Exception: pass
+                    self._proc = None
+
+                logger.info("PIPER_DAEMON", f"Booting background JSON IPC Daemon (model={os.path.basename(model_path)}, len_scale={self._length_scale})...")
 
                 cmd = [
-                    piper_path, "-m", model_path, "--json-input", "--debug"
+                    piper_path, "-m", model_path,
+                    "--length_scale", str(self._length_scale),
+                    "--noise_scale", str(self._noise_scale),
+                    "--noise_w", str(self._noise_w),
+                    "--sentence_silence", str(self._sentence_silence),
+                    "--json-input", "--debug"
                 ]
                 
                 kwargs = {
@@ -120,6 +143,12 @@ class PiperEngine(BaseTTSEngine):
                     
                 self._ready_event.clear()
                 self._proc = subprocess.Popen(cmd, **kwargs)
+
+                self._daemon_model = model_path
+                self._daemon_length_scale = self._length_scale
+                self._daemon_noise_scale = self._noise_scale
+                self._daemon_noise_w = self._noise_w
+                self._daemon_sentence_silence = self._sentence_silence
 
                 if self._stderr_thread is None or not self._stderr_thread.is_alive():
                     self._stderr_thread = threading.Thread(target=self._read_stderr_loop, daemon=True)
@@ -148,141 +177,211 @@ class PiperEngine(BaseTTSEngine):
             except Exception:
                 break
 
-    def generate_wav(self, text: str, filepath: str, **kwargs) -> bool:
-        """
-        Requests Piper to generate a WAV via JSON IPC and waits for completion.
-        Used by WebUI to get instant responses instead of subprocess lag.
-        """
-        if not text: return False
-        
-        self._ensure_running()
-        if self._proc is None or self._proc.poll() is not None:
-            logger.error("PIPER_DAEMON", "Piper IPC Daemon is dead.")
-            return False
+    @staticmethod
+    def _resolve_piper_params(session_overrides=None):
+        """Resolves binary path, model path, length_scale, noise and sentence silence."""
+        from hecos.core.audio.device_manager import get_audio_config
+        audio_cfg = get_audio_config()
+        root = _get_project_root()
+        overrides = session_overrides or {}
 
-        # Block until the ONNX model is fully loaded (takes ~4-20s depending on hardware)
-        if not self._ready_event.wait(timeout=30.0):
-            logger.error("PIPER_DAEMON", "Piper did not initialize within 30s.")
-            return False
+        default_piper = os.path.join(root, "bin", "piper", "piper.exe")
+        default_model = os.path.join(root, "bin", "piper", "it_IT-paola-medium.onnx")
 
-        clean = text.replace('"', "").replace('\n', " ").strip()
-        if not clean: return False
+        piper_path = overrides.get("piper_path") or audio_cfg.get("piper_path", default_piper)
+        if not os.path.isfile(piper_path):
+            piper_path = default_piper
 
-        req = {
-            "text": clean,
-            "output_file": filepath
+        model_candidate = (
+            overrides.get("onnx_model")
+            or overrides.get("piper_model")
+            or overrides.get("tts_voice")
+            or audio_cfg.get("onnx_model", default_model)
+        )
+        if not model_candidate or not os.path.isfile(str(model_candidate)):
+            basename = os.path.basename(str(model_candidate))
+            if basename and os.path.isfile(os.path.join(root, "bin", "piper", basename)):
+                model_candidate = os.path.join(root, "bin", "piper", basename)
+            else:
+                model_candidate = default_model
+        model_path = model_candidate
+
+        def _get_num(*keys, default=0.0):
+            for k in keys:
+                if k in overrides and overrides[k] is not None:
+                    try:
+                        return float(overrides[k])
+                    except (ValueError, TypeError):
+                        pass
+                if k in audio_cfg and audio_cfg[k] is not None:
+                    try:
+                        return float(audio_cfg[k])
+                    except (ValueError, TypeError):
+                        pass
+            return default
+
+        speed = _get_num("speed", "piper_speed", default=1.0)
+        if speed <= 0:
+            speed = 1.0
+        length_scale = round(1.0 / speed, 3)
+
+        noise_scale = round(_get_num("noise_scale", "noise", "piper_noise", default=0.667), 3)
+        noise_w = round(_get_num("noise_w", "noisew", "piper_noisew", default=0.8), 3)
+        sentence_silence = round(_get_num("sentence_silence", "silence", "piper_silence", default=0.2), 3)
+        volume = round(_get_num("volume", "piper_volume", default=1.0), 2)
+
+        timeout = _get_num("piper_timeout", default=180.0)
+
+        return {
+            "piper_path": piper_path,
+            "model_path": model_path,
+            "speed": speed,
+            "length_scale": length_scale,
+            "noise_scale": noise_scale,
+            "noise_w": noise_w,
+            "sentence_silence": sentence_silence,
+            "volume": volume,
+            "timeout": timeout,
         }
 
-        os.makedirs(os.path.dirname(os.path.abspath(filepath)), exist_ok=True)
-        self._synth_complete_event.clear()
+    @staticmethod
+    def _adjust_volume(filepath: str, volume: float) -> bool:
+        """Scales WAV volume with soft-knee limiting to prevent digital clipping."""
+        if not filepath or not os.path.isfile(filepath):
+            return False
+        if abs(volume - 1.0) < 0.01:
+            return True
         try:
-            with self._lock:
-                self._proc.stdin.write((json.dumps(req) + "\n").encode("utf-8"))
-                self._proc.stdin.flush()
+            import wave
+            import numpy as np
+            with wave.open(filepath, "rb") as w:
+                params = w.getparams()
+                frames = w.readframes(params.nframes)
+            if params.sampwidth == 2:
+                data = np.frombuffer(frames, dtype=np.int16).astype(np.float32)
+                amplified = data * volume
+                if volume > 1.0:
+                    thresh = 24000.0
+                    limit = 32000.0
+                    headroom = limit - thresh
+                    signs = np.sign(amplified)
+                    abs_amp = np.abs(amplified)
+                    mask = abs_amp > thresh
+                    res = np.where(mask, thresh + headroom * np.tanh((abs_amp - thresh) / headroom), abs_amp)
+                    clamped = np.clip(signs * res, -32767, 32767).astype(np.int16)
+                else:
+                    clamped = np.clip(amplified, -32767, 32767).astype(np.int16)
+
+                with wave.open(filepath, "wb") as w:
+                    w.setparams(params)
+                    w.writeframes(clamped.tobytes())
+                return True
+            return False
         except Exception as e:
-            logger.error("PIPER_DAEMON", f"IPC Write Error: {e}")
+            logger.warning("PIPER_DAEMON", f"Volume adjustment error for {filepath}: {e}")
             return False
 
-        # Wait max 120s for the wav to be completed (long texts can take more time)
-        waited = self._synth_complete_event.wait(120.0)
-        return waited and os.path.exists(filepath)
-
-    def generate_wav_chunked(self, text: str, filepath: str, progress_callback=None, **kwargs) -> bool:
+    def generate_wav(self, text: str, filepath: str, session_overrides=None, **kwargs) -> bool:
         """
-        Splits text into sentences, generates temp wav files, and merges them.
-        Prevents IPC timeouts on very long texts.
+        Synthesizes audio directly to a WAV file via Piper CLI with full support
+        for runtime parameters (speed, noise_scale, noise_w, sentence_silence, onnx_model).
         """
-        if not text: return False
-        
-        self._ensure_running()
-        if self._proc is None or self._proc.poll() is not None:
-            logger.error("PIPER_DAEMON", "Piper IPC Daemon is dead.")
-            return False
-
-        if not self._ready_event.wait(timeout=30.0):
-            logger.error("PIPER_DAEMON", "Piper did not initialize within 30s.")
+        if not text:
             return False
 
         clean = text.replace('"', "").replace('\n', " ").strip()
-        if not clean: return False
+        if not clean:
+            return False
 
-        import re
-        raw = re.split(r'(?<=[.!?…])\s+|(?<=[—\-]{2})\s*', clean)
-        sentences = [r.strip() for r in raw if r.strip()]
-        
-        root = _get_project_root()
-        temp_dir = os.path.join(root, "hecos", "media", "audio", "temp_tts")
-        os.makedirs(temp_dir, exist_ok=True)
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        
-        temp_files = []
-        success = True
-        
-        total = len(sentences)
-        self._stop_flag = False
-        
+        overrides = session_overrides or kwargs.get("session_overrides") or {}
+        params = self._resolve_piper_params(overrides)
+
+        piper_bin = params["piper_path"]
+        model_file = params["model_path"]
+
+        if not os.path.isfile(piper_bin) or not os.path.isfile(model_file):
+            logger.error("PIPER_DAEMON", f"Missing piper binary ({piper_bin}) or model ({model_file})")
+            return False
+
+        os.makedirs(os.path.dirname(os.path.abspath(filepath)), exist_ok=True)
+
+        cmd = [
+            piper_bin,
+            "-m", model_file,
+            "-f", filepath,
+            "--length_scale", str(params["length_scale"]),
+            "--noise_scale", str(params["noise_scale"]),
+            "--noise_w", str(params["noise_w"]),
+            "--sentence_silence", str(params["sentence_silence"]),
+        ]
+
+        logger.info("PIPER_DAEMON", f"CLI synth: model={os.path.basename(model_file)}, len_scale={params['length_scale']}, noise={params['noise_scale']}, noisew={params['noise_w']}, silence={params['sentence_silence']}")
+
+        kwargs_proc = {
+            "stdin": subprocess.PIPE,
+            "stdout": subprocess.DEVNULL,
+            "stderr": subprocess.PIPE,
+            "cwd": os.path.dirname(piper_bin),
+        }
+        if sys.platform == "win32":
+            kwargs_proc["creationflags"] = 0x08000000  # CREATE_NO_WINDOW
+
         try:
-            for i, s in enumerate(sentences):
-                if self._stop_flag: 
-                    success = False
-                    break
-                    
-                if progress_callback:
-                    progress_callback(i, total)
-                    
-                uid = uuid.uuid4().hex[:8]
-                tmp_wav = os.path.join(temp_dir, f"chunk_{uid}.wav")
-                
-                req = {"text": s, "output_file": tmp_wav}
-                self._synth_complete_event.clear()
-                
-                with self._lock:
-                    if self._proc and self._proc.poll() is None:
-                        try:
-                            self._proc.stdin.write((json.dumps(req) + "\n").encode('utf-8'))
-                            self._proc.stdin.flush()
-                        except: 
-                            success = False
-                            break
-                            
-                waited = self._synth_complete_event.wait(30.0)
-                if not waited or not os.path.exists(tmp_wav) or os.path.getsize(tmp_wav) <= 44:
-                    logger.error("PIPER_DAEMON", f"Timeout or failure waiting for TTS chunk synthesis: {s}")
-                    success = False
-                    break
-                    
-                temp_files.append(tmp_wav)
-            
-            if success and temp_files:
-                # Merge WAV files
+            proc = subprocess.Popen(cmd, **kwargs_proc)
+            _, err = proc.communicate(input=clean.encode("utf-8"), timeout=params["timeout"])
+            if proc.returncode != 0:
+                err_msg = err.decode("utf-8", errors="ignore") if err else "Unknown error"
+                logger.error("PIPER_DAEMON", f"Piper CLI synthesis failed (RC={proc.returncode}): {err_msg}")
+                root = _get_project_root()
+                fallback_m = os.path.join(root, "bin", "piper", "it_IT-paola-medium.onnx")
+                if model_file != fallback_m and os.path.isfile(fallback_m):
+                    logger.warning("PIPER_DAEMON", f"Retrying with fallback model: {fallback_m}")
+                    cmd[2] = fallback_m
+                    proc = subprocess.Popen(cmd, **kwargs_proc)
+                    _, err = proc.communicate(input=clean.encode("utf-8"), timeout=params["timeout"])
+            success = os.path.isfile(filepath) and os.path.getsize(filepath) > 44
+            if success and params.get("volume") and abs(params["volume"] - 1.0) >= 0.01:
+                self._adjust_volume(filepath, params["volume"])
+            return success
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            logger.error("PIPER_DAEMON", f"Piper CLI synthesis timed out after {params['timeout']}s")
+            return False
+        except Exception as exc:
+            logger.error("PIPER_DAEMON", f"Piper CLI synthesis error: {exc}")
+            return False
+
+    def generate_wav_chunked(self, text: str, filepath: str, progress_callback=None, on_chunk_ready=None, session_overrides=None, **kwargs) -> bool:
+        """
+        Generates WAV audio respecting speed and acoustic overrides, reporting progress and chunk events.
+        """
+        if not text:
+            return False
+
+        overrides = session_overrides or kwargs.get("session_overrides") or {}
+
+        if progress_callback:
+            try:
+                progress_callback(0, 1)
+            except Exception:
+                pass
+
+        success = self.generate_wav(text, filepath, session_overrides=overrides, **kwargs)
+
+        if success:
+            if progress_callback:
                 try:
-                    import wave
-                    data = []
-                    params = None
-                    for tmp in temp_files:
-                        with wave.open(tmp, 'rb') as wf:
-                            if params is None:
-                                params = wf.getparams()
-                            data.append(wf.readframes(wf.getnframes()))
-                            
-                    with wave.open(filepath, 'wb') as wf:
-                        wf.setparams(params)
-                        for d in data:
-                            wf.writeframes(d)
-                except Exception as e:
-                    logger.error("PIPER_DAEMON", f"Error merging chunked WAVs: {e}")
-                    success = False
-        finally:
-            # Cleanup temp files
-            for tmp in temp_files:
+                    progress_callback(1, 1)
+                except Exception:
+                    pass
+            if on_chunk_ready and os.path.exists(filepath):
                 try:
-                    if os.path.exists(tmp): os.remove(tmp)
-                except: pass
-                
-        if progress_callback and success:
-            progress_callback(total, total)
-            
-        return success and os.path.exists(filepath)
+                    with open(filepath, "rb") as _f:
+                        _cb = _f.read()
+                    on_chunk_ready(0, 1, filepath, _cb)
+                except Exception:
+                    pass
+        return success
 
     def speak(self, text: str, state=None, _run_id=None, _timeout=0, _start=0, session_overrides=None, **kwargs):
         """
@@ -363,8 +462,12 @@ class PiperEngine(BaseTTSEngine):
                             frames = wf.readframes(wf.getnframes())
                             import numpy as np
                             pcm = np.frombuffer(frames, dtype="int16")
+                            vol = float(audio_cfg.get("volume", 1.0) or 1.0)
+                            pcm_f = pcm.astype("float32") / 32768.0
+                            if abs(vol - 1.0) >= 0.01:
+                                pcm_f = np.clip(pcm_f * vol, -1.0, 1.0)
                             # Non-blocking play with cooperative checks
-                            sd.play(pcm.astype("float32") / 32768.0, samplerate=wf.getframerate())
+                            sd.play(pcm_f, samplerate=wf.getframerate())
                             duration = len(pcm) / wf.getframerate()
                             end_time = time.time() + duration
                             while time.time() < end_time:

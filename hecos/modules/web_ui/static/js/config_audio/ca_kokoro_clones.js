@@ -66,7 +66,7 @@
             sources.forEach(src => {
                 const opt = document.createElement('option');
                 opt.value = src.filename;
-                const sizeKb = Math.round((src.size || 0) / 1024);
+                const sizeKb = src.size_kb !== undefined ? Math.round(src.size_kb) : Math.round((src.size || src.size_bytes || 0) / 1024);
                 opt.textContent = `${src.filename} (${sizeKb} KB)`;
                 select.appendChild(opt);
             });
@@ -158,6 +158,8 @@
         const customName = nameInput ? nameInput.value.trim() : '';
         const langPrefix = langSelect ? langSelect.value : 'af';
         const displayTitle = titleInput ? titleInput.value.trim() : '';
+        const prosodySelect = document.getElementById('kokoro-clone-prosody-select');
+        const prosodyMode = prosodySelect ? prosodySelect.value : 'auto';
 
         if (!wavFilename) {
             alert('Please select a reference WAV audio track to clone.');
@@ -185,7 +187,8 @@
                     wav_filename: wavFilename,
                     custom_name: customName,
                     lang_prefix: langPrefix,
-                    display_title: displayTitle
+                    display_title: displayTitle,
+                    prosody_mode: prosodyMode
                 })
             });
 
@@ -244,7 +247,7 @@
 
                 const langBadge = getLangBadge(v.lang_prefix);
                 const title = v.display_title || v.voice_id;
-                const sizeKb = Math.round((v.size || 0) / 1024);
+                const sizeKb = v.size_kb !== undefined ? Math.round(v.size_kb) : Math.round((v.size || v.size_bytes || 0) / 1024);
 
                 item.innerHTML = `
                     <div style="display:flex; align-items:center; gap:10px; min-width:220px; flex:1;">
@@ -432,6 +435,9 @@
                     sel.appendChild(opt);
                 });
                 if (currentVal) sel.value = currentVal;
+            }
+            if (typeof window.syncKokoroBlendVoiceOptions === 'function') {
+                window.syncKokoroBlendVoiceOptions();
             }
         } catch (err) {
             console.warn('[KokoroClones] Failed to reload voices dropdown:', err);

@@ -130,12 +130,13 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
             translations  = get_translator().get_translations()
             zconfig_data  = cfg_mgr.config
             from flask import make_response
+            from hecos.core.system.version import _get_version
             rendered = render_template(
                 "index.html",
                 zconfig=zconfig_data,
                 zoptions={},
                 translations=translations,
-                version="20261015_4",
+                version=_get_version(),
             )
             _ui_cache[cache_key] = (now_ts, rendered)
             if len(_ui_cache) > 10:

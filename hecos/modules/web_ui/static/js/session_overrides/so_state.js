@@ -149,6 +149,8 @@ window.soLoadData = async function() {
             window.soState.xttsInferencePresets = audioConfData.config.xtts_inference_presets || {};
             window.soState.fishSpeechPresets = audioConfData.config.fish_speech_presets || {};
             window.soState.fishSpeechInferencePresets = audioConfData.config.fish_speech_inference_presets || {};
+            window.soState.kokoroPresets = audioConfData.config.kokoro_presets || {};
+            window.soState.kokoroInferencePresets = audioConfData.config.kokoro_inference_presets || {};
         }
 
         
@@ -338,6 +340,17 @@ window.soLoadActiveSessionState = async function() {
                 if (cfg.voice.fish_chunk_length !== undefined) setVal('so-fish-chunk-length', cfg.voice.fish_chunk_length);
                 if (cfg.voice.fish_max_new_tokens !== undefined) setVal('so-fish-max-tokens', cfg.voice.fish_max_new_tokens);
                 if (cfg.voice.fish_volume !== undefined) setVal('so-fish-volume', cfg.voice.fish_volume);
+            }
+
+            if (cfg.voice?.kokoro_preset) document.getElementById('so-kokoro-preset-select').value = cfg.voice.kokoro_preset;
+            if (cfg.voice?.kokoro_inference_preset) document.getElementById('so-kokoro-inference-preset-select').value = cfg.voice.kokoro_inference_preset;
+            if (cfg.voice?.kokoro_blend_voice) document.getElementById('so-kokoro-blend-voice').value = cfg.voice.kokoro_blend_voice;
+            if (cfg.voice) {
+                if (cfg.voice.kokoro_speed !== undefined) setVal('so-kokoro-speed', cfg.voice.kokoro_speed);
+                if (cfg.voice.kokoro_silence !== undefined) setVal('so-kokoro-silence', cfg.voice.kokoro_silence);
+                if (cfg.voice.kokoro_alpha !== undefined) setVal('so-kokoro-alpha', cfg.voice.kokoro_alpha);
+                if (cfg.voice.kokoro_beta !== undefined) setVal('so-kokoro-beta', cfg.voice.kokoro_beta);
+                if (cfg.voice.kokoro_volume !== undefined) setVal('so-kokoro-volume', cfg.voice.kokoro_volume);
             }
 
         }

@@ -89,6 +89,8 @@ window.sfLoadData = async function() {
             window.sfState.xttsInferencePresets = audioConfData.config.xtts_inference_presets || {};
             window.sfState.fishSpeechPresets = audioConfData.config.fish_speech_presets || {};
             window.sfState.fishSpeechInferencePresets = audioConfData.config.fish_speech_inference_presets || {};
+            window.sfState.kokoroPresets = audioConfData.config.kokoro_presets || {};
+            window.sfState.kokoroInferencePresets = audioConfData.config.kokoro_inference_presets || {};
         }
         
         // Populate select lists
@@ -165,7 +167,16 @@ window.sfLoadGlobalState = async function() {
                     fish_top_p: cfg.audio?.fish_speech?.top_p,
                     fish_repetition_penalty: cfg.audio?.fish_speech?.repetition_penalty,
                     fish_chunk_length: cfg.audio?.fish_speech?.chunk_length,
-                    fish_max_new_tokens: cfg.audio?.fish_speech?.max_new_tokens
+                    fish_max_new_tokens: cfg.audio?.fish_speech?.max_new_tokens,
+                    kokoro_preset: cfg.ai?.kokoro_preset || (cfg.audio?.kokoro?.current_preset !== 'default' ? cfg.audio?.kokoro?.current_preset : "") || "",
+                    kokoro_inference_preset: cfg.audio?.kokoro?.current_inference_preset || "",
+                    kokoro_voice: cfg.audio?.kokoro?.voice || "",
+                    kokoro_blend_voice: cfg.audio?.kokoro?.blend_voice || "",
+                    kokoro_speed: cfg.audio?.kokoro?.speed,
+                    kokoro_alpha: cfg.audio?.kokoro?.alpha,
+                    kokoro_beta: cfg.audio?.kokoro?.beta,
+                    kokoro_silence: cfg.audio?.kokoro?.sentence_silence,
+                    kokoro_volume: cfg.audio?.kokoro?.volume
                 },
                 inference: {
                     temperature: bdict.temperature,

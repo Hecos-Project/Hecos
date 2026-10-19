@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <div class="grid-2" style="gap:10px; margin-bottom:12px;">
+    <div class="grid-2" style="gap:10px; margin-bottom:10px;">
       <!-- Voice ID / Custom Name -->
       <div class="field" style="margin:0;">
         <label style="font-size:11px;">3. Voice Identifier (auto-prefixed)</label>
@@ -97,6 +97,19 @@
         <label style="font-size:11px;">4. Descriptive Title (optional)</label>
         <input type="text" id="kokoro-clone-title-input" placeholder="e.g. Cine Witch (Enchantress)" style="background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:11px; width:100%;">
       </div>
+    </div>
+
+    <!-- Prosody Alignment Setting -->
+    <div class="field" style="margin-bottom:12px;">
+      <label style="font-size:11px; display:flex; justify-content:space-between; align-items:center;">
+        <span>5. Prosody & Cadence Alignment</span>
+        <span style="font-size:10px; color:var(--muted);">Controls intonation and vowel timing</span>
+      </label>
+      <select id="kokoro-clone-prosody-select" class="form-control" style="background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:11px; width:100%;">
+        <option value="auto" selected>Auto-Adaptive (Native cadence for IT/ES/FR, Tuner match for EN)</option>
+        <option value="native">Force Native Language Prosody (Authentic rhythm e.g. Nicola/Sara for Italian)</option>
+        <option value="inno_blend">Experimental Inno-Tuner Blend (Convex blend over English voice actors)</option>
+      </select>
     </div>
 
     <!-- Action Bar -->

@@ -303,14 +303,26 @@ class KokoroEngine(BaseTTSEngine):
 
     # ── Voice resolution ──────────────────────────────────────────────────────
 
+    def _get_preset_dict(self, overrides: dict) -> dict:
+        k_preset = overrides.get("kokoro_preset")
+        if k_preset and k_preset != "default":
+            try:
+                from hecos.core.audio.device_manager import get_audio_config
+                cfg = get_audio_config()
+                return cfg.get("kokoro_presets", {}).get(k_preset) or {}
+            except Exception:
+                pass
+        return {}
+
     def _get_voice(self, kwargs: dict) -> str:
         """Resolve voice ID from kwargs or global audio config."""
         # 1. Direct kwarg
-        voice = kwargs.get("tts_voice") or kwargs.get("voice")
+        voice = kwargs.get("tts_voice") or kwargs.get("voice") or kwargs.get("kokoro_voice")
         # 2. session_overrides dict (passed by TTSManager from quick panel / chat)
         if not voice or voice == "default":
             overrides = kwargs.get("session_overrides") or {}
-            voice = overrides.get("tts_voice")
+            p_dict = self._get_preset_dict(overrides)
+            voice = overrides.get("kokoro_voice") or overrides.get("tts_voice") or p_dict.get("voice")
         # 3. Global audio config fallback
         if not voice or voice == "default":
             try:
@@ -351,10 +363,10 @@ class KokoroEngine(BaseTTSEngine):
 
     def _get_speed(self, kwargs: dict) -> float:
         """Resolve speech speed from kwargs or global audio config."""
-        speed = kwargs.get("speed")
+        speed = kwargs.get("speed") or kwargs.get("kokoro_speed")
         if not speed:
             overrides = kwargs.get("session_overrides") or {}
-            speed = overrides.get("speed")
+            speed = overrides.get("speed") or overrides.get("kokoro_speed") or self._get_preset_dict(overrides).get("speed")
         if speed:
             try:
                 return float(speed)
@@ -367,13 +379,161 @@ class KokoroEngine(BaseTTSEngine):
         except Exception:
             return 1.0
 
+    def _get_alpha(self, kwargs: dict) -> float:
+        """Resolve style / timbre weight (alpha) from kwargs or audio config."""
+        import numpy as np
+        alpha = kwargs.get("alpha") or kwargs.get("kokoro_alpha")
+        if alpha is None:
+            overrides = kwargs.get("session_overrides") or {}
+            alpha = overrides.get("alpha") or overrides.get("kokoro_alpha") or self._get_preset_dict(overrides).get("alpha")
+        if alpha is None:
+            try:
+                from hecos.core.audio.device_manager import get_audio_config
+                cfg = get_audio_config()
+                alpha = cfg.get("kokoro", {}).get("alpha", 1.0)
+            except Exception:
+                alpha = 1.0
+        try:
+            return float(np.clip(float(alpha), 0.0, 2.0))
+        except (TypeError, ValueError):
+            return 1.0
+
+    def _get_beta(self, kwargs: dict) -> float:
+        """Resolve prosody / cadence weight (beta) from kwargs or audio config."""
+        import numpy as np
+        beta = kwargs.get("beta") or kwargs.get("kokoro_beta")
+        if beta is None:
+            overrides = kwargs.get("session_overrides") or {}
+            beta = overrides.get("beta") or overrides.get("kokoro_beta") or self._get_preset_dict(overrides).get("beta")
+        if beta is None:
+            try:
+                from hecos.core.audio.device_manager import get_audio_config
+                cfg = get_audio_config()
+                beta = cfg.get("kokoro", {}).get("beta", 1.0)
+            except Exception:
+                beta = 1.0
+        try:
+            return float(np.clip(float(beta), 0.0, 2.0))
+        except (TypeError, ValueError):
+            return 1.0
+
+    def _get_blend_voice(self, kwargs: dict) -> str:
+        """Resolve secondary blend voice from kwargs or audio config."""
+        blend = kwargs.get("blend_voice") or kwargs.get("kokoro_blend_voice")
+        if blend is None:
+            overrides = kwargs.get("session_overrides") or {}
+            blend = overrides.get("blend_voice") or overrides.get("kokoro_blend_voice") or self._get_preset_dict(overrides).get("blend_voice")
+        if blend is None:
+            try:
+                from hecos.core.audio.device_manager import get_audio_config
+                cfg = get_audio_config()
+                blend = cfg.get("kokoro", {}).get("blend_voice", "")
+            except Exception:
+                blend = ""
+        return str(blend).strip() if blend else ""
+
+    def _get_lang_code(self, kwargs: dict, voice_id: str) -> str:
+        """Resolve G2P pipeline language code ('auto' or specific 'i','a','b','e','f','j','z','p','h')."""
+        lang = kwargs.get("lang_code") or kwargs.get("kokoro_lang")
+        if not lang:
+            overrides = kwargs.get("session_overrides") or {}
+            lang = overrides.get("lang_code") or overrides.get("kokoro_lang")
+        if not lang:
+            try:
+                from hecos.core.audio.device_manager import get_audio_config
+                cfg = get_audio_config()
+                lang = cfg.get("kokoro", {}).get("lang_code", "auto")
+            except Exception:
+                lang = "auto"
+        lang = str(lang).strip().lower()
+        if lang and lang != "auto" and lang in "abefhijpz":
+            return lang
+
+        # Auto fallback based on voice ID prefix or custom voice metadata
+        try:
+            from .kokoro.voice_manager import KokoroVoiceManager
+            _, detected = KokoroVoiceManager.resolve_voice_pack(voice_id)
+            if detected:
+                return detected
+        except Exception:
+            pass
+        return voice_id[0] if (voice_id and len(voice_id) > 0 and voice_id[0] in "abefhijpz") else "a"
+
+    def _resolve_voice_tensor(self, pipeline, voice_id: str, blend_voice: str = "", alpha: float = 1.0, beta: float = 1.0):
+        """
+        Loads primary voice and blends with optional secondary voice or scales style dynamics.
+        Returns a torch.FloatTensor or the voice string identifier.
+        """
+        import torch
+        import numpy as np
+
+        def _load_one(vid):
+            if not vid:
+                return None
+            if isinstance(vid, torch.Tensor):
+                return vid
+            try:
+                from .kokoro.voice_manager import KokoroVoiceManager
+                p, _ = KokoroVoiceManager.resolve_voice_pack(vid)
+                if p is not None:
+                    return p
+            except Exception:
+                pass
+            if pipeline is not None:
+                try:
+                    return pipeline.load_voice(vid)
+                except Exception as err:
+                    logger.warning("KOKORO", f"Could not load voice '{vid}': {err}")
+            return None
+
+        pack1 = _load_one(voice_id)
+        if pack1 is None:
+            logger.warning("KOKORO", f"Falling back to default af_heart voice tensor.")
+            pack1 = _load_one("af_heart")
+            if pack1 is None:
+                return voice_id
+
+        if not isinstance(pack1, torch.Tensor):
+            return voice_id
+
+        if pack1.ndim == 2:
+            pack1 = pack1.unsqueeze(1)
+
+        # Check if secondary voice blending is requested
+        if blend_voice and blend_voice.strip() and blend_voice.strip() != voice_id:
+            pack2 = _load_one(blend_voice.strip())
+            if pack2 is not None and isinstance(pack2, torch.Tensor):
+                if pack2.ndim == 2:
+                    pack2 = pack2.unsqueeze(1)
+                
+                # Alpha (timbre) and Beta (prosody) interpolation
+                a = float(np.clip(alpha, 0.0, 1.0))
+                b = float(np.clip(beta, 0.0, 1.0))
+                p1 = pack1.to(dtype=torch.float32, device="cpu")
+                p2 = pack2.to(dtype=torch.float32, device="cpu")
+                blended = torch.zeros_like(p1)
+                blended[:, :, :128] = a * p1[:, :, :128] + (1.0 - a) * p2[:, :, :128]
+                blended[:, :, 128:] = b * p1[:, :, 128:] + (1.0 - b) * p2[:, :, 128:]
+                return blended
+
+        # Single voice mode: check if alpha/beta dynamic scaling is applied
+        if (alpha != 1.0 or beta != 1.0) and isinstance(pack1, torch.Tensor):
+            scaled = pack1.clone().to(dtype=torch.float32, device="cpu")
+            if alpha != 1.0:
+                scaled[:, :, :128] = scaled[:, :, :128] * float(alpha)
+            if beta != 1.0:
+                scaled[:, :, 128:] = scaled[:, :, 128:] * float(beta)
+            return scaled
+
+        return pack1
+
     def _get_volume(self, kwargs: dict) -> float:
         """Resolve output volume factor from kwargs, session_overrides or audio config."""
         import numpy as np
         vol = kwargs.get("volume") or kwargs.get("kokoro_volume")
         if vol is None:
             overrides = kwargs.get("session_overrides") or {}
-            vol = overrides.get("volume") or overrides.get("kokoro_volume")
+            vol = overrides.get("volume") or overrides.get("kokoro_volume") or self._get_preset_dict(overrides).get("volume")
         if vol is None:
             try:
                 from hecos.core.audio.device_manager import get_audio_config
@@ -393,7 +553,10 @@ class KokoroEngine(BaseTTSEngine):
             norm = kwargs.get("kokoro_normalize")
         if norm is None:
             overrides = kwargs.get("session_overrides") or {}
+            p_norm = self._get_preset_dict(overrides).get("normalize")
             norm = overrides.get("normalize") if overrides.get("normalize") is not None else overrides.get("kokoro_normalize")
+            if norm is None:
+                norm = p_norm
         if norm is None:
             try:
                 from hecos.core.audio.device_manager import get_audio_config
@@ -410,13 +573,20 @@ class KokoroEngine(BaseTTSEngine):
             return False
 
         voice = self._get_voice(kwargs)
-        voice_target, lang_code = self._resolve_voice_and_lang(voice)
+        blend_voice = self._get_blend_voice(kwargs)
+        alpha = self._get_alpha(kwargs)
+        beta = self._get_beta(kwargs)
         speed = self._get_speed(kwargs)
         volume = self._get_volume(kwargs)
         normalize = self._get_normalize(kwargs)
+        lang_code = self._get_lang_code(kwargs, voice)
         lang_name = _LANG_NAMES.get(lang_code, lang_code)
 
-        logger.info("KOKORO", f"generate_wav: voice='{voice}', lang='{lang_name}', speed={speed}, volume={volume}, norm={normalize}")
+        logger.info(
+            "KOKORO",
+            f"generate_wav: voice='{voice}', blend='{blend_voice}', alpha={alpha}, beta={beta}, "
+            f"lang='{lang_name}' ({lang_code}), speed={speed}, volume={volume}, norm={normalize}"
+        )
 
         # Italian (and other non-native langs) require espeak-ng
         if lang_code not in _MISAKI_NATIVE_LANGS and not _espeak_available():
@@ -433,11 +603,16 @@ class KokoroEngine(BaseTTSEngine):
         if not pipeline:
             return False
 
+        voice_target = self._resolve_voice_tensor(pipeline, voice, blend_voice, alpha, beta)
+
         try:
             import numpy as np
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-            sentence_silence = kwargs.get("sentence_silence")
+            sentence_silence = kwargs.get("sentence_silence") or kwargs.get("kokoro_silence")
+            if sentence_silence is None:
+                overrides = kwargs.get("session_overrides") or {}
+                sentence_silence = overrides.get("sentence_silence") or overrides.get("kokoro_silence") or self._get_preset_dict(overrides).get("sentence_silence")
             if sentence_silence is None:
                 try:
                     from hecos.core.audio.device_manager import get_audio_config
@@ -503,13 +678,20 @@ class KokoroEngine(BaseTTSEngine):
         if session_overrides:
             kwargs["session_overrides"] = session_overrides
         voice = self._get_voice(kwargs)
-        voice_target, lang_code = self._resolve_voice_and_lang(voice)
+        blend_voice = self._get_blend_voice(kwargs)
+        alpha = self._get_alpha(kwargs)
+        beta = self._get_beta(kwargs)
         speed = self._get_speed(kwargs)
         volume = self._get_volume(kwargs)
         normalize = self._get_normalize(kwargs)
+        lang_code = self._get_lang_code(kwargs, voice)
         lang_name = _LANG_NAMES.get(lang_code, lang_code)
 
-        logger.info("KOKORO", f"speak: voice='{voice}', lang='{lang_name}', speed={speed}, volume={volume}, norm={normalize}")
+        logger.info(
+            "KOKORO",
+            f"speak: voice='{voice}', blend='{blend_voice}', alpha={alpha}, beta={beta}, "
+            f"lang='{lang_name}' ({lang_code}), speed={speed}, volume={volume}, norm={normalize}"
+        )
 
         if lang_code not in _MISAKI_NATIVE_LANGS and not _espeak_available():
             logger.error(
@@ -524,6 +706,8 @@ class KokoroEngine(BaseTTSEngine):
         if not pipeline:
             logger.warning("KOKORO", "Pipeline unavailable; skipping speak().")
             return
+
+        voice_target = self._resolve_voice_tensor(pipeline, voice, blend_voice, alpha, beta)
 
         self._stop_flag = False
         self._is_speaking = True

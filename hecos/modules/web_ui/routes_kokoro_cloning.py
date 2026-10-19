@@ -45,18 +45,20 @@ def init_kokoro_cloning_routes(app, cfg_mgr, root_dir, logger):
             custom_name = (data.get("custom_name") or "").strip()
             lang_prefix = (data.get("lang_prefix") or "af").strip()
             display_title = (data.get("display_title") or "").strip()
+            prosody_mode = (data.get("prosody_mode") or "auto").strip()
 
             if not wav_filename:
                 return jsonify({"ok": False, "error": "wav_filename is required"}), 400
             if not custom_name:
                 return jsonify({"ok": False, "error": "custom_name is required"}), 400
 
-            logger.info(f"[KokoroCloner] Starting enrollment for '{wav_filename}' -> '{custom_name}' ({lang_prefix})...")
+            logger.info(f"[KokoroCloner] Starting enrollment for '{wav_filename}' -> '{custom_name}' ({lang_prefix}, prosody={prosody_mode})...")
             result = KokoroVoiceManager.create_clone(
                 wav_filename=wav_filename,
                 custom_name=custom_name,
                 lang_prefix=lang_prefix,
-                display_title=display_title
+                display_title=display_title,
+                prosody_mode=prosody_mode
             )
             return jsonify(result)
         except Exception as exc:

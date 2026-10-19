@@ -112,7 +112,8 @@ def update_status_bar_in_place(config, voice_status, listening_status, system_st
         backend_type, model = "N/D", "N/D"
         
     ai_conf = config.get('ai') or {}
-    soul = ai_conf.get('active_personality', 'N/D').replace('.yaml', '')
+    raw_soul = ai_conf.get('active_personality') or 'N/D'
+    soul = raw_soul.replace('.yaml', '').strip() if isinstance(raw_soul, str) and raw_soul.strip() else 'N/D'
     
     mic_str = "ON" if listening_status else f"{Fore.RED}OFF{Fore.WHITE}"
     spk_str = "ON" if voice_status else f"{Fore.RED}OFF{Fore.WHITE}"

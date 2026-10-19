@@ -16,18 +16,30 @@
     </div>
     <div id="v-kokoro-progress-text" style="display: none; margin-top: 4px; color: var(--accent); text-align: right; font-size:11px; font-weight:600;">0%</div>
   </div>
-  <div class="grid-2">
-    <div class="field">
-      <label>Speed</label>
-      <input type="number" id="v-kokoro-speed" min="0.5" max="3" step="0.05">
-    </div>
-    <div class="field">
-      <label>Sentence Silence (s)</label>
-      <input type="number" id="v-kokoro-silence" min="0" max="2" step="0.05">
-    </div>
+  <!-- Configuration Presets -->
+  <div class="grid-2" style="margin-bottom:12px;">
     <div class="field" style="grid-column: span 2;">
-      <label>Default Voice</label>
-      <select id="v-kokoro-voice">
+      <label>Configuration Preset</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select id="v-kokoro-preset" onchange="loadKokoroPreset()" style="flex:1;">
+          <option value="default">Default</option>
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" onclick="saveKokoroPreset()" title="Save as New Preset"><i class="fas fa-plus"></i> New</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="updateKokoroPreset()" title="Update Current Preset"><i class="fas fa-sync-alt"></i> Update</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetKokoroConfig()" title="Reset to Defaults"><i class="fas fa-undo"></i> Reset</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deleteKokoroPreset()" title="Delete Preset"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Primary Voice & G2P Language Mode -->
+  <div class="grid-2" style="margin-bottom:12px;">
+    <div class="field">
+      <label>
+        <i class="fas fa-microphone"></i> Primary Voice
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Base voice or custom cloned style (.pt) for Kokoro speech synthesis."></i>
+      </label>
+      <select id="v-kokoro-voice" onchange="if(typeof syncKokoroBlendVoiceOptions==='function') syncKokoroBlendVoiceOptions();">
         <option value="af_heart">Heart (Female, US)</option>
         <option value="af_alloy">Alloy (Female, US)</option>
         <option value="af_bella">Bella (Female, US)</option>
@@ -50,6 +62,138 @@
         <option value="if_sara">Sara (Female, IT)</option>
         <option value="im_nicola">Nicola (Male, IT)</option>
       </select>
+    </div>
+    <div class="field">
+      <label>
+        <i class="fas fa-language"></i> G2P Language Pipeline
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Grapheme-to-Phoneme linguistic processor. By default, auto-detected from voice prefix (e.g. 'im_' -> Italian, 'af_' -> English). Or manually set to pronounce any language phonemes."></i>
+      </label>
+      <select id="v-kokoro-lang">
+        <option value="auto">Auto-Detect (From Voice Prefix)</option>
+        <option value="i">Italian (it · eSpeak-NG)</option>
+        <option value="a">American English (en-us · Misaki)</option>
+        <option value="b">British English (en-gb · Misaki)</option>
+        <option value="e">Spanish (es · eSpeak-NG)</option>
+        <option value="f">French (fr-fr · eSpeak-NG)</option>
+        <option value="j">Japanese (ja · Misaki)</option>
+        <option value="z">Mandarin Chinese (zh · Misaki)</option>
+        <option value="p">Portuguese (pt-br · eSpeak-NG)</option>
+        <option value="h">Hindi (hi · eSpeak-NG)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Kokoro Inference Parameters Preset -->
+  <div class="grid-2" style="margin-top:12px; margin-bottom:12px;">
+    <div class="field" style="grid-column: span 2;">
+      <label><i class="fas fa-sliders-h"></i> Inference Parameters Preset</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select id="v-kokoro-inference-preset" onchange="loadKokoroInferencePreset()" style="flex:1;">
+          <option value="">-- No Preset Selected --</option>
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" onclick="saveKokoroInferencePreset()" title="Save as New Inference Preset"><i class="fas fa-plus"></i> New</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="updateKokoroInferencePreset()" title="Update Current Inference Preset"><i class="fas fa-sync-alt"></i> Update</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deleteKokoroInferencePreset()" title="Delete Inference Preset"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Speech Speed & Sentence Silence (Inter-Chunk Pause) -->
+  <div class="grid-2" style="margin-bottom:12px;">
+    <div class="field">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:4px;">
+        <label style="margin:0;">
+          <i class="fas fa-tachometer-alt" style="color:var(--accent);"></i> Speech Speed
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Speech rate / pacing modifier. 1.0 = standard rate. Higher values make the voice speak faster, lower values speak slower. Range: 0.5 to 2.5."></i>
+        </label>
+        <div style="display:flex; gap:3px;">
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setKokoroSpeedPreset(0.8)">0.8x</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setKokoroSpeedPreset(1.0)">1.0x</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setKokoroSpeedPreset(1.25)">1.25x</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setKokoroSpeedPreset(1.5)">1.5x</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setKokoroSpeedPreset(1.8)">1.8x</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-kokoro-speed-range" min="0.5" max="2.5" step="0.05" value="1.0" style="flex:1;" oninput="document.getElementById('v-kokoro-speed').value = this.value">
+        <input type="number" id="v-kokoro-speed" min="0.5" max="3.0" step="0.05" value="1.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-kokoro-speed-range').value = this.value">
+      </div>
+    </div>
+    <div class="field">
+      <label>
+        <i class="fas fa-pause"></i> Sentence Silence (s)
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Silence duration inserted between sentences or synthesized text chunks. Range: 0.0s to 1.5s."></i>
+      </label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-kokoro-silence-range" min="0.0" max="1.5" step="0.05" value="0.0" style="flex:1;" oninput="document.getElementById('v-kokoro-silence').value = this.value">
+        <input type="number" id="v-kokoro-silence" min="0.0" max="2.0" step="0.05" value="0.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-kokoro-silence-range').value = this.value">
+      </div>
+    </div>
+  </div>
+
+  <!-- StyleTTS 2 Voice Blending & Dynamics (Alpha / Beta) -->
+  <div class="field" style="background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:14px; margin-bottom:14px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+      <label style="margin:0; font-weight:600; font-size:13px; color:var(--text); display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-layer-group" style="color:var(--accent);"></i> StyleTTS 2 Voice Blending & Dynamics (Alpha & Beta)
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Kokoro is based on StyleTTS 2 with a 256-dimensional style space. You can blend two voices or adjust the balance between timbre and prosody."></i>
+      </label>
+      <span id="kokoro-blend-badge" class="badge-pill" style="font-size:10px; background:rgba(0,180,216,0.15); color:var(--accent); border:1px solid rgba(0,180,216,0.3);">
+        Single Voice Mode
+      </span>
+    </div>
+    
+    <div style="font-size:11px; color:var(--muted); margin-bottom:12px;">
+      Interpolate timbre (tone color) and prosody (cadence / inflection) with a secondary voice, or scale style dynamics.
+    </div>
+
+    <!-- Secondary Voice (Blend Voice) -->
+    <div class="field" style="margin-bottom:12px;">
+      <label style="font-size:11px; margin-bottom:4px;">
+        Secondary Voice (Blend Target)
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Optional second voice to blend with. Leave empty for single voice mode."></i>
+      </label>
+      <select id="v-kokoro-blend-voice" onchange="if(typeof onKokoroBlendVoiceChange==='function') onKokoroBlendVoiceChange();" style="width:100%;">
+        <option value="">-- None (Single Voice Mode) --</option>
+      </select>
+    </div>
+
+    <div class="grid-2">
+      <!-- Alpha: Timbre / Style Weight -->
+      <div class="field">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+          <label style="margin:0; font-size:11px;">
+            <b>Alpha (α)</b> · Timbre Weight
+            <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Controls voice identity and acoustic timbre in the decoder (dimensions 0-127). When blending: 1.0 = 100% Primary Voice, 0.0 = 100% Secondary Voice, 0.5 = 50/50 mix. When single voice: scales timbre texture strength."></i>
+          </label>
+          <span id="kokoro-alpha-label" style="font-size:10px; color:var(--accent); font-family:monospace;">1.00</span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-kokoro-alpha-range" min="0.0" max="1.5" step="0.05" value="1.0" style="flex:1;" oninput="document.getElementById('v-kokoro-alpha').value = this.value; document.getElementById('kokoro-alpha-label').textContent = parseFloat(this.value).toFixed(2);">
+          <input type="number" id="v-kokoro-alpha" min="0.0" max="2.0" step="0.05" value="1.0" style="width:60px; padding:2px 4px; font-size:11px;" oninput="document.getElementById('v-kokoro-alpha-range').value = this.value; document.getElementById('kokoro-alpha-label').textContent = parseFloat(this.value).toFixed(2);">
+        </div>
+        <div style="font-size:10px; color:var(--muted); margin-top:2px;">
+          Timbre texture: 1.0 = Primary / Standard · 0.0 = Secondary
+        </div>
+      </div>
+
+      <!-- Beta: Prosody / Cadence Weight -->
+      <div class="field">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+          <label style="margin:0; font-size:11px;">
+            <b>Beta (β)</b> · Prosody Weight
+            <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Controls rhythmic pacing, duration, and pitch inflection in the predictor (dimensions 128-255). When blending: 1.0 = 100% Primary Voice prosody, 0.0 = 100% Secondary Voice prosody. When single voice: scales inflection dynamics."></i>
+          </label>
+          <span id="kokoro-beta-label" style="font-size:10px; color:var(--accent); font-family:monospace;">1.00</span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-kokoro-beta-range" min="0.0" max="1.5" step="0.05" value="1.0" style="flex:1;" oninput="document.getElementById('v-kokoro-beta').value = this.value; document.getElementById('kokoro-beta-label').textContent = parseFloat(this.value).toFixed(2);">
+          <input type="number" id="v-kokoro-beta" min="0.0" max="2.0" step="0.05" value="1.0" style="width:60px; padding:2px 4px; font-size:11px;" oninput="document.getElementById('v-kokoro-beta-range').value = this.value; document.getElementById('kokoro-beta-label').textContent = parseFloat(this.value).toFixed(2);">
+        </div>
+        <div style="font-size:10px; color:var(--muted); margin-top:2px;">
+          Prosody cadence: 1.0 = Primary / Standard · 0.0 = Secondary
+        </div>
+      </div>
     </div>
   </div>
 

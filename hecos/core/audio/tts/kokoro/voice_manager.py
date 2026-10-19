@@ -77,6 +77,8 @@ class KokoroVoiceManager:
                 "filename": bname,
                 "name": name_no_ext,
                 "path": f,
+                "size": size_bytes,
+                "size_bytes": size_bytes,
                 "size_kb": size_kb,
                 "has_clone": has_clone,
                 "mtime": os.path.getmtime(f)
@@ -181,7 +183,7 @@ class KokoroVoiceManager:
         return None, None
 
     @classmethod
-    def create_clone(cls, wav_filename: str, custom_name: str, lang_prefix: str = "af", display_title: str = None) -> dict:
+    def create_clone(cls, wav_filename: str, custom_name: str, lang_prefix: str = "af", display_title: str = None, prosody_mode: str = "auto") -> dict:
         """
         Extracts voice pack from wav_filename and saves it as a new custom Kokoro voice.
         """
@@ -204,8 +206,13 @@ class KokoroVoiceManager:
         output_pt = os.path.join(voices_dir, f"{voice_id}.pt")
         output_json = os.path.join(voices_dir, f"{voice_id}.json")
 
-        # Enroll and save tensor
-        pack = KokoroCloner.enroll_from_wav(wav_path, output_pt)
+        # Enroll and save tensor with native prosody alignment
+        pack = KokoroCloner.enroll_from_wav(
+            source_wav=wav_path,
+            output_pt_path=output_pt,
+            lang_prefix=prefix,
+            prosody_mode=prosody_mode
+        )
 
         # Meta
         lang_code = prefix[0] if len(prefix) > 0 else "a"
@@ -217,6 +224,7 @@ class KokoroVoiceManager:
             "name": final_title,
             "lang_code": lang_code,
             "gender": gender,
+            "prosody_mode": prosody_mode,
             "source_wav": os.path.basename(wav_path),
             "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
         }

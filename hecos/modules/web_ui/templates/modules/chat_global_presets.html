@@ -342,6 +342,64 @@
                     </div>
                 </div>
             </div>
+
+            <div id="sf-kokoro-controls" style="display:none; margin-top:15px;">
+                <div class="sf-controls-row" style="margin-bottom:15px;">
+                    <div class="sf-control-group" style="flex: 1;">
+                        <label>Kokoro Preset</label>
+                        <select id="sf-kokoro-preset-select" class="form-control"
+                            onchange="window.sfApplyKokoroPreset(this.value)">
+                            <option value="">-- No Kokoro Preset --</option>
+                        </select>
+                    </div>
+                    <div class="sf-control-group" style="flex: 1;">
+                        <label>Secondary Blend Voice (Optional)</label>
+                        <select id="sf-kokoro-blend-voice" class="form-control" onchange="window.sfDirty()">
+                            <option value="">None (Pure Voice)</option>
+                        </select>
+                    </div>
+                </div>
+                <div
+                    style="font-size:12px; color:var(--text-muted); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>Kokoro Inference Parameters</span>
+                    <div style="display:flex; gap:4px; align-items:center;">
+                        <div class="sf-control-group" style="flex:unset; width:150px; margin-bottom:0;">
+                            <select id="sf-kokoro-inference-preset-select" class="form-control"
+                                onchange="window.sfApplyKokoroInferencePreset(this.value)"
+                                style="padding: 2px 5px; font-size:11px; width:100%;">
+                                <option value="">-- Inference Preset --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="sf-sliders-grid">
+                    <div class="sf-slider-item">
+                        <label>Speed <span id="sf-val-kokoro-speed">1.0</span></label>
+                        <input type="range" id="sf-kokoro-speed" min="0.5" max="2.0" step="0.05" value="1.0"
+                            oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-speed'); window.sfDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Sentence Silence (s) <span id="sf-val-kokoro-silence">0.0</span></label>
+                        <input type="range" id="sf-kokoro-silence" min="0.0" max="2.0" step="0.05" value="0.0"
+                            oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-silence'); window.sfDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Voice Weight (Alpha) <span id="sf-val-kokoro-alpha">1.0</span></label>
+                        <input type="range" id="sf-kokoro-alpha" min="0.0" max="1.0" step="0.05" value="1.0"
+                            oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-alpha'); window.sfDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Blend Weight (Beta) <span id="sf-val-kokoro-beta">1.0</span></label>
+                        <input type="range" id="sf-kokoro-beta" min="0.0" max="1.0" step="0.05" value="1.0"
+                            oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-beta'); window.sfDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Volume <span id="sf-val-kokoro-volume">1.0</span></label>
+                        <input type="range" id="sf-kokoro-volume" min="0.1" max="2.0" step="0.05" value="1.0"
+                            oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-volume'); window.sfDirty()">
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>

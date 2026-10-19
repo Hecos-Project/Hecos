@@ -42,10 +42,27 @@ def get_session_config(session_id: str) -> dict:
         logger.warning(f"[SESSION_CONFIG] Error getting config for {session_id}: {e}")
     return {}
 
+def _clean_null_overrides(d: dict) -> dict:
+    if not isinstance(d, dict):
+        return d
+    cleaned = {}
+    for k, v in d.items():
+        if v is None:
+            continue
+        if isinstance(v, dict):
+            sub = _clean_null_overrides(v)
+            if sub:
+                cleaned[k] = sub
+        else:
+            cleaned[k] = v
+    return cleaned
+
+
 def set_session_config(session_id: str, overrides: dict) -> bool:
     """Sets the configuration override for a session."""
     if not session_id:
         return False
+    overrides = _clean_null_overrides(overrides) if overrides else {}
     if session_id in _ram_sessions:
         _ram_sessions[session_id]["config_override"] = overrides
         return True

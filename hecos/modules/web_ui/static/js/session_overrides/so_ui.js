@@ -123,6 +123,8 @@ window.soDirty = function() {
     document.getElementById('so-xtts-controls').style.display = (ttsEngine === 'xtts2') ? 'block' : 'none';
     const fishControls = document.getElementById('so-fish-controls');
     if (fishControls) fishControls.style.display = (ttsEngine === 'fish_speech' || ttsEngine === 'fish') ? 'block' : 'none';
+    const kokoroControls = document.getElementById('so-kokoro-controls');
+    if (kokoroControls) kokoroControls.style.display = (ttsEngine === 'kokoro') ? 'block' : 'none';
     
     // Check and update clone / preset disabled state on voice select
     if (window.soUpdateCloneState) window.soUpdateCloneState();
@@ -277,6 +279,28 @@ window.soPopulateDropdowns = function(optData) {
             fishInfSel.appendChild(opt);
         });
     }
+
+    const kokoroSel = document.getElementById('so-kokoro-preset-select');
+    if (kokoroSel) {
+        kokoroSel.innerHTML = '<option value="">-- No Kokoro Preset --</option>';
+        Object.keys(window.soState.kokoroPresets || {}).forEach(k => {
+            const opt = document.createElement('option');
+            opt.value = k;
+            opt.textContent = k;
+            kokoroSel.appendChild(opt);
+        });
+    }
+
+    const kokoroInfSel = document.getElementById('so-kokoro-inference-preset-select');
+    if (kokoroInfSel) {
+        kokoroInfSel.innerHTML = '<option value="">-- No Inference Preset --</option>';
+        Object.keys(window.soState.kokoroInferencePresets || {}).forEach(k => {
+            const opt = document.createElement('option');
+            opt.value = k;
+            opt.textContent = k;
+            kokoroInfSel.appendChild(opt);
+        });
+    }
     
     if (optData && optData.ok) {
         const pSel = document.getElementById('so-persona-select');
@@ -369,6 +393,21 @@ window.soUpdateVoicesDropdown = async function() {
                 opt.textContent = (!Array.isArray(voiceMap) && voiceMap[v]) ? voiceMap[v] : v;
                 vSel.appendChild(opt);
             });
+
+            if (engine === 'kokoro') {
+                const bSel = document.getElementById('so-kokoro-blend-voice');
+                if (bSel) {
+                    const prevVal = bSel.value;
+                    bSel.innerHTML = '<option value="">None (Pure Voice)</option>';
+                    keys.forEach(v => {
+                        const opt = document.createElement('option');
+                        opt.value = v;
+                        opt.textContent = (!Array.isArray(voiceMap) && voiceMap[v]) ? voiceMap[v] : v;
+                        bSel.appendChild(opt);
+                    });
+                    bSel.value = prevVal;
+                }
+            }
         }
     } catch(e) {}
 };
@@ -432,9 +471,20 @@ window.soApplySoulToUI = async function(soul) {
         resetVal('so-fish-max-tokens', 1024);
         resetVal('so-fish-volume', 1.0);
         
+        if (document.getElementById('so-kokoro-preset-select')) document.getElementById('so-kokoro-preset-select').value = "";
+        if (document.getElementById('so-kokoro-inference-preset-select')) document.getElementById('so-kokoro-inference-preset-select').value = "";
+        if (document.getElementById('so-kokoro-blend-voice')) document.getElementById('so-kokoro-blend-voice').value = "";
+        resetVal('so-kokoro-speed', 1.0);
+        resetVal('so-kokoro-silence', 0.0);
+        resetVal('so-kokoro-alpha', 1.0);
+        resetVal('so-kokoro-beta', 1.0);
+        resetVal('so-kokoro-volume', 1.0);
+
         document.getElementById('so-xtts-controls').style.display = 'none';
         const fishControls = document.getElementById('so-fish-controls');
         if (fishControls) fishControls.style.display = 'none';
+        const kokoroControls = document.getElementById('so-kokoro-controls');
+        if (kokoroControls) kokoroControls.style.display = 'none';
         if (window.soUpdateCloneState) window.soUpdateCloneState();
         window.soState.isDirty = false;
         
@@ -547,10 +597,24 @@ window.soApplySoulToUI = async function(soul) {
     setVal('so-fish-chunk-length', soul.voice?.fish_chunk_length ?? 200);
     setVal('so-fish-max-tokens', soul.voice?.fish_max_new_tokens ?? 1024);
     
+    const soKokoroPresetSel = document.getElementById('so-kokoro-preset-select');
+    if (soKokoroPresetSel) soKokoroPresetSel.value = soul.voice?.kokoro_preset || "";
+    const soKokoroInfSel = document.getElementById('so-kokoro-inference-preset-select');
+    if (soKokoroInfSel) soKokoroInfSel.value = soul.voice?.kokoro_inference_preset || "";
+    const soKokoroBlendSel = document.getElementById('so-kokoro-blend-voice');
+    if (soKokoroBlendSel) soKokoroBlendSel.value = soul.voice?.kokoro_blend_voice || "";
+    setVal('so-kokoro-speed', soul.voice?.kokoro_speed ?? 1.0);
+    setVal('so-kokoro-silence', soul.voice?.kokoro_silence ?? 0.0);
+    setVal('so-kokoro-alpha', soul.voice?.kokoro_alpha ?? 1.0);
+    setVal('so-kokoro-beta', soul.voice?.kokoro_beta ?? 1.0);
+    setVal('so-kokoro-volume', soul.voice?.kokoro_volume ?? 1.0);
+
     const curEng = soul.voice?.tts_engine || fallbacks.tts_engine || "";
     document.getElementById('so-xtts-controls').style.display = (curEng === 'xtts2') ? 'block' : 'none';
     const fishControls = document.getElementById('so-fish-controls');
     if (fishControls) fishControls.style.display = (curEng === 'fish_speech' || curEng === 'fish') ? 'block' : 'none';
+    const kokoroControls = document.getElementById('so-kokoro-controls');
+    if (kokoroControls) kokoroControls.style.display = (curEng === 'kokoro') ? 'block' : 'none';
     if (window.soUpdateCloneState) window.soUpdateCloneState();
     window.soState.isDirty = false; // reset dirty flag as we just loaded
     
@@ -646,7 +710,15 @@ window.soCollectUIState = function() {
             fish_repetition_penalty: getNum('so-fish-reppen'),
             fish_chunk_length: getNum('so-fish-chunk-length'),
             fish_max_new_tokens: getNum('so-fish-max-tokens'),
-            fish_volume: getNum('so-fish-volume')
+            fish_volume: getNum('so-fish-volume'),
+            kokoro_preset: getVal('so-kokoro-preset-select'),
+            kokoro_inference_preset: getVal('so-kokoro-inference-preset-select'),
+            kokoro_blend_voice: getVal('so-kokoro-blend-voice'),
+            kokoro_speed: getNum('so-kokoro-speed'),
+            kokoro_silence: getNum('so-kokoro-silence'),
+            kokoro_alpha: getNum('so-kokoro-alpha'),
+            kokoro_beta: getNum('so-kokoro-beta'),
+            kokoro_volume: getNum('so-kokoro-volume')
         }
     };
 };

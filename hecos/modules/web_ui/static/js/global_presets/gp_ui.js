@@ -124,6 +124,8 @@ window.sfDirty = function() {
     document.getElementById('sf-xtts-controls').style.display = (ttsEngine === 'xtts2') ? 'block' : 'none';
     const fishControls = document.getElementById('sf-fish-controls');
     if (fishControls) fishControls.style.display = (ttsEngine === 'fish_speech' || ttsEngine === 'fish') ? 'block' : 'none';
+    const kokoroControls = document.getElementById('sf-kokoro-controls');
+    if (kokoroControls) kokoroControls.style.display = (ttsEngine === 'kokoro') ? 'block' : 'none';
 
     // Check and update clone / preset disabled state on voice select
     if (window.sfUpdateCloneState) window.sfUpdateCloneState();
@@ -265,6 +267,28 @@ window.sfPopulateDropdowns = function(optData) {
             fishInfSel.appendChild(opt);
         });
     }
+
+    const kokoroSel = document.getElementById('sf-kokoro-preset-select');
+    if (kokoroSel) {
+        kokoroSel.innerHTML = '<option value="">-- No Kokoro Preset --</option>';
+        Object.keys(window.sfState.kokoroPresets || {}).forEach(k => {
+            const opt = document.createElement('option');
+            opt.value = k;
+            opt.textContent = k;
+            kokoroSel.appendChild(opt);
+        });
+    }
+
+    const kokoroInfSel = document.getElementById('sf-kokoro-inference-preset-select');
+    if (kokoroInfSel) {
+        kokoroInfSel.innerHTML = '<option value="">-- No Inference Preset --</option>';
+        Object.keys(window.sfState.kokoroInferencePresets || {}).forEach(k => {
+            const opt = document.createElement('option');
+            opt.value = k;
+            opt.textContent = k;
+            kokoroInfSel.appendChild(opt);
+        });
+    }
     
     if (optData && optData.ok) {
         const pSel = document.getElementById('sf-persona-select');
@@ -357,6 +381,21 @@ window.sfUpdateVoicesDropdown = async function() {
                 opt.textContent = (!Array.isArray(voiceMap) && voiceMap[v]) ? voiceMap[v] : v;
                 vSel.appendChild(opt);
             });
+
+            if (engine === 'kokoro') {
+                const bSel = document.getElementById('sf-kokoro-blend-voice');
+                if (bSel) {
+                    const prevVal = bSel.value;
+                    bSel.innerHTML = '<option value="">None (Pure Voice)</option>';
+                    keys.forEach(v => {
+                        const opt = document.createElement('option');
+                        opt.value = v;
+                        opt.textContent = (!Array.isArray(voiceMap) && voiceMap[v]) ? voiceMap[v] : v;
+                        bSel.appendChild(opt);
+                    });
+                    bSel.value = prevVal;
+                }
+            }
         }
     } catch(e) {}
 };
@@ -460,6 +499,18 @@ window.sfApplySoulToUI = async function(soul) {
     setVal('sf-fish-reppen', soul.voice?.fish_repetition_penalty ?? 1.2);
     setVal('sf-fish-chunk-length', soul.voice?.fish_chunk_length ?? 200);
     setVal('sf-fish-max-tokens', soul.voice?.fish_max_new_tokens ?? 1024);
+
+    const sfKokoroPresetSel = document.getElementById('sf-kokoro-preset-select');
+    if (sfKokoroPresetSel) sfKokoroPresetSel.value = soul.voice?.kokoro_preset || "";
+    const sfKokoroInfSel = document.getElementById('sf-kokoro-inference-preset-select');
+    if (sfKokoroInfSel) sfKokoroInfSel.value = soul.voice?.kokoro_inference_preset || "";
+    const sfKokoroBlendSel = document.getElementById('sf-kokoro-blend-voice');
+    if (sfKokoroBlendSel) sfKokoroBlendSel.value = soul.voice?.kokoro_blend_voice || "";
+    setVal('sf-kokoro-speed', soul.voice?.kokoro_speed ?? 1.0);
+    setVal('sf-kokoro-silence', soul.voice?.kokoro_silence ?? 0.0);
+    setVal('sf-kokoro-alpha', soul.voice?.kokoro_alpha ?? 1.0);
+    setVal('sf-kokoro-beta', soul.voice?.kokoro_beta ?? 1.0);
+    setVal('sf-kokoro-volume', soul.voice?.kokoro_volume ?? 1.0);
     
     window.sfUpdateCloneState();
     window.sfDirty();
@@ -535,6 +586,14 @@ window.sfUpdateTooltip = function(soul) {
                     voiceDisplay = soul.voice.tts_voice.split(/[/\\]/).pop().replace(/\.wav$/i, '');
                 } else {
                     voiceDisplay = 'Default Voice';
+                }
+            } else if (soul.voice.tts_engine === 'kokoro') {
+                if (soul.voice.kokoro_preset && soul.voice.kokoro_preset !== 'default') {
+                    voiceDisplay = soul.voice.kokoro_preset;
+                } else if (soul.voice.tts_voice) {
+                    voiceDisplay = soul.voice.tts_voice.split(/[/\\]/).pop().replace(/\.pt$/i, '');
+                } else {
+                    voiceDisplay = 'af_heart';
                 }
             } else {
                 let v = soul.voice.tts_voice || '';
@@ -666,7 +725,16 @@ window.sfCollectUIState = function() {
             fish_top_p: getNum('sf-fish-topp'),
             fish_repetition_penalty: getNum('sf-fish-reppen'),
             fish_chunk_length: getNum('sf-fish-chunk-length'),
-            fish_max_new_tokens: getNum('sf-fish-max-tokens')
+            fish_max_new_tokens: getNum('sf-fish-max-tokens'),
+            kokoro_preset: getVal('sf-kokoro-preset-select'),
+            kokoro_inference_preset: getVal('sf-kokoro-inference-preset-select'),
+            kokoro_voice: getVal('sf-tts-voice-select'),
+            kokoro_blend_voice: getVal('sf-kokoro-blend-voice'),
+            kokoro_speed: getNum('sf-kokoro-speed'),
+            kokoro_silence: getNum('sf-kokoro-silence'),
+            kokoro_alpha: getNum('sf-kokoro-alpha'),
+            kokoro_beta: getNum('sf-kokoro-beta'),
+            kokoro_volume: getNum('sf-kokoro-volume')
         }
     };
 };

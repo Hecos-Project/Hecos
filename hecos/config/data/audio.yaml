@@ -1,19 +1,138 @@
-active_engine: piper
+active_engine: kokoro
 voice_status: true
 piper_path: C:\Hecos\bin\piper\piper.exe
-onnx_model: C:\Hecos\bin\piper\it_IT-paola-medium.onnx
-speed: 1.0
-noise_scale: 0.8
-noise_w: 1.0
-sentence_silence: 0.2
+onnx_model: C:\Hecos\bin\piper\it_IT-serena-high.onnx
+speed: 1.05
+noise_scale: 1.2
+noise_w: 1.2
+sentence_silence: 0.25
+volume: 1.0
 piper_timeout: 180
+piper_current_inference_preset: ''
+piper_inference_presets:
+  Standard & Balanced:
+    speed: 1.0
+    sentence_silence: 0.2
+    noise_scale: 0.67
+    noise_w: 0.8
+    volume: 1.0
+  Expressive & Dynamic:
+    speed: 1.05
+    sentence_silence: 0.25
+    noise_scale: 1.2
+    noise_w: 1.2
+    volume: 1.0
+  Fast & Direct:
+    speed: 1.35
+    sentence_silence: 0.05
+    noise_scale: 0.6
+    noise_w: 0.7
+    volume: 1.0
+  Stable & Monotone:
+    speed: 1.0
+    sentence_silence: 0.15
+    noise_scale: 0.0
+    noise_w: 0.0
+    volume: 1.0
+  Creative & Wild:
+    speed: 1.15
+    sentence_silence: 0.35
+    noise_scale: 1.6
+    noise_w: 1.5
+    volume: 1.0
 kokoro:
   speed: 1.0
-  voice: im_voce_antonio_1
-  sentence_silence: 0.0
+  voice: af_bella
+  lang_code: auto
+  blend_voice: ''
+  alpha: 1.0
+  beta: 1.25
+  sentence_silence: 0.1
   model_path: ''
   volume: 1.0
   normalize: true
+  current_preset: Expressive Bella
+  current_inference_preset: Dynamic Prosody
+kokoro_presets:
+  Default Heart:
+    alpha: 1
+    beta: 1
+    blend_voice: ''
+    inference_preset: Standard & Balanced
+    lang_code: auto
+    normalize: true
+    sentence_silence: 0
+    speed: 1
+    voice: af_heart
+    volume: 1
+  Expressive Bella:
+    alpha: 1
+    beta: 1.25
+    blend_voice: ''
+    inference_preset: Dynamic Prosody
+    lang_code: auto
+    normalize: true
+    sentence_silence: 0.1
+    speed: 1
+    voice: af_bella
+    volume: 1
+  Fast Adam:
+    alpha: 1
+    beta: 1
+    blend_voice: ''
+    inference_preset: Fast & Direct
+    lang_code: auto
+    normalize: true
+    sentence_silence: 0.05
+    speed: 1.35
+    voice: am_adam
+    volume: 1
+kokoro_inference_presets:
+  Dynamic Prosody:
+    alpha: 1
+    beta: 1.25
+    blend_voice: ''
+    lang_code: auto
+    normalize: true
+    sentence_silence: 0.1
+    speed: 1
+    volume: 1
+  Fast & Direct:
+    alpha: 1
+    beta: 1
+    blend_voice: ''
+    lang_code: auto
+    normalize: true
+    sentence_silence: 0.05
+    speed: 1.35
+    volume: 1
+  Hyper-Speed Assistant:
+    alpha: 1
+    beta: 1
+    blend_voice: ''
+    lang_code: auto
+    normalize: true
+    sentence_silence: 0
+    speed: 1.6
+    volume: 1
+  Slow & Articulated:
+    alpha: 1
+    beta: 1.1
+    blend_voice: ''
+    lang_code: auto
+    normalize: true
+    sentence_silence: 0.2
+    speed: 0.85
+    volume: 1
+  Standard & Balanced:
+    alpha: 1
+    beta: 1
+    blend_voice: ''
+    lang_code: auto
+    normalize: true
+    sentence_silence: 0
+    speed: 1
+    volume: 1
 xtts:
   speed: 1.1
   language: it
@@ -116,8 +235,11 @@ fish_speech:
   api_url: http://127.0.0.1:8080/v1/tts
   api_key: ''
   reference_id: ''
-  reference_audio: voce antonio 1.wav
-  reference_text: ''
+  reference_audio: voce_antonio_02.wav
+  reference_text: angoscia inesprimibile. la mente gravata da una pressione immateriale,
+    il corpo rallentato da un'aria che pare barriera. ma la mia mente non è il mio
+    corpo, non è il mio spirito, che sa vagare leggero percorrendo spazi indefinibili
+    nella pura contemplazione del tempo.
   temperature: 0.7
   top_p: 0.7
   repetition_penalty: 1.2

@@ -118,6 +118,32 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                                 if 'xtts_preset' in soul.voice.model_dump(exclude_unset=True):
                                     acfg['xtts']['current_preset'] = soul.voice.xtts_preset if soul.voice.xtts_preset is not None else "default"
                                 
+                                if soul.voice.tts_engine == 'kokoro':
+                                    acfg['active_engine'] = 'kokoro'
+                                    k_cfg = acfg.setdefault('kokoro', {})
+                                    if soul.voice.tts_voice:
+                                        k_cfg['voice'] = soul.voice.tts_voice
+                                    if soul.voice.kokoro_voice:
+                                        k_cfg['voice'] = soul.voice.kokoro_voice
+                                    if soul.voice.kokoro_blend_voice is not None:
+                                        k_cfg['blend_voice'] = soul.voice.kokoro_blend_voice
+                                    if soul.voice.kokoro_speed is not None:
+                                        k_cfg['speed'] = soul.voice.kokoro_speed
+                                    if soul.voice.kokoro_alpha is not None:
+                                        k_cfg['alpha'] = soul.voice.kokoro_alpha
+                                    if soul.voice.kokoro_beta is not None:
+                                        k_cfg['beta'] = soul.voice.kokoro_beta
+                                    if soul.voice.kokoro_silence is not None:
+                                        k_cfg['sentence_silence'] = soul.voice.kokoro_silence
+                                    if soul.voice.kokoro_volume is not None:
+                                        k_cfg['volume'] = soul.voice.kokoro_volume
+                                    if soul.voice.kokoro_normalize is not None:
+                                        k_cfg['normalize'] = soul.voice.kokoro_normalize
+                                    if soul.voice.kokoro_preset:
+                                        k_cfg['current_preset'] = soul.voice.kokoro_preset
+                                    if soul.voice.kokoro_inference_preset:
+                                        k_cfg['current_inference_preset'] = soul.voice.kokoro_inference_preset
+
                                 if soul.voice.tts_engine in ('fish_speech', 'fish'):
                                     acfg['active_engine'] = 'fish_speech'
                                     f_cfg = acfg.setdefault('fish_speech', {})

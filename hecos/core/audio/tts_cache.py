@@ -92,14 +92,34 @@ class TTSCache:
                     params[k] = overrides[k]
         elif engine_clean == "kokoro":
             voice = overrides.get("kokoro_voice") or overrides.get("voice") or overrides.get("tts_voice") or ""
-            for k in ("speed", "volume", "normalize"):
+            for k in ("speed", "kokoro_speed", "volume", "kokoro_volume", "normalize", "kokoro_normalize",
+                      "alpha", "kokoro_alpha", "beta", "kokoro_beta", "blend_voice", "kokoro_blend_voice",
+                      "lang_code", "sentence_silence", "kokoro_silence", "kokoro_preset", "kokoro_inference_preset"):
                 if k in overrides and overrides[k] is not None:
                     params[k] = overrides[k]
         elif engine_clean == "piper":
-            voice = overrides.get("onnx_model") or overrides.get("tts_voice") or ""
-            for k in ("speed", "noise_scale", "noise_w"):
-                if k in overrides and overrides[k] is not None:
-                    params[k] = overrides[k]
+            raw_voice = overrides.get("onnx_model") or overrides.get("piper_model") or overrides.get("tts_voice") or ""
+            voice = os.path.basename(str(raw_voice)).lower() if raw_voice else ""
+
+            def _get_val(*keys):
+                for k in keys:
+                    if k in overrides and overrides[k] is not None:
+                        try:
+                            return round(float(overrides[k]), 3)
+                        except (ValueError, TypeError):
+                            pass
+                return None
+
+            speed_val = _get_val("speed", "piper_speed")
+            if speed_val is not None: params["speed"] = speed_val
+            noise_val = _get_val("noise_scale", "noise", "piper_noise")
+            if noise_val is not None: params["noise_scale"] = noise_val
+            noisew_val = _get_val("noise_w", "noisew", "piper_noisew")
+            if noisew_val is not None: params["noise_w"] = noisew_val
+            silence_val = _get_val("sentence_silence", "silence", "piper_silence")
+            if silence_val is not None: params["sentence_silence"] = silence_val
+            volume_val = _get_val("volume", "piper_volume")
+            if volume_val is not None: params["volume"] = volume_val
         else:
             voice = overrides.get("tts_voice") or ""
 
