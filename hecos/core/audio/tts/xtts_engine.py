@@ -70,9 +70,9 @@ class XttsEngine(BaseTTSEngine):
     @staticmethod
     def is_available() -> bool:
         try:
-            from TTS.api import TTS  # noqa: F401
-            return True
-        except ImportError:
+            import importlib.util
+            return importlib.util.find_spec("TTS") is not None
+        except Exception:
             return False
 
     @staticmethod
@@ -85,17 +85,8 @@ class XttsEngine(BaseTTSEngine):
             os.path.join(home, ".local", "share", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
             os.path.join(home, "AppData", "Roaming", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
         ]
-        # Fast local disk check: avoid network requests to scarf.sh/HuggingFace during status polling
-        if any(os.path.isdir(p) and (os.path.exists(os.path.join(p, "config.json")) or os.path.exists(os.path.join(p, "model.pth"))) for p in possible_paths):
-            return True
-
-        try:
-            from TTS.utils.manage import ModelManager
-            manager = ModelManager()
-            model_path, _, _ = manager.download_model("tts_models/multilingual/multi-dataset/xtts_v2")
-            return os.path.exists(model_path)
-        except Exception:
-            return False
+        # Fast local disk check: avoid network requests or DLL loading during status polling
+        return any(os.path.isdir(p) and (os.path.exists(os.path.join(p, "config.json")) or os.path.exists(os.path.join(p, "model.pth"))) for p in possible_paths)
 
     # ── Lazy model loading ────────────────────────────────────────────────────
 
@@ -107,6 +98,14 @@ class XttsEngine(BaseTTSEngine):
                 return True
             try:
                 import os
+                import sys
+                if sys.platform == "win32":
+                    try:
+                        import ctypes
+                        ctypes.windll.kernel32.SetErrorMode(0x0001 | 0x0002 | 0x8000)
+                    except Exception:
+                        pass
+
                 model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
 
                 # Auto-agree to Coqui TOS so it doesn't block on stdin
@@ -121,7 +120,6 @@ class XttsEngine(BaseTTSEngine):
                     logger.warning("XTTS", f"TTS compatibility patch failed (non-fatal): {patch_err}")
 
                 from TTS.api import TTS
-
 
                 is_ready = XttsEngine.model_ready()
                 if not is_ready:

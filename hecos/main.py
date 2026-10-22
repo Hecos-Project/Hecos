@@ -31,6 +31,12 @@ os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 # Force UTF-8 output encoding on Windows (prevents UnicodeEncodeError with box-drawing characters)
 if sys.platform == "win32":
     try:
+        import ctypes
+        # SEM_FAILCRITICALERRORS (0x0001) | SEM_NOGPFAULTERRORBOX (0x0002) | SEM_NOOPENFILEERRORBOX (0x8000)
+        ctypes.windll.kernel32.SetErrorMode(0x0001 | 0x0002 | 0x8000)
+    except Exception:
+        pass
+    try:
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
         sys.stderr.reconfigure(encoding='utf-8', errors='replace')
     except AttributeError:

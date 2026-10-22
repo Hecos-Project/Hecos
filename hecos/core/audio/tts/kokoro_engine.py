@@ -98,6 +98,32 @@ def _patch_espeak_path():
 _patch_espeak_path()
 
 
+# ── Smart App Control / Code Integrity resilience ─────────────────────────────
+def _ensure_kokoro_compat():
+    """
+    Guarantees Kokoro can initialize even if Windows Smart App Control (SAC) blocks
+    spaCy's native extensions (e.g. span_group.pyd).
+    misaki.en eagerly imports spacy for English G2P. Italian and non-English pipelines
+    use espeak-ng and do not use spaCy at all. If spaCy cannot be loaded, we provide
+    a lightweight mock for misaki.en so Kokoro loads smoothly for all espeak voices.
+    """
+    try:
+        import spacy  # noqa: F401
+    except Exception:
+        try:
+            import sys
+            import types
+            from misaki.token import MToken
+            if "misaki.en" not in sys.modules:
+                mock_en = types.ModuleType("misaki.en")
+                mock_en.MToken = MToken
+                sys.modules["misaki.en"] = mock_en
+        except Exception:
+            pass
+
+_ensure_kokoro_compat()
+
+
 # ── Voice registry ─────────────────────────────────────────────────────────────
 
 # Known Kokoro voices (v1.0 model).  Key format: <lang_code><gender>_<name>
@@ -174,10 +200,11 @@ class KokoroEngine(BaseTTSEngine):
 
     @staticmethod
     def is_available() -> bool:
+        _ensure_kokoro_compat()
         try:
             import kokoro  # noqa: F401
             return True
-        except ImportError:
+        except Exception:
             return False
 
     def get_available_voices(self) -> dict:
@@ -253,6 +280,7 @@ class KokoroEngine(BaseTTSEngine):
                 self._evict_pipeline()
 
             try:
+                _ensure_kokoro_compat()
                 from kokoro import KPipeline
                 from hecos.core.audio.device_manager import get_audio_config
                 cfg = get_audio_config()

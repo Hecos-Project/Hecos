@@ -6,6 +6,15 @@ import sys
 import os
 import threading
 import logging
+
+if sys.platform == "win32":
+    try:
+        import ctypes
+        # SEM_FAILCRITICALERRORS (0x0001) | SEM_NOGPFAULTERRORBOX (0x0002) | SEM_NOOPENFILEERRORBOX (0x8000)
+        ctypes.windll.kernel32.SetErrorMode(0x0001 | 0x0002 | 0x8000)
+    except Exception:
+        pass
+
 from flask import Flask, send_from_directory, request, redirect, url_for, jsonify
 from flask_login import LoginManager, current_user
 from .routes import init_routes

@@ -262,6 +262,11 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict, job_id: str = N
 
         inline_code = (
             "import sys, os\n"
+            "if sys.platform == 'win32':\n"
+            "    try:\n"
+            "        import ctypes\n"
+            "        ctypes.windll.kernel32.SetErrorMode(0x0001 | 0x0002 | 0x8000)\n"
+            "    except Exception: pass\n"
             "import torch\n"
             "try:\n"
             "    import torchaudio\n"
