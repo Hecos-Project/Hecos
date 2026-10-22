@@ -70,18 +70,31 @@ window.initEvents = function() {
       
     } else if (ev.type === 'ptt_status') {
       const pttInd = document.getElementById('ptt-indicator');
-      const sttSource = document.getElementById('stt-source');
-      const isWebMic = sttSource && sttSource.value === 'web';
+      if (pttInd) {
+          if (ev.active) pttInd.classList.add('active');
+          else pttInd.classList.remove('active');
+      }
       
       window.isBackendPTTActive = ev.active;
       
       if (ev.active) {
-          if (window.UnifiedToast) {
-              window.UnifiedToast.show('🎙️ Listening (Hardware PTT)...', 'fas fa-microphone', 0, 'rgba(235, 75, 75, 0.9)');
+          // If browser is NOT already recording, start recording from the global/hardware PTT bus trigger
+          if (!window.isWebAudioRecording && (window.currentMicOn || window.currentPTTOn)) {
+              window.isTouchHold = true;
+              window.pressStartTime = Date.now();
+              if (typeof window.unlockAudioContext === 'function') window.unlockAudioContext();
+              if (window.startWebAudioRecording) {
+                  window.startWebAudioRecording();
+              }
+          } else if (!window.isWebAudioRecording && window.UnifiedToast) {
+              window.UnifiedToast.show('🎙️ Listening...', 'fas fa-microphone', 0, 'rgba(235, 75, 75, 0.9)');
           }
-          // Bypassing browser beep and auto-recording on backend PTT hardware events
-          // to avoid double-echoing and double-recording contexts.
       } else {
+          // If recording was active from global PTT, stop recording and send to transcription
+          if (window.isWebAudioRecording && window.stopWebAudioRecording) {
+              window.isTouchHold = false;
+              window.stopWebAudioRecording();
+          }
           if (window.UnifiedToast) window.UnifiedToast.hide();
       }
       

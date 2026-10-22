@@ -258,12 +258,14 @@
               if (sel && sel.selectedIndex >= 0) {
                   if (sel.value === "") {
                       sel.title = obj.defaultTitle;
-                  } else if (sel.id === 'chat-tts-voice-select' && sel.value === 'custom') {
+                  } else if (sel.id === 'chat-tts-voice-select' && (sel.value === 'custom' || sel.value === 'CLONE' || sel.value === 'MIXED')) {
                       const fishP = document.getElementById('so-fish-preset-select')?.value || document.getElementById('sf-fish-preset-select')?.value;
                       const xttsP = document.getElementById('so-xtts-preset-select')?.value || document.getElementById('sf-xtts-preset-select')?.value;
-                      if (fishP) sel.title = `Fish Speech: ${fishP}`;
+                      const kokoroP = document.getElementById('so-kokoro-preset-select')?.value || document.getElementById('sf-kokoro-preset-select')?.value;
+                      if (kokoroP) sel.title = `Kokoro: ${kokoroP}`;
+                      else if (fishP) sel.title = `Fish Speech: ${fishP}`;
                       else if (xttsP) sel.title = `XTTS: ${xttsP}`;
-                      else sel.title = 'Custom Voice Clone';
+                      else sel.title = 'Custom Voice Clone / Mix';
                   } else {
                       sel.title = sel.options[sel.selectedIndex].text;
                   }

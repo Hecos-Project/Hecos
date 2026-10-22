@@ -173,7 +173,8 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 for k in ["active_engine", "kokoro", "kokoro_presets", "kokoro_inference_presets", "xtts", "xtts_presets", "xtts_inference_presets", "fish_speech", "fish_speech_presets", "fish_speech_inference_presets", "voice_status", "listening_status",
                           "piper_path", "onnx_model", "speed", "noise_scale", "noise_w",
                           "sentence_silence", "piper_timeout", "energy_threshold",
-                          "silence_timeout", "phrase_limit", "tts_history_max_files", "push_to_talk"]:
+                          "silence_timeout", "phrase_limit", "tts_history_max_files", "push_to_talk",
+                          "ptt_hotkey", "ptt_sources", "custom_ptt_key"]:
                     if k in data:
                         cfg[k] = data[k]
 

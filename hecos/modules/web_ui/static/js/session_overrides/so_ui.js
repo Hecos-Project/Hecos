@@ -150,9 +150,10 @@ window.soDirty = function() {
 
         const tVoiceSel = document.getElementById('chat-tts-voice-select');
         let tVoiceVal = document.getElementById('so-tts-voice-select')?.value || "";
-        const isCloneActive = (tVoiceVal === 'CLONE') || 
+        const isCloneActive = (tVoiceVal === 'CLONE') || (tVoiceVal === 'MIXED') ||
             (tEngVal === 'xtts2' && document.getElementById('so-xtts-speaker-wav')?.value) ||
-            ((tEngVal === 'fish_speech' || tEngVal === 'fish') && (document.getElementById('so-fish-speaker-wav')?.value || document.getElementById('so-fish-preset-select')?.value));
+            ((tEngVal === 'fish_speech' || tEngVal === 'fish') && (document.getElementById('so-fish-speaker-wav')?.value || document.getElementById('so-fish-preset-select')?.value)) ||
+            (tEngVal === 'kokoro' && document.getElementById('so-kokoro-preset-select')?.value);
         if (isCloneActive) {
             tVoiceVal = 'custom';
         }
@@ -654,12 +655,19 @@ window.soCollectUIState = function() {
     const resolvedVoice = (() => {
         const eng = getVal('so-tts-engine-select');
         const rawVoice = getVal('so-tts-voice-select');
-        const cleanVoice = (rawVoice === 'CLONE') ? '' : rawVoice;
+        const cleanVoice = (rawVoice === 'CLONE' || rawVoice === 'MIXED') ? '' : rawVoice;
         if (eng === 'fish_speech' || eng === 'fish') {
             return getVal('so-fish-speaker-wav') || cleanVoice || 'default';
         }
         if (eng === 'xtts2' && getVal('so-xtts-speaker-wav')) {
             return getVal('so-xtts-speaker-wav');
+        }
+        if (eng === 'kokoro') {
+            const pName = getVal('so-kokoro-preset-select');
+            if (pName && window.soState?.kokoroPresets?.[pName]) {
+                const p = window.soState.kokoroPresets[pName];
+                return p.voice || cleanVoice;
+            }
         }
         return cleanVoice;
     })();
@@ -713,7 +721,13 @@ window.soCollectUIState = function() {
             fish_volume: getNum('so-fish-volume'),
             kokoro_preset: getVal('so-kokoro-preset-select'),
             kokoro_inference_preset: getVal('so-kokoro-inference-preset-select'),
-            kokoro_blend_voice: getVal('so-kokoro-blend-voice'),
+            kokoro_blend_voice: (() => {
+                const pName = getVal('so-kokoro-preset-select');
+                if (pName && window.soState?.kokoroPresets?.[pName]) {
+                    return window.soState.kokoroPresets[pName].blend_voice || '';
+                }
+                return '';
+            })(),
             kokoro_speed: getNum('so-kokoro-speed'),
             kokoro_silence: getNum('so-kokoro-silence'),
             kokoro_alpha: getNum('so-kokoro-alpha'),
@@ -895,6 +909,8 @@ window.soUpdateCloneState = function() {
     
     let isCloneOrPreset = false;
     let titleDesc = "";
+    let customOptionLabel = "-- Voice Clone Active --";
+    let customOptionValue = "CLONE";
 
     if (engine === 'xtts2') {
         const wavInput = document.getElementById('so-xtts-speaker-wav');
@@ -902,6 +918,8 @@ window.soUpdateCloneState = function() {
         if ((wavInput && wavInput.value.trim() !== '') || (presetSel && presetSel.value.trim() !== '')) {
             isCloneOrPreset = true;
             titleDesc = "Using XTTS Preset / Voice Clone (.wav)";
+            customOptionLabel = "-- Voice Clone Active --";
+            customOptionValue = "CLONE";
         }
     } else if (engine === 'fish_speech' || engine === 'fish') {
         const fishWav = document.getElementById('so-fish-speaker-wav');
@@ -909,26 +927,50 @@ window.soUpdateCloneState = function() {
         if ((fishPresetSel && fishPresetSel.value.trim() !== '') || (fishWav && fishWav.value.trim() !== '')) {
             isCloneOrPreset = true;
             titleDesc = "Using Fish Speech Preset / Voice Clone (.wav)";
+            customOptionLabel = "-- Voice Clone Active --";
+            customOptionValue = "CLONE";
+        }
+    } else if (engine === 'kokoro') {
+        const kokoroPresetSel = document.getElementById('so-kokoro-preset-select');
+        const presetName = kokoroPresetSel ? kokoroPresetSel.value.trim() : '';
+        if (presetName !== '') {
+            isCloneOrPreset = true;
+            const p = (window.soState && window.soState.kokoroPresets) ? window.soState.kokoroPresets[presetName] : null;
+            const hasBlend = p && p.blend_voice && p.blend_voice.trim() !== '';
+            if (hasBlend) {
+                const primary = p.voice || 'Primary';
+                const blend = p.blend_voice;
+                titleDesc = `Kokoro Preset '${presetName}' (Mixed Voice: ${primary} + ${blend})`;
+                customOptionLabel = `-- Mixed Voice (${primary} + ${blend}) --`;
+                customOptionValue = "MIXED";
+            } else {
+                const vName = (p && p.voice) ? p.voice : 'Preset Voice';
+                titleDesc = `Kokoro Preset '${presetName}' (Voice: ${vName})`;
+                customOptionLabel = `-- Preset Voice (${vName}) --`;
+                customOptionValue = vName;
+            }
         }
     }
 
     if (isCloneOrPreset) {
         voiceSelect.disabled = true;
         voiceSelect.title = titleDesc;
-        let cloneOpt = Array.from(voiceSelect.options).find(o => o.value === "CLONE");
-        if (!cloneOpt) {
-            cloneOpt = document.createElement('option');
-            cloneOpt.value = "CLONE";
-            cloneOpt.textContent = "-- Voice Clone Active --";
-            voiceSelect.appendChild(cloneOpt);
+        let opt = Array.from(voiceSelect.options).find(o => o.value === customOptionValue || o.dataset?.virtual === "true");
+        if (!opt) {
+            opt = document.createElement('option');
+            opt.dataset.virtual = "true";
+            voiceSelect.appendChild(opt);
         }
-        voiceSelect.value = "CLONE";
+        opt.value = customOptionValue;
+        opt.textContent = customOptionLabel;
+        voiceSelect.value = customOptionValue;
     } else {
         voiceSelect.disabled = false;
         voiceSelect.title = "";
-        const cloneOpt = Array.from(voiceSelect.options).find(o => o.value === "CLONE");
-        if (cloneOpt) {
-            cloneOpt.remove();
-        }
+        Array.from(voiceSelect.options).forEach(o => {
+            if (o.dataset?.virtual === "true" || o.value === "CLONE" || o.value === "MIXED") {
+                o.remove();
+            }
+        });
     }
 };

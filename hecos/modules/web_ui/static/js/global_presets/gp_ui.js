@@ -699,12 +699,19 @@ window.sfCollectUIState = function() {
             tts_voice: (() => {
                 const eng = getVal('sf-tts-engine-select');
                 const rawVoice = getVal('sf-tts-voice-select');
-                const cleanVoice = (rawVoice === 'CLONE') ? '' : rawVoice;
+                const cleanVoice = (rawVoice === 'CLONE' || rawVoice === 'MIXED') ? '' : rawVoice;
                 if (eng === 'fish_speech' || eng === 'fish') {
                     return getVal('sf-fish-speaker-wav') || cleanVoice || 'default';
                 }
                 if (eng === 'xtts2' && getVal('sf-xtts-speaker-wav')) {
                     return getVal('sf-xtts-speaker-wav');
+                }
+                if (eng === 'kokoro') {
+                    const pName = getVal('sf-kokoro-preset-select');
+                    if (pName && window.sfState?.kokoroPresets?.[pName]) {
+                        const p = window.sfState.kokoroPresets[pName];
+                        return p.voice || cleanVoice;
+                    }
                 }
                 return cleanVoice;
             })(),
@@ -728,8 +735,13 @@ window.sfCollectUIState = function() {
             fish_max_new_tokens: getNum('sf-fish-max-tokens'),
             kokoro_preset: getVal('sf-kokoro-preset-select'),
             kokoro_inference_preset: getVal('sf-kokoro-inference-preset-select'),
-            kokoro_voice: getVal('sf-tts-voice-select'),
-            kokoro_blend_voice: getVal('sf-kokoro-blend-voice'),
+            kokoro_blend_voice: (() => {
+                const pName = getVal('sf-kokoro-preset-select');
+                if (pName && window.sfState?.kokoroPresets?.[pName]) {
+                    return window.sfState.kokoroPresets[pName].blend_voice || '';
+                }
+                return '';
+            })(),
             kokoro_speed: getNum('sf-kokoro-speed'),
             kokoro_silence: getNum('sf-kokoro-silence'),
             kokoro_alpha: getNum('sf-kokoro-alpha'),
@@ -910,6 +922,8 @@ window.sfUpdateCloneState = function() {
     
     let isCloneOrPreset = false;
     let titleDesc = "";
+    let customOptionLabel = "-- Voice Clone Active --";
+    let customOptionValue = "CLONE";
 
     if (engine === 'xtts2') {
         const wavInput = document.getElementById('sf-xtts-speaker-wav');
@@ -917,6 +931,8 @@ window.sfUpdateCloneState = function() {
         if ((wavInput && wavInput.value.trim() !== '') || (presetSel && presetSel.value.trim() !== '')) {
             isCloneOrPreset = true;
             titleDesc = "Using XTTS Preset / Voice Clone (.wav)";
+            customOptionLabel = "-- Voice Clone Active --";
+            customOptionValue = "CLONE";
         }
     } else if (engine === 'fish_speech' || engine === 'fish') {
         const fishWav = document.getElementById('sf-fish-speaker-wav');
@@ -924,26 +940,50 @@ window.sfUpdateCloneState = function() {
         if ((fishPresetSel && fishPresetSel.value.trim() !== '') || (fishWav && fishWav.value.trim() !== '')) {
             isCloneOrPreset = true;
             titleDesc = "Using Fish Speech Preset / Voice Clone (.wav)";
+            customOptionLabel = "-- Voice Clone Active --";
+            customOptionValue = "CLONE";
+        }
+    } else if (engine === 'kokoro') {
+        const kokoroPresetSel = document.getElementById('sf-kokoro-preset-select');
+        const presetName = kokoroPresetSel ? kokoroPresetSel.value.trim() : '';
+        if (presetName !== '') {
+            isCloneOrPreset = true;
+            const p = (window.sfState && window.sfState.kokoroPresets) ? window.sfState.kokoroPresets[presetName] : null;
+            const hasBlend = p && p.blend_voice && p.blend_voice.trim() !== '';
+            if (hasBlend) {
+                const primary = p.voice || 'Primary';
+                const blend = p.blend_voice;
+                titleDesc = `Kokoro Preset '${presetName}' (Mixed Voice: ${primary} + ${blend})`;
+                customOptionLabel = `-- Mixed Voice (${primary} + ${blend}) --`;
+                customOptionValue = "MIXED";
+            } else {
+                const vName = (p && p.voice) ? p.voice : 'Preset Voice';
+                titleDesc = `Kokoro Preset '${presetName}' (Voice: ${vName})`;
+                customOptionLabel = `-- Preset Voice (${vName}) --`;
+                customOptionValue = vName;
+            }
         }
     }
 
     if (isCloneOrPreset) {
         voiceSelect.disabled = true;
         voiceSelect.title = titleDesc;
-        let cloneOpt = Array.from(voiceSelect.options).find(o => o.value === "CLONE");
-        if (!cloneOpt) {
-            cloneOpt = document.createElement('option');
-            cloneOpt.value = "CLONE";
-            cloneOpt.textContent = "-- Voice Clone Active --";
-            voiceSelect.appendChild(cloneOpt);
+        let opt = Array.from(voiceSelect.options).find(o => o.value === customOptionValue || o.dataset?.virtual === "true");
+        if (!opt) {
+            opt = document.createElement('option');
+            opt.dataset.virtual = "true";
+            voiceSelect.appendChild(opt);
         }
-        voiceSelect.value = "CLONE";
+        opt.value = customOptionValue;
+        opt.textContent = customOptionLabel;
+        voiceSelect.value = customOptionValue;
     } else {
         voiceSelect.disabled = false;
         voiceSelect.title = "";
-        const cloneOpt = Array.from(voiceSelect.options).find(o => o.value === "CLONE");
-        if (cloneOpt) {
-            cloneOpt.remove();
-        }
+        Array.from(voiceSelect.options).forEach(o => {
+            if (o.dataset?.virtual === "true" || o.value === "CLONE" || o.value === "MIXED") {
+                o.remove();
+            }
+        });
     }
 };

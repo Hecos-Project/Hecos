@@ -20,15 +20,18 @@
 
     // ── Handle Blend Voice Selection Change ───────────────────────────────────
     window.onKokoroBlendVoiceChange = function () {
+        const primarySel = document.getElementById('v-kokoro-voice');
         const blendSel = document.getElementById('v-kokoro-blend-voice');
         const badge = document.getElementById('kokoro-blend-badge');
         const alphaLabel = document.getElementById('kokoro-alpha-label');
         const betaLabel = document.getElementById('kokoro-beta-label');
+        const resultVal = document.getElementById('v-kokoro-voice-result-val');
         const val = blendSel ? blendSel.value.trim() : '';
+        const primaryVal = (primarySel && primarySel.options[primarySel.selectedIndex]) ? primarySel.options[primarySel.selectedIndex].text : (primarySel ? primarySel.value : 'af_heart');
 
         if (badge) {
             if (val) {
-                badge.textContent = 'Dual-Voice Blending Active';
+                badge.textContent = 'Dual-Voice Blending Active (Mixed)';
                 badge.style.background = 'rgba(46, 204, 113, 0.15)';
                 badge.style.color = 'var(--green, #2ecc71)';
                 badge.style.borderColor = 'rgba(46, 204, 113, 0.3)';
@@ -37,6 +40,17 @@
                 badge.style.background = 'rgba(0, 180, 216, 0.15)';
                 badge.style.color = 'var(--accent, #00b4d8)';
                 badge.style.borderColor = 'rgba(0, 180, 216, 0.3)';
+            }
+        }
+
+        if (resultVal) {
+            if (val) {
+                const blendText = (blendSel && blendSel.options[blendSel.selectedIndex]) ? blendSel.options[blendSel.selectedIndex].text : val;
+                resultVal.textContent = `${primaryVal} + ${blendText} (Custom Mixed)`;
+                resultVal.style.color = 'var(--green, #2ecc71)';
+            } else {
+                resultVal.textContent = `${primaryVal || 'af_heart'} (Single Voice)`;
+                resultVal.style.color = 'var(--accent, #00b4d8)';
             }
         }
 

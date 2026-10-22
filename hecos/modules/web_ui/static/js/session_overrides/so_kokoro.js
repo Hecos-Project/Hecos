@@ -2,27 +2,14 @@
 
 window.soApplyKokoroPreset = function(presetName) {
     if (!presetName || !window.soState.kokoroPresets || !window.soState.kokoroPresets[presetName]) {
-        const bSel = document.getElementById('so-kokoro-blend-voice');
-        if (bSel) bSel.value = "";
         const infSel = document.getElementById('so-kokoro-inference-preset-select');
         if (infSel) infSel.value = "";
+        if (window.soUpdateCloneState) window.soUpdateCloneState();
         window.soDirty();
         return;
     }
 
     const p = window.soState.kokoroPresets[presetName];
-
-    // Set Primary Voice if present
-    if (p.voice) {
-        const vSel = document.getElementById('so-tts-voice-select');
-        if (vSel) vSel.value = p.voice;
-    }
-
-    // Set Blend Voice
-    if (p.blend_voice !== undefined) {
-        const bSel = document.getElementById('so-kokoro-blend-voice');
-        if (bSel) bSel.value = p.blend_voice;
-    }
 
     const setVal = (id, val) => {
         if (val !== undefined && val !== null) {
@@ -59,6 +46,7 @@ window.soApplyKokoroPreset = function(presetName) {
     const infSel = document.getElementById('so-kokoro-inference-preset-select');
     if (infSel) infSel.value = matchedInf;
 
+    if (window.soUpdateCloneState) window.soUpdateCloneState();
     window.soDirty();
 };
 

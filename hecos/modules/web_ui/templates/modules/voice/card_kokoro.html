@@ -39,7 +39,7 @@
         <i class="fas fa-microphone"></i> Primary Voice
         <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Base voice or custom cloned style (.pt) for Kokoro speech synthesis."></i>
       </label>
-      <select id="v-kokoro-voice" onchange="if(typeof syncKokoroBlendVoiceOptions==='function') syncKokoroBlendVoiceOptions();">
+      <select id="v-kokoro-voice" onchange="if(typeof syncKokoroBlendVoiceOptions==='function') syncKokoroBlendVoiceOptions(); if(typeof onKokoroBlendVoiceChange==='function') onKokoroBlendVoiceChange();">
         <option value="af_heart">Heart (Female, US)</option>
         <option value="af_alloy">Alloy (Female, US)</option>
         <option value="af_bella">Bella (Female, US)</option>
@@ -62,6 +62,9 @@
         <option value="if_sara">Sara (Female, IT)</option>
         <option value="im_nicola">Nicola (Male, IT)</option>
       </select>
+      <div id="v-kokoro-voice-result" style="font-size:11px; margin-top:5px; color:var(--muted); line-height:1.4;">
+        Resulting Voice: <b style="color:var(--accent);" id="v-kokoro-voice-result-val">af_heart (Single Voice)</b>
+      </div>
     </div>
     <div class="field">
       <label>

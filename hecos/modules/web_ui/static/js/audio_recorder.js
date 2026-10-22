@@ -139,14 +139,6 @@ async function uploadWebAudio(wasLockedMode) {
     return;
   }
 
-  // If backend hardware PTT was actively running, do not duplicate transcription
-  if (window.isBackendPTTActive) {
-    console.log('[WebAudio] Backend hardware PTT is active, skipping duplicate WebAudio upload.');
-    window.webAudioChunks = [];
-    if (window._webptt_setButtonState) window._webptt_setButtonState('idle');
-    return;
-  }
-
   const type = window.webAudioRecorder.mimeType || 'audio/webm';
   const audioBlob = new Blob(window.webAudioChunks, { type });
   window.webAudioChunks = [];
