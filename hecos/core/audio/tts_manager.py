@@ -70,6 +70,12 @@ class TTSManager:
     """
     Facade for all TTS operations.
     """
+    _last_used_engine: str = "piper"
+
+    @classmethod
+    def get_last_used_engine(cls) -> str:
+        return getattr(cls, "_last_used_engine", "piper")
+
     @classmethod
     def speak(cls, text: str, state=None, _run_id=None, _timeout=0, _start=0, session_overrides=None):
         text = sanitize_text(text)
@@ -102,6 +108,8 @@ class TTSManager:
             except Exception:
                 engine_name = "piper"
 
+        cls._last_used_engine = engine_name
+
         try:
             from hecos.core.audio.tts_cache import TTSCache
             if TTSCache.get_instance().get_to_file(text, engine=engine_name, out_filepath=filepath, session_overrides=session_overrides):
@@ -116,6 +124,7 @@ class TTSManager:
                 logger.warning("TTS_MANAGER", "Falling back to Piper.")
                 success = get_piper().generate_wav(text, filepath, session_overrides=session_overrides)
                 engine_name = "piper"
+                cls._last_used_engine = "piper"
 
             if success:
                 try:
@@ -128,6 +137,7 @@ class TTSManager:
         except Exception as e:
             logger.error("TTS_MANAGER", f"Engine {engine.__class__.__name__} generate_wav error: {e}")
             if not getattr(engine, "_stop_flag", False) and not isinstance(engine, type(get_piper())):
+                cls._last_used_engine = "piper"
                 return get_piper().generate_wav(text, filepath, session_overrides=session_overrides)
             return False
 
@@ -145,6 +155,8 @@ class TTSManager:
                 engine_name = get_audio_config().get("active_engine", "piper")
             except Exception:
                 engine_name = "piper"
+
+        cls._last_used_engine = engine_name
 
         # Fast TTSCache lookup
         try:
@@ -179,6 +191,7 @@ class TTSManager:
                 except TypeError:
                     success = get_piper().generate_wav_chunked(text, filepath, progress_callback, session_overrides=session_overrides)
                 engine_name = "piper"
+                cls._last_used_engine = "piper"
 
             if success:
                 try:
@@ -191,6 +204,7 @@ class TTSManager:
         except Exception as e:
             logger.error("TTS_MANAGER", f"Engine {engine.__class__.__name__} chunked error: {e}")
             if not getattr(engine, "_stop_flag", False) and not isinstance(engine, type(get_piper())):
+                cls._last_used_engine = "piper"
                 try:
                     return get_piper().generate_wav_chunked(text, filepath, progress_callback, on_chunk_ready=on_chunk_ready, session_overrides=session_overrides)
                 except TypeError:

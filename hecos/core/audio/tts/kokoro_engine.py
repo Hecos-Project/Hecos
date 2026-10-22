@@ -103,23 +103,76 @@ def _ensure_kokoro_compat():
     """
     Guarantees Kokoro can initialize even if Windows Smart App Control (SAC) blocks
     spaCy's native extensions (e.g. span_group.pyd).
-    misaki.en eagerly imports spacy for English G2P. Italian and non-English pipelines
-    use espeak-ng and do not use spaCy at all. If spaCy cannot be loaded, we provide
-    a lightweight mock for misaki.en so Kokoro loads smoothly for all espeak voices.
+    If misaki.en is already working, leaves it untouched.
+    If misaki.en fails to import or lacks G2P, provides a compatible mock for misaki.en
+    with a FallbackG2P class that uses misaki.espeak.EspeakFallback so English voices
+    can synthesize cleanly without raising AttributeError.
     """
+    import sys
+    # Check if a valid misaki.en is already loaded
+    if "misaki.en" in sys.modules:
+        m = sys.modules["misaki.en"]
+        if hasattr(m, "G2P") and hasattr(m, "MToken"):
+            return
+
     try:
-        import spacy  # noqa: F401
+        import misaki.en
+        if hasattr(misaki.en, "G2P") and hasattr(misaki.en, "MToken"):
+            return
     except Exception:
+        pass
+
+    try:
+        import types
         try:
-            import sys
-            import types
             from misaki.token import MToken
-            if "misaki.en" not in sys.modules:
-                mock_en = types.ModuleType("misaki.en")
-                mock_en.MToken = MToken
-                sys.modules["misaki.en"] = mock_en
         except Exception:
-            pass
+            from dataclasses import dataclass
+            from typing import Optional
+            @dataclass
+            class MToken:
+                text: str
+                tag: str = 'NN'
+                whitespace: str = ''
+                phonemes: Optional[str] = None
+                start_ts: Optional[float] = None
+                end_ts: Optional[float] = None
+
+        class FallbackG2P:
+            def __init__(self, version=None, trf=False, british=False, fallback=None, unk=''):
+                self.version = version
+                self.british = british
+                self.fallback = fallback
+                self.unk = unk
+                if not self.fallback:
+                    try:
+                        from misaki import espeak
+                        self.fallback = espeak.EspeakFallback(british=self.british)
+                    except Exception:
+                        self.fallback = None
+
+            def __call__(self, text, preprocess=True):
+                import re
+                tokens = []
+                words = re.findall(r'\S+|\s+', text)
+                for w in words:
+                    if w.isspace():
+                        if tokens:
+                            tokens[-1].whitespace += w
+                    else:
+                        tk = MToken(text=w, tag='NN', whitespace='', phonemes=None)
+                        ph, _ = self.fallback(tk) if self.fallback else (None, None)
+                        tk.phonemes = ph or self.unk or ''
+                        tokens.append(tk)
+                res = ''.join((t.phonemes or '') + t.whitespace for t in tokens)
+                return res, tokens
+
+        mock_en = types.ModuleType("misaki.en")
+        mock_en.MToken = MToken
+        mock_en.G2P = FallbackG2P
+        sys.modules["misaki.en"] = mock_en
+    except Exception:
+        pass
 
 _ensure_kokoro_compat()
 

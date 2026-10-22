@@ -533,7 +533,11 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None, on_chunk
             
             try:
                 from hecos.core.audio.tts_cache import TTSCache
-                TTSCache.get_instance().put_from_file(text, engine=_engine, source_filepath=out, session_overrides=session_overrides)
+                actual_engine = _engine
+                if _engine not in ['xtts2', 'xtts', 'fish_speech', 'fish']:
+                    from hecos.core.audio.tts_manager import TTSManager
+                    actual_engine = TTSManager.get_last_used_engine()
+                TTSCache.get_instance().put_from_file(text, engine=actual_engine, source_filepath=out, session_overrides=session_overrides)
             except Exception as _c_put_err:
                 _chat_log.debug(f"[Audio] TTS Cache store notice: {_c_put_err}")
             
