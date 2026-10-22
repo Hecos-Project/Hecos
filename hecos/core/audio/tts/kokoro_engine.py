@@ -682,6 +682,19 @@ class KokoroEngine(BaseTTSEngine):
         pipeline = self._get_pipeline(lang_code)
 
         if not pipeline:
+            # Fallback to voice default language or Italian to maintain Kokoro synthesis
+            fallback_lang = voice[0] if (voice and voice[0] in "abefhijpz" and voice[0] != lang_code) else ("i" if _espeak_available() else "a")
+            if fallback_lang != lang_code:
+                logger.warning(
+                    "KOKORO",
+                    f"Requested language pipeline '{lang_name}' ({lang_code}) failed to load. "
+                    f"Falling back to '{fallback_lang}' ({_LANG_NAMES.get(fallback_lang, fallback_lang)}) to maintain Kokoro synthesis."
+                )
+                lang_code = fallback_lang
+                lang_name = _LANG_NAMES.get(lang_code, lang_code)
+                pipeline = self._get_pipeline(lang_code)
+
+        if not pipeline:
             return False
 
         voice_target = self._resolve_voice_tensor(pipeline, voice, blend_voice, alpha, beta)
@@ -783,6 +796,19 @@ class KokoroEngine(BaseTTSEngine):
             return
 
         pipeline = self._get_pipeline(lang_code)
+
+        if not pipeline:
+            # Fallback to voice default language or Italian to maintain Kokoro synthesis
+            fallback_lang = voice[0] if (voice and voice[0] in "abefhijpz" and voice[0] != lang_code) else ("i" if _espeak_available() else "a")
+            if fallback_lang != lang_code:
+                logger.warning(
+                    "KOKORO",
+                    f"Requested language pipeline '{lang_name}' ({lang_code}) failed to load. "
+                    f"Falling back to '{fallback_lang}' ({_LANG_NAMES.get(fallback_lang, fallback_lang)}) to maintain Kokoro synthesis."
+                )
+                lang_code = fallback_lang
+                lang_name = _LANG_NAMES.get(lang_code, lang_code)
+                pipeline = self._get_pipeline(lang_code)
 
         if not pipeline:
             logger.warning("KOKORO", "Pipeline unavailable; skipping speak().")

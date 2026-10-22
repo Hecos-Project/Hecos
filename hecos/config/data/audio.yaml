@@ -42,7 +42,7 @@ piper_inference_presets:
     volume: 1.0
 kokoro:
   speed: 1.0
-  voice: af_bella
+  voice: if_sara
   lang_code: auto
   blend_voice: ''
   alpha: 1.0
@@ -66,16 +66,17 @@ kokoro_presets:
     voice: af_heart
     volume: 1
   Expressive Bella:
+    voice: if_sara
+    blend_voice: ''
+    lang_code: auto
+    inference_preset: Dynamic Prosody
+    speed: 1
     alpha: 1
     beta: 1.25
-    blend_voice: ''
-    inference_preset: Dynamic Prosody
-    lang_code: auto
-    normalize: true
     sentence_silence: 0.1
-    speed: 1
-    voice: af_bella
     volume: 1
+    normalize: true
+    model_path: ''
   Fast Adam:
     alpha: 1
     beta: 1
