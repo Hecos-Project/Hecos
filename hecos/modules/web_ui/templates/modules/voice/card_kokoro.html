@@ -69,10 +69,10 @@
     <div class="field">
       <label>
         <i class="fas fa-language"></i> G2P Language Pipeline
-        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Elaboratore fonetico del testo (G2P). Definisce la lingua in cui è SCRITTO il testo (es. 'it' per italiano, 'en-us' per inglese). NON serve per l'accento straniero! Per dare accento o sfumature alla voce, usa invece Voice 2 (Blend) e i parametri Alpha/Beta."></i>
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Grapheme-to-Phoneme linguistic processor. Defines the written text language to phonemize (e.g. 'it' for Italian, 'en-us' for English), NOT a foreign accent! To modify vocal accent or timbre, use Voice 2 (Blend) and Alpha/Beta parameters instead."></i>
       </label>
       <select id="v-kokoro-lang">
-        <option value="auto">Auto-Detect (Dalla voce / Consigliato)</option>
+        <option value="auto">Auto-Detect (From Voice / Recommended)</option>
         <option value="i">Italian (it · eSpeak-NG)</option>
         <option value="a">American English (en-us · Misaki)</option>
         <option value="b">British English (en-gb · Misaki)</option>
@@ -81,7 +81,7 @@
         <option value="z">Mandarin Chinese (zh · Misaki)</option>
         <option value="p">Portuguese (pt-br · eSpeak-NG)</option>
         <option value="h">Hindi (hi · eSpeak-NG)</option>
-        <option value="j" disabled title="Richiede pyopenjtalk (non supportato su Windows senza build C++ dedicate)">Japanese (ja · Non supportato su Windows)</option>
+        <option value="j" disabled title="Requires pyopenjtalk (not supported on Windows without dedicated C++ build tools)">Japanese (ja · Not supported on Windows)</option>
       </select>
     </div>
   </div>

@@ -91,12 +91,63 @@ class TTSCache:
                 if k in overrides and overrides[k] is not None:
                     params[k] = overrides[k]
         elif engine_clean == "kokoro":
-            voice = overrides.get("kokoro_voice") or overrides.get("voice") or overrides.get("tts_voice") or ""
-            for k in ("speed", "kokoro_speed", "volume", "kokoro_volume", "normalize", "kokoro_normalize",
-                      "alpha", "kokoro_alpha", "beta", "kokoro_beta", "blend_voice", "kokoro_blend_voice",
-                      "lang_code", "sentence_silence", "kokoro_silence", "kokoro_preset", "kokoro_inference_preset"):
-                if k in overrides and overrides[k] is not None:
-                    params[k] = overrides[k]
+            try:
+                from hecos.core.audio.device_manager import get_audio_config
+                cfg = get_audio_config().get("kokoro", {})
+            except Exception:
+                cfg = {}
+
+            k_preset = overrides.get("kokoro_preset") or cfg.get("current_preset")
+            p_dict = {}
+            if k_preset and k_preset != "default":
+                try:
+                    p_dict = get_audio_config().get("kokoro_presets", {}).get(k_preset) or {}
+                except Exception:
+                    pass
+
+            voice = (
+                overrides.get("kokoro_voice")
+                or overrides.get("voice")
+                or overrides.get("tts_voice")
+                or p_dict.get("voice")
+                or cfg.get("voice")
+                or "af_heart"
+            )
+
+            def _get_k_val(name, *alts):
+                for k in (name, *alts):
+                    if k in overrides and overrides[k] is not None:
+                        try:
+                            return round(float(overrides[k]), 3)
+                        except (ValueError, TypeError):
+                            return overrides[k]
+                if name in p_dict and p_dict[name] is not None:
+                    try:
+                        return round(float(p_dict[name]), 3)
+                    except (ValueError, TypeError):
+                        return p_dict[name]
+                if name in cfg and cfg[name] is not None:
+                    try:
+                        return round(float(cfg[name]), 3)
+                    except (ValueError, TypeError):
+                        return cfg[name]
+                return None
+
+            for p_name, alts in [
+                ("speed", ("kokoro_speed",)),
+                ("alpha", ("kokoro_alpha",)),
+                ("beta", ("kokoro_beta",)),
+                ("sentence_silence", ("kokoro_silence",)),
+                ("volume", ("kokoro_volume",)),
+                ("normalize", ("kokoro_normalize",)),
+                ("blend_voice", ("kokoro_blend_voice",)),
+                ("lang_code", ("kokoro_lang",)),
+            ]:
+                v = _get_k_val(p_name, *alts)
+                if v is not None:
+                    params[p_name] = v
+            if k_preset:
+                params["kokoro_preset"] = k_preset
         elif engine_clean == "piper":
             raw_voice = overrides.get("onnx_model") or overrides.get("piper_model") or overrides.get("tts_voice") or ""
             voice = os.path.basename(str(raw_voice)).lower() if raw_voice else ""

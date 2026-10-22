@@ -717,8 +717,9 @@ class KokoroEngine(BaseTTSEngine):
             silence_samples = int(sentence_silence * 24000)
             silence_chunk = np.zeros(silence_samples, dtype=np.float32) if silence_samples > 0 else None
 
+            split_pat = r"(?<=[.!?。])\s+|\n+" if sentence_silence > 0 else r"\n+"
             chunks = []
-            for _, _, audio in pipeline(text, voice=voice_target, speed=speed, split_pattern=r"\n+"):
+            for _, _, audio in pipeline(text, voice=voice_target, speed=speed, split_pattern=split_pat):
                 if audio is not None:
                     if hasattr(audio, "detach"):
                         arr = audio.detach().cpu().numpy().astype(np.float32)
