@@ -704,3 +704,4 @@ hecos/data/*_token*
 *.env
 .env.*
 
+hecos/engines/fish_speech/
