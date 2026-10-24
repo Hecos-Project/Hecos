@@ -251,6 +251,72 @@
             }
         ]
     },
+    "DOCUMENT_READER": {
+        "description": "Universal document reader with TTS. Fullscreen reading mode, visual PDF canvas rendering, text selection reading, word-by-word highlighting, audiobook-style controls.",
+        "commands": {
+            "read_document": "Open a document in the fullscreen reader with TTS capabilities. Accepts filename, partial name (e.g. 'fotoromanzo'), or full path.",
+            "stop_reading": "Stop the current TTS reading session.",
+            "list_documents": "List all readable documents (PDF, TXT, MD, HTML, DOCX) available in the documents library."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "📖",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "read",
+                "aliases": [
+                    "/read",
+                    "/leggi",
+                    "/reader",
+                    "/docreader",
+                    "/leggi_documento"
+                ],
+                "description": "Apre e legge un documento con voce sintetizzata nel Document Reader",
+                "usage": "/read [percorso o nome file]",
+                "example": "/read fotoromanzo",
+                "icon": "📖",
+                "category": "DOCUMENTS",
+                "method": "read_document",
+                "requires_args": false
+            },
+            {
+                "id": "stop_reading",
+                "aliases": [
+                    "/stop_reading",
+                    "/ferma_lettura",
+                    "/stop_doc",
+                    "/stop_reader"
+                ],
+                "description": "Interrompe la lettura vocale attiva nel Document Reader",
+                "usage": "/stop_reading",
+                "example": "/stop_reading",
+                "icon": "⏹️",
+                "category": "DOCUMENTS",
+                "method": "stop_reading",
+                "requires_args": false
+            },
+            {
+                "id": "read_list",
+                "aliases": [
+                    "/read_list",
+                    "/doc_list",
+                    "/lista_lettura"
+                ],
+                "description": "Elenca i documenti disponibili da leggere con il Document Reader",
+                "usage": "/read_list",
+                "example": "/read_list",
+                "icon": "📑",
+                "category": "DOCUMENTS",
+                "method": "list_documents",
+                "requires_args": false
+            }
+        ]
+    },
     "IMAGE_GEN": {
         "description": "AI Image Generation - Generates images from text prompts with priority support for local backends (SwarmUI/ComfyUI on port 7801). Additionally supports cloud AI providers including Pollinations, Gemini, OpenAI DALL-E, Stability AI, and HuggingFace. Fully autonomous package with its own TOML configuration.",
         "commands": {},

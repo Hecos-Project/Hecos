@@ -305,6 +305,24 @@ function buildAudioPayload() {
     const sel = el ? el.value : (v.onnx_model || 'it_IT-paola-medium.onnx');
     const modelFile = (sel && sel.trim() && sel !== 'null') ? sel : 'it_IT-paola-medium.onnx';
 
+    const curKokoroPreset = getV('v-kokoro-preset', v.kokoro?.current_preset ?? 'default');
+    const kokoroPresetsObj = v.kokoro_presets ? Object.assign({}, v.kokoro_presets) : {};
+    if (curKokoroPreset && curKokoroPreset !== 'default' && kokoroPresetsObj[curKokoroPreset]) {
+        kokoroPresetsObj[curKokoroPreset] = Object.assign({}, kokoroPresetsObj[curKokoroPreset], {
+            speed: parseFloat(getV('v-kokoro-speed', kokoroPresetsObj[curKokoroPreset].speed ?? 1.0)),
+            sentence_silence: parseFloat(getV('v-kokoro-silence', kokoroPresetsObj[curKokoroPreset].sentence_silence ?? 0.15)),
+            voice: getV('v-kokoro-voice', kokoroPresetsObj[curKokoroPreset].voice || 'af_heart'),
+            blend_voice: getV('v-kokoro-blend-voice', kokoroPresetsObj[curKokoroPreset].blend_voice || ''),
+            alpha: parseFloat(getV('v-kokoro-alpha', kokoroPresetsObj[curKokoroPreset].alpha ?? 1.0)),
+            beta: parseFloat(getV('v-kokoro-beta', kokoroPresetsObj[curKokoroPreset].beta ?? 1.0)),
+            volume: parseFloat(getV('v-kokoro-volume', kokoroPresetsObj[curKokoroPreset].volume ?? 1.0)),
+            normalize: getC('v-kokoro-normalize', kokoroPresetsObj[curKokoroPreset].normalize ?? true),
+            inference_preset: getV('v-kokoro-inference-preset', kokoroPresetsObj[curKokoroPreset].inference_preset || ''),
+            lang_code: getV('v-kokoro-lang', kokoroPresetsObj[curKokoroPreset].lang_code || 'auto')
+        });
+        if (window.audioConfig) window.audioConfig.kokoro_presets = kokoroPresetsObj;
+    }
+
     return {
         active_engine: getV('v-active-engine', v.active_engine || 'piper'),
         kokoro: {
@@ -314,14 +332,14 @@ function buildAudioPayload() {
             blend_voice: getV('v-kokoro-blend-voice', v.kokoro?.blend_voice || ''),
             alpha: parseFloat(getV('v-kokoro-alpha', v.kokoro?.alpha ?? 1.0)),
             beta: parseFloat(getV('v-kokoro-beta', v.kokoro?.beta ?? 1.0)),
-            sentence_silence: parseFloat(getV('v-kokoro-silence', v.kokoro?.sentence_silence ?? 0.0)),
+            sentence_silence: parseFloat(getV('v-kokoro-silence', v.kokoro?.sentence_silence ?? 0.15)),
             model_path: getV('v-kokoro-model', v.kokoro?.model_path || ''),
             volume: parseFloat(getV('v-kokoro-volume', v.kokoro?.volume ?? 1.0)),
             normalize: getC('v-kokoro-normalize', v.kokoro?.normalize ?? true),
-            current_preset: getV('v-kokoro-preset', v.kokoro?.current_preset ?? 'default'),
+            current_preset: curKokoroPreset,
             current_inference_preset: getV('v-kokoro-inference-preset', '')
         },
-        kokoro_presets: v.kokoro_presets || {},
+        kokoro_presets: kokoroPresetsObj,
         kokoro_inference_presets: v.kokoro_inference_presets || {},
         xtts: {
             speed: parseFloat(getV('v-xtts-speed', v.xtts?.speed ?? 1.0)),

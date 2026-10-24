@@ -124,16 +124,22 @@ window.processAiMedia = function(html) {
       
       let docPath = href;
       try {
-        if (href.includes('?path=')) {
-          const urlObj = new URL(href, window.location.origin);
-          docPath = urlObj.searchParams.get('path') || href;
-        } else if (href.startsWith('file:///')) {
-          docPath = decodeURIComponent(href.replace('file:///', ''));
+        while (docPath.includes('?path=')) {
+          const urlObj = new URL(docPath, window.location.origin);
+          const p = urlObj.searchParams.get('path');
+          if (p) docPath = decodeURIComponent(p);
+          else break;
+        }
+        if (docPath.startsWith('file:///')) {
+          docPath = decodeURIComponent(docPath.substring(8));
+        } else if (docPath.startsWith('file://')) {
+          docPath = decodeURIComponent(docPath.substring(7));
         }
       } catch(e) {}
+      docPath = docPath.replace(/\\/g, '/');
       
       // Extract clean filename from the actual document path rather than the messy URL
-      const fileName = docPath.split(/[\\\/]/).pop() || 'Local File';
+      const fileName = docPath.split('/').pop() || 'Local File';
       const ext = (fileName.match(/\.([a-z0-9]+)$/i) || ['', ''])[1].toLowerCase();
 
       // Determine icon and color by file extension
@@ -145,6 +151,16 @@ window.processAiMedia = function(html) {
       const iconClass = fileIconMap[ext] || 'fa-file-alt';
       const iconColor = fileColorMap[ext] || 'var(--accent)';
 
+      const isPreviewable = (ext === 'pdf' || ext === 'html' || ext === 'htm');
+      const previewId = isPreviewable ? ('preview_box_' + Math.random().toString(36).substring(2, 10)) : null;
+      const iframeId = isPreviewable ? ('preview_' + Math.random().toString(36).substring(2, 10)) : null;
+
+      const zoomBtnHtml = isPreviewable ? `
+        <button class="chat-file-zoom-btn" data-preview-id="${previewId}" onclick="window.togglePdfPreviewZoom('${previewId}')" title="Expand preview in chat" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.15); border:1px solid rgba(108,140,255,0.3); color:#c4b5fd; font-size:0.8em; font-family:inherit; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.2s ease;">
+          <i class="fas fa-expand-arrows-alt"></i> <span class="zoom-label">Zoom</span>
+        </button>
+      ` : '';
+
       const card = document.createElement('div');
       card.className = 'chat-file-card';
       card.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;margin:6px 0;';
@@ -152,8 +168,8 @@ window.processAiMedia = function(html) {
         <div class="chat-file-icon" style="font-size:1.6em;color:${iconColor};"><i class="fas ${iconClass}"></i></div>
         <div class="chat-file-details" style="flex:1;min-width:0;">
           <div class="chat-file-name" style="font-weight:600;font-size:0.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${docPath}">${fileName}</div>
-          <div class="chat-file-action" style="display:flex;gap:6px;margin-top:5px;">
-            <a href="${src}" target="_blank" download style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.12); border:1px solid rgba(108,140,255,0.25); color:var(--muted); font-size:0.8em; text-decoration:none;"><i class="fas fa-download"></i> Download</a>
+          <div class="chat-file-action" style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;align-items:center;">
+            <a href="${src}" target="_blank" download style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.12); border:1px solid rgba(108,140,255,0.25); color:var(--muted); font-size:0.8em; text-decoration:none;"><i class="fas fa-download"></i> Download</a>${zoomBtnHtml}
           </div>
         </div>
       `;
@@ -161,46 +177,63 @@ window.processAiMedia = function(html) {
       // For HTML files, add inline preview iframe with Visual Editor hover overlay
       if (ext === 'html' || ext === 'htm') {
         const serveUrl = `/api/serve_html?path=${encodeURIComponent(docPath)}`;
-        const iframeId = 'preview_' + Math.random().toString(36).substring(2, 10);
         const safeDocPath = docPath.replace(/\\/g, '/');
         const previewDiv = document.createElement('div');
         previewDiv.className = 'chat-html-preview';
+        previewDiv.id = previewId;
         previewDiv.innerHTML = `
           <div class="chat-html-preview-bar">
             <span>Preview: ${fileName}</span>
-            <div style="display:flex; gap:10px; align-items:center;">
+            <div style="display:flex; gap:8px; align-items:center;">
               <button onclick="if(window.openDocPreview) window.openDocPreview('${safeDocPath.replace(/'/g, "\\'")}');" style="background:rgba(108,140,255,0.2);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9em;"><i class="fas fa-magic"></i> Visual Editor</button>
-              <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" style="background:none;border:none;color:var(--accent);cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
+              <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Ricarica anteprima" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
             </div>
           </div>
           <div class="chat-html-preview-body">
-            <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;height:350px;border:none;display:block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
+            <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:400px;border:none;display:block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
           </div>
         `;
         // Wrap card and preview together
         const wrapper = document.createElement('div');
+        wrapper.style.width = '100%';
         wrapper.appendChild(card);
         wrapper.appendChild(previewDiv);
         a.replaceWith(wrapper);
+        setTimeout(() => {
+          const pMsg = wrapper.closest('.msg');
+          if (pMsg) pMsg.classList.add('has-pdf');
+          const pBubble = wrapper.closest('.msg-bubble');
+          if (pBubble) pBubble.classList.add('has-pdf');
+        }, 0);
       } else if (ext === 'pdf') {
-        // For PDF files, add an iframe preview without the edit overlay
-        const serveUrl = `/api/local_file?path=${encodeURIComponent(docPath)}`;
-        const iframeId = 'preview_' + Math.random().toString(36).substring(2, 10);
+        // For PDF files, add an iframe preview with full navigation toolbar
+        const serveUrl = `/api/local_file?path=${encodeURIComponent(docPath)}#pagemode=thumbs&navpanes=1&page=1`;
+        const safeDocPath = docPath.replace(/\\/g, '/');
         const previewDiv = document.createElement('div');
         previewDiv.className = 'chat-pdf-preview';
+        previewDiv.id = previewId;
         previewDiv.innerHTML = `
           <div class="chat-pdf-preview-bar">
             <span>Preview: ${fileName}</span>
-            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" style="background:none;border:none;color:var(--accent);cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Ricarica anteprima" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
+            </div>
           </div>
           <div class="chat-pdf-preview-body">
-            <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;height:450px;border:none;display:block;"></iframe>
+            <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:480px;border:none;display:block;"></iframe>
           </div>
         `;
         const wrapper = document.createElement('div');
+        wrapper.style.width = '100%';
         wrapper.appendChild(card);
         wrapper.appendChild(previewDiv);
         a.replaceWith(wrapper);
+        setTimeout(() => {
+          const pMsg = wrapper.closest('.msg');
+          if (pMsg) pMsg.classList.add('has-pdf');
+          const pBubble = wrapper.closest('.msg-bubble');
+          if (pBubble) pBubble.classList.add('has-pdf');
+        }, 0);
       } else {
         a.replaceWith(card);
       }
@@ -295,53 +328,60 @@ window.processAiMedia = function(html) {
     const iconColor = colorMap[ext] || 'var(--accent)';
 
     // For PDF/HTML, offer an "Open" button linking to the API serve endpoint
+    const isPreviewable = (ext === 'pdf' || ext === 'html' || ext === 'htm');
+    const previewId = isPreviewable ? ('preview_box_' + Math.random().toString(36).substring(2, 10)) : null;
+    const iframeId = isPreviewable ? ('preview_' + Math.random().toString(36).substring(2, 10)) : null;
+
     const serveUrl = (ext === 'html' || ext === 'htm') ? `/api/serve_html?path=${encodeURIComponent(rawPath)}` : apiUrl;
     
-    const openBtn = (ext === 'pdf' || ext === 'html' || ext === 'htm')
-      ? `<a href="${serveUrl}" target="_blank" style="margin-left:8px; padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.18); border:1px solid rgba(108,140,255,0.35); color:var(--accent); font-size:0.8em; text-decoration:none; font-weight:600;">
+    const openBtn = isPreviewable
+      ? `<a href="${serveUrl}" target="_blank" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.18); border:1px solid rgba(108,140,255,0.35); color:var(--accent); font-size:0.8em; text-decoration:none; font-weight:600;">
           <i class="fas fa-external-link-alt"></i> Open
         </a>`
       : '';
     const dlBtn = `<a href="${apiUrl}" download="${fileName}" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.12); border:1px solid rgba(108,140,255,0.25); color:var(--muted); font-size:0.8em; text-decoration:none;">
         <i class="fas fa-download"></i> Download
       </a>`;
+    const zoomBtn = isPreviewable ? `<button class="chat-file-zoom-btn" data-preview-id="${previewId}" onclick="window.togglePdfPreviewZoom('${previewId}')" title="Expand preview in chat" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.15); border:1px solid rgba(108,140,255,0.3); color:#c4b5fd; font-size:0.8em; font-family:inherit; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.2s ease;">
+        <i class="fas fa-expand-arrows-alt"></i> <span class="zoom-label">Zoom</span>
+      </button>` : '';
 
     let cardHtml = `<div class="chat-file-card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;margin:6px 0;">
       <div class="chat-file-icon" style="font-size:1.6em;color:${iconColor};"><i class="fas ${iconClass}"></i></div>
       <div class="chat-file-details" style="flex:1;min-width:0;">
         <div class="chat-file-name" style="font-weight:600;font-size:0.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${rawPath}">${fileName}</div>
-        <div class="chat-file-action" style="display:flex;gap:6px;margin-top:5px;">${openBtn}${dlBtn}</div>
+        <div class="chat-file-action" style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;align-items:center;">${openBtn}${dlBtn}${zoomBtn}</div>
       </div>
     </div>`;
 
     // Add inline iframe preview for HTML
     if (ext === 'html' || ext === 'htm') {
-      const iframeId = 'preview_' + Math.random().toString(36).substring(2, 10);
       const safeDocPath = rawPath.replace(/\\/g, '/');
       cardHtml += `
-      <div class="chat-html-preview">
+      <div class="chat-html-preview" id="${previewId}">
         <div class="chat-html-preview-bar">
           <span>Preview: ${fileName}</span>
-          <div style="display:flex; gap:10px; align-items:center;">
+          <div style="display:flex; gap:8px; align-items:center;">
             <button onclick="if(window.openDocPreview) window.openDocPreview('${safeDocPath.replace(/'/g, "\\'")}');" style="background:rgba(108,140,255,0.2);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9em;"><i class="fas fa-magic"></i> Visual Editor</button>
-            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" style="background:none;border:none;color:var(--accent);cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
+            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Ricarica anteprima" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
           </div>
         </div>
         <div class="chat-html-preview-body">
-          <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;height:350px;border:none;display:block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
+          <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:400px;border:none;display:block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
         </div>
       </div>`;
     } else if (ext === 'pdf') {
-      const serveUrl = `/api/local_file?path=${encodeURIComponent(rawPath)}`;
-      const iframeId = 'preview_' + Math.random().toString(36).substring(2, 10);
+      const serveUrl = `/api/local_file?path=${encodeURIComponent(rawPath)}#pagemode=thumbs&navpanes=1&page=1`;
       cardHtml += `
-      <div class="chat-pdf-preview">
+      <div class="chat-pdf-preview" id="${previewId}">
         <div class="chat-pdf-preview-bar">
           <span>Preview: ${fileName}</span>
-          <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" style="background:none;border:none;color:var(--accent);cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Ricarica anteprima" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
+          </div>
         </div>
         <div class="chat-pdf-preview-body">
-          <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;height:450px;border:none;display:block;"></iframe>
+          <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:480px;border:none;display:block;"></iframe>
         </div>
       </div>`;
     }
@@ -498,3 +538,234 @@ window.openInVlc = function(filePath) {
     }
   });
 };
+
+// ── Preview Zoom / Full-Chat Expansion ──────────────────────────────────────
+window.togglePdfPreviewZoom = function(previewId) {
+  const el = document.getElementById(previewId);
+  if (!el) return;
+
+  const isExpanded = el.classList.toggle('expanded');
+  
+  // Find all zoom buttons targeting this previewId
+  const zoomBtns = document.querySelectorAll(`[data-preview-id="${previewId}"], .chat-file-zoom-btn[onclick*="${previewId}"]`);
+  
+  // Overrides on parent bubble to prevent backdrop-filter stacking context traps
+  const msgBubble = el.closest('.msg-bubble');
+  const msgEl = el.closest('.msg');
+  
+  if (isExpanded) {
+    if (msgBubble) msgBubble.classList.add('has-expanded-preview');
+    if (msgEl) msgEl.classList.add('has-expanded-preview');
+    document.body.classList.add('preview-zoomed');
+    
+    zoomBtns.forEach(btn => {
+      const icon = btn.querySelector('i');
+      const label = btn.querySelector('.zoom-label') || btn;
+      if (icon) icon.className = 'fas fa-compress-arrows-alt';
+      if (label && label !== btn) label.textContent = 'Collapse';
+      btn.setAttribute('title', 'Restore normal size (Esc)');
+    });
+    
+    const bar = el.querySelector('.chat-pdf-preview-bar, .chat-html-preview-bar');
+    if (bar && !bar.querySelector('.chat-preview-close-btn')) {
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'chat-preview-close-btn';
+      closeBtn.innerHTML = '<i class="fas fa-times"></i> <span style="font-size:0.85em;font-weight:600;">Close</span>';
+      closeBtn.title = 'Close expanded preview (Esc)';
+      closeBtn.style.cssText = 'background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:0.85em;display:inline-flex;align-items:center;gap:5px;';
+      closeBtn.onclick = function(e) {
+        e.stopPropagation();
+        window.togglePdfPreviewZoom(previewId);
+      };
+      bar.appendChild(closeBtn);
+    }
+  } else {
+    if (msgBubble) msgBubble.classList.remove('has-expanded-preview');
+    if (msgEl) msgEl.classList.remove('has-expanded-preview');
+    document.body.classList.remove('preview-zoomed');
+    
+    zoomBtns.forEach(btn => {
+      const icon = btn.querySelector('i');
+      const label = btn.querySelector('.zoom-label') || btn;
+      if (icon) icon.className = 'fas fa-expand-arrows-alt';
+      if (label && label !== btn) label.textContent = 'Zoom';
+      btn.setAttribute('title', 'Expand preview in chat');
+    });
+    
+    const closeBtn = el.querySelector('.chat-preview-close-btn');
+    if (closeBtn) closeBtn.remove();
+  }
+};
+
+// Global Esc listener to exit preview zoom
+if (!window._pdfZoomEscBound) {
+  window._pdfZoomEscBound = true;
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const expanded = document.querySelector('.chat-pdf-preview.expanded, .chat-html-preview.expanded');
+      if (expanded) {
+        window.togglePdfPreviewZoom(expanded.id);
+      }
+    }
+  });
+}
+
+// Ensure CSS styles for Zoom/Full-Chat expansion and immediate wide view
+(function _ensurePreviewZoomCSS() {
+  if (document.getElementById('chat-preview-zoom-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'chat-preview-zoom-styles';
+  style.textContent = `
+    .msg:has(.chat-pdf-preview),
+    .msg.has-pdf,
+    .msg:has(.chat-html-preview),
+    .msg.has-html-preview {
+      max-width: 980px !important;
+      width: 100% !important;
+    }
+    .msg:has(.chat-pdf-preview) .msg-content-wrapper,
+    .msg.has-pdf .msg-content-wrapper,
+    .msg:has(.chat-html-preview) .msg-content-wrapper,
+    .msg.has-html-preview .msg-content-wrapper {
+      max-width: 100% !important;
+      width: 100% !important;
+      align-items: stretch !important;
+    }
+    .msg:has(.chat-pdf-preview) .msg-bubble,
+    .msg.has-pdf .msg-bubble,
+    .msg:has(.chat-html-preview) .msg-bubble,
+    .msg.has-html-preview .msg-bubble {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: min(800px, 100%) !important;
+      box-sizing: border-box !important;
+    }
+    .chat-pdf-preview,
+    .chat-html-preview {
+      width: 100% !important;
+      min-width: min(780px, 100%) !important;
+      box-sizing: border-box !important;
+      margin: 10px 0 4px 0 !important;
+      border-radius: 8px !important;
+      overflow: hidden !important;
+      border: 1px solid var(--border-color, rgba(255,255,255,0.12)) !important;
+      background: var(--bg2, #12141f) !important;
+    }
+    .chat-pdf-preview-bar,
+    .chat-html-preview-bar {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      padding: 8px 14px !important;
+      background: rgba(0, 0, 0, 0.25) !important;
+      border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08)) !important;
+      font-size: 0.85em !important;
+      font-weight: 600 !important;
+      color: var(--muted, #94a3b8) !important;
+      gap: 10px !important;
+    }
+    .chat-pdf-preview-bar > span,
+    .chat-html-preview-bar > span {
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+      flex: 1 !important;
+    }
+    .chat-pdf-preview-body,
+    .chat-html-preview-body {
+      width: 100% !important;
+      min-width: min(780px, 100%) !important;
+      box-sizing: border-box !important;
+      position: relative !important;
+    }
+    .chat-pdf-preview-body iframe,
+    .chat-html-preview-body iframe {
+      width: 100% !important;
+      min-width: min(780px, 100%) !important;
+      height: 480px !important;
+      border: none !important;
+      display: block !important;
+      box-sizing: border-box !important;
+    }
+    .chat-file-zoom-btn:hover {
+      background: rgba(108,140,255,0.28) !important;
+      border-color: var(--accent, #6c8cff) !important;
+      color: #fff !important;
+      transform: translateY(-1px) !important;
+    }
+    .has-expanded-preview {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      transform: none !important;
+      filter: none !important;
+      animation: none !important;
+      z-index: 9999 !important;
+    }
+    .chat-pdf-preview.expanded,
+    .chat-html-preview.expanded {
+      position: fixed !important;
+      top: 50px !important;
+      left: var(--sidebar-w, 260px) !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: auto !important;
+      height: auto !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      margin: 0 !important;
+      border-radius: 0 !important;
+      border: none !important;
+      border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
+      z-index: 99999 !important;
+      background: #0b0c12 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      box-shadow: 0 0 60px rgba(0, 0, 0, 0.95) !important;
+      animation: previewZoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    @keyframes previewZoomIn {
+      from { opacity: 0; transform: scale(0.985); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    #sidebar.collapsed ~ #main .chat-pdf-preview.expanded,
+    #sidebar.collapsed ~ #main .chat-html-preview.expanded,
+    body.sidebar-collapsed .chat-pdf-preview.expanded,
+    body.sidebar-collapsed .chat-html-preview.expanded {
+      left: 0 !important;
+    }
+    @media (max-width: 768px) {
+      .chat-pdf-preview.expanded,
+      .chat-html-preview.expanded {
+        left: 0 !important;
+        top: 0 !important;
+      }
+    }
+    .chat-pdf-preview.expanded .chat-pdf-preview-bar,
+    .chat-html-preview.expanded .chat-html-preview-bar {
+      padding: 10px 18px !important;
+      background: #12141f !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+      flex-shrink: 0 !important;
+    }
+    .chat-pdf-preview.expanded .chat-pdf-preview-body,
+    .chat-html-preview.expanded .chat-html-preview-body {
+      flex: 1 !important;
+      height: calc(100% - 48px) !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .chat-pdf-preview.expanded iframe,
+    .chat-html-preview.expanded iframe {
+      width: 100% !important;
+      min-width: 0 !important;
+      height: 100% !important;
+      min-height: 100% !important;
+      display: block !important;
+      border: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+

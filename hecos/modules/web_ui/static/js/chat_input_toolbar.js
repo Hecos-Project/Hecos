@@ -34,7 +34,8 @@ function handleFiles(files, type) {
   const i = document.getElementById('file-upload-img');
   if (d) d.value = '';
   if (i) i.value = '';
-  if (window.showToast) showToast(`📎 ${arr.length} file allegato/i`);
+  if (window.showToast) showToast(`📎 ${arr.length} file(s) attached`);
+  if (typeof window.updateSendBtnState === 'function') window.updateSendBtnState();
 }
 
 function addUploadChip(entry) {
@@ -79,6 +80,7 @@ function addUploadChip(entry) {
 window.removeAttachment = function(name, chipEl) {
   window.pendingAttachments = window.pendingAttachments.filter(a => a.name !== name);
   if (chipEl) chipEl.remove();
+  if (typeof window.updateSendBtnState === 'function') window.updateSendBtnState();
 };
 
 // ── Upload & extract context before sending ─────────────────────
@@ -92,6 +94,7 @@ async function uploadAndGetContext() {
     if (data.ok) {
       window.pendingAttachments = [];
       document.getElementById('upload-preview').innerHTML = '';
+      if (typeof window.updateSendBtnState === 'function') window.updateSendBtnState();
       
       let fileLinks = '';
       if (data.saved_files && data.saved_files.length > 0) {
@@ -105,7 +108,7 @@ async function uploadAndGetContext() {
       return { context: ctx, images: data.images || [], saved_files: data.saved_files || [] };
     }
   } catch (e) {
-    if (window.showToast) showToast('❌ Upload fallito: ' + e.message);
+    if (window.showToast) showToast('❌ Upload failed: ' + e.message);
   }
   return { context: '', images: [] };
 }
@@ -142,7 +145,7 @@ window.confirmPaste = function() {
   ta.value = '';
   closePasteModal();
   userInput.focus();
-  if (window.showToast) showToast('✅ Testo incollato nel messaggio');
+  if (window.showToast) showToast('✅ Text pasted into message');
 };
 
 // (Escape to close paste modal is handled globally by HKS in hks_actions.js)
@@ -239,4 +242,37 @@ document.addEventListener('DOMContentLoaded', () => {
   setupFileUploads();
   setupModalDrag();
   setupDragAndDrop();
+
+  const uInput = document.getElementById('user-input');
+  if (uInput) {
+    uInput.addEventListener('input', () => {
+      if (typeof window.updateSendBtnState === 'function') window.updateSendBtnState();
+    });
+  }
+  if (typeof window.updateSendBtnState === 'function') window.updateSendBtnState();
 });
+
+// ── Send Button State Sync (Deposit Mode vs Send Mode) ──────────
+window.updateSendBtnState = function() {
+  const sendBtn = document.getElementById('send-btn');
+  const userInput = document.getElementById('user-input');
+  if (!sendBtn) return;
+
+  if (!sendBtn.getAttribute('data-default-title')) {
+    sendBtn.setAttribute('data-default-title', sendBtn.title || 'Send');
+  }
+
+  const hasAttachments = window.pendingAttachments && window.pendingAttachments.length > 0;
+  const hasText = userInput && userInput.value.trim().length > 0;
+
+  if (hasAttachments && !hasText) {
+    sendBtn.innerHTML = '<i class="fas fa-file-upload"></i>';
+    sendBtn.title = "Deposit file in chat without querying AI (Enter)";
+    sendBtn.classList.add('btn-deposit-mode');
+  } else {
+    sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    sendBtn.title = sendBtn.getAttribute('data-default-title') || 'Send';
+    sendBtn.classList.remove('btn-deposit-mode');
+  }
+};
+

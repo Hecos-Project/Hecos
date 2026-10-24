@@ -596,3 +596,185 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
 .chat-pdf-preview-body iframe {
     height: 450px;
 }
+
+/* ── Preview Full-Chat Zoom / Expansion ───────────────────────────────────── */
+.msg:has(.chat-pdf-preview),
+.msg.has-pdf,
+.msg:has(.chat-html-preview),
+.msg.has-html-preview {
+    max-width: 980px !important;
+    width: 100% !important;
+}
+
+.msg:has(.chat-pdf-preview) .msg-content-wrapper,
+.msg.has-pdf .msg-content-wrapper,
+.msg:has(.chat-html-preview) .msg-content-wrapper,
+.msg.has-html-preview .msg-content-wrapper {
+    max-width: 100% !important;
+    width: 100% !important;
+    align-items: stretch !important;
+}
+
+.msg:has(.chat-pdf-preview) .msg-bubble,
+.msg.has-pdf .msg-bubble,
+.msg:has(.chat-html-preview) .msg-bubble,
+.msg.has-html-preview .msg-bubble {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: min(800px, 100%) !important;
+    box-sizing: border-box !important;
+}
+
+.chat-pdf-preview,
+.chat-html-preview {
+    width: 100% !important;
+    min-width: min(780px, 100%) !important;
+    box-sizing: border-box !important;
+    margin: 10px 0 4px 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    border: 1px solid var(--border-color, rgba(255,255,255,0.12)) !important;
+    background: var(--bg2, #12141f) !important;
+}
+
+.chat-pdf-preview-bar,
+.chat-html-preview-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 8px 14px !important;
+    background: rgba(0, 0, 0, 0.25) !important;
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08)) !important;
+    font-size: 0.85em !important;
+    font-weight: 600 !important;
+    color: var(--muted, #94a3b8) !important;
+    gap: 10px !important;
+}
+
+.chat-pdf-preview-bar > span,
+.chat-html-preview-bar > span {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    flex: 1 !important;
+}
+
+.chat-pdf-preview-body,
+.chat-html-preview-body {
+    width: 100% !important;
+    min-width: min(780px, 100%) !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+}
+
+.chat-pdf-preview-body iframe,
+.chat-html-preview-body iframe {
+    width: 100% !important;
+    min-width: min(780px, 100%) !important;
+    height: 480px !important;
+    border: none !important;
+    display: block !important;
+    box-sizing: border-box !important;
+}
+
+.chat-file-zoom-btn:hover {
+    background: rgba(108,140,255,0.28) !important;
+    border-color: var(--accent, #6c8cff) !important;
+    color: #fff !important;
+    transform: translateY(-1px) !important;
+}
+
+.has-expanded-preview {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: none !important;
+    filter: none !important;
+    animation: none !important;
+    z-index: 9999 !important;
+}
+
+.chat-preview-zoom-btn {
+    background: rgba(108, 140, 255, 0.15);
+    border: 1px solid rgba(108, 140, 255, 0.35);
+    color: var(--accent, #6c8cff);
+    border-radius: 4px;
+    padding: 3px 8px;
+    cursor: pointer;
+    font-size: 0.85em;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+
+.chat-preview-zoom-btn:hover {
+    background: rgba(108, 140, 255, 0.28);
+    border-color: var(--accent, #6c8cff);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.chat-pdf-preview.expanded,
+.chat-html-preview.expanded {
+    position: fixed !important;
+    top: 50px !important;
+    left: var(--sidebar-w, 260px) !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
+    z-index: 99999 !important;
+    background: #0b0c12 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.95) !important;
+    animation: previewZoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes previewZoomIn {
+    from { opacity: 0; transform: scale(0.985); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+#sidebar.collapsed ~ #main .chat-pdf-preview.expanded,
+#sidebar.collapsed ~ #main .chat-html-preview.expanded,
+body.sidebar-collapsed .chat-pdf-preview.expanded,
+body.sidebar-collapsed .chat-html-preview.expanded,
+@media (max-width: 768px) {
+    .chat-pdf-preview.expanded,
+    .chat-html-preview.expanded {
+        left: 0 !important;
+        top: 0 !important;
+    }
+}
+
+.chat-pdf-preview.expanded .chat-pdf-preview-bar,
+.chat-html-preview.expanded .chat-html-preview-bar {
+    padding: 10px 18px !important;
+    background: #12141f !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+    flex-shrink: 0 !important;
+}
+
+.chat-pdf-preview.expanded .chat-pdf-preview-body,
+.chat-html-preview.expanded .chat-html-preview-body {
+    flex: 1 !important;
+    height: calc(100% - 48px) !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.chat-pdf-preview.expanded iframe,
+.chat-html-preview.expanded iframe {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    display: block !important;
+    border: none !important;
+}

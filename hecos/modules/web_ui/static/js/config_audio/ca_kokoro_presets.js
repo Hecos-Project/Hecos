@@ -29,10 +29,10 @@
                 blend_voice: blendVoice,
                 lang_code: langCode,
                 inference_preset: infPreset,
-                speed: parseFloat(document.getElementById('v-kokoro-speed')?.value || 1.0),
+                speed: parseFloat(document.getElementById('v-kokoro-speed')?.value || 0.95),
                 alpha: parseFloat(document.getElementById('v-kokoro-alpha')?.value || 1.0),
                 beta: parseFloat(document.getElementById('v-kokoro-beta')?.value || 1.0),
-                sentence_silence: parseFloat(document.getElementById('v-kokoro-silence')?.value || 0.0),
+                sentence_silence: parseFloat(document.getElementById('v-kokoro-silence')?.value || 0.15),
                 volume: parseFloat(document.getElementById('v-kokoro-volume')?.value || 1.0),
                 normalize: document.getElementById('v-kokoro-normalize')?.checked ?? true,
                 model_path: (document.getElementById('v-kokoro-model')?.value || '').trim()
@@ -75,10 +75,10 @@
             blend_voice: blendVoice,
             lang_code: langCode,
             inference_preset: infPreset,
-            speed: parseFloat(document.getElementById('v-kokoro-speed')?.value || 1.0),
+            speed: parseFloat(document.getElementById('v-kokoro-speed')?.value || 0.95),
             alpha: parseFloat(document.getElementById('v-kokoro-alpha')?.value || 1.0),
             beta: parseFloat(document.getElementById('v-kokoro-beta')?.value || 1.0),
-            sentence_silence: parseFloat(document.getElementById('v-kokoro-silence')?.value || 0.0),
+            sentence_silence: parseFloat(document.getElementById('v-kokoro-silence')?.value || 0.15),
             volume: parseFloat(document.getElementById('v-kokoro-volume')?.value || 1.0),
             normalize: document.getElementById('v-kokoro-normalize')?.checked ?? true,
             model_path: (document.getElementById('v-kokoro-model')?.value || '').trim()
@@ -109,10 +109,10 @@
             setVal('v-kokoro-voice', 'af_heart');
             setVal('v-kokoro-blend-voice', '');
             setVal('v-kokoro-lang', 'auto');
-            setVal('v-kokoro-speed', 1.0);
+            setVal('v-kokoro-speed', 0.95);
             setVal('v-kokoro-alpha', 1.0);
             setVal('v-kokoro-beta', 1.0);
-            setVal('v-kokoro-silence', 0.0);
+            setVal('v-kokoro-silence', 0.15);
             setVal('v-kokoro-volume', 1.0);
             const normCheck = document.getElementById('v-kokoro-normalize');
             if (normCheck) normCheck.checked = true;
@@ -196,10 +196,10 @@
             document.getElementById('v-kokoro-model').value = p.model_path;
         }
 
-        setValAndRange('v-kokoro-speed', p.speed ?? 1.0);
+        setValAndRange('v-kokoro-speed', p.speed ?? 0.95);
         setValAndRange('v-kokoro-alpha', p.alpha ?? 1.0);
         setValAndRange('v-kokoro-beta', p.beta ?? 1.0);
-        setValAndRange('v-kokoro-silence', p.sentence_silence ?? 0.0);
+        setValAndRange('v-kokoro-silence', p.sentence_silence ?? 0.15);
         setValAndRange('v-kokoro-volume', p.volume ?? 1.0);
         if (p.normalize !== undefined && document.getElementById('v-kokoro-normalize')) {
             document.getElementById('v-kokoro-normalize').checked = p.normalize;

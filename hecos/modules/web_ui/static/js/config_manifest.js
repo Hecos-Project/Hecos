@@ -110,7 +110,8 @@ window.CONFIG_HUB.tagMap = {
     'CONTACTS': 'contacts',
     'BROWSER':    'browser',
     'USERS':      'users',
-    'FLOWS':      'flows'
+    'FLOWS':      'flows',
+    'DOCUMENT_READER': 'document_reader'
 };
 
 /**
@@ -120,7 +121,7 @@ window.CONFIG_HUB.tagMap = {
  */
 window.LAZY_PANEL_IDS = new Set([
     'backend', 'keymanager', 'agent', 'ia', 'filters', 'bridge',
-    'memory', 'voice',
+    'memory', 'voice', 'document_reader',
     'webcam', 'executor', 'automation',
     'browser', 'system', 'sysnet', 'users', 'payload', 'plugins',
     'contacts', 'remote-triggers',

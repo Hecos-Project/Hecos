@@ -21,8 +21,8 @@ window.soApplyKokoroPreset = function(presetName) {
         }
     };
 
-    setVal('so-kokoro-speed', p.speed ?? 1.0);
-    setVal('so-kokoro-silence', p.sentence_silence ?? 0.0);
+    setVal('so-kokoro-speed', p.speed ?? 0.95);
+    setVal('so-kokoro-silence', p.sentence_silence ?? 0.15);
     setVal('so-kokoro-alpha', p.alpha ?? 1.0);
     setVal('so-kokoro-beta', p.beta ?? 1.0);
     setVal('so-kokoro-volume', p.volume ?? 1.0);

@@ -42,7 +42,7 @@ piper_inference_presets:
     volume: 1.0
 kokoro:
   speed: 0.95
-  voice: if_sara
+  voice: im_nicola
   lang_code: auto
   blend_voice: ''
   alpha: 1.0
@@ -52,7 +52,7 @@ kokoro:
   volume: 1.0
   normalize: true
   current_preset: voce ita 1
-  current_inference_preset: Standard & Balanced
+  current_inference_preset: ''
 kokoro_presets:
   Default Heart:
     alpha: 1
@@ -88,18 +88,30 @@ kokoro_presets:
     speed: 1.35
     voice: am_adam
     volume: 1
-  voce ita 1:
-    voice: if_sara
-    blend_voice: ''
-    lang_code: auto
-    inference_preset: Standard & Balanced
-    speed: 0.95
+  ita 1:
     alpha: 1
     beta: 1
-    sentence_silence: 0.15
-    volume: 1
-    normalize: true
+    blend_voice: ''
+    inference_preset: Standard & Balanced
+    lang_code: auto
     model_path: ''
+    normalize: true
+    sentence_silence: 0.15
+    speed: 0.95
+    voice: if_sara
+    volume: 1
+  voce ita 1:
+    alpha: 1
+    beta: 1
+    blend_voice: ''
+    inference_preset: Standard & Balanced
+    lang_code: auto
+    model_path: ''
+    normalize: true
+    sentence_silence: 0.15
+    speed: 0.95
+    voice: if_sara
+    volume: 1
 kokoro_inference_presets:
   Dynamic Prosody:
     alpha: 1
@@ -111,14 +123,14 @@ kokoro_inference_presets:
     speed: 1
     volume: 1
   Fast & Direct:
-    speed: 0.9
-    sentence_silence: 0.05
-    lang_code: auto
-    blend_voice: ''
     alpha: 1
     beta: 1
-    volume: 1
+    blend_voice: ''
+    lang_code: auto
     normalize: true
+    sentence_silence: 0.05
+    speed: 0.9
+    volume: 1
   Hyper-Speed Assistant:
     alpha: 1
     beta: 1
@@ -143,8 +155,8 @@ kokoro_inference_presets:
     blend_voice: ''
     lang_code: auto
     normalize: true
-    sentence_silence: 0
-    speed: 1
+    sentence_silence: 0.15
+    speed: 0.95
     volume: 1
 xtts:
   speed: 1.1

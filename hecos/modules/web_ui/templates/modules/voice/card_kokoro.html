@@ -118,8 +118,8 @@
         </div>
       </div>
       <div style="display:flex; gap:8px; align-items:center;">
-        <input type="range" id="v-kokoro-speed-range" min="0.5" max="2.5" step="0.05" value="1.0" style="flex:1;" oninput="document.getElementById('v-kokoro-speed').value = this.value">
-        <input type="number" id="v-kokoro-speed" min="0.5" max="3.0" step="0.05" value="1.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-kokoro-speed-range').value = this.value">
+        <input type="range" id="v-kokoro-speed-range" min="0.5" max="2.5" step="0.05" value="0.95" style="flex:1;" oninput="document.getElementById('v-kokoro-speed').value = this.value">
+        <input type="number" id="v-kokoro-speed" min="0.5" max="3.0" step="0.05" value="0.95" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-kokoro-speed-range').value = this.value">
       </div>
     </div>
     <div class="field">
@@ -128,8 +128,8 @@
         <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Silence duration inserted between sentences or synthesized text chunks. Range: 0.0s to 1.5s."></i>
       </label>
       <div style="display:flex; gap:8px; align-items:center;">
-        <input type="range" id="v-kokoro-silence-range" min="0.0" max="1.5" step="0.05" value="0.0" style="flex:1;" oninput="document.getElementById('v-kokoro-silence').value = this.value">
-        <input type="number" id="v-kokoro-silence" min="0.0" max="2.0" step="0.05" value="0.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-kokoro-silence-range').value = this.value">
+        <input type="range" id="v-kokoro-silence-range" min="0.0" max="1.5" step="0.05" value="0.15" style="flex:1;" oninput="document.getElementById('v-kokoro-silence').value = this.value">
+        <input type="number" id="v-kokoro-silence" min="0.0" max="2.0" step="0.05" value="0.15" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-kokoro-silence-range').value = this.value">
       </div>
     </div>
   </div>

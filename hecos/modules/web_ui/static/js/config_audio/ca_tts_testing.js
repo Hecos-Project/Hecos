@@ -53,7 +53,7 @@
         }, 100);
 
         try {
-            const reqPayload = { text: text, mode: mode, engine: activeEng };
+            const reqPayload = { text: text, mode: mode, engine: activeEng, bypass_cache: true };
             if (activeEng === 'fish_speech') {
                 const fishWav = (document.getElementById('v-fish-speaker-wav')?.value || document.getElementById('v-fish-clone-select')?.value || '').trim();
                 reqPayload.voice = {

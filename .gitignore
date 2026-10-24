@@ -694,6 +694,23 @@ hecos/modules/web_ui/static/js/playbooks/
 hecos/data/playbooks_settings.json
 hecos/hpm/playbooks/
 
+# Document Reader (HPM Package)
+hecos/modules/document_reader/
+hecos/hpm/document_reader/
+hecos/modules/web_ui/templates/modules/config_document_reader.html
+hecos/modules/web_ui/templates/document_reader/
+hecos/modules/web_ui/static/js/document_reader.js
+hecos/modules/web_ui/static/js/document_reader_chat.js
+hecos/modules/web_ui/static/js/document_reader_panel.js
+hecos/modules/web_ui/static/js/document_reader*.js
+hecos/modules/web_ui/static/css/document_reader.css
+hecos/modules/web_ui/static/css/document_reader*.css
+hecos/config/data/docreader_config.json
+hecos/config/data/document_reader*.toml
+hecos/config/data/document_reader*.json
+hecos/data/docreader_config.json
+hecos/data/document_reader*.json
+
 # HPM Store Cache
 hecos/data/store_cache*.json
 

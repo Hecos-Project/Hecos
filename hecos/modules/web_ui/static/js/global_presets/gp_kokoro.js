@@ -21,8 +21,8 @@ window.sfApplyKokoroPreset = function(presetName) {
         }
     };
 
-    setVal('sf-kokoro-speed', p.speed ?? 1.0);
-    setVal('sf-kokoro-silence', p.sentence_silence ?? 0.0);
+    setVal('sf-kokoro-speed', p.speed ?? 0.95);
+    setVal('sf-kokoro-silence', p.sentence_silence ?? 0.15);
     setVal('sf-kokoro-alpha', p.alpha ?? 1.0);
     setVal('sf-kokoro-beta', p.beta ?? 1.0);
     setVal('sf-kokoro-volume', p.volume ?? 1.0);

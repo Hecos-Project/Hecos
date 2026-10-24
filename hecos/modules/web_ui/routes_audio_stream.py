@@ -164,9 +164,17 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             if engine:
                 session_overrides["tts_engine"] = engine
                 
+            bypass_cache = bool(data.get("bypass_cache", False))
             voice_config = data.get("voice", {})
             if voice_config:
                 session_overrides.update(voice_config)
+                if "speed" in voice_config:
+                    session_overrides["kokoro_speed"] = voice_config["speed"]
+                    session_overrides["piper_speed"] = voice_config["speed"]
+                    session_overrides["xtts_speed"] = voice_config["speed"]
+                if "sentence_silence" in voice_config:
+                    session_overrides["kokoro_silence"] = voice_config["sentence_silence"]
+                    session_overrides["piper_silence"] = voice_config["sentence_silence"]
 
             job_id = str(uuid.uuid4())
 
@@ -175,7 +183,8 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                     wav_path, wav_id = generate_voice_file(
                         text, 
                         {"session_overrides": session_overrides} if session_overrides else {}, 
-                        job_id=job_id
+                        job_id=job_id,
+                        bypass_cache=bypass_cache
                     )
                     if wav_path:
                         set_last_audio_path(wav_path, wav_id)

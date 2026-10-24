@@ -268,6 +268,20 @@
 #drop-overlay .drop-sub   { font-size: 13px; color: var(--muted); }
 @keyframes dropBounce { from { transform: translateY(0); } to { transform: translateY(-8px); } }
 
+/* Deposit mode styling for Send button */
+#send-btn.btn-deposit-mode {
+  background: rgba(139, 92, 246, 0.28) !important;
+  color: #c4b5fd !important;
+  border-color: rgba(139, 92, 246, 0.6) !important;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.35);
+  animation: pulse-deposit 2.2s infinite ease-in-out;
+}
+@keyframes pulse-deposit {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+  70% { transform: scale(1.04); box-shadow: 0 0 0 6px rgba(139, 92, 246, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+}
+
 /* Hidden file inputs */
 #file-upload-doc, #file-upload-img { display: none; }
 </style>
@@ -280,6 +294,9 @@
   </button>
   <button class="toolbar-btn" title="Attach an image (PNG, JPG, WebP)" onclick="document.getElementById('file-upload-img').click()">
     <span class="tb-icon"><i class="fas fa-image"></i></span> {{ t('webui_chat_toolbar_img') }}
+  </button>
+  <button class="toolbar-btn" title="Open and read document directly with Document Reader" onclick="if(window.docReaderOpenFilePicker) window.docReaderOpenFilePicker(); else if(window.DocReader) window.DocReader.open();">
+    <span class="tb-icon" style="color: #a78bfa;"><i class="fas fa-book-reader"></i></span> Reader
   </button>
   <button class="toolbar-btn emoji-trigger-btn" title="Insert Emoji" onclick="toggleEmoticonPicker(event)">
     <span class="tb-icon"><i class="fas fa-smile"></i></span> Emoji

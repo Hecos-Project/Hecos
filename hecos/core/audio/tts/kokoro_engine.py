@@ -710,14 +710,21 @@ class KokoroEngine(BaseTTSEngine):
             if sentence_silence is None:
                 try:
                     from hecos.core.audio.device_manager import get_audio_config
-                    sentence_silence = float(get_audio_config().get("kokoro", {}).get("sentence_silence", 0.0))
+                    sentence_silence = float(get_audio_config().get("kokoro", {}).get("sentence_silence", 0.15))
                 except Exception:
-                    sentence_silence = 0.0
+                    sentence_silence = 0.15
 
-            silence_samples = int(sentence_silence * 24000)
+            try:
+                silence_val = float(sentence_silence) if sentence_silence is not None else 0.15
+            except (ValueError, TypeError):
+                silence_val = 0.15
+
+            silence_samples = int(silence_val * 24000)
             silence_chunk = np.zeros(silence_samples, dtype=np.float32) if silence_samples > 0 else None
 
-            split_pat = r"(?<=[.!?。])\s+|\n+" if sentence_silence > 0 else r"\n+"
+            # Always split on punctuation (.!?。) or newlines so Kokoro synthesizes each sentence
+            # with proper sentence-level intonation instead of rushing through long unbroken paragraphs.
+            split_pat = r"(?<=[.!?。])\s+|\n+"
             chunks = []
             for _, _, audio in pipeline(text, voice=voice_target, speed=speed, split_pattern=split_pat):
                 if audio is not None:

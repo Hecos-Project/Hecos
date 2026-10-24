@@ -425,7 +425,7 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict, job_id: str = N
 
 # ── Core generation ────────────────────────────────────────────────────────────
 
-def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None, on_chunk_ready: callable = None) -> tuple[str | None, str | None]:
+def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None, on_chunk_ready: callable = None, bypass_cache: bool = False) -> tuple[str | None, str | None]:
     """
     Runs TTSManager or XTTS2 Bypass synthesis and stores the WAV in media/audio/history/.
     Supports on_chunk_ready for progressive streaming.
@@ -459,20 +459,21 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None, on_chunk
             _tts_jobs[job_id] = {"current": 0, "total": 1, "status": "generating"}
 
         # Fast persistent TTS Cache lookup (<1ms return)
-        try:
-            from hecos.core.audio.tts_cache import TTSCache
-            if TTSCache.get_instance().get_to_file(text, engine=_engine, out_filepath=out, session_overrides=session_overrides):
-                if job_id:
-                    _tts_jobs[job_id] = {"current": 1, "total": 1, "status": "done", "audio_id": audio_id}
-                _chat_log.info(f"[Audio] ⚡ TTS Cache HIT (instant): {out}")
-                try:
-                    max_f = int(_acfg.get("tts_history_max_files", 100))
-                except Exception:
-                    max_f = 100
-                cleanup_audio_history(max_f)
-                return out, audio_id
-        except Exception as _c_err:
-            _chat_log.debug(f"[Audio] TTS Cache check notice: {_c_err}")
+        if not bypass_cache:
+            try:
+                from hecos.core.audio.tts_cache import TTSCache
+                if TTSCache.get_instance().get_to_file(text, engine=_engine, out_filepath=out, session_overrides=session_overrides):
+                    if job_id:
+                        _tts_jobs[job_id] = {"current": 1, "total": 1, "status": "done", "audio_id": audio_id}
+                    _chat_log.info(f"[Audio] ⚡ TTS Cache HIT (instant): {out}")
+                    try:
+                        max_f = int(_acfg.get("tts_history_max_files", 100))
+                    except Exception:
+                        max_f = 100
+                    cleanup_audio_history(max_f)
+                    return out, audio_id
+            except Exception as _c_err:
+                _chat_log.debug(f"[Audio] TTS Cache check notice: {_c_err}")
 
         # Chunk progress handler
         def _handle_chunk_ready(idx, total, chunk_path, chunk_bytes):

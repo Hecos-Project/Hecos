@@ -350,6 +350,28 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         ).start()
         return jsonify({"ok": True, "session_id": sid})
 
+    @app.route("/api/chat/deposit", methods=["POST"])
+    def api_chat_deposit():
+        from flask_login import current_user
+        from hecos.core.privacy import privacy_manager
+        from hecos.memory.brain_interface import save_message
+        from hecos.memory import session_manager
+
+        data = request.get_json(force=True) or {}
+        msg = data.get("message", "").strip()
+        if not msg:
+            return jsonify({"ok": False, "error": "Empty message"}), 400
+
+        uid = current_user.username if current_user.is_authenticated else "admin"
+        sid = data.get("session_id") or privacy_manager.get_session_id()
+        if not sid:
+            sid = session_manager.create_session(title=None, privacy_mode="normal")
+
+        tab_id = data.get("tab_id")
+        save_message("user", msg, config=cfg_mgr.config if cfg_mgr else None, user_id=uid, session_id=sid, broadcast_sse=True, sender_tab_id=tab_id)
+        _chat_log.info(f"[Chat] File/Attachment deposited in chat for user='{uid}', session='{sid}' (no LLM inference).")
+        return jsonify({"ok": True, "session_id": sid})
+
     @app.route("/api/chat/session/config", methods=["GET", "POST"])
     def api_session_config():
         from hecos.memory.session_config_db import get_session_config, set_session_config
