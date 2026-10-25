@@ -39,7 +39,7 @@
         <i class="fas fa-microphone"></i> Primary Voice
         <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Base voice or custom cloned style (.pt) for Kokoro speech synthesis."></i>
       </label>
-      <select id="v-kokoro-voice" onchange="if(typeof syncKokoroBlendVoiceOptions==='function') syncKokoroBlendVoiceOptions(); if(typeof onKokoroBlendVoiceChange==='function') onKokoroBlendVoiceChange();">
+      <select id="v-kokoro-voice" onchange="if(typeof syncKokoroBlendVoiceOptions==='function') syncKokoroBlendVoiceOptions(); if(typeof onKokoroBlendVoiceChange==='function') onKokoroBlendVoiceChange(); if(typeof loadKokoroInstalledClones==='function') loadKokoroInstalledClones();">
         <option value="af_heart">Heart (Female, US)</option>
         <option value="af_alloy">Alloy (Female, US)</option>
         <option value="af_bella">Bella (Female, US)</option>
@@ -156,7 +156,7 @@
         Secondary Voice (Blend Target)
         <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Optional second voice to blend with. Leave empty for single voice mode."></i>
       </label>
-      <select id="v-kokoro-blend-voice" onchange="if(typeof onKokoroBlendVoiceChange==='function') onKokoroBlendVoiceChange();" style="width:100%;">
+      <select id="v-kokoro-blend-voice" onchange="if(typeof onKokoroBlendVoiceChange==='function') onKokoroBlendVoiceChange(); if(typeof loadKokoroInstalledClones==='function') loadKokoroInstalledClones();" style="width:100%;">
         <option value="">-- None (Single Voice Mode) --</option>
       </select>
     </div>

@@ -592,9 +592,10 @@ class KokoroEngine(BaseTTSEngine):
                 b = float(np.clip(beta, 0.0, 1.0))
                 p1 = pack1.to(dtype=torch.float32, device="cpu")
                 p2 = pack2.to(dtype=torch.float32, device="cpu")
-                blended = torch.zeros_like(p1)
-                blended[:, :, :128] = a * p1[:, :, :128] + (1.0 - a) * p2[:, :, :128]
-                blended[:, :, 128:] = b * p1[:, :, 128:] + (1.0 - b) * p2[:, :, 128:]
+                min_len = min(p1.shape[0], p2.shape[0])
+                blended = torch.zeros((min_len, p1.shape[1], p1.shape[2]), dtype=torch.float32, device="cpu")
+                blended[:, :, :128] = a * p1[:min_len, :, :128] + (1.0 - a) * p2[:min_len, :, :128]
+                blended[:, :, 128:] = b * p1[:min_len, :, 128:] + (1.0 - b) * p2[:min_len, :, 128:]
                 return blended
 
         # Single voice mode: check if alpha/beta dynamic scaling is applied

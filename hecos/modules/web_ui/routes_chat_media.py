@@ -19,7 +19,7 @@ import subprocess
 import logging
 from flask import jsonify, request, send_from_directory, send_file
 from urllib.parse import quote, unquote
-from hecos.core.constants import SNAPSHOTS_DIR, IMAGES_DIR
+from hecos.core.constants import SNAPSHOTS_DIR, IMAGES_DIR, MEDIA_DIR
 
 _chat_log = logging.getLogger("HecosChatRoutes")
 
@@ -176,16 +176,18 @@ def init_chat_media_routes(app, logger):
             return send_from_directory(IMAGES_DIR, filename)
         return jsonify({"error": "Image not found"}), 404
 
-    @app.route("/api/open_media_folder", methods=["POST"])
+    @app.route("/api/open_media_folder", methods=["GET", "POST"])
     def api_open_media_folder():
-        """Opens the media/images folder in the OS file manager."""
-        os.makedirs(IMAGES_DIR, exist_ok=True)
+        """Opens the centralized media folder (or subfolder) in the native OS file manager."""
+        target = request.args.get("target") or (request.get_json(silent=True) or {}).get("target")
+        folder = IMAGES_DIR if target == "images" else MEDIA_DIR
+        os.makedirs(folder, exist_ok=True)
         try:
-            if os.name == "nt":
-                os.startfile(IMAGES_DIR)
-            else:
-                subprocess.Popen(["xdg-open", IMAGES_DIR])
-            return jsonify({"ok": True})
+            from hecos.core.system.os_adapter import OSAdapter
+            details = OSAdapter.open_path_detailed(folder)
+            if details.get("ok"):
+                return jsonify({"ok": True, "path": folder, "details": details})
+            return jsonify({"ok": False, "error": details.get("error") or "Native file manager failed to launch", "details": details}), 500
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
     @app.route("/api/serve_html", methods=["GET"])

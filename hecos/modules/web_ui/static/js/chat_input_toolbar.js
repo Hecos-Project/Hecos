@@ -276,3 +276,71 @@ window.updateSendBtnState = function() {
   }
 };
 
+// ── Open Centralized Media Folder ──────────────────────────────
+window.openMediaFolder = async function(btnEl) {
+  const btn = btnEl || document.getElementById('btn-open-media-folder') || (window.event && window.event.currentTarget);
+  const icon = btn ? btn.querySelector('i') : null;
+  const oldIconClass = icon ? icon.className : '';
+  if (icon) icon.className = 'fas fa-spinner fa-spin';
+
+  const startTime = performance.now();
+  console.group('%c[Hecos Media Debug] 📂 Richiesta Apertura Cartella Media', 'background: #0284c7; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 13px;');
+  console.log('%c⏰ Timestamp:%c ' + new Date().toISOString(), 'font-weight: bold; color: #38bdf8;', 'color: #aaa;');
+  console.log('%c🎯 Pulsante:%c', 'font-weight: bold; color: #38bdf8;', '', btn);
+
+  const endpoints = [
+    { url: '/hecos/api/media/open-folder', label: '1. Endpoint Primario (/hecos/api/media/open-folder)' },
+    { url: '/api/open_media_folder', label: '2. Endpoint Fallback (/api/open_media_folder)' },
+    { url: '/api/system/explorer/open-folder', label: '3. Endpoint Explorer (/api/system/explorer/open-folder)' }
+  ];
+
+  let success = false;
+  let finalResult = null;
+
+  for (const ep of endpoints) {
+    console.log(`%c👉 Chiamata ${ep.label}...`, 'font-weight: bold; color: #cbd5e1;');
+    try {
+      const t0 = performance.now();
+      const res = await fetch(ep.url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: 'media' })
+      });
+      const elapsed = Math.round(performance.now() - t0);
+      const data = await res.json().catch(() => ({}));
+
+      console.log(`  └─> HTTP Status: %c${res.status} ${res.statusText}%c (${elapsed}ms)`, res.ok ? 'color: #22c55e; font-weight: bold;' : 'color: #ef4444; font-weight: bold;', '');
+      console.log('  └─> Dati Risposta:', data);
+
+      if (res.ok && data && data.ok) {
+        success = true;
+        finalResult = data;
+        console.log(`%c  ✔ SUCCESSO con ${ep.label}!`, 'color: #22c55e; font-weight: bold;');
+        if (data.details) {
+          console.table([data.details]);
+        }
+        break;
+      } else {
+        console.warn(`  ✖ Fallito con ${ep.label}:`, data ? (data.error || data.message || 'Risposta ok: false') : 'Nessuna risposta');
+      }
+    } catch (netErr) {
+      console.error(`  ✖ Errore di rete su ${ep.label}:`, netErr);
+    }
+  }
+
+  const totalTime = Math.round(performance.now() - startTime);
+  if (success) {
+    console.log(`%c[Hecos Media Debug] Operazione completata con successo in ${totalTime}ms`, 'color: #22c55e; font-weight: bold;');
+    if (window.showToast) window.showToast('📂 Cartella Media aperta');
+  } else {
+    console.error(`%c[Hecos Media Debug] Tutti gli endpoint hanno fallito (${totalTime}ms)`, 'color: #ef4444; font-weight: bold;');
+    const msg = (finalResult && (finalResult.error || finalResult.message)) || 'Impossibile aprire la cartella Media';
+    if (window.showToast) window.showToast('⚠️ ' + msg, 'error');
+  }
+  console.groupEnd();
+
+  if (icon) icon.className = oldIconClass;
+};
+
+

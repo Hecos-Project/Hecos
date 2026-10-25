@@ -9,6 +9,17 @@
 (function () {
     'use strict';
 
+    function _getAudioConfig() {
+        const cfg = (window.audioConfig && typeof window.audioConfig === 'object')
+            ? window.audioConfig
+            : ((typeof audioConfig !== 'undefined' && audioConfig) ? audioConfig : {});
+        window.audioConfig = cfg;
+        if (typeof audioConfig !== 'undefined') {
+            try { audioConfig = cfg; } catch (_) {}
+        }
+        return cfg;
+    }
+
     // ── Quick Speed Preset Setter ─────────────────────────────────────────────
     window.setKokoroSpeedPreset = function (speed) {
         const val = parseFloat(speed) || 1.0;
@@ -88,10 +99,10 @@
         promptFn("Kokoro Inference Preset Name (e.g. 'Fast & Direct', 'Expressive Dynamic'):", function (name) {
             if (!name || !name.trim()) return;
             name = name.trim();
-            if (!window.audioConfig) window.audioConfig = {};
-            if (!window.audioConfig.kokoro_inference_presets) window.audioConfig.kokoro_inference_presets = {};
+            const cfg = _getAudioConfig();
+            if (!cfg.kokoro_inference_presets) cfg.kokoro_inference_presets = {};
 
-            window.audioConfig.kokoro_inference_presets[name] = {
+            cfg.kokoro_inference_presets[name] = {
                 speed: parseFloat(document.getElementById('v-kokoro-speed')?.value || 1.0),
                 sentence_silence: parseFloat(document.getElementById('v-kokoro-silence')?.value || 0.0),
                 lang_code: document.getElementById('v-kokoro-lang')?.value || 'auto',
@@ -102,11 +113,23 @@
                 normalize: document.getElementById('v-kokoro-normalize')?.checked ?? true
             };
 
+            const sel = document.getElementById('v-kokoro-inference-preset');
+            if (sel) {
+                let opt = Array.from(sel.options).find(o => o.value === name);
+                if (!opt) {
+                    opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    sel.appendChild(opt);
+                }
+                sel.value = name;
+            }
+
             if (typeof window.saveAudioConfig === 'function') {
                 window.saveAudioConfig().then(() => {
                     if (typeof window.populateAudioUI === 'function') window.populateAudioUI();
-                    const sel = document.getElementById('v-kokoro-inference-preset');
-                    if (sel) sel.value = name;
+                    const s = document.getElementById('v-kokoro-inference-preset');
+                    if (s) s.value = name;
                     if (window.showToast) window.showToast(`Inference Preset '${name}' saved!`, 'success');
                 });
             }
@@ -123,10 +146,10 @@
             return;
         }
 
-        if (!window.audioConfig) window.audioConfig = {};
-        if (!window.audioConfig.kokoro_inference_presets) window.audioConfig.kokoro_inference_presets = {};
+        const cfg = _getAudioConfig();
+        if (!cfg.kokoro_inference_presets) cfg.kokoro_inference_presets = {};
 
-        window.audioConfig.kokoro_inference_presets[name] = {
+        cfg.kokoro_inference_presets[name] = {
             speed: parseFloat(document.getElementById('v-kokoro-speed')?.value || 1.0),
             sentence_silence: parseFloat(document.getElementById('v-kokoro-silence')?.value || 0.0),
             lang_code: document.getElementById('v-kokoro-lang')?.value || 'auto',
@@ -156,8 +179,11 @@
 
         const confirmFn = window.hecosConfirm || confirm;
         confirmFn(`Do you want to delete the Inference Preset '${name}'?`, function () {
-            if (window.audioConfig?.kokoro_inference_presets && window.audioConfig.kokoro_inference_presets[name]) {
-                delete window.audioConfig.kokoro_inference_presets[name];
+            const cfg = _getAudioConfig();
+            if (cfg.kokoro_inference_presets && cfg.kokoro_inference_presets[name]) {
+                delete cfg.kokoro_inference_presets[name];
+                const s = document.getElementById('v-kokoro-inference-preset');
+                if (s) s.value = '';
                 if (typeof window.saveAudioConfig === 'function') {
                     window.saveAudioConfig().then(() => {
                         if (typeof window.populateAudioUI === 'function') window.populateAudioUI();
@@ -172,9 +198,10 @@
     window.loadKokoroInferencePreset = function () {
         const sel = document.getElementById('v-kokoro-inference-preset');
         const name = sel ? sel.value : '';
-        if (!name || !window.audioConfig?.kokoro_inference_presets || !window.audioConfig.kokoro_inference_presets[name]) return;
+        const cfg = _getAudioConfig();
+        if (!name || !cfg.kokoro_inference_presets || !cfg.kokoro_inference_presets[name]) return;
 
-        const p = window.audioConfig.kokoro_inference_presets[name];
+        const p = cfg.kokoro_inference_presets[name];
 
         // Speed
         if (p.speed !== undefined) {

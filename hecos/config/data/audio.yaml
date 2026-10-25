@@ -1,4 +1,4 @@
-active_engine: kokoro
+active_engine: piper
 voice_status: true
 piper_path: C:\Hecos\bin\piper\piper.exe
 onnx_model: C:\Hecos\bin\piper\it_IT-serena-high.onnx
@@ -41,18 +41,18 @@ piper_inference_presets:
     noise_w: 1.5
     volume: 1.0
 kokoro:
-  speed: 0.95
-  voice: im_nicola
+  speed: 1.0
+  voice: if_cine_witch
   lang_code: auto
   blend_voice: ''
   alpha: 1.0
-  beta: 1.0
-  sentence_silence: 0.15
+  beta: 1.25
+  sentence_silence: 0.1
   model_path: ''
   volume: 1.0
   normalize: true
-  current_preset: voce ita 1
-  current_inference_preset: ''
+  current_preset: KOKORO1
+  current_inference_preset: Dynamic Prosody
 kokoro_presets:
   Default Heart:
     alpha: 1
@@ -88,6 +88,18 @@ kokoro_presets:
     speed: 1.35
     voice: am_adam
     volume: 1
+  KOKORO1:
+    alpha: 1
+    beta: 1.25
+    blend_voice: ''
+    inference_preset: Dynamic Prosody
+    lang_code: auto
+    model_path: ''
+    normalize: true
+    sentence_silence: 0.1
+    speed: 1
+    voice: if_cine_witch
+    volume: 1
   ita 1:
     alpha: 1
     beta: 1
@@ -104,13 +116,13 @@ kokoro_presets:
     alpha: 1
     beta: 1
     blend_voice: ''
-    inference_preset: Standard & Balanced
+    inference_preset: ''
     lang_code: auto
     model_path: ''
     normalize: true
     sentence_silence: 0.15
     speed: 0.95
-    voice: if_sara
+    voice: im_nicola
     volume: 1
 kokoro_inference_presets:
   Dynamic Prosody:
@@ -274,7 +286,7 @@ fish_speech:
   normalize: true
   use_memory_cache: true
   chunk_sentences: true
-  current_preset: default
+  current_preset: Urania Fish 1
   current_inference_preset: ''
   model_checkpoint: s2-pro
   volume: 1.0
@@ -318,6 +330,24 @@ fish_speech_presets:
     repetition_penalty: 1.2
     temperature: 0.7
     top_p: 0.7
+  Urania Fish 1:
+    chunk_length: 200
+    chunk_sentences: true
+    inference_preset: ''
+    max_new_tokens: 512
+    normalize: true
+    reference_audio: voce_antonio_02.wav
+    reference_id: ''
+    reference_text: angoscia inesprimibile. la mente gravata da una pressione immateriale,
+      il corpo rallentato da un'aria che pare barriera. ma la mia mente non è il mio
+      corpo, non è il mio spirito, che sa vagare leggero percorrendo spazi indefinibili
+      nella pura contemplazione del tempo.
+    repetition_penalty: 1.2
+    seed: 0
+    temperature: 0.7
+    top_p: 0.7
+    use_memory_cache: true
+    volume: 1
   Witch (Strega Arcana):
     chunk_sentences: true
     inference_preset: Standard & Balanced

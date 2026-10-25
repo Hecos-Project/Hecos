@@ -233,20 +233,19 @@ print(path or '', end='')
         try:
             data = request.get_json(force=True) or {}
             path = data.get("path")
-            if not path or not os.path.exists(path):
+            if not path:
+                from hecos.core.constants import MEDIA_DIR
+                path = MEDIA_DIR
+            if not os.path.exists(path):
                 return jsonify({"ok": False, "error": "Invalid path"}), 400
             
             # If path is a file, open its parent
             if os.path.isfile(path):
                 path = os.path.dirname(path)
 
-            if sys.platform == "win32":
-                os.startfile(path)
-            else:
-                import subprocess
-                subprocess.Popen(["xdg-open", path])
-                
-            return jsonify({"ok": True})
+            from hecos.core.system.os_adapter import OSAdapter
+            details = OSAdapter.open_path_detailed(path)
+            return jsonify({"ok": details.get("ok", False), "details": details})
         except Exception as e:
             logger.error(f"[EXPLORER] Open Folder Error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500

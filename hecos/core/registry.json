@@ -254,21 +254,20 @@
     "DOCUMENT_READER": {
         "description": "Universal document reader with TTS. Fullscreen reading mode, visual PDF canvas rendering, text selection reading, word-by-word highlighting, audiobook-style controls.",
         "commands": {
-            "read_document": "Open a document in the fullscreen reader with TTS capabilities. Accepts filename, partial name (e.g. 'fotoromanzo'), or full path.",
-            "stop_reading": "Stop the current TTS reading session.",
-            "list_documents": "List all readable documents (PDF, TXT, MD, HTML, DOCX) available in the documents library."
+            "list_documents": "List all documents (PDF, TXT, MD, HTML, DOCX) available in the documents library.",
+            "read_document": "Open a document in the fullscreen reader with TTS capabilities. Accepts filename, partial name, or full path.",
+            "stop_reading": "Stop the current TTS reading session."
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true,
-        "icon": "📖",
+        "icon": "<i class=\"fas fa-book-reader\"></i>",
         "category": "PLUGINS",
         "module_type": "hpm",
         "slash_commands": [
             {
-                "id": "read",
                 "aliases": [
                     "/read",
                     "/leggi",
@@ -276,44 +275,45 @@
                     "/docreader",
                     "/leggi_documento"
                 ],
+                "category": "DOCUMENTS",
                 "description": "Apre e legge un documento con voce sintetizzata nel Document Reader",
-                "usage": "/read [percorso o nome file]",
                 "example": "/read fotoromanzo",
                 "icon": "📖",
-                "category": "DOCUMENTS",
+                "id": "read",
                 "method": "read_document",
-                "requires_args": false
+                "requires_args": false,
+                "usage": "/read [percorso o nome file]"
             },
             {
-                "id": "stop_reading",
                 "aliases": [
                     "/stop_reading",
                     "/ferma_lettura",
                     "/stop_doc",
                     "/stop_reader"
                 ],
+                "category": "DOCUMENTS",
                 "description": "Interrompe la lettura vocale attiva nel Document Reader",
-                "usage": "/stop_reading",
                 "example": "/stop_reading",
                 "icon": "⏹️",
-                "category": "DOCUMENTS",
+                "id": "stop_reading",
                 "method": "stop_reading",
-                "requires_args": false
+                "requires_args": false,
+                "usage": "/stop_reading"
             },
             {
-                "id": "read_list",
                 "aliases": [
                     "/read_list",
                     "/doc_list",
                     "/lista_lettura"
                 ],
+                "category": "DOCUMENTS",
                 "description": "Elenca i documenti disponibili da leggere con il Document Reader",
-                "usage": "/read_list",
                 "example": "/read_list",
                 "icon": "📑",
-                "category": "DOCUMENTS",
+                "id": "read_list",
                 "method": "list_documents",
-                "requires_args": false
+                "requires_args": false,
+                "usage": "/read_list"
             }
         ]
     },

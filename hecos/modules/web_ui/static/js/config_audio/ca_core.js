@@ -4,7 +4,9 @@
  */
 
 function populateAudioUI() {
-    const v = audioConfig || {};
+    const v = (window.audioConfig && typeof window.audioConfig === 'object')
+        ? window.audioConfig
+        : ((typeof audioConfig !== 'undefined' && audioConfig) ? audioConfig : {});
     setVal('v-piper', v.piper_path || '');
     const curOnnx = (v.onnx_model || '').split('\\').pop().split('/').pop();
     populateSelect('v-onnx-model', sysOptions.piper_voices || [], curOnnx, true);
@@ -25,9 +27,37 @@ function populateAudioUI() {
     // Kokoro
     setVal('v-kokoro-speed', (v.kokoro && v.kokoro.speed) ? v.kokoro.speed : 1.0);
     setVal('v-kokoro-speed-range', (v.kokoro && v.kokoro.speed) ? v.kokoro.speed : 1.0);
-    setVal('v-kokoro-voice', (v.kokoro && v.kokoro.voice) ? v.kokoro.voice : 'af_heart');
+
+    const curKokoroVoice = (v.kokoro && v.kokoro.voice) ? v.kokoro.voice : 'af_heart';
+    const vKokoroSel = document.getElementById('v-kokoro-voice');
+    if (vKokoroSel) {
+        let hasOpt = Array.from(vKokoroSel.options).some(o => o.value === curKokoroVoice);
+        if (!hasOpt && curKokoroVoice) {
+            const opt = document.createElement('option');
+            opt.value = curKokoroVoice;
+            opt.textContent = `🎭 ${curKokoroVoice} (Custom Cloned)`;
+            vKokoroSel.appendChild(opt);
+        }
+        vKokoroSel.value = curKokoroVoice;
+    }
+
     setVal('v-kokoro-lang', (v.kokoro && v.kokoro.lang_code) ? v.kokoro.lang_code : 'auto');
-    setVal('v-kokoro-blend-voice', (v.kokoro && v.kokoro.blend_voice) ? v.kokoro.blend_voice : '');
+
+    const curBlendVoice = (v.kokoro && v.kokoro.blend_voice) ? v.kokoro.blend_voice : '';
+    const vBlendSel = document.getElementById('v-kokoro-blend-voice');
+    if (vBlendSel) {
+        if (curBlendVoice) {
+            let hasOpt = Array.from(vBlendSel.options).some(o => o.value === curBlendVoice);
+            if (!hasOpt) {
+                const opt = document.createElement('option');
+                opt.value = curBlendVoice;
+                opt.textContent = `🎭 ${curBlendVoice} (Custom Cloned)`;
+                vBlendSel.appendChild(opt);
+            }
+        }
+        vBlendSel.value = curBlendVoice;
+    }
+
     setVal('v-kokoro-alpha', (v.kokoro && v.kokoro.alpha !== undefined) ? v.kokoro.alpha : 1.0);
     setVal('v-kokoro-alpha-range', (v.kokoro && v.kokoro.alpha !== undefined) ? v.kokoro.alpha : 1.0);
     setVal('v-kokoro-beta', (v.kokoro && v.kokoro.beta !== undefined) ? v.kokoro.beta : 1.0);
@@ -44,6 +74,7 @@ function populateAudioUI() {
     if (kokoroBetaLbl) kokoroBetaLbl.textContent = parseFloat((v.kokoro && v.kokoro.beta !== undefined) ? v.kokoro.beta : 1.0).toFixed(2);
     if (typeof window.syncKokoroBlendVoiceOptions === 'function') window.syncKokoroBlendVoiceOptions();
     if (typeof window.onKokoroBlendVoiceChange === 'function') window.onKokoroBlendVoiceChange();
+    if (typeof window.loadKokoroInstalledClones === 'function') window.loadKokoroInstalledClones();
     // XTTS
     setVal('v-xtts-speed', (v.xtts && v.xtts.speed) ? v.xtts.speed : 1.0);
     setVal('v-xtts-lang', (v.xtts && v.xtts.language) ? v.xtts.language : 'it');
@@ -204,13 +235,15 @@ function populateAudioUI() {
     if (typeof switchAudioEngineTab === 'function') switchAudioEngineTab(activeEngine, false);
 
 
-    const a = audioConfig || {};
+    const a = (window.audioConfig && typeof window.audioConfig === 'object')
+        ? window.audioConfig
+        : ((typeof audioConfig !== 'undefined' && audioConfig) ? audioConfig : {});
     setVal('a-threshold', a.energy_threshold ?? 450);
     setVal('a-timeout', a.silence_timeout ?? 5);
     setVal('a-limit', a.phrase_limit ?? 15);
 
-    setCheck('sys-mic-status', (audioConfig || {}).listening_status ?? false);
-    setCheck('sys-voice-status', (audioConfig || {}).voice_status ?? false);
+    setCheck('sys-mic-status', a.listening_status ?? false);
+    setCheck('sys-voice-status', a.voice_status ?? false);
 
     if (audioDevices) {
         const inSel = document.getElementById('audio-input-device');
@@ -299,14 +332,33 @@ window.switchAudioEngineTab = function (engine, saveEngine = true) {
 
 
 function buildAudioPayload() {
-    const v = (typeof audioConfig !== 'undefined' ? audioConfig : {}) || {};
+    const cfg = (window.audioConfig && typeof window.audioConfig === 'object')
+        ? window.audioConfig
+        : ((typeof audioConfig !== 'undefined' && audioConfig) ? audioConfig : {});
+    const v = cfg;
+    window.audioConfig = cfg;
+    if (typeof audioConfig !== 'undefined') {
+        try { audioConfig = cfg; } catch (_) {}
+    }
+
     const pdir = (window.sysOptions || {}).piper_dir || 'C:\\piper';
     const el = document.getElementById('v-onnx-model');
     const sel = el ? el.value : (v.onnx_model || 'it_IT-paola-medium.onnx');
     const modelFile = (sel && sel.trim() && sel !== 'null') ? sel : 'it_IT-paola-medium.onnx';
 
-    const curKokoroPreset = getV('v-kokoro-preset', v.kokoro?.current_preset ?? 'default');
-    const kokoroPresetsObj = v.kokoro_presets ? Object.assign({}, v.kokoro_presets) : {};
+    // Merge kokoro_presets from all sources so nothing is ever dropped
+    const baseKokoroPresets = Object.assign(
+        {},
+        (typeof audioConfig !== 'undefined' && audioConfig?.kokoro_presets) ? audioConfig.kokoro_presets : {},
+        (window.audioConfig?.kokoro_presets) ? window.audioConfig.kokoro_presets : {},
+        v.kokoro_presets || {}
+    );
+    const kokoroPresetsObj = Object.assign({}, baseKokoroPresets);
+
+    // Current preset: prefer DOM value if set, otherwise in-memory current_preset
+    const domKokoroPreset = getV('v-kokoro-preset', '');
+    const curKokoroPreset = domKokoroPreset || v.kokoro?.current_preset || 'default';
+
     if (curKokoroPreset && curKokoroPreset !== 'default' && kokoroPresetsObj[curKokoroPreset]) {
         kokoroPresetsObj[curKokoroPreset] = Object.assign({}, kokoroPresetsObj[curKokoroPreset], {
             speed: parseFloat(getV('v-kokoro-speed', kokoroPresetsObj[curKokoroPreset].speed ?? 1.0)),
@@ -320,8 +372,49 @@ function buildAudioPayload() {
             inference_preset: getV('v-kokoro-inference-preset', kokoroPresetsObj[curKokoroPreset].inference_preset || ''),
             lang_code: getV('v-kokoro-lang', kokoroPresetsObj[curKokoroPreset].lang_code || 'auto')
         });
-        if (window.audioConfig) window.audioConfig.kokoro_presets = kokoroPresetsObj;
     }
+
+    const kokoroInfPresetsObj = Object.assign(
+        {},
+        (typeof audioConfig !== 'undefined' && audioConfig?.kokoro_inference_presets) ? audioConfig.kokoro_inference_presets : {},
+        (window.audioConfig?.kokoro_inference_presets) ? window.audioConfig.kokoro_inference_presets : {},
+        v.kokoro_inference_presets || {}
+    );
+
+    const xttsPresetsObj = Object.assign(
+        {},
+        (typeof audioConfig !== 'undefined' && audioConfig?.xtts_presets) ? audioConfig.xtts_presets : {},
+        (window.audioConfig?.xtts_presets) ? window.audioConfig.xtts_presets : {},
+        v.xtts_presets || {}
+    );
+    const xttsInfPresetsObj = Object.assign(
+        {},
+        (typeof audioConfig !== 'undefined' && audioConfig?.xtts_inference_presets) ? audioConfig.xtts_inference_presets : {},
+        (window.audioConfig?.xtts_inference_presets) ? window.audioConfig.xtts_inference_presets : {},
+        v.xtts_inference_presets || {}
+    );
+
+    const fishPresetsObj = Object.assign(
+        {},
+        (typeof audioConfig !== 'undefined' && audioConfig?.fish_speech_presets) ? audioConfig.fish_speech_presets : {},
+        (window.audioConfig?.fish_speech_presets) ? window.audioConfig.fish_speech_presets : {},
+        v.fish_speech_presets || {}
+    );
+    const fishInfPresetsObj = Object.assign(
+        {},
+        (typeof audioConfig !== 'undefined' && audioConfig?.fish_speech_inference_presets) ? audioConfig.fish_speech_inference_presets : {},
+        (window.audioConfig?.fish_speech_inference_presets) ? window.audioConfig.fish_speech_inference_presets : {}
+    );
+
+    // Sync in memory immediately
+    cfg.kokoro_presets = kokoroPresetsObj;
+    cfg.kokoro_inference_presets = kokoroInfPresetsObj;
+    cfg.xtts_presets = xttsPresetsObj;
+    cfg.xtts_inference_presets = xttsInfPresetsObj;
+    cfg.fish_speech_presets = fishPresetsObj;
+    cfg.fish_speech_inference_presets = fishInfPresetsObj;
+    if (!cfg.kokoro) cfg.kokoro = {};
+    cfg.kokoro.current_preset = curKokoroPreset;
 
     return {
         active_engine: getV('v-active-engine', v.active_engine || 'piper'),
@@ -340,7 +433,7 @@ function buildAudioPayload() {
             current_inference_preset: getV('v-kokoro-inference-preset', '')
         },
         kokoro_presets: kokoroPresetsObj,
-        kokoro_inference_presets: v.kokoro_inference_presets || {},
+        kokoro_inference_presets: kokoroInfPresetsObj,
         xtts: {
             speed: parseFloat(getV('v-xtts-speed', v.xtts?.speed ?? 1.0)),
             language: getV('v-xtts-lang', v.xtts?.language || 'it'),
@@ -374,10 +467,10 @@ function buildAudioPayload() {
             current_preset: getV('v-fish-preset', 'default'),
             current_inference_preset: getV('v-fish-inference-preset', '')
         },
-        xtts_presets: v.xtts_presets || {},
-        xtts_inference_presets: v.xtts_inference_presets || {},
-        fish_speech_presets: v.fish_speech_presets || {},
-        fish_speech_inference_presets: v.fish_speech_inference_presets || {},
+        xtts_presets: xttsPresetsObj,
+        xtts_inference_presets: xttsInfPresetsObj,
+        fish_speech_presets: fishPresetsObj,
+        fish_speech_inference_presets: fishInfPresetsObj,
         listening_status: getC('sys-mic-status', v.listening_status ?? false),
         voice_status: getC('sys-voice-status', v.voice_status ?? false),
         push_to_talk: v.push_to_talk ?? true,

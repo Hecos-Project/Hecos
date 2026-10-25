@@ -101,7 +101,11 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     @app.before_request
     def require_login():
         if request.headers.get("X-Hecos-Internal") == "backup": return
-        exempt_paths = ['/login', '/logout', '/static', '/assets', '/favicon.ico', '/ext', '/hpm_plugin']
+        exempt_paths = [
+            '/login', '/logout', '/static', '/assets', '/favicon.ico', '/ext', '/hpm_plugin',
+            '/api/open_media_folder', '/hecos/api/media/open-folder', '/api/media/open-folder',
+            '/api/system/explorer/open-folder'
+        ]
         if any(request.path.startswith(p) for p in exempt_paths): return
         
         if not current_user.is_authenticated:

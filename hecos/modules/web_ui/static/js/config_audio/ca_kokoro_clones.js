@@ -240,14 +240,37 @@
             }
 
             listEl.innerHTML = '';
+            const currentActiveVoice = (document.getElementById('v-kokoro-voice')?.value || window.audioConfig?.kokoro?.voice || '').trim();
+            const currentBlendVoice = (document.getElementById('v-kokoro-blend-voice')?.value || window.audioConfig?.kokoro?.blend_voice || '').trim();
+
             voices.forEach(v => {
                 const item = document.createElement('div');
                 item.className = 'kokoro-clone-item';
-                item.style.cssText = 'background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; transition:border-color 0.2s;';
+                const isActive = (v.voice_id === currentActiveVoice);
+                const isBlend = (v.voice_id === currentBlendVoice);
+
+                const activeBorder = isActive ? 'border: 1px solid var(--accent); background: rgba(0, 180, 216, 0.08);' : (isBlend ? 'border: 1px solid rgba(46, 204, 113, 0.6); background: rgba(46, 204, 113, 0.06);' : 'background:var(--bg3); border:1px solid var(--border);');
+                item.style.cssText = `${activeBorder} border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; transition:all 0.2s;`;
 
                 const langBadge = getLangBadge(v.lang_prefix);
                 const title = v.display_title || v.voice_id;
                 const sizeKb = v.size_kb !== undefined ? Math.round(v.size_kb) : Math.round((v.size || v.size_bytes || 0) / 1024);
+
+                let statusBadges = '';
+                if (isActive) {
+                    statusBadges += '<span class="badge-pill badge-ok" style="font-size:9px; margin-left:4px;"><i class="fas fa-check-circle"></i> Primary Voice</span>';
+                }
+                if (isBlend) {
+                    statusBadges += '<span class="badge-pill badge-accent" style="font-size:9px; margin-left:4px;"><i class="fas fa-layer-group"></i> Blend Voice</span>';
+                }
+
+                const primaryBtnHtml = isActive
+                    ? `<button type="button" class="btn btn-primary btn-sm" disabled style="padding:4px 10px; font-size:11px; opacity:0.95; background:var(--green, #2ecc71); border-color:var(--green, #2ecc71); cursor:default;"><i class="fas fa-check-circle"></i> Active</button>`
+                    : `<button type="button" class="btn btn-secondary btn-sm" onclick="setKokoroActiveVoice('${v.voice_id}')" title="Set as Primary Voice for Kokoro" style="padding:4px 10px; font-size:11px;"><i class="fas fa-check"></i> Set Active</button>`;
+
+                const blendBtnHtml = isBlend
+                    ? `<button type="button" class="btn btn-primary btn-sm" disabled style="padding:4px 8px; font-size:11px; opacity:0.95; background:var(--accent); border-color:var(--accent); cursor:default;"><i class="fas fa-layer-group"></i> Blended</button>`
+                    : `<button type="button" class="btn btn-secondary btn-sm" onclick="setKokoroBlendVoice('${v.voice_id}')" title="Set as Secondary Voice for Blending / Mix" style="padding:4px 8px; font-size:11px;"><i class="fas fa-layer-group"></i> Blend</button>`;
 
                 item.innerHTML = `
                     <div style="display:flex; align-items:center; gap:10px; min-width:220px; flex:1;">
@@ -258,6 +281,7 @@
                             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                                 <span style="font-weight:600; font-size:12px; color:var(--text);">${title}</span>
                                 ${langBadge}
+                                ${statusBadges}
                             </div>
                             <div style="font-size:10px; color:var(--muted); font-family:monospace; margin-top:2px;">
                                 ID: <span style="color:var(--accent);">${v.voice_id}</span> · From: <span>${v.source_wav || 'Audio'}</span> (${sizeKb} KB)
@@ -269,9 +293,8 @@
                         <button type="button" class="btn btn-secondary btn-sm" id="btn-kokoro-prev-${v.voice_id}" onclick="previewKokoroClone('${v.voice_id}')" title="Synthesize instant speech sample with this voice style" style="padding:4px 10px; font-size:11px;">
                             <i class="fas fa-play"></i> Preview
                         </button>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="setKokoroActiveVoice('${v.voice_id}')" title="Select as default Kokoro voice" style="padding:4px 10px; font-size:11px;">
-                            <i class="fas fa-check"></i> Set Active
-                        </button>
+                        ${primaryBtnHtml}
+                        ${blendBtnHtml}
                         <button type="button" class="btn btn-danger btn-sm" onclick="deleteKokoroClone('${v.voice_id}')" title="Delete this voice pack (.pt and .json)" style="padding:4px 8px; font-size:11px;">
                             <i class="fas fa-trash-alt"></i>
                         </button>
@@ -339,34 +362,120 @@
     };
 
     // ── Set Voice as Active Kokoro Default Voice ──────────────────────────────
-    window.setKokoroActiveVoice = function (voiceId) {
+    window.setKokoroActiveVoice = async function (voiceId) {
+        if (!voiceId) return;
         const select = document.getElementById('v-kokoro-voice');
-        if (!select) return;
-
-        let optFound = false;
-        for (let i = 0; i < select.options.length; i++) {
-            if (select.options[i].value === voiceId) {
-                select.selectedIndex = i;
-                optFound = true;
-                break;
+        if (select) {
+            let optFound = false;
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === voiceId) {
+                    select.selectedIndex = i;
+                    optFound = true;
+                    break;
+                }
             }
+
+            if (!optFound) {
+                const opt = document.createElement('option');
+                opt.value = voiceId;
+                opt.textContent = `🎭 ${voiceId} (Custom Cloned)`;
+                select.appendChild(opt);
+                select.value = voiceId;
+            }
+
+            // Trigger change event so any listeners pick it up
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // Flash green feedback
+            const prevBorder = select.style.borderColor;
+            select.style.borderColor = 'var(--green, #2ecc71)';
+            setTimeout(() => { select.style.borderColor = prevBorder; }, 1500);
         }
 
-        if (!optFound) {
-            const opt = document.createElement('option');
-            opt.value = voiceId;
-            opt.textContent = `★ ${voiceId} (Custom Cloned)`;
-            select.appendChild(opt);
-            select.value = voiceId;
+        // Update in-memory audioConfig
+        if (!window.audioConfig) window.audioConfig = {};
+        if (!window.audioConfig.kokoro) window.audioConfig.kokoro = {};
+        window.audioConfig.kokoro.voice = voiceId;
+        if (typeof audioConfig !== 'undefined' && audioConfig) {
+            if (!audioConfig.kokoro) audioConfig.kokoro = {};
+            audioConfig.kokoro.voice = voiceId;
         }
 
-        // Trigger change event so any listeners or auto-savers pick it up
-        select.dispatchEvent(new Event('change', { bubbles: true }));
+        // Sync blend voice dropdown options and resulting voice display
+        if (typeof window.syncKokoroBlendVoiceOptions === 'function') {
+            window.syncKokoroBlendVoiceOptions();
+        }
+        if (typeof window.onKokoroBlendVoiceChange === 'function') {
+            window.onKokoroBlendVoiceChange();
+        }
 
-        // Flash green feedback
-        const prevBorder = select.style.borderColor;
-        select.style.borderColor = 'var(--green, #2ecc71)';
-        setTimeout(() => { select.style.borderColor = prevBorder; }, 1500);
+        // Persist to disk
+        if (typeof window.saveAudioConfig === 'function') {
+            await window.saveAudioConfig();
+        } else if (typeof window.saveConfig === 'function') {
+            await window.saveConfig(true);
+        }
+
+        // Refresh installed list to reflect active badge
+        await window.loadKokoroInstalledClones();
+
+        if (window.showToast) {
+            window.showToast(`Kokoro primary voice set to '${voiceId}'!`, 'success');
+        }
+    };
+
+    // ── Set Voice as Secondary Kokoro Blend Voice (Mix) ───────────────────────
+    window.setKokoroBlendVoice = async function (voiceId) {
+        if (!voiceId) return;
+        const select = document.getElementById('v-kokoro-blend-voice');
+        if (select) {
+            let optFound = false;
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === voiceId) {
+                    select.selectedIndex = i;
+                    optFound = true;
+                    break;
+                }
+            }
+
+            if (!optFound) {
+                const opt = document.createElement('option');
+                opt.value = voiceId;
+                opt.textContent = `🎭 ${voiceId} (Custom Cloned)`;
+                select.appendChild(opt);
+                select.value = voiceId;
+            }
+
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+
+            const prevBorder = select.style.borderColor;
+            select.style.borderColor = 'var(--accent, #00b4d8)';
+            setTimeout(() => { select.style.borderColor = prevBorder; }, 1500);
+        }
+
+        if (!window.audioConfig) window.audioConfig = {};
+        if (!window.audioConfig.kokoro) window.audioConfig.kokoro = {};
+        window.audioConfig.kokoro.blend_voice = voiceId;
+        if (typeof audioConfig !== 'undefined' && audioConfig) {
+            if (!audioConfig.kokoro) audioConfig.kokoro = {};
+            audioConfig.kokoro.blend_voice = voiceId;
+        }
+
+        if (typeof window.onKokoroBlendVoiceChange === 'function') {
+            window.onKokoroBlendVoiceChange();
+        }
+
+        if (typeof window.saveAudioConfig === 'function') {
+            await window.saveAudioConfig();
+        } else if (typeof window.saveConfig === 'function') {
+            await window.saveConfig(true);
+        }
+
+        await window.loadKokoroInstalledClones();
+
+        if (window.showToast) {
+            window.showToast(`Secondary blend voice set to '${voiceId}'!`, 'success');
+        }
     };
 
     // ── Delete Custom Voice (.pt & .json) ─────────────────────────────────────
@@ -383,8 +492,11 @@
             });
 
             if (res.ok) {
-                await window.loadKokoroInstalledClones();
                 await window.reloadKokoroVoicesDropdown();
+                await window.loadKokoroInstalledClones();
+                if (window.showToast) {
+                    window.showToast(`Voice '${voiceId}' deleted.`, 'info');
+                }
             } else {
                 throw new Error(res.error || 'Could not delete voice pack.');
             }
@@ -411,8 +523,12 @@
     window.refreshKokoroClonesAll = async function () {
         await Promise.all([
             window.loadKokoroCloneSources(),
+            window.reloadKokoroVoicesDropdown(),
             window.loadKokoroInstalledClones()
         ]);
+        if (window.showToast) {
+            window.showToast('Kokoro voices and source tracks refreshed!', 'info');
+        }
     };
 
     // ── Dynamically Reload Main Kokoro Voice Select Dropdown ──────────────────
@@ -426,7 +542,7 @@
             const keys = Array.isArray(voiceMap) ? voiceMap : Object.keys(voiceMap);
 
             if (keys.length > 0) {
-                const currentVal = selectVoiceId || sel.value;
+                const currentVal = selectVoiceId || sel.value || (window.audioConfig?.kokoro?.voice) || 'af_heart';
                 sel.innerHTML = '';
                 keys.forEach(k => {
                     const opt = document.createElement('option');
@@ -439,23 +555,27 @@
             if (typeof window.syncKokoroBlendVoiceOptions === 'function') {
                 window.syncKokoroBlendVoiceOptions();
             }
+            if (typeof window.onKokoroBlendVoiceChange === 'function') {
+                window.onKokoroBlendVoiceChange();
+            }
         } catch (err) {
             console.warn('[KokoroClones] Failed to reload voices dropdown:', err);
         }
     };
 
     // ── Auto-Initialization ───────────────────────────────────────────────────
-    function initKokoroClones() {
+    async function initKokoroClones() {
         if (document.getElementById('kokoro-cloning-container')) {
             window.loadKokoroCloneSources();
-            window.loadKokoroInstalledClones();
+            await window.reloadKokoroVoicesDropdown();
+            await window.loadKokoroInstalledClones();
         }
     }
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initKokoroClones);
     } else {
-        setTimeout(initKokoroClones, 100);
+        setTimeout(initKokoroClones, 50);
     }
 
 })();
