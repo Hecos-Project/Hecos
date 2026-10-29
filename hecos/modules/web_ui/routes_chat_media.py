@@ -14,6 +14,7 @@ Registers:
 ────────────────────────────────────────────────────────────────────────────
 """
 import os
+import json
 import base64
 import subprocess
 import logging
@@ -464,4 +465,78 @@ def init_chat_media_routes(app, logger):
         except Exception as e:
             _chat_log.error(f"[ChatMedia] doc_generate_pdf_from_editor error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/api/plugins/document_maker/config", methods=["GET"])
+    def doc_config_get():
+        """Get Document Maker configuration."""
+        try:
+            hecos_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            cfg_path = os.path.join(hecos_root, "hecos", "hpm", "document_maker", "docs_config.json")
+            if not os.path.exists(cfg_path):
+                cfg_path = os.path.join(hecos_root, "hpm", "document_maker", "docs_config.json")
+            data = {}
+            if os.path.exists(cfg_path):
+                with open(cfg_path, "r", encoding="utf-8-sig") as f:
+                    data = json.load(f)
+            return jsonify(data)
+        except Exception as e:
+            _chat_log.error(f"[ChatMedia] doc_config GET error: {e}")
+            return jsonify({}), 500
+
+    @app.route("/hecos/api/plugins/document_maker/config", methods=["POST"])
+    def doc_config_post():
+        """Save Document Maker configuration."""
+        try:
+            payload = request.get_json(force=True) or {}
+            hecos_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            paths = [
+                os.path.join(hecos_root, "hecos", "hpm", "document_maker", "docs_config.json"),
+                os.path.join(hecos_root, "hpm", "document_maker", "docs_config.json"),
+                os.path.join("C:\\Hecos-Packages\\sources\\plugins\\document_maker_src", "docs_config.json")
+            ]
+            saved = False
+            for p in paths:
+                try:
+                    os.makedirs(os.path.dirname(p), exist_ok=True)
+                    with open(p, "w", encoding="utf-8") as f:
+                        json.dump(payload, f, indent=4, ensure_ascii=False)
+                    saved = True
+                except Exception:
+                    pass
+            if saved:
+                return jsonify({"ok": True})
+            return jsonify({"ok": False, "error": "Could not write config"}), 500
+        except Exception as e:
+            _chat_log.error(f"[ChatMedia] doc_config POST error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/api/plugins/document_maker/templates", methods=["GET"])
+    def doc_templates_get():
+        """Return available templates for Document Maker."""
+        try:
+            hecos_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            tpl_file = os.path.join(hecos_root, "hecos", "data", "templates.json")
+            if not os.path.exists(tpl_file):
+                tpl_file = os.path.join(hecos_root, "data", "templates.json")
+            templates = []
+            if os.path.exists(tpl_file):
+                with open(tpl_file, "r", encoding="utf-8") as f:
+                    raw = json.load(f)
+                items = raw.values() if isinstance(raw, dict) else raw
+                for t in items:
+                    if t.get("channel") in ("document", "doc") or "doc" in t.get("id", "") or "rivista" in t.get("name", "").lower():
+                        templates.append({
+                            "id": t.get("id"),
+                            "name": t.get("name"),
+                            "channel": t.get("channel", "document"),
+                            "description": t.get("description", ""),
+                            "variables": t.get("variables", []),
+                            "body_html": t.get("body_html", ""),
+                            "body_text": t.get("body_text", "")
+                        })
+            return jsonify({"ok": True, "templates": templates, "count": len(templates)})
+        except Exception as e:
+            _chat_log.error(f"[ChatMedia] doc_templates GET error: {e}")
+            return jsonify({"ok": False, "templates": [], "error": str(e)}), 500
+
 

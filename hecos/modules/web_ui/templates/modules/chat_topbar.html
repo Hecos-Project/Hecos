@@ -451,5 +451,8 @@
     {% if is_hpm_installed('flows') %}
     <a id="topbar-flows-link" href="/flows" target="_blank" class="topbar-link"><i class="fas fa-project-diagram"></i> <span>Flows</span></a>
     {% endif %}
+    {% if is_hpm_installed('net_search') %}
+    <a id="topbar-search-link" href="/search" target="_blank" class="topbar-link"><i class="fas fa-satellite-dish"></i> <span>Net Search</span></a>
+    {% endif %}
   </div>
 </div>

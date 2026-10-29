@@ -38,6 +38,7 @@ _PANEL_MAP = {
     'presenter':       'modules/config_presenter.html',
     'playbooks':       'modules/config_playbooks.html',
     'chat_ui':         'modules/config_chat_ui.html',
+    'docs':            'modules/config_document_maker.html',
 }
 
 _PANELS_NEEDING_OPTIONS = {'backend', 'voice', 'ia', 'igen', 'media'}

@@ -226,10 +226,25 @@ class AgentExecutor:
                     
                     images = MediaInterceptor.load_vision_images(output_text, images, self._emit)
                     
-                # Short-circuit on successful image generation if the model already formulated substantive text
+                # Short-circuit on successful image generation ONLY if:
+                # 1. All requested images in this turn have been completed.
+                # 2. Document generation is not still pending if requested by the user.
                 has_generated_img = any("[[IMG:" in str(r.get("output", "")) for r in accumulated_tool_results)
-                if has_generated_img and extracted_text and len(extracted_text.strip()) > 10:
+                image_limit = getattr(self.state_manager, "requested_image_limit", 1) if self.state_manager else 1
+                images_done = getattr(self.state_manager, "total_images_in_turn", 0) if self.state_manager else 0
+                all_images_done = (images_done >= image_limit) if image_limit > 0 else True
+                
+                wants_doc = bool(re.search(r'\b(?:documento|documenti|doc|pdf|html|scheda|file)\b', user_text, re.IGNORECASE))
+                has_doc = any(
+                    r.get("tag") in ("DOCS", "DOCUMENT_MAKER", "DOCUMENT_READER") or 
+                    "PDF:" in str(r.get("output", "")) or "HTML:" in str(r.get("output", ""))
+                    for r in accumulated_tool_results
+                )
+                doc_satisfied = (not wants_doc) or has_doc
+
+                if has_generated_img and all_images_done and doc_satisfied and extracted_text and len(extracted_text.strip()) > 10:
                     self._emit("Image generated and response formulated.", level="success")
+
                     if think_block:
                         extracted_text = f"<think>\n{think_block}\n</think>\n\n{extracted_text}"
                     extracted_text = MediaInterceptor.append_ui_media_to_text(extracted_text, accumulated_tool_results)

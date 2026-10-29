@@ -618,6 +618,13 @@ hecos/config/data/pc_automation.toml
 hecos/modules/browser_automation/
 hecos/config/data/browser_automation.toml
 
+# Net Search module (HPM Package)
+hecos/modules/net_search/
+hecos/config/data/net_search.toml
+hecos/hpm/net_search/
+hecos/data/tor/
+hecos/data/searxng/
+
 # Telemetry Widget (HPM Package)
 hecos/modules/web_ui/extensions/telemetry_widget/
 hecos/config/data/telemetry_widget.toml

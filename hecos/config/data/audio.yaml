@@ -1,11 +1,11 @@
-active_engine: piper
+active_engine: kokoro
 voice_status: true
-piper_path: C:\Hecos\bin\piper\piper.exe
-onnx_model: C:\Hecos\bin\piper\it_IT-serena-high.onnx
-speed: 1.05
-noise_scale: 1.2
-noise_w: 1.2
-sentence_silence: 0.25
+piper_path: ''
+onnx_model: C:\piper\it_IT-paola-medium.onnx
+speed: 1.0
+noise_scale: 0.667
+noise_w: 0.8
+sentence_silence: 0.2
 volume: 1.0
 piper_timeout: 180
 piper_current_inference_preset: ''
@@ -42,88 +42,18 @@ piper_inference_presets:
     volume: 1.0
 kokoro:
   speed: 1.0
-  voice: if_cine_witch
+  voice: if_goblin_folletto
   lang_code: auto
   blend_voice: ''
   alpha: 1.0
-  beta: 1.25
+  beta: 1.0
   sentence_silence: 0.1
   model_path: ''
   volume: 1.0
   normalize: true
-  current_preset: KOKORO1
-  current_inference_preset: Dynamic Prosody
-kokoro_presets:
-  Default Heart:
-    alpha: 1
-    beta: 1
-    blend_voice: ''
-    inference_preset: Standard & Balanced
-    lang_code: auto
-    normalize: true
-    sentence_silence: 0
-    speed: 1
-    voice: af_heart
-    volume: 1
-  Expressive Bella:
-    alpha: 1
-    beta: 1.25
-    blend_voice: ''
-    inference_preset: Dynamic Prosody
-    lang_code: auto
-    model_path: ''
-    normalize: true
-    sentence_silence: 0.1
-    speed: 1
-    voice: if_sara
-    volume: 1
-  Fast Adam:
-    alpha: 1
-    beta: 1
-    blend_voice: ''
-    inference_preset: Fast & Direct
-    lang_code: auto
-    normalize: true
-    sentence_silence: 0.05
-    speed: 1.35
-    voice: am_adam
-    volume: 1
-  KOKORO1:
-    alpha: 1
-    beta: 1.25
-    blend_voice: ''
-    inference_preset: Dynamic Prosody
-    lang_code: auto
-    model_path: ''
-    normalize: true
-    sentence_silence: 0.1
-    speed: 1
-    voice: if_cine_witch
-    volume: 1
-  ita 1:
-    alpha: 1
-    beta: 1
-    blend_voice: ''
-    inference_preset: Standard & Balanced
-    lang_code: auto
-    model_path: ''
-    normalize: true
-    sentence_silence: 0.15
-    speed: 0.95
-    voice: if_sara
-    volume: 1
-  voce ita 1:
-    alpha: 1
-    beta: 1
-    blend_voice: ''
-    inference_preset: ''
-    lang_code: auto
-    model_path: ''
-    normalize: true
-    sentence_silence: 0.15
-    speed: 0.95
-    voice: im_nicola
-    volume: 1
+  current_preset: voce2donna
+  current_inference_preset: ''
+kokoro_presets: {}
 kokoro_inference_presets:
   Dynamic Prosody:
     alpha: 1
@@ -141,7 +71,7 @@ kokoro_inference_presets:
     lang_code: auto
     normalize: true
     sentence_silence: 0.05
-    speed: 0.9
+    speed: 1.35
     volume: 1
   Hyper-Speed Assistant:
     alpha: 1
@@ -167,71 +97,23 @@ kokoro_inference_presets:
     blend_voice: ''
     lang_code: auto
     normalize: true
-    sentence_silence: 0.15
-    speed: 0.95
+    sentence_silence: 0
+    speed: 1
     volume: 1
 xtts:
-  speed: 1.1
+  speed: 1.0
   language: it
-  speaker: Claribel Dervla
-  gpu_acceleration: gpu
+  speaker: if_goblin_folletto
+  gpu_acceleration: auto
   chunk_sentences: true
-  speaker_wav: C:\Hecos\hecos\assets\voice_clones\Emanuela Pacotto voce 3 .wav
-  temperature: 1.2
-  repetition_penalty: 8.0
-  top_k: 90
-  top_p: 0.95
-  length_penalty: 1.5
+  speaker_wav: ''
+  temperature: 0.75
+  repetition_penalty: 5.0
+  top_k: 50
+  top_p: 0.85
+  length_penalty: 1.0
   current_preset: default
-xtts_presets:
-  8bitMamma 1:
-    chunk_sentences: true
-    gpu_acceleration: gpu
-    language: it
-    length_penalty: 0.9
-    repetition_penalty: 4
-    speaker: Claribel Dervla
-    speaker_wav: C:\Hecos\hecos\assets\voice_clones\8bitMamma_voce1.wav
-    speed: 1.4
-    temperature: 0.6
-    top_k: 40
-    top_p: 0.8
-  Antonio 1:
-    chunk_sentences: true
-    gpu_acceleration: gpu
-    language: it
-    length_penalty: 0.9
-    repetition_penalty: 4
-    speaker: Colette Olivier
-    speaker_wav: C:\Hecos\hecos\assets\voice_clones\voce antonio 1.wav
-    speed: 1.4
-    temperature: 0.6
-    top_k: 40
-    top_p: 0.8
-  Emanuela P:
-    chunk_sentences: true
-    gpu_acceleration: gpu
-    language: it
-    length_penalty: 1.5
-    repetition_penalty: 8
-    speaker: Claribel Dervla
-    speaker_wav: C:\Hecos\hecos\assets\voice_clones\Emanuela Pacotto voce 3 .wav
-    speed: 1.1
-    temperature: 1.2
-    top_k: 90
-    top_p: 0.95
-  Rowena 1:
-    chunk_sentences: true
-    gpu_acceleration: gpu
-    language: it
-    length_penalty: 1.2
-    repetition_penalty: 6
-    speaker: Claribel Dervla
-    speaker_wav: C:\Hecos\hecos\assets\voice_clones\Rowena voce 001.wav
-    speed: 1
-    temperature: 0.9
-    top_k: 70
-    top_p: 0.9
+xtts_presets: {}
 xtts_inference_presets:
   Creative & Wild:
     length_penalty: 1.5
@@ -272,129 +154,42 @@ fish_speech:
   api_url: http://127.0.0.1:8080/v1/tts
   api_key: ''
   reference_id: ''
-  reference_audio: voce_antonio_02.wav
-  reference_text: angoscia inesprimibile. la mente gravata da una pressione immateriale,
-    il corpo rallentato da un'aria che pare barriera. ma la mia mente non è il mio
-    corpo, non è il mio spirito, che sa vagare leggero percorrendo spazi indefinibili
-    nella pura contemplazione del tempo.
+  reference_audio: ''
+  reference_text: ''
   temperature: 0.7
   top_p: 0.7
   repetition_penalty: 1.2
-  max_new_tokens: 512
+  max_new_tokens: 1024
   chunk_length: 200
   seed: 0
   normalize: true
   use_memory_cache: true
   chunk_sentences: true
-  current_preset: Urania Fish 1
+  current_preset: default
   current_inference_preset: ''
   model_checkpoint: s2-pro
   volume: 1.0
-fish_speech_presets:
-  Boy 1 (Icelandic):
-    chunk_sentences: true
-    inference_preset: Fast & Direct
-    max_new_tokens: 512
-    reference_audio: audio_voce_bambino1_iceland.wav
-    reference_text: hennar missir er mikill
-    repetition_penalty: 1.15
-    temperature: 0.5
-    top_p: 0.6
-  Girl 1 (Icelandic):
-    chunk_sentences: true
-    inference_preset: Expressive & Dynamic
-    max_new_tokens: 512
-    reference_audio: audio_voce_bambina1_iceland.wav
-    reference_text: grunur minn er alltaf á rökum reistur
-    repetition_penalty: 1.25
-    temperature: 0.7
-    top_p: 0.75
-  Man 1 (Deep & Resonant):
-    chunk_sentences: true
-    inference_preset: Standard & Balanced
-    max_new_tokens: 512
-    reference_audio: base_man_deep.wav
-    reference_text: Ma la volpe col suo balzo ha raggiunto il quieto fante all'ombra
-      del tiglio fiorito.
-    repetition_penalty: 1.2
-    temperature: 0.7
-    top_p: 0.7
-  Man 1 (German):
-    chunk_sentences: true
-    inference_preset: Standard & Balanced
-    max_new_tokens: 512
-    reference_audio: audio_voce_uomo1_tedesco.wav
-    reference_text: Intusschen was de beminnelijke ULRICA bij haren vader terug gekomen,
-      beide hadden reeds een' geruimen tijd sterk naar elkanderen verlangd en waren
-      recht verheugd en gelukkig van zich weder bijeen te vinden
-    repetition_penalty: 1.2
-    temperature: 0.7
-    top_p: 0.7
-  Urania Fish 1:
-    chunk_length: 200
-    chunk_sentences: true
-    inference_preset: ''
-    max_new_tokens: 512
-    normalize: true
-    reference_audio: voce_antonio_02.wav
-    reference_id: ''
-    reference_text: angoscia inesprimibile. la mente gravata da una pressione immateriale,
-      il corpo rallentato da un'aria che pare barriera. ma la mia mente non è il mio
-      corpo, non è il mio spirito, che sa vagare leggero percorrendo spazi indefinibili
-      nella pura contemplazione del tempo.
-    repetition_penalty: 1.2
-    seed: 0
-    temperature: 0.7
-    top_p: 0.7
-    use_memory_cache: true
-    volume: 1
-  Witch (Strega Arcana):
-    chunk_sentences: true
-    inference_preset: Standard & Balanced
-    max_new_tokens: 512
-    reference_audio: cine_witch.wav
-    reference_text: 'Ascoltami bene: questo è un momento straordinario, e ogni dettaglio
-      può fare davvero la differenza!'
-    repetition_penalty: 1.2
-    temperature: 0.7
-    top_p: 0.7
-  Young Woman 1 (German):
-    chunk_length: 200
-    chunk_sentences: true
-    inference_preset: Standard & Balanced
-    max_new_tokens: 512
-    normalize: true
-    reference_audio: audio_voce_ragazza1_tedesco.wav
-    reference_id: ''
-    reference_text: da eent metter zeide treveilli ik gamee zeide mamme en zette har
-      hoedscheef opschoot haar montel aan de ging mee turrellie vloekte een cinner
-      maar mama ging mee
-    repetition_penalty: 1.2
-    seed: 0
-    temperature: 0.7
-    top_p: 0.7
-    use_memory_cache: true
+fish_speech_presets: {}
 fish_speech_inference_presets:
   Creative & Wild:
     chunk_length: 220
     max_new_tokens: 512
     normalize: true
     repetition_penalty: 1.25
-    seed: 0
     temperature: 0.75
     top_p: 0.8
     use_memory_cache: true
   Expressive & Dynamic:
     chunk_length: 220
-    max_new_tokens: 1024
+    max_new_tokens: 512
     normalize: true
     repetition_penalty: 1.25
-    temperature: 0.85
+    temperature: 0.75
     top_p: 0.8
     use_memory_cache: true
   Fast & Direct:
     chunk_length: 160
-    max_new_tokens: 1024
+    max_new_tokens: 384
     normalize: true
     repetition_penalty: 1.15
     temperature: 0.5
@@ -402,15 +197,15 @@ fish_speech_inference_presets:
     use_memory_cache: true
   Stable & Monotone:
     chunk_length: 200
-    max_new_tokens: 1024
+    max_new_tokens: 512
     normalize: true
-    repetition_penalty: 1.4
-    temperature: 0.3
+    repetition_penalty: 1.3
+    temperature: 0.4
     top_p: 0.5
     use_memory_cache: true
   Standard & Balanced:
     chunk_length: 200
-    max_new_tokens: 1024
+    max_new_tokens: 512
     normalize: true
     repetition_penalty: 1.2
     temperature: 0.7

@@ -526,9 +526,6 @@
             window.reloadKokoroVoicesDropdown(),
             window.loadKokoroInstalledClones()
         ]);
-        if (window.showToast) {
-            window.showToast('Kokoro voices and source tracks refreshed!', 'info');
-        }
     };
 
     // ── Dynamically Reload Main Kokoro Voice Select Dropdown ──────────────────

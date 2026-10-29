@@ -253,6 +253,19 @@ def get_tools_schema():
             _override_enabled = _dm_cfg.get("override_enabled", True)
             _override_directive = _dm_cfg.get("override_directive", "").strip()
             if _override_enabled and _override_directive:
+                # Dynamically append current configured default template info
+                _def_tpl_id = _dm_cfg.get("default_template_id", "").strip()
+                _extra_tpl_info = ""
+                if _def_tpl_id:
+                    try:
+                        from hecos.hpm.libraries.templates.store import get_template
+                        _tpl_data = get_template(_def_tpl_id)
+                        _tpl_name = _tpl_data.get("name", _def_tpl_id) if _tpl_data else _def_tpl_id
+                        _extra_tpl_info = f"\n\nCURRENT CONFIGURED DEFAULT TEMPLATE:\nName: '{_tpl_name}' | ID: '{_def_tpl_id}'. When the user asks for 'default template', 'modello predefinito', or 'il solito documento', use this template (pass template_id='{_def_tpl_id}')."
+                    except Exception:
+                        pass
+                _full_directive = _override_directive + _extra_tpl_info
+
                 # Tool names that receive the directive injection
                 _override_targets = {
                     "DOCS__generate_pdf",
@@ -264,7 +277,7 @@ def get_tools_schema():
                     _func = _tool.get("function", _tool)
                     _tname = _func.get("name", "")
                     if _tname in _override_targets:
-                        _func["description"] = _func.get("description", "") + " " + _override_directive
+                        _func["description"] = _func.get("description", "") + " " + _full_directive
     except Exception as _e:
         pass  # Never crash tool assembly due to override issues
 

@@ -11,6 +11,13 @@ Idioma: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
+> ### ⚡ Lema Fundamental
+> **"Zero moral filters. Zero social bias. Zero political agendas. From the core engine to every single module, Hecos is built on one unshakeable rule: freedom of thought belongs to everyone."**
+> 
+> *(Cero filtros morales. Cero sesgos sociales. Cero agendas políticas. Desde el motor central hasta cada módulo individual, Hecos se basa en una regla inquebrantable: la libertad de pensamiento pertenece a todos.)*
+
+---
+
 > **Estado: Fase II (Ghost Fire)**: Hecos está actualmente en `v0.53.0`. Este es un Helping Companion System que actúa como puente entre el razonamiento de alto nivel y la ejecución del sistema root.
 >
 > ⚠️ **Aviso Importante**: A partir de este lanzamiento principal (0.50.0+), el desarrollo principal y el entorno de destino migran oficialmente a **Windows 11**.
@@ -18,7 +25,8 @@ Idioma: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 ## 🚀 Resumen General
 **Hecos** es un **Helping Companion System**: un ecosistema local de primera línea diseñado para conectar de manera fluida la tecnología con la vida humana, combinando el razonamiento de IA, la automatización visual y la ejecución directa del sistema. En lugar de perseguir conceptos abstractos como la soberanía digital, Hecos se enfoca en una única misión pragmática: **mejorar la vida humana**, transformando el hardware local en una herramienta práctica y altamente eficiente para el día a día.
 
-Basado en tres pilares fundamentales:
+Basado en nuestros pilares fundamentales:
+* 🕊️ **Libertad de Pensamiento** — Cero filtros morales, cero sesgos sociales, cero agendas políticas.
 * 🛡️ **Privacidad Primero** — Funcionamiento 100% local, cero dependencia de la nube y arquitectura de privacidad de 3 niveles.
 * ⚡ **Velocidad Extrema** — Arquitectura nativa optimizada y sistema de complementos de alto rendimiento para una respuesta instantánea.
 * 🧊 **Simplicidad Total** — Tablero profesional y diseño modular que hace intuitiva la orquestación de IA avanzada.

@@ -173,6 +173,15 @@ async function uploadWebAudio(wasLockedMode) {
       const transcribed = data.text.trim();
       console.log('[WebAudio] Transcribed:', transcribed);
 
+      // Deduplication safeguard: avoid re-sending identical voice command within debounce window
+      const now = Date.now();
+      if (window._lastVoiceCmdText === transcribed && (now - (window._lastVoiceCmdTime || 0)) < 3500) {
+        console.warn('[WebAudio] Duplicate voice command ignored within debounce window:', transcribed);
+        return;
+      }
+      window._lastVoiceCmdText = transcribed;
+      window._lastVoiceCmdTime = now;
+
       const shouldAutoSend = window._webptt_shouldAutoSend ? window._webptt_shouldAutoSend(wasLockedMode) : false;
 
       if (shouldAutoSend) {

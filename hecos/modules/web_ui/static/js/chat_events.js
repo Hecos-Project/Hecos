@@ -78,29 +78,27 @@ window.initEvents = function() {
       window.isBackendPTTActive = ev.active;
       
       if (ev.active) {
-          // If browser is NOT already recording, start recording from the global/hardware PTT bus trigger
-          if (!window.isWebAudioRecording && (window.currentMicOn || window.currentPTTOn)) {
-              window.isTouchHold = true;
-              window.pressStartTime = Date.now();
-              if (typeof window.unlockAudioContext === 'function') window.unlockAudioContext();
-              if (window.startWebAudioRecording) {
-                  window.startWebAudioRecording();
-              }
-          } else if (!window.isWebAudioRecording && window.UnifiedToast) {
+          if (window.UnifiedToast) {
               window.UnifiedToast.show('🎙️ Listening...', 'fas fa-microphone', 0, 'rgba(235, 75, 75, 0.9)');
           }
       } else {
-          // If recording was active from global PTT, stop recording and send to transcription
-          if (window.isWebAudioRecording && window.stopWebAudioRecording) {
-              window.isTouchHold = false;
-              window.stopWebAudioRecording();
-          }
           if (window.UnifiedToast) window.UnifiedToast.hide();
       }
       
     } else if (ev.type === 'voice_detected' && ev.text) {
       let voiceCmd = (ev.text || '').trim();
       voiceCmd = voiceCmd.replace(/^(slash\s+|barra\s+|\/\s*)/i, '/');
+      if (!voiceCmd) return;
+
+      // Deduplication safeguard: avoid processing identical voice commands within debounce window
+      const now = Date.now();
+      if (window._lastVoiceCmdText === voiceCmd && (now - (window._lastVoiceCmdTime || 0)) < 3500) {
+          console.warn("[Audio] Duplicate voice_detected ignored within debounce window:", voiceCmd);
+          return;
+      }
+      window._lastVoiceCmdText = voiceCmd;
+      window._lastVoiceCmdTime = now;
+
       console.log("[Audio] Voice command received:", voiceCmd);
       if (window.hideWelcome) window.hideWelcome();
       // Save to input history so ArrowUp can recall voice messages

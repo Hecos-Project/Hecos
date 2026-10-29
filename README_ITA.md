@@ -11,6 +11,13 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
+> ### ⚡ Motto Fondamentale
+> **"Zero moral filters. Zero social bias. Zero political agendas. From the core engine to every single module, Hecos is built on one unshakeable rule: freedom of thought belongs to everyone."**
+> 
+> *(Zero filtri morali. Zero pregiudizi sociali. Zero agende politiche. Dal motore centrale a ogni singolo modulo, Hecos è costruito su un'unica incrollabile regola: la libertà di pensiero appartiene a tutti.)*
+
+---
+
 > **Stato: Fase II (Ghost Fire)**: Hecos è attualmente in `v0.53.0`. Questo è un Helping Companion System che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root.
 >
 > ⚠️ **Avviso Importante**: A partire da questa major release (0.50.0+), lo sviluppo primario e l'ambiente target migrano ufficialmente a **Windows 11**.
@@ -18,7 +25,8 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 ## 🚀 Panoramica
 **Hecos** è un **Helping Companion System**: un ecosistema locale progettato per unire fluidamente tecnologia e vita umana, combinando AI reasoning, automazione visiva ed esecuzione di sistema diretta. Invece di inseguire concetti astratti come la sovranità digitale, Hecos si concentra su un'unica missione pragmatica: **migliorare la vita umana**, trasformando l'hardware locale in uno strumento pratico ed estremamente efficiente per tutti i giorni.
 
-Costruito su tre pilastri fondamentali:
+Costruito sui nostri pilastri fondamentali:
+* 🕊️ **Libertà di Pensiero** — Zero filtri morali, zero bias sociali, zero agende politiche.
 * 🛡️ **Privacy al Primo Posto** — Funzionamento 100% locale, zero dipendenze cloud e architettura privacy a 3 livelli.
 * ⚡ **Velocità Estrema** — Architettura nativa ottimizzata e sistema di plugin ad alte prestazioni per una reattività istantanea.
 * 🧊 **Semplicità Assoluta** — Dashboard professionale e design modulare che rende intuitiva l'orchestrazione IA avanzata.

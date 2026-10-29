@@ -35,6 +35,9 @@
       {% if is_hpm_installed('flows') %}
       <a id="hdr-nav-flows" href="/flows" target="_blank" class="btn btn-sm btn-secondary" style="text-decoration:none;" title="Hecos Flows"><i class="fas fa-project-diagram"></i> Flows</a>
       {% endif %}
+      {% if is_hpm_installed('net_search') %}
+      <a id="hdr-nav-search" href="/search" target="_blank" class="btn btn-sm btn-secondary" style="text-decoration:none;" title="Net Search & Intelligence"><i class="fas fa-satellite-dish"></i> Net Search</a>
+      {% endif %}
       {% endif %}
   
       <!-- AUTHENTICATION WIDGET -->

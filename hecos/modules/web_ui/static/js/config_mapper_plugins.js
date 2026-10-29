@@ -219,20 +219,49 @@ function buildPluginsPayload(out) {
   const _getV = (id, fallback) => typeof getV === 'function' ? getV(id, fallback) : fallback;
   const _getC = (id, fallback) => typeof getC === 'function' ? getC(id, fallback) : fallback;
 
-  // Browser engine mode (inline radio)
-  if (window.cfg?.plugins?.BROWSER) {
-    out.plugins['BROWSER'] = out.plugins['BROWSER'] || {};
+  // Browser engine mode & settings
+  if (window.cfg?.plugins?.BROWSER || document.getElementById('browser-enabled') || document.getElementById('search-tor-enabled')) {
+    out.plugins['BROWSER'] = Object.assign({}, window.cfg?.plugins?.BROWSER || {}, out.plugins['BROWSER'] || {});
     const modeEl = document.querySelector('input[name="engine_mode"]:checked');
     if (modeEl) {
       out.plugins['BROWSER'].browser_engine_mode = modeEl.value;
     } else {
-      out.plugins['BROWSER'].browser_engine_mode = out.plugins['BROWSER'].browser_engine_mode || 'playwright';
+      out.plugins['BROWSER'].browser_engine_mode = out.plugins['BROWSER'].browser_engine_mode || 'cdp_mode';
     }
+    const bEnabledEl = document.getElementById('browser-enabled');
+    if (bEnabledEl) out.plugins['BROWSER'].enabled = bEnabledEl.checked;
     out.plugins['BROWSER'].cdp_port     = parseInt(_getV('browser-cdp-port', out.plugins['BROWSER'].cdp_port)) || 9222;
     out.plugins['BROWSER'].headless     = _getC('browser-headless', out.plugins['BROWSER'].headless);
     out.plugins['BROWSER'].block_ads    = _getC('browser-block-ads', out.plugins['BROWSER'].block_ads);
     out.plugins['BROWSER'].startup_url  = _getV('browser-startup-url', out.plugins['BROWSER'].startup_url);
     out.plugins['BROWSER'].browser_type = _getV('browser-engine', out.plugins['BROWSER'].browser_type) || 'chromium';
+
+    // Timeouts if present in DOM
+    if (document.getElementById('browser-nav-timeout')) {
+      out.plugins['BROWSER'].nav_timeout = parseFloat(_getV('browser-nav-timeout', out.plugins['BROWSER'].nav_timeout || 30));
+      out.plugins['BROWSER'].action_timeout = parseFloat(_getV('browser-action-timeout', out.plugins['BROWSER'].action_timeout || 5));
+      out.plugins['BROWSER'].wait_timeout = parseFloat(_getV('browser-wait-timeout', out.plugins['BROWSER'].wait_timeout || 8));
+      out.plugins['BROWSER'].thread_timeout = parseFloat(_getV('browser-thread-timeout', out.plugins['BROWSER'].thread_timeout || 60));
+    }
+
+    // Deep Search & Intelligence subsystem toggles
+    const smEl = document.getElementById('search-master-enabled');
+    const storEl = document.getElementById('search-tor-enabled');
+    const ssearxEl = document.getElementById('search-searxng-enabled');
+    const ssearxUrl = document.getElementById('search-searxng-url');
+    if (smEl || storEl || ssearxEl || ssearxUrl) {
+      out.plugins['BROWSER'].search = out.plugins['BROWSER'].search || {};
+      if (smEl) out.plugins['BROWSER'].search.enabled = smEl.checked;
+      if (storEl) {
+        out.plugins['BROWSER'].search.tor = out.plugins['BROWSER'].search.tor || {};
+        out.plugins['BROWSER'].search.tor.enabled = storEl.checked;
+      }
+      if (ssearxEl || ssearxUrl) {
+        out.plugins['BROWSER'].search.searxng = out.plugins['BROWSER'].search.searxng || {};
+        if (ssearxEl) out.plugins['BROWSER'].search.searxng.enabled = ssearxEl.checked;
+        if (ssearxUrl) out.plugins['BROWSER'].search.searxng.url = ssearxUrl.value;
+      }
+    }
   }
 
   // Extension toggles

@@ -200,6 +200,19 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     except Exception as _tpl_e:
         logger.warning(f"[WebUI] Templates plugin API could not load: {_tpl_e}")
 
+    # Store as singleton BEFORE loading extensions so that on_load() hooks
+    # (e.g. net_search, drive) can retrieve the live app via get_app() or
+    # sys.hecos_flask_app to register their Flask routes.
+    import sys
+    sys.hecos_flask_app = app
+
+    # ── Core System Apps: Net Search ──────────────────────────────────────────
+    # NOTE: net_search routes are already registered by routes_packages.py (HPM)
+    # since net_search is present in packages.db. The explicit block was removed
+    # to avoid double-registration (Flask AssertionError on duplicate endpoints).
+    # routes.py uses _safe_route() guards to handle both HPM and direct import paths.
+    # ─────────────────────────────────────────────────────────────────────────
+
     # WEB_UI Shared Extensions
     try:
         from hecos.core.system.extension_loader import discover_webui_extensions, load_eager_extensions
@@ -220,9 +233,5 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     except Exception as _pr_e:
         logger.warning(f"[WebUI] Could not clear pending_restart.json: {_pr_e}")
     # ─────────────────────────────────────────────────────────────────────────
-
-    # Store as singleton so plugins can retrieve it via get_app()
-    import sys
-    sys.hecos_flask_app = app
 
     return app, debug_on

@@ -164,6 +164,13 @@ window.bindPTTKeyboard = function() {
         return;
       }
 
+      // If system STT / backend hardware PTT is active (default in Hecos),
+      // ptt_bus.py (pynput) is already capturing Ctrl+Shift globally on the host.
+      // Do not duplicate with browser WebAudio recording!
+      if (window.currentSTTSource !== 'web') {
+        return;
+      }
+
       _isPTTKeyDown = true;
       _pttAbortDueToThirdKey = false;
       window.isTouchHold = true;

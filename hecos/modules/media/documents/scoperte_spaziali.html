@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html lang="it">
+<head>
+<meta charset="utf-8"/>
+<title>Scoperte Spaziali</title>
+<style>
+  :root {
+    --bg-primary: #0f0f1a;
+    --bg-card: rgba(255,255,255,0.06);
+    --accent: #ff6b6b;
+    --accent-alt: #ffd93d;
+    --text-main: #f0f0f0;
+    --text-muted: rgba(255,255,255,0.55);
+    --font-display: 'Georgia', 'Playfair Display', serif;
+    --font-body: 'Segoe UI', 'Inter', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-primary);
+    color: var(--text-main);
+    min-height: 100vh;
+  }
+  /* ── COVER ─────────────────────────── */
+  .cover {
+    text-align: center;
+    padding: 60px 40px 40px;
+    background: linear-gradient(180deg, #1a1a3e 0%, var(--bg-primary) 100%);
+    border-bottom: 3px solid var(--accent);
+  }
+  .cover h1 {
+    font-family: var(--font-display);
+    font-size: 3.2em;
+    text-transform: uppercase;
+    letter-spacing: 6px;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .cover .subtitle {
+    font-style: italic;
+    color: var(--accent-alt);
+    margin-top: 12px;
+    font-size: 1.2em;
+    letter-spacing: 2px;
+  }
+  .cover .edition {
+    margin-top: 8px;
+    font-size: 0.85em;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  /* ── DESCRIPTION ────────────────────── */
+  .description {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0 40px;
+    text-align: justify;
+    font-size: 1.15em;
+    line-height: 1.9;
+    color: rgba(255,255,255,0.8);
+  }
+  .description::first-letter {
+    font-family: var(--font-display);
+    font-size: 3em;
+    float: left;
+    line-height: 0.8;
+    margin-right: 10px;
+    color: var(--accent);
+  }
+  /* ── GALLERY ────────────────────────── */
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 40px;
+  }
+  .photo-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.4);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .photo-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  }
+  .photo-card img {
+    width: 100%;
+    height: 380px;
+    object-fit: cover;
+    display: block;
+  }
+  .caption {
+    padding: 18px 16px;
+    font-size: 0.95em;
+    line-height: 1.6;
+    color: var(--accent);
+    font-weight: 600;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(255,107,107,0.15), transparent);
+    border-top: 2px solid rgba(255,107,107,0.2);
+  }
+  .caption .scene-num {
+    display: block;
+    font-size: 0.75em;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent-alt);
+    margin-bottom: 6px;
+  }
+  /* ── FOOTER ─────────────────────────── */
+  .doc-footer {
+    text-align: center;
+    padding: 40px;
+    font-size: 0.85em;
+    color: var(--text-muted);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    margin-top: 40px;
+  }
+  @media print {
+    body { background: #0f0f1a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .photo-card { break-inside: avoid; }
+  }
+
+
+        
+
+        /* --- Hecos Auto-Pagination & Margin Layout --- */
+        @page {
+            size: A4;
+            margin: 20mm 20mm 20mm 20mm;
+            background: #0f0f1a;
+        }
+        * { box-sizing: border-box; }
+
+        html {
+            background-color: #0f0f1a !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        
+        /* Clean screen viewing with configured margins and matching background */
+        @media screen {
+            html {
+                background-color: #07070d !important;
+                padding: 24px 0;
+            }
+            body {
+                margin: 0 auto;
+                padding: 20mm 20mm 20mm 20mm;
+                max-width: 210mm;
+                min-height: 297mm;
+                box-sizing: border-box;
+                background-color: #0f0f1a !important;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65);
+                border-radius: 4px;
+            }
+        }
+
+        /* Print / PDF rendering uses Playwright & @page margins cleanly with full bleed background */
+        @media print {
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background-color: #0f0f1a !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+
+        .page {
+            page-break-after: always;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .page:last-child { page-break-after: auto; }
+        img { max-width: 100%; height: auto; display: block; margin: 8px auto; }
+        img, figure, .photo-card, .gallery, .photo-grid, .card, table {
+            page-break-inside: avoid;
+        }
+        h1, h2, h3, h4 {
+            page-break-after: avoid;
+        }
+        </style>
+</head>
+<body>
+<div class="cover">
+<h1>Scoperte Spaziali</h1>
+<div class="subtitle">Oltre l'Orizzonte degli Eventi</div>
+<div class="edition">Edizione Speciale</div>
+</div>
+<div class="description">
+<p>Un'esplorazione profonda dei segreti celesti, dalle nebulose lontane ai mondi cristallini.</p>
+</div>
+<div class="gallery">
+<div class="photo-card">
+<img alt="Scena 1" src="file:///C:/Hecos/hecos/media/images/gen_20261028_155746_A_breathtaking__vibrant_nebula_with_swirling_shade.png"/>
+<div class="caption"><span class="scene-num">Scena I</span>La Nebulosa di Aetheria: un grembo di stelle dove la luce danza tra polveri dorate.</div>
+</div>
+<div class="photo-card">
+<img alt="Scena 2" src="file:///C:/Hecos/hecos/media/images/gen_20261028_155821_A_sleek__futuristic_space_station_with_large_glass.png"/>
+<div class="caption"><span class="scene-num">Scena II</span>Stazione Zenith: la nostra casa tra le stelle, un capolavoro di ingegneria e sogni.</div>
+</div>
+<div class="photo-card">
+<img alt="Scena 3" src="file:///C:/Hecos/hecos/media/images/gen_20261028_155855_An_alien_planet_surface_featuring_towering_crystal.png"/>
+<div class="caption"><span class="scene-num">Scena III</span>Il Pianeta Cristallo: un mondo dove la geologia incontra la magia della luce.</div>
+</div>
+<div class="photo-card">
+<img alt="Scena 4" src="file:///C:/Hecos/hecos/media/images/gen_20261028_155930_A_high_tech_exploration_spacecraft_entering_a_shim.png"/>
+<div class="caption"><span class="scene-num">Scena IV</span>Il Portale di Chronos: dove il tempo e lo spazio si fondono in un unico, splendido abbraccio.</div>
+</div>
+</div>
+<div class="doc-footer">
+<p>Creato da Urania 9800 per il suo Admin preferito.</p>
+</div>
+</body>
+</html>

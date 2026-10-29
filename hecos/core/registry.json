@@ -1,4 +1,48 @@
 {
+    "BROWSER": {
+        "description": "Playwright Browser Automation: Navigate web pages, click elements, fill forms, extract reader DOM and capture screenshots.",
+        "commands": {
+            "click_element": "Clicks a page element by its visible text label or CSS selector.",
+            "close": "Closes the entire Hecos AI browser window.",
+            "close_tab": "Closes the currently active browser tab.",
+            "get_current_url": "Returns the URL currently loaded in the Hecos browser.",
+            "get_inputs": "Lists all input fields, buttons and form elements on the current page.",
+            "get_links": "Returns all hyperlinks on the current page as a numbered list.",
+            "get_page_text": "Returns all visible text from the current browser page.",
+            "get_title": "Returns the title of the current browser page.",
+            "go_back": "Navigate the browser back to the previous page.",
+            "list_tabs": "List all open tabs/pages in the current browser.",
+            "new_tab": "Opens a new tab in the browser.",
+            "open_url": "Opens a URL in the Hecos AI browser. If the browser is already running, opens a new tab.",
+            "press_key": "Presses a keyboard key in the browser context.",
+            "run_js": "Executes JavaScript in the browser and returns the result.",
+            "screenshot": "Takes a screenshot of the current browser viewport.",
+            "scroll": "Scrolls the browser page up or down.",
+            "slash_b": "Method",
+            "slash_b_back": "Method",
+            "slash_b_click": "Method",
+            "slash_b_close": "Method",
+            "slash_b_close_tab": "Method",
+            "slash_b_new": "Method",
+            "slash_b_scroll": "Method",
+            "slash_b_shot": "Method",
+            "slash_b_switch": "Method",
+            "slash_b_tabs": "Method",
+            "slash_b_type": "Method",
+            "switch_tab": "Switches the active browser focus to a specific tab by its ID.",
+            "type_in_field": "Finds an input field and types text into it."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "Use BROWSER to interact with a live browser session: open URLs, click buttons, fill forms, scroll pages, capture screenshots and automate UI interactions.",
+        "is_class_based": true,
+        "icon": "globe",
+        "category": "PLUGINS",
+        "slash_commands": [
+            "/browser_open",
+            "/browser_close"
+        ]
+    },
     "BUILDER": {
         "description": "Builder Studio: Visual IDE for building and managing Hecos packages.",
         "commands": {},
@@ -127,6 +171,38 @@
         "category": "PLUGINS",
         "module_type": "core_module",
         "slash_commands": []
+    },
+    "NETSEARCH": {
+        "description": "Net Search: Multi-engine Web, Tor DarkWeb (.onion), OSINT, Media and Deep File Intelligence.",
+        "commands": {
+            "dark_search": "Searches the Tor Dark Web (.onion hidden services) through Ahmia, TorDex, Phobos, and onion crawlers.",
+            "deep_search": "Deep uninhibited search aggregating Clear Web, Dark Web (.onion), and file hunting.",
+            "fetch_page": "Reads and extracts the textual content of any webpage (Clearnet or Tor .onion).",
+            "file_search": "Hunts for downloadable files and documents using multi-extension dork queries and Archive.org.",
+            "media_search": "Searches for images, videos, audio and podcasts matching the query.",
+            "osint_search": "OSINT identity hunt: finds active user profiles across 15+ social and coding platforms.",
+            "slash_dark": "Method",
+            "slash_files": "Method",
+            "slash_netsearch": "Method",
+            "slash_osint": "Method",
+            "slash_search": "Method",
+            "slash_tor_new": "Method",
+            "web_search": "Searches the Clearnet using privacy-preserving aggregators (SearXNG, DuckDuckGo, Brave, etc.)."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "NET SEARCH & INTELLIGENCE EXECUTION RULES:\n\n1. WEB SEARCH: If the user asks to search the web, find news, or search anything online, call NETSEARCH__web_search(query=...).\n2. DARK WEB: If the user asks for Tor, .onion, hidden services, dark web, or uninhibited search, call NETSEARCH__dark_search(query=...).\n3. DEEP SEARCH: If the user asks for comprehensive / deep search combining Clear + Dark + Files, call NETSEARCH__deep_search(query=...).\n4. MEDIA SEARCH: If the user asks for images, videos, audio/soundtracks, call NETSEARCH__media_search(query=..., media_type=...).\n5. FILE SEARCH: If the user asks for documents, PDFs, ebooks, zip archives, or file downloads, call NETSEARCH__file_search(query=..., file_types=...).\n6. OSINT: If the user asks to find a person's online accounts, usernames, or social profiles, call NETSEARCH__osint_search(username=...).\n7. READ WEBPAGE: If the user asks to inspect, read, or scrape a specific URL (clearnet or .onion), call NETSEARCH__fetch_page(url=...).",
+        "is_class_based": true,
+        "icon": "fas fa-satellite-dish",
+        "category": "SISTEMA",
+        "slash_commands": [
+            "/netsearch",
+            "/search",
+            "/dark",
+            "/tor_new",
+            "/files",
+            "/osint"
+        ]
     },
     "PERSONALITY": {
         "description": "Manage and switch AI personalities (souls) dynamically.",
@@ -330,8 +406,6 @@
         "module_type": "hpm",
         "slash_commands": [
             {
-                "id": "img",
-                "manifest_version": "1",
                 "aliases": [
                     "/img",
                     "/image",
@@ -339,13 +413,28 @@
                     "/foto"
                 ],
                 "description": "Generates an AI image from a text description",
-                "usage": "/img <descrizione>",
                 "example": "/img foto fotorealistica di un gatto su Marte",
                 "icon": "ðŸ–¼ï¸",
+                "id": "img",
+                "manifest_version": "1",
                 "method": "generate_image",
-                "requires_args": true
+                "requires_args": true,
+                "usage": "/img <descrizione>"
             }
         ]
+    },
+    "TEMPLATES": {
+        "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-file-alt",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
     },
     "AUTOMATION": {
         "description": "PC Automation: control the mouse, keyboard, and application windows. Use with desktop_screenshot for a full see-and-act loop.",
