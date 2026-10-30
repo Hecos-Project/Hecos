@@ -2,6 +2,9 @@ import os
 import sys
 import datetime
 import subprocess
+import re
+import shlex
+import uuid
 
 try:
     import winsound
@@ -114,6 +117,78 @@ def reboot_system_tool() -> str:
     os._exit(42)
     return "Rebooting..."
 
+# Matches: pip install ..., pip3 install ..., python -m pip install ..., py -3 -m pip install ...
+_PIP_INSTALL_RE = re.compile(
+    r'^\s*(?:(?:"[^"]*python[^"]*"|[^\s"]*python[\w.]*(?:\.exe)?|py(?:\.exe)?)(?:\s+-\d(?:\.\d+)?)?\s+-m\s+)?'
+    r'pip[\d.]*(?:\.exe)?\s+install\b(?P<rest>.*)$',
+    re.IGNORECASE | re.DOTALL,
+)
+_SHELL_META_RE = re.compile(r'&&|\|\||[|;<>&`\n]')
+_PIP_RAW_LINE_RE = re.compile(r'^\s*Progress\s+\d+\s+of\s+\d+\s*$', re.IGNORECASE)
+_PIP_VALUE_FLAGS = {
+    "-t", "--target", "-r", "--requirement", "-c", "--constraint", "-i", "--index-url",
+    "--extra-index-url", "-f", "--find-links", "--prefix", "--root", "--progress-bar",
+}
+
+
+def _run_pip_with_progress(command: str, tag: str):
+    """
+    If `command` is a plain `pip install ...`, runs it through the unified progress
+    system (bars in logs, CLI, Presenter, WebUI) and returns the textual result.
+    Returns None when the command is not eligible, so the caller falls back to the shell.
+    """
+    m = _PIP_INSTALL_RE.match(command)
+    if not m:
+        return None
+    rest = m.group("rest")
+    # Compound commands (pipes, chaining, redirects) must be handled by the real shell.
+    if _SHELL_META_RE.search(re.sub(r'"[^"]*"|\'[^\']*\'', '', rest)):
+        return None
+    try:
+        args = shlex.split(rest, posix=(os.name != "nt"))
+    except ValueError:
+        return None
+    args = [a[1:-1] if len(a) >= 2 and a[0] == a[-1] and a[0] in "\"'" else a for a in args]
+    if not args or any(a in ("-h", "--help") for a in args):
+        return None
+
+    try:
+        from hecos.core.progress import progress
+        from hecos.core.progress.adapters.pip import PIP_PHASES
+    except Exception:
+        return None
+
+    pkgs, skip_next = [], False
+    for a in args:
+        if skip_next:
+            skip_next = False
+            continue
+        if a in _PIP_VALUE_FLAGS:
+            skip_next = True
+            continue
+        if not a.startswith("-"):
+            pkgs.append(os.path.basename(a) if os.path.sep in a else a)
+    title = "pip install " + " ".join(pkgs)[:60]
+    retcode, output = -1, "Operation cancelled."
+    with progress.task(
+        f"exec_pip_{uuid.uuid4().hex[:8]}",
+        title=title,
+        source=tag,
+        phases=list(PIP_PHASES),
+    ) as pt:
+        retcode, output = progress.pip(["install"] + args, task=pt)
+        if retcode != 0:
+            tail = [l for l in output.strip().splitlines() if l.strip()][-1:] or ["pip failed"]
+            pt.fail(f"pip exited with code {retcode}: {tail[0][:200]}")
+
+    clean_output = "".join(
+        l for l in output.splitlines(keepends=True) if not _PIP_RAW_LINE_RE.match(l)
+    )
+    if retcode != 0:
+        return f"Shell Error (exit code {retcode}): {clean_output or 'pip install failed.'}"
+    return clean_output if clean_output.strip() else "Command executed successfully (no output)."
+
+
 def execute_shell_command_tool(command: str, tag: str) -> str:
     """
     Executes a shell command (cmd.exe on Windows, bash on Linux).
@@ -122,6 +197,16 @@ def execute_shell_command_tool(command: str, tag: str) -> str:
     cfg = ConfigManager()
     if not cfg.get_plugin_config(tag, "enable_shell_commands", True):
         return "Error: Shell commands are disabled in configuration."
+    pip_result = None
+    try:
+        pip_result = _run_pip_with_progress(command, tag)
+    except Exception as e:
+        # pip may already have run: never re-run it through the plain shell.
+        logger.error(f"[EXECUTOR] pip progress wrapper failed: {e}")
+        pip_result = f"Shell Error: pip install did not complete cleanly: {e}"
+    if pip_result is not None:
+        AgentTracer.emit_action(tag, command, pip_result)
+        return pip_result
     try:
         output = subprocess.check_output(
             command, shell=True, text=True,

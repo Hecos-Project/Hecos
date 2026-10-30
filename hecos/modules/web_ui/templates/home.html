@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="/assets/css/control_room_panel.css?v={{ version }}&t=20260521">
 <link rel="stylesheet" href="/static/css/hecos_file_picker.css?v={{ version }}">
 <link rel="stylesheet" href="/static/css/hecos_wheel_picker.css?v={{ version }}">
+<link rel="stylesheet" href="/static/css/hecos_progress.css?v={{ version }}-purple">
 <script>console.log("HECOS_ROOM_HOME_V2_ACTIVE");</script>
 <!-- Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -77,6 +78,12 @@
       <span>Flows</span>
     </a>
     {% endif %}
+    {% if is_hpm_installed('net_search') %}
+    <a href="/search" target="_blank" rel="noopener" class="home-nav-link" title="Net Search">
+      <i class="fas fa-satellite-dish"></i>
+      <span>Net Search</span>
+    </a>
+    {% endif %}
     <span class="home-nav-link" style="cursor:default; opacity:0.6;">
       <i class="fas fa-user"></i>
       <span>{{ current_user.username }}</span>
@@ -133,7 +140,8 @@
 <script src="/static/js/control_room_grid.js?v={{ version }}&t=20260521"></script>
 
 <!-- Global Events (Reminders & Backend Sync) -->
-<script src="/static/js/chat_events.js?v={{ version }}"></script>
+<script src="/static/js/hecos_progress.js?v={{ version }}-purple"></script>
+<script src="/static/js/chat_events.js?v={{ version }}&t=20261027_nopttdup"></script>
 <script src="/static/js/hecos_wheel_picker.js?v={{ version }}"></script>
 
 <!-- Initialize -->

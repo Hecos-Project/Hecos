@@ -78,19 +78,73 @@ class PluginExecutor(BaseModel):
 # PluginFlows removed — Flows is now an HPM system_app (type='app').
 # It manages its own config independently in config/data/flows.toml.
 
+class PluginAutomation(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    enabled: bool = True
+    move_duration: float = 0.15
+    type_interval: float = 0.02
+    allow_window_control: bool = True
+
+
+class PluginBrowserSearchTor(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    enabled: bool = False
+    socks_port: int = 9055
+    control_port: int = 9056
+    use_system_tor_if_available: bool = True
+    auto_start: bool = True
+    custom_proxy_url: str = ""
+
+
+class PluginBrowserSearchSearxng(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    enabled: bool = False
+    url: str = "http://localhost:8080"
+    custom_engines: str = ""
+
+
+class PluginBrowserSearch(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    enabled: bool = True
+    default_mode: str = "clear"
+    default_limit: int = 15
+    safe_search: bool = False
+    auto_fallback_tor: bool = True
+    tor: PluginBrowserSearchTor = Field(default_factory=PluginBrowserSearchTor)
+    searxng: PluginBrowserSearchSearxng = Field(default_factory=PluginBrowserSearchSearxng)
+    engines: Dict[str, bool] = Field(default_factory=dict)
+    max_concurrent_engines: int = 6
+    request_timeout_sec: float = 12.0
+
+
+class PluginBrowser(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    enabled: bool = True
+    lazy_load: bool = True
+    headless: bool = False
+    block_ads: bool = True
+    startup_url: str = "http://localhost:7070"
+    browser_type: str = "chromium"
+    browser_engine_mode: str = "cdp_mode"
+    cdp_port: int = 9222
+    thread_timeout: float = 60.0
+    nav_timeout: float = 30.0
+    wait_timeout: float = 8.0
+    action_timeout: float = 5.0
+    search: PluginBrowserSearch = Field(default_factory=PluginBrowserSearch)
+
+
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────
 
 class PluginsConfig(BaseModel):
-    model_config = ConfigDict(extra='ignore')  # HPM package keys are NO LONGER stored here (they use their own .toml files)
+    model_config = ConfigDict(extra='allow')
     DASHBOARD: PluginDashboard = Field(default_factory=PluginDashboard)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
-    # SYS_NET removed — it is now an HPM package
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
-    # DRIVE removed — it is now an HPM system_app package
-    # USERS removed — it is now an HPM package
-    # FLOWS removed — it is now an HPM system_app package
+    BROWSER: Optional[PluginBrowser] = Field(default_factory=PluginBrowser)
+    AUTOMATION: Optional[PluginAutomation] = Field(default_factory=PluginAutomation)
     extra_dirs: List[str] = []
 
 
@@ -104,6 +158,7 @@ class ExtensionsConfig(BaseModel):
 
 class PluginsFileConfig(BaseModel):
     """Root schema for config/plugins.yaml"""
-    model_config = ConfigDict(extra='ignore')
+    model_config = ConfigDict(extra='allow')
     plugins: PluginsConfig = Field(default_factory=PluginsConfig)
     extensions: ExtensionsConfig = Field(default_factory=ExtensionsConfig)
+

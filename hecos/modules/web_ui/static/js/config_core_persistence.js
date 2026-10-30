@@ -69,9 +69,9 @@ async function saveConfig(silent = false) {
     const agentData = await resAgent.json();
 
     if (data.ok && audData.ok && medData.ok && agentData.ok) {
-      // Update in-memory state so subsequent saves don't use stale fallbacks
       window.cfg        = payload;
       window.audioConfig = audioPayload;
+      try { if (typeof audioConfig !== 'undefined') audioConfig = audioPayload; } catch (_) {}
       // CRITICAL: update mediaConfig immediately so the next save cycle reads fresh data
       // and doesn't fall back to stale defaults for Image Gen fields.
       if (mediaPayload && typeof mediaPayload === 'object') {

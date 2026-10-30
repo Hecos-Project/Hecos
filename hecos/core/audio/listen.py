@@ -178,7 +178,10 @@ def listen(state=None):
             try:
                 text = _recognizer.recognize_google(audio, language="it-IT", show_all=False)
                 logger.info("VOICE", f"[PTT] Transcribed: '{text}'")
-                return text.lower()
+                import re
+                clean_text = text.strip()
+                clean_text = re.sub(r'^(slash\s*|barra\s*|/\s*)', '/', clean_text, flags=re.IGNORECASE)
+                return clean_text
             except sr.UnknownValueError:
                 logger.info("VOICE", "[PTT] Google STT: speech not understood.")
                 return ""

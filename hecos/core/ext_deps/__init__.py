@@ -83,7 +83,7 @@ def require(dep_id: str) -> bool:
     return False
 
 
-def install_dep(dep_id: str, on_progress=None) -> tuple[bool, str]:
+def install_dep(dep_id: str, on_progress=None, force: bool = False) -> tuple[bool, str]:
     """
     Downloads and installs a dependency synchronously.
 
@@ -95,6 +95,7 @@ def install_dep(dep_id: str, on_progress=None) -> tuple[bool, str]:
     Args:
         dep_id:      The dep id from ext_deps.toml
         on_progress: Optional callback(bytes_done, total) for download progress
+        force:       If True, forces downloading and installing even if already installed.
 
     Returns:
         (success: bool, message: str)
@@ -106,7 +107,7 @@ def install_dep(dep_id: str, on_progress=None) -> tuple[bool, str]:
     if not dep.is_platform_relevant:
         return True, f"'{dep.id}' is not required on this platform — skipped."
 
-    if is_installed(dep_id):
+    if not force and is_installed(dep_id):
         notify_skipped(dep)
         return True, f"'{dep.name}' is already installed."
 
@@ -121,6 +122,7 @@ def install_dep(dep_id: str, on_progress=None) -> tuple[bool, str]:
             dep,
             progress_cb=_progress_cb,
             local_fallback_dir=_LOCAL_FALLBACK if _LOCAL_FALLBACK.exists() else None,
+            force_download=force,
         )
     except (ConnectionError, ValueError, FileNotFoundError) as e:
         msg = str(e)
@@ -134,7 +136,7 @@ def install_dep(dep_id: str, on_progress=None) -> tuple[bool, str]:
     return success, message
 
 
-def install_dep_async(dep_id: str, on_done=None) -> threading.Thread:
+def install_dep_async(dep_id: str, on_done=None, force: bool = False) -> threading.Thread:
     """
     Runs install_dep() in a background thread.
     Useful for WebUI endpoints that must not block the request.
@@ -142,9 +144,10 @@ def install_dep_async(dep_id: str, on_done=None) -> threading.Thread:
     Args:
         dep_id:  The dep id.
         on_done: Optional callback(success: bool, message: str) called on completion.
+        force:   If True, forces re-downloading/installing.
     """
     def _run():
-        success, msg = install_dep(dep_id)
+        success, msg = install_dep(dep_id, force=force)
         if on_done:
             on_done(success, msg)
 

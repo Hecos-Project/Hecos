@@ -70,32 +70,45 @@ window.initEvents = function() {
       
     } else if (ev.type === 'ptt_status') {
       const pttInd = document.getElementById('ptt-indicator');
-      const sttSource = document.getElementById('stt-source');
-      const isWebMic = sttSource && sttSource.value === 'web';
+      if (pttInd) {
+          if (ev.active) pttInd.classList.add('active');
+          else pttInd.classList.remove('active');
+      }
       
       window.isBackendPTTActive = ev.active;
       
       if (ev.active) {
           if (window.UnifiedToast) {
-              window.UnifiedToast.show('🎙️ Listening (Hardware PTT)...', 'fas fa-microphone', 0, 'rgba(235, 75, 75, 0.9)');
+              window.UnifiedToast.show('🎙️ Listening...', 'fas fa-microphone', 0, 'rgba(235, 75, 75, 0.9)');
           }
-          // Bypassing browser beep and auto-recording on backend PTT hardware events
-          // to avoid double-echoing and double-recording contexts.
       } else {
           if (window.UnifiedToast) window.UnifiedToast.hide();
       }
       
     } else if (ev.type === 'voice_detected' && ev.text) {
-      console.log("[Audio] Voice command received:", ev.text);
+      let voiceCmd = (ev.text || '').trim();
+      voiceCmd = voiceCmd.replace(/^(slash\s+|barra\s+|\/\s*)/i, '/');
+      if (!voiceCmd) return;
+
+      // Deduplication safeguard: avoid processing identical voice commands within debounce window
+      const now = Date.now();
+      if (window._lastVoiceCmdText === voiceCmd && (now - (window._lastVoiceCmdTime || 0)) < 3500) {
+          console.warn("[Audio] Duplicate voice_detected ignored within debounce window:", voiceCmd);
+          return;
+      }
+      window._lastVoiceCmdText = voiceCmd;
+      window._lastVoiceCmdTime = now;
+
+      console.log("[Audio] Voice command received:", voiceCmd);
       if (window.hideWelcome) window.hideWelcome();
       // Save to input history so ArrowUp can recall voice messages
-      if (typeof window.saveInputHistory === 'function') window.saveInputHistory(ev.text);
+      if (typeof window.saveInputHistory === 'function') window.saveInputHistory(voiceCmd);
       
       if (ev.standalone) {
           // In standalone mode, the frontend orchestrates generation
-          if (window.addBubble) window.addBubble('user', ev.text);
-          if (window.chatHistory) window.chatHistory.push({role: 'user', content: ev.text, images: []});
-          if (window.sendInternalMessage) window.sendInternalMessage(ev.text);
+          if (window.addBubble) window.addBubble('user', voiceCmd);
+          if (window.chatHistory) window.chatHistory.push({role: 'user', content: voiceCmd, images: []});
+          if (window.sendInternalMessage) window.sendInternalMessage(voiceCmd);
       } else {
           // Native system is already processing it, just show the bubbles
           if (window.addBubble) window.addBubble('user', ev.text);
@@ -142,12 +155,11 @@ window.initEvents = function() {
       if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
 
     } else if (ev.type === 'audio_ready') {
-      console.log("[Audio] Global audio ready from backend");
-      // Use _lastAiBubble tracked at bubble creation time.
-      // The old .msg.ai:last-child selector broke when action-log divs were inserted after.
+      console.log("[Audio] Global audio ready from backend", ev);
       const targetBubble = window._lastAiBubble;
       if (targetBubble && window.tryLoadAudio) {
-        window.tryLoadAudio(targetBubble);
+        if (ev.audio_id) targetBubble.dataset.audioId = ev.audio_id;
+        window.tryLoadAudio(targetBubble, true);
       }
 
     } else if (ev.type === 'chat_background_append') {
@@ -190,9 +202,12 @@ window.initEvents = function() {
       console.log('[Reminder] SSE reminder_stop received:', ev);
       const existing = document.getElementById('hecos-reminder-banner');
       if (existing) existing.remove();
+    } else if (ev.type === 'progress') {
+      if (window.HecosProgress) window.HecosProgress.handleSSE(ev.data || ev);
     } else if (ev.type === 'hpm:progress') {
       const payload = ev.data || ev;
       document.dispatchEvent(new CustomEvent('hpmProgressUpdate', { detail: payload }));
+      if (window.HecosProgress) window.HecosProgress.handleSSE(payload);
     } else if (ev.type === 'widgets_refresh' || ev.type === 'hpm:package_uninstalled' || ev.type === 'hpm:package_installed' || ev.type === 'hpm:package_status_changed') {
       console.log(`[WIDGETS/HPM] SSE refresh signal received: ${ev.type}`);
       // 1. Sidebar refresh

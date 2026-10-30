@@ -39,6 +39,16 @@ class GlobalUninstaller:
         """Remove Hecos Tray from system autostart."""
         print("[*] Removing Hecos from system autostart...")
         if os.name == 'nt':
+            # Remove shortcut from Windows Startup folder
+            startup_dir = os.path.expandvars(r'%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup')
+            lnk_path = os.path.join(startup_dir, "HecosTray.lnk")
+            if os.path.exists(lnk_path):
+                try:
+                    os.remove(lnk_path)
+                    print("[+] Autostart shortcut removed from Startup folder.")
+                except Exception as e:
+                    print(f"[-] Error removing autostart shortcut: {e}")
+
             script = os.path.join(CWD, "scripts", "windows", "setup", "DISABLE_TRAY_AUTOSTART.bat")
             if os.path.exists(script):
                 try:
@@ -50,7 +60,11 @@ class GlobalUninstaller:
                 import winreg
                 try:
                     key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE)
-                    winreg.DeleteValue(key, "HecosTray")
+                    for k in ("HecosTray", "ZentraTray", "ZentraCore"):
+                        try:
+                            winreg.DeleteValue(key, k)
+                        except FileNotFoundError:
+                            pass
                     winreg.CloseKey(key)
                     print("[+] Autostart removed (Windows Registry).")
                 except FileNotFoundError:

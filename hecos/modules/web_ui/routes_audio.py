@@ -13,3 +13,8 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     # Delegate audio toggles and configuration state
     init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm)
+
+    # Delegate Kokoro voice cloning & style packs
+    from .routes_kokoro_cloning import init_kokoro_cloning_routes
+    init_kokoro_cloning_routes(app, cfg_mgr, root_dir, logger)
+

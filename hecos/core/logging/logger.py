@@ -234,8 +234,9 @@ def init_logger(config, allow_external_windows=True):
         if message_types == 'info' or message_types == 'both':
             ps_script_info = (
                 "$host.ui.RawUI.WindowTitle = 'Hecos - Activity Log'; "
+                "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; "
                 "Write-Host '=== ACTIVITY LOG CONSOLE ACTIVE ===' -ForegroundColor White; "
-                f"Get-Content -Path '{info_filename}' -Wait -Tail 20 | ForEach-Object {{ "
+                f"Get-Content -Encoding utf8 -Path '{info_filename}' -Wait -Tail 20 | ForEach-Object {{ "
                 "if ($_ -match '\\[ERROR\\]') { Write-Host $_ -ForegroundColor Red } "
                 "elseif ($_ -match '\\[WARNING\\]') { Write-Host $_ -ForegroundColor Yellow } "
                 "else { Write-Host $_ -ForegroundColor White } "
@@ -278,8 +279,9 @@ def open_debug_log():
 
     ps_script_debug = (
         "$host.ui.RawUI.WindowTitle = 'Hecos - Technical Debug (LiteLLM)'; "
+        "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; "
         "Write-Host '=== TECHNICAL DEBUG CONSOLE ACTIVE ===' -ForegroundColor Cyan; "
-        f"Get-Content -Path '{debug_filename}' -Wait -Tail 20 | ForEach-Object {{ "
+        f"Get-Content -Encoding utf8 -Path '{debug_filename}' -Wait -Tail 20 | ForEach-Object {{ "
         "if ($_ -match '\\[DEBUG\\]') { Write-Host $_ -ForegroundColor Cyan } "
         "else { Write-Host $_ -ForegroundColor Gray } "
         "}"

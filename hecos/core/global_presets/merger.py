@@ -104,14 +104,122 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
     v_dump = soul.voice.model_dump(exclude_unset=True)
     
     voice_keys = [
-        'xtts_preset', 'xtts_temperature', 'xtts_repetition_penalty', 'xtts_top_k', 
+        'xtts_preset', 'xtts_inference_preset', 'xtts_temperature', 'xtts_repetition_penalty', 'xtts_top_k', 
         'xtts_top_p', 'xtts_speed', 'xtts_length_penalty', 'xtts_speaker_wav',
         'piper_speed', 'piper_noise_scale', 'piper_noise_w',
-        'kokoro_speed', 'kokoro_voice'
+        'kokoro_preset', 'kokoro_inference_preset', 'kokoro_speed', 'kokoro_voice', 'kokoro_blend_voice',
+        'kokoro_alpha', 'kokoro_beta', 'kokoro_silence', 'kokoro_volume', 'kokoro_normalize',
+        'fish_preset', 'fish_inference_preset', 'fish_api_url', 'fish_reference_audio', 'fish_reference_text',
+        'fish_temperature', 'fish_top_p', 'fish_repetition_penalty', 'fish_max_new_tokens',
+        'fish_chunk_length', 'fish_seed', 'fish_normalize', 'fish_use_memory_cache', 'fish_reference_id'
     ]
     for k in voice_keys:
         if k in v_dump:
             voice_overrides[k] = v_dump[k]
+
+    # Resolve Fish Speech preset defaults and inference preset if specified
+    try:
+        from hecos.core.audio.device_manager import get_audio_config
+        acfg = get_audio_config()
+        f_presets = acfg.get("fish_speech_presets", {})
+        f_inf_presets = acfg.get("fish_speech_inference_presets", {})
+
+        inf_preset_name = soul.voice.fish_inference_preset
+        if soul.voice.fish_preset:
+            f_p = f_presets.get(soul.voice.fish_preset)
+            if f_p:
+                if 'fish_reference_audio' not in voice_overrides and f_p.get('reference_audio'):
+                    voice_overrides['fish_reference_audio'] = f_p['reference_audio']
+                if 'fish_reference_text' not in voice_overrides and f_p.get('reference_text'):
+                    voice_overrides['fish_reference_text'] = f_p['reference_text']
+                if 'fish_reference_id' not in voice_overrides and f_p.get('reference_id'):
+                    voice_overrides['fish_reference_id'] = f_p['reference_id']
+                if not inf_preset_name and f_p.get('inference_preset'):
+                    inf_preset_name = f_p['inference_preset']
+
+        if inf_preset_name and inf_preset_name in f_inf_presets:
+            inf_p = f_inf_presets[inf_preset_name]
+            if 'fish_temperature' not in voice_overrides and inf_p.get('temperature') is not None:
+                voice_overrides['fish_temperature'] = inf_p['temperature']
+            if 'fish_top_p' not in voice_overrides and inf_p.get('top_p') is not None:
+                voice_overrides['fish_top_p'] = inf_p['top_p']
+            if 'fish_repetition_penalty' not in voice_overrides and inf_p.get('repetition_penalty') is not None:
+                voice_overrides['fish_repetition_penalty'] = inf_p['repetition_penalty']
+            if 'fish_max_new_tokens' not in voice_overrides and inf_p.get('max_new_tokens') is not None:
+                voice_overrides['fish_max_new_tokens'] = inf_p['max_new_tokens']
+            if 'fish_chunk_length' not in voice_overrides and inf_p.get('chunk_length') is not None:
+                voice_overrides['fish_chunk_length'] = inf_p['chunk_length']
+            if 'fish_normalize' not in voice_overrides and inf_p.get('normalize') is not None:
+                voice_overrides['fish_normalize'] = inf_p['normalize']
+            if 'fish_use_memory_cache' not in voice_overrides and inf_p.get('use_memory_cache') is not None:
+                voice_overrides['fish_use_memory_cache'] = inf_p['use_memory_cache']
+
+        if soul.voice.fish_preset:
+            f_p = f_presets.get(soul.voice.fish_preset)
+            if f_p:
+                if 'fish_temperature' not in voice_overrides and f_p.get('temperature') is not None:
+                    voice_overrides['fish_temperature'] = f_p['temperature']
+                if 'fish_top_p' not in voice_overrides and f_p.get('top_p') is not None:
+                    voice_overrides['fish_top_p'] = f_p['top_p']
+                if 'fish_repetition_penalty' not in voice_overrides and f_p.get('repetition_penalty') is not None:
+                    voice_overrides['fish_repetition_penalty'] = f_p['repetition_penalty']
+                if 'fish_max_new_tokens' not in voice_overrides and f_p.get('max_new_tokens') is not None:
+                    voice_overrides['fish_max_new_tokens'] = f_p['max_new_tokens']
+                if 'fish_chunk_length' not in voice_overrides and f_p.get('chunk_length') is not None:
+                    voice_overrides['fish_chunk_length'] = f_p['chunk_length']
+                if 'fish_normalize' not in voice_overrides and f_p.get('normalize') is not None:
+                    voice_overrides['fish_normalize'] = f_p['normalize']
+                if 'fish_use_memory_cache' not in voice_overrides and f_p.get('use_memory_cache') is not None:
+                    voice_overrides['fish_use_memory_cache'] = f_p['use_memory_cache']
+    except Exception as e:
+        logger.warning(f"[GlobalPresets] Error applying fish presets: {e}")
+
+    # Resolve Kokoro preset defaults and inference preset if specified
+    try:
+        from hecos.core.audio.device_manager import get_audio_config
+        acfg = get_audio_config()
+        k_presets = acfg.get("kokoro_presets", {})
+        k_inf_presets = acfg.get("kokoro_inference_presets", {})
+
+        k_inf_name = soul.voice.kokoro_inference_preset
+        if soul.voice.kokoro_preset:
+            k_p = k_presets.get(soul.voice.kokoro_preset)
+            if k_p:
+                if 'kokoro_voice' not in voice_overrides and k_p.get('voice'):
+                    voice_overrides['kokoro_voice'] = k_p['voice']
+                if 'kokoro_blend_voice' not in voice_overrides and k_p.get('blend_voice') is not None:
+                    voice_overrides['kokoro_blend_voice'] = k_p['blend_voice']
+                if not k_inf_name and k_p.get('inference_preset'):
+                    k_inf_name = k_p['inference_preset']
+                if 'kokoro_speed' not in voice_overrides and k_p.get('speed') is not None:
+                    voice_overrides['kokoro_speed'] = k_p['speed']
+                if 'kokoro_alpha' not in voice_overrides and k_p.get('alpha') is not None:
+                    voice_overrides['kokoro_alpha'] = k_p['alpha']
+                if 'kokoro_beta' not in voice_overrides and k_p.get('beta') is not None:
+                    voice_overrides['kokoro_beta'] = k_p['beta']
+                if 'kokoro_silence' not in voice_overrides and k_p.get('sentence_silence') is not None:
+                    voice_overrides['kokoro_silence'] = k_p['sentence_silence']
+                if 'kokoro_volume' not in voice_overrides and k_p.get('volume') is not None:
+                    voice_overrides['kokoro_volume'] = k_p['volume']
+                if 'kokoro_normalize' not in voice_overrides and k_p.get('normalize') is not None:
+                    voice_overrides['kokoro_normalize'] = k_p['normalize']
+
+        if k_inf_name and k_inf_name in k_inf_presets:
+            inf_p = k_inf_presets[k_inf_name]
+            if 'kokoro_speed' not in voice_overrides and inf_p.get('speed') is not None:
+                voice_overrides['kokoro_speed'] = inf_p['speed']
+            if 'kokoro_alpha' not in voice_overrides and inf_p.get('alpha') is not None:
+                voice_overrides['kokoro_alpha'] = inf_p['alpha']
+            if 'kokoro_beta' not in voice_overrides and inf_p.get('beta') is not None:
+                voice_overrides['kokoro_beta'] = inf_p['beta']
+            if 'kokoro_silence' not in voice_overrides and inf_p.get('sentence_silence') is not None:
+                voice_overrides['kokoro_silence'] = inf_p['sentence_silence']
+            if 'kokoro_volume' not in voice_overrides and inf_p.get('volume') is not None:
+                voice_overrides['kokoro_volume'] = inf_p['volume']
+            if 'kokoro_normalize' not in voice_overrides and inf_p.get('normalize') is not None:
+                voice_overrides['kokoro_normalize'] = inf_p['normalize']
+    except Exception as e:
+        logger.warning(f"[GlobalPresets] Error applying kokoro presets: {e}")
 
     if voice_overrides:
         merged['ai']['voice_overrides'] = voice_overrides

@@ -12,6 +12,7 @@ Registers:
 ────────────────────────────────────────────────────────────────────────────
 """
 import json
+import time
 import uuid
 import queue
 import threading
@@ -124,6 +125,97 @@ def init_chat_api_routes(app, cfg_mgr, logger):
             _chat_log.warning(f"[Chat] Flow intercept check failed: {_ie}")
         # ── End flow intercept ────────────────────────────────────────────────
 
+        # ── Direct TTS commands (/speak, /tts, /say, /parla, /voce) ─────────────────
+        raw_cmd = user_msg.strip()
+        first_token = raw_cmd.split()[0].lower() if raw_cmd else ""
+        if first_token in ("/speak", "/tts", "/say", "/parla", "/voce"):
+            parts = raw_cmd.split(maxsplit=1)
+            text_to_speak = parts[1].strip() if len(parts) > 1 else ""
+
+            sid  = data.get("session_id") or privacy_manager.get_session_id() or str(uuid.uuid4())
+            sess = {"queue": queue.Queue(), "history": list(history), "done": False, "user_id": uid}
+            with _sessions_lock:
+                _sessions[sid] = sess
+
+            def _handle_direct_tts():
+                try:
+                    if not text_to_speak:
+                        msg = (
+                            "🗣️ **Direct TTS Command (LLM Bypass)**\n\n"
+                            "Usage: `/speak <text to pronounce>` (or `/parla`, `/tts`)\n\n"
+                            "*Example:*\n"
+                            "`/speak Hello Tony, I am Urania. This is a direct voice test.`"
+                        )
+                        time.sleep(0.05)
+                        sess["queue"].put({"type": "token", "text": msg})
+                        sess["queue"].put({"type": "trace_done", "persona_name": "Direct TTS", "model_info": "Usage"})
+                        sess["history"].append({"role": "user", "content": user_msg})
+                        sess["history"].append({"role": "assistant", "content": msg})
+                        sess["queue"].put({"type": "done", "text": ""})
+                        sess["done"] = True
+                        return
+
+                    bubble_text = f"🗣️ {text_to_speak}"
+                    time.sleep(0.05)
+                    sess["queue"].put({"type": "token", "text": bubble_text})
+                    sess["queue"].put({"type": "trace_done", "persona_name": "Direct TTS", "model_info": "Bypass LLM"})
+
+                    from hecos.config.session_config_manager import merge_session_config
+                    from hecos.modules.web_ui.routes_chat_tts import _maybe_generate_tts
+                    merged_cfg = merge_session_config(cfg_mgr.config if cfg_mgr else {}, sid)
+                    
+                    class DirectCfgMgr:
+                        def __init__(self, base, cfg):
+                            self._base = base
+                            self.config = cfg
+                        def save_config(self):
+                            pass
+                        def __getattr__(self, name):
+                            return getattr(self._base, name)
+
+                    active_cfg = DirectCfgMgr(cfg_mgr, merged_cfg)
+
+                    def _on_chunk_ready(chunk_idx, total_chunks, *args):
+                        pass
+
+                    _chat_log.info(f"[Chat] Direct TTS requested for '{text_to_speak[:50]}'...")
+                    audio_status, audio_id = _maybe_generate_tts(text_to_speak, active_cfg, on_chunk_ready=_on_chunk_ready)
+                    _chat_log.info(f"[Chat] Direct TTS finished: status={audio_status} audio_id={audio_id}")
+
+                    if audio_status == "web":
+                        sess["queue"].put({"type": "audio_ready", "text": "", "audio_id": audio_id or ""})
+                        if audio_id:
+                            try:
+                                from hecos.memory.brain_interface import _db_path
+                                uid = sess.get("user_id", "admin")
+                                db  = _db_path(uid)
+                                import sqlite3
+                                with sqlite3.connect(db, timeout=10) as _conn:
+                                    _conn.execute(
+                                        "UPDATE history SET audio_file = ? WHERE id = ("
+                                        "  SELECT MAX(id) FROM history WHERE session_id = ? AND role = 'assistant'"
+                                        ")",
+                                        (audio_id, sid)
+                                    )
+                                    _conn.commit()
+                            except Exception as _ae:
+                                _chat_log.warning(f"[Chat] Direct TTS could not save audio_id to DB: {_ae}")
+                    elif audio_status == "system":
+                        sess["queue"].put({"type": "system_audio_playing", "text": ""})
+
+                    sess["history"].append({"role": "user", "content": user_msg})
+                    sess["history"].append({"role": "assistant", "content": bubble_text})
+                    sess["queue"].put({"type": "done", "text": ""})
+                    sess["done"] = True
+                except Exception as _ex:
+                    _chat_log.error(f"[Chat] Direct TTS command error: {_ex}")
+                    sess["queue"].put({"type": "error", "text": f"Errore comando TTS: {_ex}"})
+                    sess["queue"].put({"type": "done", "text": ""})
+                    sess["done"] = True
+
+            threading.Thread(target=_handle_direct_tts, daemon=True).start()
+            return jsonify({"ok": True, "session_id": sid})
+
         # ── Playbook simulation slash commands (/pb ...) ────────────────────
         pb_cmd = user_msg.strip().lower()
         if pb_cmd.startswith("/pb") or pb_cmd.startswith("/playbook"):
@@ -199,14 +291,16 @@ def init_chat_api_routes(app, cfg_mgr, logger):
                         )
                     
                     time.sleep(0.1)
-                    sess["queue"].put({"type": "token", "token": reply_text})
+                    sess["queue"].put({"type": "token", "text": reply_text})
                     sess["queue"].put({"type": "trace_done", "persona_name": "System", "model_info": None})
                     sess["history"].append({"role": "user", "content": user_msg})
                     sess["history"].append({"role": "assistant", "content": reply_text})
+                    sess["queue"].put({"type": "done", "text": ""})
                     sess["done"] = True
                 except Exception as _pbe:
                     _chat_log.error(f"[Chat] Playbook command error: {_pbe}")
-                    sess["queue"].put({"type": "token", "token": f"Errore comando playbook: {_pbe}"})
+                    sess["queue"].put({"type": "error", "text": f"Errore comando playbook: {_pbe}"})
+                    sess["queue"].put({"type": "done", "text": ""})
                     sess["done"] = True
             
             threading.Thread(target=_handle_pb_command, daemon=True).start()
@@ -254,6 +348,28 @@ def init_chat_api_routes(app, cfg_mgr, logger):
             args=(sess, sid, user_msg, history, cfg_mgr, images, uid, urole, tab_id),
             daemon=True,
         ).start()
+        return jsonify({"ok": True, "session_id": sid})
+
+    @app.route("/api/chat/deposit", methods=["POST"])
+    def api_chat_deposit():
+        from flask_login import current_user
+        from hecos.core.privacy import privacy_manager
+        from hecos.memory.brain_interface import save_message
+        from hecos.memory import session_manager
+
+        data = request.get_json(force=True) or {}
+        msg = data.get("message", "").strip()
+        if not msg:
+            return jsonify({"ok": False, "error": "Empty message"}), 400
+
+        uid = current_user.username if current_user.is_authenticated else "admin"
+        sid = data.get("session_id") or privacy_manager.get_session_id()
+        if not sid:
+            sid = session_manager.create_session(title=None, privacy_mode="normal")
+
+        tab_id = data.get("tab_id")
+        save_message("user", msg, config=cfg_mgr.config if cfg_mgr else None, user_id=uid, session_id=sid, broadcast_sse=True, sender_tab_id=tab_id)
+        _chat_log.info(f"[Chat] File/Attachment deposited in chat for user='{uid}', session='{sid}' (no LLM inference).")
         return jsonify({"ok": True, "session_id": sid})
 
     @app.route("/api/chat/session/config", methods=["GET", "POST"])
@@ -322,10 +438,11 @@ def init_chat_api_routes(app, cfg_mgr, logger):
                 try:
                     ev = sess["queue"].get(timeout=0.5)
                     yield "data: " + json.dumps(ev) + "\n\n"
-                    if ev.get("type") == "error":
+                    if ev.get("type") in ("error", "done"):
                         break
                 except queue.Empty:
                     if sess.get("done") and sess["queue"].empty():
+                        yield "data: " + json.dumps({"type": "done", "text": ""}) + "\n\n"
                         break
                     yield "data: " + json.dumps({"type": "heartbeat"}) + "\n\n"
 

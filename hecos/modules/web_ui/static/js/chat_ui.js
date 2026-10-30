@@ -198,9 +198,15 @@ window.stopAudioPlayback = function() {
  * Returns true if there was audio to stop, false otherwise.
  */
 window.stopTTS = function() {
-  const hadAudio = !!(window.currentAudio && !window.currentAudio.paused);
+  let hadAudio = !!(window.currentAudio && !window.currentAudio.paused);
   console.log("[Audio] stopTTS triggered, hadAudio:", hadAudio);
   window.stopAudioPlayback();
+  
+  if (window.DocReader && typeof window.DocReader.isReading === 'function' && window.DocReader.isReading()) {
+    window.DocReader.stop();
+    hadAudio = true;
+  }
+
   if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
   if (window.updateStopAllBtn) window.updateStopAllBtn();
   return hadAudio;

@@ -8,13 +8,15 @@
 <link rel="stylesheet" href="/assets/css/core/base.css?v={{ version or '20261015_4' }}">
 <link rel="stylesheet" href="/assets/css/core/layout.css?v={{ version or '20261015_4' }}">
 <link rel="stylesheet" href="/assets/css/core/components.css?v={{ version or '20261015_4' }}">
-<link rel="stylesheet" href="/assets/css/core/dashboard.css?v={{ version or '20261015_4' }}">
+<link rel="stylesheet" href="/assets/css/core/dashboard.css?v={{ version or '20261030_v6' }}">
 <link rel="stylesheet" href="/assets/css/core/logs.css?v={{ version or '20261015_4' }}">
 <link rel="stylesheet" href="/assets/css/core/modules.css?v={{ version or '20261015_4' }}">
 <link rel="stylesheet" href="/static/css/hecos_file_picker.css?v={{ version or '20261015_4' }}">
 <link rel="stylesheet" href="/static/css/hecos_wheel_picker.css?v={{ version or '20261015_4' }}">
 <!-- HKS — Hecos Keyboard Shortcuts System -->
 <link rel="stylesheet" href="/static/css/keyboard_shortcuts.css?v={{ version or '20261015_4' }}">
+<!-- Unified Hecos Progress System -->
+<link rel="stylesheet" href="/static/css/hecos_progress.css?v={{ version or '20261018_purple' }}">
 <!-- Icons Support: preload for early discovery, media=print trick makes it non-render-blocking -->
 <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'" crossorigin="anonymous">
@@ -31,11 +33,13 @@
 
 <!-- Preload critical JS: these are on the hot render path and must start downloading ASAP -->
 <link rel="preload" as="script" href="/static/js/config_manifest.js?v={{ version }}-persistence-v3">
+<link rel="preload" as="script" href="/static/js/packages_panel_render_meta.js?v={{ version }}">
 <link rel="preload" as="script" href="/static/js/config_core_utils.js?v={{ version }}">
-<link rel="preload" as="script" href="/static/js/config_core_hub.js?v={{ version }}">
-<link rel="preload" as="script" href="/static/js/config_core_navigation.js?v={{ version }}">
+<link rel="preload" as="script" href="/static/js/config_core_hub.js?v={{ version }}-v7">
+<link rel="preload" as="script" href="/static/js/config_core_navigation.js?v={{ version }}-v7">
 <link rel="preload" as="script" href="/static/js/config_core_init.js?v={{ version }}">
 <link rel="preload" as="script" href="/static/js/config_core.js?v={{ version }}">
+<link rel="preload" as="script" href="/static/js/config_search.js?v={{ version }}-v3">
 <style>
 :root { color-scheme: dark; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -55,11 +59,13 @@
     header .logo-text { font-size: 16px; }
     header .logo img { height: 24px; }
     
-    header > div:last-child {
-    flex-wrap: nowrap;
+    header .header-left, header .header-right {
     justify-content: center;
-    gap: 4px;
+    gap: 6px;
     width: 100%;
+    }
+    header .header-right {
+    flex-wrap: nowrap;
     overflow-x: auto;
     padding-bottom: 4px;
     }

@@ -1,19 +1,26 @@
 header {
-  background: linear-gradient(135deg, var(--bg2) 0%, var(--bg) 100%);
+  background: var(--bg-blur);
+  backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
-  padding: 20px 32px;
+  padding: 12px 24px;
+  min-height: 58px;
   display: flex;
   align-items: center;
-  justify-content: center; /* Centered in index.css */
-  gap: 60px; /* 60px in index.css vs 20px in old layout.css */
+  justify-content: space-between;
+  gap: 16px;
   position: sticky;
   top: 0;
   z-index: 100;
   box-shadow: var(--shadow);
+  box-sizing: border-box;
 }
 
 .config-page header {
-  justify-content: center; /* Ensuring consistency with index.css */
+  justify-content: space-between;
+  padding: 12px 24px;
+  min-height: 58px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .logo {

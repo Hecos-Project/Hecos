@@ -30,6 +30,7 @@ _INSTALLED_DB   = _HECOS_USER_DIR / "installed_ext_deps.json"
 # Installer exit codes that indicate success
 _SUCCESS_CODES = {
     0,     # OK
+    1638,  # Windows: another version or already installed
     3010,  # Windows: success, reboot required
     1641,  # Windows: success, reboot initiated
 }

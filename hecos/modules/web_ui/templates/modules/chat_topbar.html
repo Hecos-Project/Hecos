@@ -22,6 +22,7 @@
               <option value="piper">Piper</option>
               <option value="kokoro">Kokoro</option>
               <option value="xtts2">XTTSv2</option>
+              <option value="fish_speech">Fish Speech</option>
           </select>
           <select id="chat-tts-voice-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
               <option value="">&#127908; TTS Voice...</option>
@@ -237,9 +238,9 @@
                   body: JSON.stringify({ session_id: sessionId, config: overrides })
               });
               
-              // If the Chat Overrides panel is currently open, sync it to reflect topbar changes
+              // If the Chat Overrides panel is currently open, sync it to reflect topbar changes (only if user is not actively editing inside it)
               const panel = document.getElementById('session-overrides-panel');
-              if (panel && panel.classList.contains('open') && window.soLoadActiveSessionState) {
+              if (panel && panel.classList.contains('open') && window.soLoadActiveSessionState && !window._soIsSyncing && !(window.soState && window.soState.isDirty)) {
                   window.soLoadActiveSessionState();
               }
           } catch(e) { console.warn("Failed to save session config", e); }
@@ -257,6 +258,14 @@
               if (sel && sel.selectedIndex >= 0) {
                   if (sel.value === "") {
                       sel.title = obj.defaultTitle;
+                  } else if (sel.id === 'chat-tts-voice-select' && (sel.value === 'custom' || sel.value === 'CLONE' || sel.value === 'MIXED')) {
+                      const fishP = document.getElementById('so-fish-preset-select')?.value || document.getElementById('sf-fish-preset-select')?.value;
+                      const xttsP = document.getElementById('so-xtts-preset-select')?.value || document.getElementById('sf-xtts-preset-select')?.value;
+                      const kokoroP = document.getElementById('so-kokoro-preset-select')?.value || document.getElementById('sf-kokoro-preset-select')?.value;
+                      if (kokoroP) sel.title = `Kokoro: ${kokoroP}`;
+                      else if (fishP) sel.title = `Fish Speech: ${fishP}`;
+                      else if (xttsP) sel.title = `XTTS: ${xttsP}`;
+                      else sel.title = 'Custom Voice Clone / Mix';
                   } else {
                       sel.title = sel.options[sel.selectedIndex].text;
                   }
@@ -264,14 +273,14 @@
           });
       };
       
-      window.updateSessionTTSVoices = async function(selectedVoice = null) {
+      window.updateSessionTTSVoices = async function(selectedVoice = null, skipSave = false) {
           const engine = document.getElementById('chat-tts-engine-select').value;
           const voiceSel = document.getElementById('chat-tts-voice-select');
           if (!voiceSel) return;
           
           voiceSel.innerHTML = '<option value="">\uD83C\uDF99\uFE0F TTS Voice...</option>';
           if (!engine) {
-              window.saveSessionConfig();
+              if (!skipSave) window.saveSessionConfig();
               return;
           }
           
@@ -315,7 +324,7 @@
                   }
               }
           } catch(e) { console.warn("Failed to load TTS voices", e); }
-          window.saveSessionConfig();
+          if (!skipSave) window.saveSessionConfig();
       };
 
       window.resetSessionDropdowns = function() {
@@ -391,7 +400,7 @@
                           if (data.config.voice?.xtts_speaker_wav) {
                               selectedVoice = 'custom';
                           }
-                          await window.updateSessionTTSVoices(selectedVoice);
+                          await window.updateSessionTTSVoices(selectedVoice, true);
                       }
                   } else {
                       if (tEngSel) tEngSel.value = "";
@@ -441,6 +450,9 @@
     {% endif %}
     {% if is_hpm_installed('flows') %}
     <a id="topbar-flows-link" href="/flows" target="_blank" class="topbar-link"><i class="fas fa-project-diagram"></i> <span>Flows</span></a>
+    {% endif %}
+    {% if is_hpm_installed('net_search') %}
+    <a id="topbar-search-link" href="/search" target="_blank" class="topbar-link"><i class="fas fa-satellite-dish"></i> <span>Net Search</span></a>
     {% endif %}
   </div>
 </div>

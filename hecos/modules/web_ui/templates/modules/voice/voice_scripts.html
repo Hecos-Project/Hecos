@@ -1,0 +1,101 @@
+<script>
+  // TTS Filters Integration
+  window.HecosVoiceFilters = {
+    container: null,
+    
+    init() {
+      this.container = document.getElementById('tts-custom-filters-container');
+    },
+
+    renderRows(replacements) {
+      this.container.innerHTML = '';
+      if (!replacements || replacements.length === 0) {
+        return;
+      }
+      replacements.forEach(rep => this.addRow(rep.target, rep.replacement));
+    },
+
+    addRow(target = '', replacement = '') {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.gap = '10px';
+      row.style.alignItems = 'center';
+      
+      row.innerHTML = `
+        <input type="text" class="v-target config-input" placeholder="Target text/symbol (e.g. ...)" value="${target.replace(/"/g, '&quot;')}" onchange="window.saveTTSFilters()" style="flex:1;">
+        <span style="color:var(--muted);"><i class="fas fa-arrow-right"></i></span>
+        <input type="text" class="v-replacement config-input" placeholder="Replacement (e.g. space)" value="${replacement.replace(/"/g, '&quot;')}" onchange="window.saveTTSFilters()" style="flex:1;">
+        <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); window.saveTTSFilters();" title="Remove"><i class="fas fa-trash"></i></button>
+      `;
+      this.container.appendChild(row);
+    },
+
+    addPlaceholderRow() {
+      this.addRow('', '');
+    },
+
+    getValues() {
+      const rows = Array.from(this.container.children);
+      const data = [];
+      rows.forEach(row => {
+        const t = row.querySelector('.v-target').value;
+        const r = row.querySelector('.v-replacement').value;
+        if (t.trim() !== '') {
+          data.push({ target: t, replacement: r });
+        }
+      });
+      return data;
+    }
+  };
+
+  window.loadTTSFilters = function() {
+    window.HecosVoiceFilters.init();
+    fetch('/api/audio/filters')
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok && d.config) {
+          document.getElementById('tts-filter-punctuation').checked = d.config.remove_punctuation || false;
+          document.getElementById('tts-filter-llm').checked = d.config.remove_llm_errors || false;
+          document.getElementById('tts-filter-xtts-periods').checked = d.config.xtts_fix_periods !== false;
+          window.HecosVoiceFilters.renderRows(d.config.custom_replacements || []);
+        }
+      })
+      .catch(e => console.error("Failed to load TTS filters:", e));
+  };
+
+  window.saveTTSFilters = function() {
+    const data = {
+      remove_punctuation: document.getElementById('tts-filter-punctuation').checked,
+      remove_llm_errors: document.getElementById('tts-filter-llm').checked,
+      xtts_fix_periods: document.getElementById('tts-filter-xtts-periods').checked,
+      custom_replacements: window.HecosVoiceFilters.getValues()
+    };
+    
+    fetch('/api/audio/filters', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(d => {
+      if(!d.ok) console.error("Failed to save filters", d.error);
+    })
+    .catch(e => console.error("Error saving TTS filters:", e));
+  };
+
+  // Run on load to fetch and display the current settings
+  window.loadTTSFilters();
+</script>
+
+<script>
+  // Merge the dynamically loaded zoptions into the global sysOptions
+  // so that dropdowns (models, personalities, etc.) can populate correctly.
+  (function() {
+    var newOpts = {{ zoptions | tojson | safe }};
+    if (newOpts && Object.keys(newOpts).length > 0) {
+      window.sysOptions = window.sysOptions || {};
+      Object.assign(window.sysOptions, newOpts);
+    }
+  })();
+</script>
+<script src="/static/js/audio_encoder.js"></script>

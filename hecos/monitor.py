@@ -15,17 +15,26 @@ from datetime import datetime
 # Global reference to child process for signal handling
 _current_child_process = None
 
-def _signal_handler(sig, frame):
-    """Handle termination signals (SIGTERM, SIGINT) and kill the child process."""
-    monitor_log(f"Received signal {sig}. Terminating child process...")
-    if _current_child_process and _current_child_process.poll() is None:
+def _kill_child_tree(proc):
+    """Recursively terminates a child process and all its descendants (e.g. Fish Speech server) on Windows."""
+    if not proc or proc.poll() is not None:
+        return
+    try:
+        if sys.platform == "win32":
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True, timeout=5)
+        else:
+            proc.terminate()
+            proc.wait(timeout=3)
+    except Exception:
         try:
-            _current_child_process.terminate()
-            _current_child_process.wait(timeout=5)
-        except Exception:
-            try:
-                _current_child_process.kill()
-            except: pass
+            proc.kill()
+        except: pass
+
+def _signal_handler(sig, frame):
+    """Handle termination signals (SIGTERM, SIGINT) and kill the entire child process tree."""
+    monitor_log(f"Received signal {sig}. Terminating child process tree...")
+    if _current_child_process and _current_child_process.poll() is None:
+        _kill_child_tree(_current_child_process)
     sys.exit(0)
 
 # Register signal handlers
@@ -208,8 +217,7 @@ def start_and_monitor(script_to_run):
                 
                 # Unsanctioned change detected
                 monitor_log(f"system.yaml change detected! DIFF: {current_config_time - last_config_time:.3f}s (Old: {last_config_time}, New: {current_config_time}). Terminating...")
-                process.terminate()
-                process.wait(timeout=5)
+                _kill_child_tree(process)
                 _current_child_process = None
                 return True
 
@@ -219,8 +227,8 @@ def start_and_monitor(script_to_run):
                 current_code_time = get_max_py_mtime(hecos_folder)
                 if current_code_time > last_code_time + 2:
                     monitor_log(f"Code change detected in hecos/ folder. Restarting...")
-                    process.terminate()
-                    process.wait(timeout=5)
+                    _kill_child_tree(process)
+                    _current_child_process = None
                     return True
                 
         # Natural exit:
@@ -273,10 +281,7 @@ if __name__ == "__main__":
                 print(f"\n[MONITOR] unexpected error in watchdog loop: {e}")
                 time.sleep(5) # Long pause before retry if something crashed
     finally:
-        # Final safety kill for the child process before exiting
+        # Final safety kill for the child process and its entire tree before exiting
         if _current_child_process and _current_child_process.poll() is None:
-            try: 
-                _current_child_process.terminate()
-                _current_child_process.wait(timeout=2)
-            except: pass
+            _kill_child_tree(_current_child_process)
         instance_lock.release_lock(lock_name)

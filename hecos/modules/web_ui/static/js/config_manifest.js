@@ -75,6 +75,8 @@ window.getIconForModule = function(id, name, metaIcon) {
     
     // Explicit mapping for widgets/extensions
     const extIcons = {
+        'netsearch':           '<i class="fas fa-satellite-dish"></i>',
+        'net_search':          '<i class="fas fa-satellite-dish"></i>',
         'media_player_widget': '<i class="fas fa-music"></i>',
         'quick_links':         '<i class="fas fa-bolt"></i>',
         'calendar':            '<i class="fas fa-calendar-alt"></i>',
@@ -110,7 +112,9 @@ window.CONFIG_HUB.tagMap = {
     'CONTACTS': 'contacts',
     'BROWSER':    'browser',
     'USERS':      'users',
-    'FLOWS':      'flows'
+    'FLOWS':      'flows',
+    'DOCUMENT_READER': 'document_reader',
+    'NETSEARCH':  'netsearch'
 };
 
 /**
@@ -120,9 +124,9 @@ window.CONFIG_HUB.tagMap = {
  */
 window.LAZY_PANEL_IDS = new Set([
     'backend', 'keymanager', 'agent', 'ia', 'filters', 'bridge',
-    'memory', 'voice',
+    'memory', 'voice', 'document_reader',
     'webcam', 'executor', 'automation',
-    'browser', 'system', 'sysnet', 'users', 'payload', 'plugins',
+    'browser', 'netsearch', 'system', 'sysnet', 'users', 'payload', 'plugins',
     'contacts', 'remote-triggers',
     'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup', 'shortcuts', 'presenter'
 ]);

@@ -90,6 +90,8 @@ function _qcPopulateUI() {
                 opt.textContent = base + (ttsStatus.kokoro === false ? ' ⚠️' : '');
             } else if (opt.value === 'xtts2') {
                 opt.textContent = base + (ttsStatus.xtts2 === false ? ' ⚠️' : '');
+            } else if (opt.value === 'fish_speech') {
+                opt.textContent = base + (ttsStatus.fish_speech === false ? ' ⚠️' : '');
             }
         }
 
@@ -102,6 +104,8 @@ function _qcPopulateUI() {
             activeVoice = audCfg.kokoro?.voice;
         } else if (audCfg.active_engine === 'xtts2') {
             activeVoice = audCfg.xtts?.speaker;
+        } else if (audCfg.active_engine === 'fish_speech') {
+            activeVoice = audCfg.fish_speech?.reference_audio || 'default';
         }
         
         window.qcTTSChanged(activeVoice, false); // populate voices — NOT a user action, do not save
@@ -309,6 +313,8 @@ window.qcSaveConfig = function() {
             audPayload.kokoro = Object.assign({}, baseAud.kokoro || {}, { voice: ttsVoice });
         } else if (ttsEngine === 'xtts2') {
             audPayload.xtts = Object.assign({}, baseAud.xtts || {}, { speaker: ttsVoice });
+        } else if (ttsEngine === 'fish_speech') {
+            audPayload.fish_speech = Object.assign({}, baseAud.fish_speech || {}, { reference_audio: ttsVoice === 'default' ? '' : ttsVoice });
         }
         
         fetch('/api/audio/config', {

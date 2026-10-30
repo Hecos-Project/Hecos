@@ -1,0 +1,246 @@
+/**
+ * hecos_progress.css
+ * Unified progress bar styling for Hecos WebUI.
+ * Provides consistent styling across inline, card, and modal variants.
+ */
+
+:root {
+  --hp-bar-height: 8px;
+  --hp-bar-radius: 8px;
+  --hp-accent-gradient: linear-gradient(90deg, var(--accent, #6366f1), var(--accent2, #7c3aed));
+  --hp-success-gradient: linear-gradient(90deg, var(--accent, #6366f1), var(--accent2, #7c3aed));
+  --hp-error-gradient: linear-gradient(90deg, #ef4444, #b91c1c);
+  --hp-warning-gradient: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+/* ── Container ───────────────────────────────────────────────────────────── */
+.hp-widget {
+  font-family: inherit;
+  box-sizing: border-box;
+  color: var(--text, #e2e8f0);
+}
+
+/* ── Progress Track & Fill ────────────────────────────────────────────────── */
+.hp-track {
+  width: 100%;
+  height: var(--hp-bar-height);
+  background: var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: var(--hp-bar-radius);
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25);
+  margin: 10px 0;
+}
+
+.hp-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: var(--hp-bar-radius);
+  background: var(--hp-accent-gradient);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* Shimmer animation while running */
+.hp-widget.hp-state-running .hp-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: hp-shimmer 2s infinite linear;
+}
+
+@keyframes hp-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* State variants */
+.hp-widget.hp-state-done .hp-fill {
+  background: var(--hp-success-gradient);
+}
+.hp-widget.hp-state-error .hp-fill {
+  background: var(--hp-error-gradient);
+}
+.hp-widget.hp-state-cancelled .hp-fill {
+  background: var(--hp-warning-gradient);
+}
+
+/* ── Header / Info Rows ─────────────────────────────────────────────────── */
+.hp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9em;
+}
+
+.hp-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.hp-icon {
+  font-size: 1.1em;
+  flex-shrink: 0;
+  color: var(--accent, #6366f1);
+}
+.hp-widget.hp-state-done .hp-icon { color: var(--accent, #6366f1); }
+.hp-widget.hp-state-error .hp-icon { color: #ef4444; }
+.hp-widget.hp-state-cancelled .hp-icon { color: #f59e0b; }
+
+.hp-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text, #fff);
+}
+
+.hp-pct {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text, #fff);
+  font-size: 0.95em;
+  flex-shrink: 0;
+}
+
+/* ── Phase & Step Indicator ──────────────────────────────────────────────── */
+.hp-phases-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 0.78em;
+  color: var(--muted, #94a3b8);
+  flex-wrap: wrap;
+}
+
+.hp-phase-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s ease;
+}
+
+.hp-phase-pill.active {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: var(--accent, #6366f1);
+  color: var(--text, #fff);
+  font-weight: 600;
+}
+
+.hp-phase-pill.completed {
+  color: var(--accent, #6366f1);
+  border-color: rgba(99, 102, 241, 0.3);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+/* ── Metrics / Speed / ETA ──────────────────────────────────────────────── */
+.hp-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 0.8em;
+  color: var(--muted, #94a3b8);
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-speed-eta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.hp-log-line {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 0.76em;
+  color: var(--accent, #a5b4fc);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-top: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.9;
+}
+
+/* ── Cancel Button ───────────────────────────────────────────────────────── */
+.hp-cancel-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.78em;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.hp-cancel-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  color: #fff;
+}
+
+.hp-cancel-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Modal Overlay Variant ──────────────────────────────────────────────── */
+.hp-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: hp-fade-in 0.2s ease;
+}
+
+.hp-modal-content {
+  background: var(--bg2, #181824);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  border-radius: 16px;
+  max-width: 460px;
+  width: 100%;
+  padding: 28px 24px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+  box-sizing: border-box;
+}
+
+@keyframes hp-fade-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Inline Minimal Variant ─────────────────────────────────────────────── */
+.hp-widget-inline .hp-track {
+  margin: 4px 0;
+  height: 6px;
+}
+.hp-widget-inline .hp-header {
+  font-size: 0.82em;
+}

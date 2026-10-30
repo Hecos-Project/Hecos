@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo de Hecos">
 </p>
 
-# Hecos - Versión 0.53.0 (Fase II: Ghost Fire)
+# Hecos - Versión 0.54.0 (Fase II: Ghost Fire)
 Idioma: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,23 +11,38 @@ Idioma: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
-> **Estado: Fase II (Ghost Fire)**: Hecos está actualmente en `v0.53.0`. Este es un Helping Companion System que actúa como puente entre el razonamiento de alto nivel y la ejecución del sistema root.
+> ### ⚡ Lema Fundamental
+> **"Zero moral filters. Zero social bias. Zero political agendas. From the core engine to every single module, Hecos is built on one unshakeable rule: freedom of thought belongs to everyone."**
+> 
+> *(Cero filtros morales. Cero sesgos sociales. Cero agendas políticas. Desde el motor central hasta cada módulo individual, Hecos se basa en una regla inquebrantable: la libertad de pensamiento pertenece a todos.)*
+
+---
+
+> **Estado: Fase II (Ghost Fire)**: Hecos está actualmente en `v0.54.0`. Este es un Helping Companion System que actúa como puente entre el razonamiento de alto nivel y la ejecución del sistema root.
 >
 > ⚠️ **Aviso Importante**: A partir de este lanzamiento principal (0.50.0+), el desarrollo principal y el entorno de destino migran oficialmente a **Windows 11**.
 
 ## 🚀 Resumen General
 **Hecos** es un **Helping Companion System**: un ecosistema local de primera línea diseñado para conectar de manera fluida la tecnología con la vida humana, combinando el razonamiento de IA, la automatización visual y la ejecución directa del sistema. En lugar de perseguir conceptos abstractos como la soberanía digital, Hecos se enfoca en una única misión pragmática: **mejorar la vida humana**, transformando el hardware local en una herramienta práctica y altamente eficiente para el día a día.
 
-Basado en tres pilares fundamentales:
+Basado en nuestros pilares fundamentales:
+* 🕊️ **Libertad de Pensamiento** — Cero filtros morales, cero sesgos sociales, cero agendas políticas.
 * 🛡️ **Privacidad Primero** — Funcionamiento 100% local, cero dependencia de la nube y arquitectura de privacidad de 3 niveles.
 * ⚡ **Velocidad Extrema** — Arquitectura nativa optimizada y sistema de complementos de alto rendimiento para una respuesta instantánea.
 * 🧊 **Simplicidad Total** — Tablero profesional y diseño modular que hace intuitiva la orquestación de IA avanzada.
 
-Ahora completamente migrato a una **arquitectura estable Fase II: Ghost Fire**, Hecos 0.53.0 ofrece una Interfaz Web dedicada (Chat + Configuración) y una Internacionalización completa. Desarrollado por **LiteLLM**, soporta Ollama, Llama.cpp, KoboldCpp y los principales proveedores en la nube con streaming en tiempo real y TTS local (Kokoro y Piper).
+Ahora completamente migrato a una **arquitectura estable Fase II: Ghost Fire**, Hecos 0.54.0 ofrece una Interfaz Web dedicada (Chat + Configuración) y una Internacionalización completa. Desarrollado por **LiteLLM**, soporta Ollama, Llama.cpp, KoboldCpp y los principales proveedores en la nube con streaming en tiempo real y TTS local (Kokoro, Piper, Fish Speech y XTTS).
 
 ---
 
-## ✨ Características Principales (v0.53.0)
+## ✨ Características Principales (v0.54.0)
+* 🎙️ **Voice Forge Studio** — Estudio avanzado para la creación y modelado de voces con análisis acústico en tiempo real (formantes, gráfico radar del perfil vocal, espectrograma) y mezcla de perfiles vocales.
+* 🐟 **Fish Speech SOTA Zero-Shot TTS** — Motor neural de última generación con clonación de voz zero-shot instantánea ejecutándose localmente mediante daemon y servidor dedicado.
+* 🧬 **Clonación de Voz Kokoro & Voice Manager** — Clonación de voz integrada para Kokoro TTS con interfaz de gestión de clones y vista previa de audio.
+* 🎛️ **Arquitectura de Audio Modular** — Sala de control de audio rediseñada en tarjetas modulares (Fish Speech, Kokoro, Piper, XTTS, enrutamiento, micrófono) con caché TTS unificado de alto rendimiento.
+* 📑 **Paginación y Búsqueda en Config Hub** — Explorador de módulos con paginación configurable global y por categoría, búsqueda en vivo y distintivos con caducidad automática TTL (3 días).
+* 📊 **Motor de Progreso Unificado** — Framework estandarizado para el seguimiento de tareas asíncronas (`hecos.core.progress`) para descargas, instalaciones pip y operaciones en segundo plano en CLI y WebUI.
+* 📦 **Motor SemVer de HPM y Distintivos Visuales** — Comparación semántica de versiones evitando avisos de degradación, con distintivos visuales claros de versión instalada vs versión en tienda.
 * 📢 **Presenter & Playbook (Entrenamiento, Coach y Roleplay)** — Motor interactivo integrado nativamente en el Core para anuncios del sistema, notificaciones y narración por voz en tiempo real. Gracias al módulo empaquetado **Playbook**, Hecos se transforma en un completo sistema de entrenamiento interactivo: puede actuar como personal coach, dirigir sesiones de roleplay y simulaciones guiadas, facilitar el aprendizaje de idiomas y guiar al usuario paso a paso en cualquier flujo operativo.
 * 🌐 **Ajustes Preestablecidos Globales (Soul Profiles)** — Infinitas posibilidades de creación combinando libremente personalidades de IA, motores de audio TTS y voces, backends de texto y perfiles de inferencia en perfiles maestros cohesivos.
 * 🎭 **Anulaciones de Chat en Línea y Personalidades Infinitas** — Sobrescribe el modelo de IA, la Persona y la Voz directamente en la interfaz del chat sobre la marcha. Crea infinitas personalidades al instante para cada sesión de conversación.

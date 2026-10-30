@@ -472,21 +472,48 @@
                     return;
                 }
 
-                // ── PRIORITY 5: Doc Preview ──────────────────────────────────
+                // ── PRIORITY 5: Document Reader (Voice & Fullscreen Reader) ───
+                if (window.DocReader) {
+                    // 1. If actively speaking / reading aloud, stop the voice first
+                    if (typeof window.DocReader.isReading === 'function' && window.DocReader.isReading()) {
+                        window.DocReader.stop();
+                        if (window.showToast) window.showToast('🔇 Document Reader voice stopped', 'info');
+                        return;
+                    }
+                    // 2. If the Document Reader overlay is open (and not reading), close it
+                    const docReaderOverlay = document.getElementById('docreader-overlay');
+                    if (docReaderOverlay && docReaderOverlay.classList.contains('active')) {
+                        if (typeof window.DocReader.close === 'function') {
+                            window.DocReader.close();
+                            return;
+                        }
+                    }
+                }
+
+                // ── PRIORITY 6: Doc Preview ──────────────────────────────────
                 const docModal = document.getElementById('doc-preview-modal');
                 if (docModal && docModal.classList.contains('active')) {
                     if (window.closeDocPreview) window.closeDocPreview();
                     return;
                 }
 
-                // ── PRIORITY 6: Chat Image Lightbox ──────────────────────────
+                // ── PRIORITY 7: Chat PDF/HTML Preview Zoom ────────────────────
+                const expandedPreview = document.querySelector('.chat-pdf-preview.expanded, .chat-html-preview.expanded');
+                if (expandedPreview) {
+                    if (typeof window.togglePdfPreviewZoom === 'function') {
+                        window.togglePdfPreviewZoom(expandedPreview.id);
+                        return;
+                    }
+                }
+
+                // ── PRIORITY 8: Chat Image Lightbox ──────────────────────────
                 const lightbox = document.getElementById('img-lightbox');
                 if (lightbox && lightbox.classList.contains('open')) {
                     lightbox.classList.remove('open');
                     return;
                 }
 
-                // ── PRIORITY 7: Chat Image Gallery ───────────────────────────
+                // ── PRIORITY 9: Chat Image Gallery ───────────────────────────
                 const gallery = document.getElementById('hg-gallery-modal');
                 if (gallery && gallery.classList.contains('open')) {
                     gallery.classList.remove('open');
@@ -495,7 +522,7 @@
                     return;
                 }
 
-                // ── PRIORITY 8: Generic Modals / Panels ──────────────────────
+                // ── PRIORITY 10: Generic Modals / Panels ──────────────────────
                 const sfPanel = document.getElementById('soul-forge-panel');
                 if (sfPanel && sfPanel.classList.contains('open')) {
                     if (window.sfTogglePanel) window.sfTogglePanel(false);
@@ -522,7 +549,13 @@
                     }
                 }
                 
-                // ── PRIORITY 9: Stop TTS Audio (if playing) ──────────────────
+                // ── PRIORITY 11: Stop TTS Audio (if playing) ──────────────────
+                if (window.DocReader && typeof window.DocReader.isReading === 'function' && window.DocReader.isReading()) {
+                    window.DocReader.stop();
+                    if (window.showToast) window.showToast('🔇 Document Reader voice stopped', 'info');
+                    return;
+                }
+
                 if (typeof window.stopTTS === 'function') {
                     if (window.stopTTS()) {
                         if (window.showToast) window.showToast('🔇 TTS stopped', 'info');
@@ -530,7 +563,7 @@
                     }
                 }
 
-                // ── PRIORITY 10: Stop LLM Generation (if active) ─────────────
+                // ── PRIORITY 12: Stop LLM Generation (if active) ─────────────
                 if (typeof window.stopGeneration === 'function') {
                     if (window.stopGeneration()) {
                         if (window.showToast) window.showToast('⛔ Generation stopped', 'info');

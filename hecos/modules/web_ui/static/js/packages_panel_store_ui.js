@@ -182,8 +182,8 @@ function _hpmStoreRenderCard(pkg) {
     ? pkg.update_available
       ? `<button onclick="window.hpmStoreInstall('${pkg.id}','${pkg.download_url}','${pkg.name}')"
                 style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:0.78em;font-weight:700;cursor:pointer;">
-           <i class="fas fa-arrow-up" style="margin-right:4px;"></i>Update to v${pkg.version}</button>`
-      : `<span style="display:inline-flex;align-items:center;gap:5px;font-size:0.78em;color:#10b981;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);padding:3px 10px;border-radius:20px;font-weight:600;">
+           <i class="fas fa-arrow-up" style="margin-right:4px;"></i>Update to v${pkg.catalog_version || pkg.version}</button>`
+      : `<span style="display:inline-flex;align-items:center;gap:5px;font-size:0.78em;color:var(--accent);background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);padding:3px 10px;border-radius:20px;font-weight:600;">
            <i class="fas fa-check-circle"></i> Installed</span>`
     : `<button onclick="window.hpmStoreInstall('${pkg.id}','${pkg.download_url}','${pkg.name}')"
               style="background:linear-gradient(135deg,var(--accent),var(--accent2,#7c3aed));color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:0.78em;font-weight:700;cursor:pointer;transition:opacity .2s;"
@@ -209,7 +209,15 @@ function _hpmStoreRenderCard(pkg) {
           <div style="font-weight:700;color:var(--text);font-size:0.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_hesc(pkg.name)}</div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap;">
             <span style="font-size:0.72em;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:${meta.color};background:${meta.color}18;padding:2px 8px;border-radius:20px;border:1px solid ${meta.color}44;display:inline-flex;align-items:center;line-height:1.2;">${meta.shortLabel || meta.label}</span>
-            <span style="font-size:0.75em;color:var(--muted);">v${_hesc(pkg.version)}</span>
+            <span style="font-size:0.75em;color:var(--muted);" title="Store catalog version">v${_hesc(pkg.version)}</span>
+            ${pkg.installed && pkg.installed_version && pkg.update_available ? `
+              <span style="font-size:0.68em;font-weight:700;color:#f59e0b;background:rgba(245,158,11,0.14);border:1px solid rgba(245,158,11,0.3);padding:1px 6px;border-radius:10px;line-height:1.2;" title="Installed: v${_hesc(pkg.installed_version)}">
+                <i class="fas fa-hdd" style="font-size:0.85em;margin-right:2px;opacity:0.8;"></i>v${_hesc(pkg.installed_version)}
+              </span>` : ''}
+            ${pkg.installed && pkg.installed_version && !pkg.update_available && pkg.installed_version !== pkg.version ? `
+              <span style="font-size:0.68em;font-weight:700;color:#10b981;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.3);padding:1px 6px;border-radius:10px;line-height:1.2;" title="Local version: v${_hesc(pkg.installed_version)}">
+                <i class="fas fa-code-branch" style="font-size:0.85em;margin-right:2px;opacity:0.8;"></i>dev v${_hesc(pkg.installed_version)}
+              </span>` : ''}
             ${sizeFmt ? `<span style="font-size:0.7em;color:var(--muted);">${sizeFmt}</span>` : ''}
           </div>
         </div>

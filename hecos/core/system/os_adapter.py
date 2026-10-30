@@ -15,18 +15,98 @@ class OSAdapter:
         return platform.system().lower()
 
     @staticmethod
-    def open_path(path: str):
-        """Opens a file or folder using the default OS application."""
+    def open_path_detailed(path: str) -> dict:
+        """
+        Opens a file or folder using the native OS file explorer or default application.
+        Returns a dict with execution details and diagnostics.
+        """
+        norm = os.path.normpath(os.path.abspath(path))
+        if not os.path.exists(norm):
+            try:
+                os.makedirs(norm, exist_ok=True)
+            except Exception:
+                pass
+
         current_os = OSAdapter.get_os()
         try:
             if current_os == 'windows':
-                os.startfile(path)
+                # 1. Primary mechanism on Windows: direct explorer.exe via shell.
+                # This is the proven method used across Hecos (audio config, models).
+                cmd1 = f'explorer.exe "{norm}"'
+                try:
+                    subprocess.Popen(cmd1, shell=True)
+                    logger.info(f"[OS_ADAPTER] Launched native explorer: {cmd1}")
+                    return {"ok": True, "os": "windows", "method": cmd1, "path": norm}
+                except Exception as e1:
+                    logger.warning(f"[OS_ADAPTER] explorer.exe shell=True failed: {e1}")
+
+                # 2. Fallback: PowerShell Start-Process explorer.exe
+                cmd2 = f"Start-Process explorer.exe -ArgumentList '\"{norm}\"'"
+                try:
+                    subprocess.Popen(["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", cmd2])
+                    logger.info(f"[OS_ADAPTER] Launched explorer via PowerShell: {cmd2}")
+                    return {"ok": True, "os": "windows", "method": f"powershell: {cmd2}", "path": norm}
+                except Exception as e2:
+                    logger.warning(f"[OS_ADAPTER] PowerShell Start-Process failed: {e2}")
+
+                # 3. Fallback: cmd start ""
+                cmd3 = f'start "" "{norm}"'
+                try:
+                    subprocess.Popen(cmd3, shell=True)
+                    logger.info(f"[OS_ADAPTER] Launched via start command: {cmd3}")
+                    return {"ok": True, "os": "windows", "method": cmd3, "path": norm}
+                except Exception as e3:
+                    logger.warning(f"[OS_ADAPTER] cmd start failed: {e3}")
+
+                # 4. Fallback: os.startfile
+                try:
+                    os.startfile(norm)
+                    logger.info(f"[OS_ADAPTER] Opened via os.startfile: {norm}")
+                    return {"ok": True, "os": "windows", "method": f"os.startfile({norm})", "path": norm}
+                except Exception as e4:
+                    logger.error(f"[OS_ADAPTER] All Windows opening methods failed for {norm}: {e4}")
+                    return {"ok": False, "os": "windows", "error": str(e4), "path": norm}
+
             elif current_os == 'darwin':
-                subprocess.Popen(["open", path])
-            else: # linux or others
-                subprocess.Popen(["xdg-open", path])
+                cmd = f"open {norm}"
+                try:
+                    subprocess.Popen(["open", norm])
+                    logger.info(f"[OS_ADAPTER] Opened on macOS: {cmd}")
+                    return {"ok": True, "os": "darwin", "method": cmd, "path": norm}
+                except Exception as e:
+                    logger.error(f"[OS_ADAPTER] macOS open failed: {e}")
+                    return {"ok": False, "os": "darwin", "error": str(e), "path": norm}
+
+            else:  # Linux / Unix
+                linux_tools = [
+                    ["xdg-open", norm],
+                    ["gio", "open", norm],
+                    ["nautilus", norm],
+                    ["dolphin", norm],
+                    ["nemo", norm],
+                    ["thunar", norm],
+                    ["pcmanfm", norm],
+                    ["caja", norm]
+                ]
+                for cmd in linux_tools:
+                    try:
+                        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        cmd_str = " ".join(cmd)
+                        logger.info(f"[OS_ADAPTER] Launched Linux file manager: {cmd_str}")
+                        return {"ok": True, "os": "linux", "method": cmd_str, "path": norm}
+                    except (FileNotFoundError, OSError):
+                        continue
+                logger.warning(f"[OS_ADAPTER] No desktop file manager tool found to open {norm}")
+                return {"ok": False, "os": "linux", "error": "No desktop file manager tool found (tried xdg-open, gio, nautilus, dolphin, nemo, thunar, pcmanfm, caja)", "path": norm}
+
         except Exception as e:
-            logger.error(f"[OS_ADAPTER] Failed to open path {path}: {e}")
+            logger.error(f"[OS_ADAPTER] Failed to open path {norm}: {e}")
+            return {"ok": False, "os": current_os, "error": str(e), "path": norm}
+
+    @staticmethod
+    def open_path(path: str) -> bool:
+        """Opens a file or folder using the native OS file explorer or default application."""
+        return OSAdapter.open_path_detailed(path).get("ok", False)
 
     @staticmethod
     def open_terminal():

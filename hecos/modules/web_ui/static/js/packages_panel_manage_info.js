@@ -25,7 +25,7 @@ window.hpmVerifyPackage = async function (id, name) {
         const title = _ti('Verification Passed', 'Verifica Superata', 'Verificación Superada');
         const msg = _ti(`All files for package <b>${name}</b> are intact.`, `Tutti i file del pacchetto <b>${name}</b> sono integri.`, `Todos los archivos del paquete <b>${name}</b> están intactos.`);
         htmlContent = `<div style="text-align:center; padding: 10px 0;">
-          <i class="fas fa-check-circle" style="margin-right:6px; color:#10b981; font-size:1.5em; margin-bottom:8px; display:block;"></i>
+          <i class="fas fa-check-circle" style="margin-right:6px; color:var(--accent); font-size:1.5em; margin-bottom:8px; display:block;"></i>
           <b style="font-size:1.1em; color:var(--text)">${title}</b>
           <div style="font-size:0.9em; color:var(--muted); margin-top:8px;">${msg}</div>
           ${hintHTML}

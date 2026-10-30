@@ -41,7 +41,17 @@ def _sanitize_for_xtts(text: str) -> str:
 
 
 
-def sanitize_text(text: str) -> str:
+def _is_fish_cloud() -> bool:
+    try:
+        from hecos.core.audio.device_manager import get_audio_config
+        acfg = get_audio_config()
+        fcfg = acfg.get("fish_speech", {})
+        return bool(fcfg.get("api_key") and "api.fish.audio" in fcfg.get("api_url", ""))
+    except Exception:
+        return False
+
+
+def sanitize_text(text: str, engine: str = None) -> str:
     """
     Applies filters to the TTS text based on current configuration.
     """
@@ -49,7 +59,18 @@ def sanitize_text(text: str) -> str:
         return text
 
     config = get_filter_config()
+    if not engine:
+        engine = _get_active_engine()
     
+    # 0. Fish Speech Expressive Tags Handling (S2-Pro & S2.1-Pro)
+    fish_tags = []
+    if engine in ("fish_speech", "fish") or re.search(r'\[(whisper|laughing|excited|calm|sigh|surprised|angry|sad|dramatic)\]', text, re.IGNORECASE):
+        # Both Fish Speech S2-Pro locally and S2.1-Pro Cloud natively parse bracket emotion tags
+        def _save_tag(m):
+            fish_tags.append(m.group(0))
+            return f"\uE000FISHTAG{len(fish_tags)-1}\uE001"
+        text = re.sub(r'\[[a-zA-Z\s_-]+\]', _save_tag, text)
+
     # 1. Apply custom replacements first
     for item in config.get("custom_replacements", []):
         target = item.get("target", "")
@@ -75,9 +96,13 @@ def sanitize_text(text: str) -> str:
 
     # 4. XTTS2-specific: fix period vocalization ("punto" bug)
     if config.get("xtts_fix_periods", True):
-        engine = _get_active_engine()
         if engine in ("xtts2", "xtts"):
             text = _sanitize_for_xtts(text)
+
+    # Restore protected Fish Speech tags
+    if fish_tags:
+        for idx, tag in enumerate(fish_tags):
+            text = text.replace(f"\uE000FISHTAG{idx}\uE001", tag)
 
     # Clean up double spaces
     text = re.sub(r'\s+', ' ', text)

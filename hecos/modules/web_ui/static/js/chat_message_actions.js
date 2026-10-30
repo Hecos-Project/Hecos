@@ -191,6 +191,7 @@ function buildMessageActions(msgEl, role, historyIndex) {
               body: JSON.stringify({ 
                   text: textToSpeak, 
                   mode: 'web',
+                  bypass_cache: true,
                   session_id: (window.chatHistoryState && window.chatHistoryState.activeSessionId) ? window.chatHistoryState.activeSessionId : null
               })
           });

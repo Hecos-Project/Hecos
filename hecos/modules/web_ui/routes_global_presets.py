@@ -117,9 +117,61 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                                 # Map correctly for audio.yaml schema
                                 if 'xtts_preset' in soul.voice.model_dump(exclude_unset=True):
                                     acfg['xtts']['current_preset'] = soul.voice.xtts_preset if soul.voice.xtts_preset is not None else "default"
-                                if soul.voice.xtts_inference_preset is not None:
-                                    pass # this doesn't directly exist in audio.yaml root/xtts, wait...
+                                
+                                if soul.voice.tts_engine == 'kokoro':
+                                    acfg['active_engine'] = 'kokoro'
+                                    k_cfg = acfg.setdefault('kokoro', {})
+                                    if soul.voice.tts_voice:
+                                        k_cfg['voice'] = soul.voice.tts_voice
+                                    if soul.voice.kokoro_voice:
+                                        k_cfg['voice'] = soul.voice.kokoro_voice
+                                    if soul.voice.kokoro_blend_voice is not None:
+                                        k_cfg['blend_voice'] = soul.voice.kokoro_blend_voice
+                                    if soul.voice.kokoro_speed is not None:
+                                        k_cfg['speed'] = soul.voice.kokoro_speed
+                                    if soul.voice.kokoro_alpha is not None:
+                                        k_cfg['alpha'] = soul.voice.kokoro_alpha
+                                    if soul.voice.kokoro_beta is not None:
+                                        k_cfg['beta'] = soul.voice.kokoro_beta
+                                    if soul.voice.kokoro_silence is not None:
+                                        k_cfg['sentence_silence'] = soul.voice.kokoro_silence
+                                    if soul.voice.kokoro_volume is not None:
+                                        k_cfg['volume'] = soul.voice.kokoro_volume
+                                    if soul.voice.kokoro_normalize is not None:
+                                        k_cfg['normalize'] = soul.voice.kokoro_normalize
+                                    if soul.voice.kokoro_preset:
+                                        k_cfg['current_preset'] = soul.voice.kokoro_preset
+                                    if soul.voice.kokoro_inference_preset:
+                                        k_cfg['current_inference_preset'] = soul.voice.kokoro_inference_preset
+
+                                if soul.voice.tts_engine in ('fish_speech', 'fish'):
+                                    acfg['active_engine'] = 'fish_speech'
+                                    f_cfg = acfg.setdefault('fish_speech', {})
+                                    ref_aud = soul.voice.fish_reference_audio or soul.voice.tts_voice
+                                    if ref_aud:
+                                        f_cfg['reference_audio'] = ref_aud
+                                    if soul.voice.fish_reference_text is not None:
+                                        f_cfg['reference_text'] = soul.voice.fish_reference_text
+                                    if soul.voice.fish_temperature is not None:
+                                        f_cfg['temperature'] = soul.voice.fish_temperature
+                                    if soul.voice.fish_top_p is not None:
+                                        f_cfg['top_p'] = soul.voice.fish_top_p
+                                    if soul.voice.fish_repetition_penalty is not None:
+                                        f_cfg['repetition_penalty'] = soul.voice.fish_repetition_penalty
+                                    if soul.voice.fish_chunk_length is not None:
+                                        f_cfg['chunk_length'] = soul.voice.fish_chunk_length
+                                    if soul.voice.fish_max_new_tokens is not None:
+                                        f_cfg['max_new_tokens'] = soul.voice.fish_max_new_tokens
+                                    if soul.voice.fish_preset:
+                                        f_cfg['current_preset'] = soul.voice.fish_preset
+                                    else:
+                                        f_cfg['current_preset'] = ""
                             _save_audio_config(acfg)
+                            if soul.voice and soul.voice.tts_engine in ('fish_speech', 'fish'):
+                                from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
+                                daemon = FishSpeechDaemon.get_instance()
+                                if daemon.is_local_target() and not daemon.is_healthy():
+                                    daemon.preload(delay=0.2)
                         except Exception as e:
                             logger.error(f"[GlobalPresets] Error updating audio.yaml: {e}")
             else:
@@ -156,9 +208,8 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                         if 'voice' not in overrides: overrides['voice'] = {}
                         for k, v in soul.voice.model_dump(exclude_unset=True).items():
                             overrides['voice'][k] = v
-                else:
-                    # The user selected "No active global preset", so we clear all overrides
-                    overrides = {'active_global_preset': ""}
+                    # The user selected "No active global preset" or clicked Reset, so we clear all overrides
+                    overrides = {}
                 
                 set_session_config(session_id, overrides)
             

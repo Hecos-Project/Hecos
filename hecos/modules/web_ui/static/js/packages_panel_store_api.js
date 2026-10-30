@@ -251,18 +251,30 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, logEl, title, icon, modal,
   if (event === 'progress') {
     if (payload.step === 'pip_log') {
         // Row 2 only — pip log lines scroll through without touching row 1
-        if (logEl) logEl.textContent = payload.message || '';
+        if (logEl) {
+            logEl.textContent = payload.message || '';
+            logEl.style.display = payload.message ? 'block' : 'none';
+        }
     } else {
-        // Row 1 — step label (download, install, validating…)
+        // Row 1 — step label with real percentage
         msg.textContent = payload.message || '';
-        bar.style.width = payload.step === 'download' ? '40%' : '75%';
+        if (payload.percent != null && !isNaN(payload.percent)) {
+            const p = Math.min(100, Math.max(5, Math.round(payload.percent)));
+            bar.style.width = `${p}%`;
+            title.textContent = `Installing ${pkgName}… (${p}%)`;
+        } else {
+            bar.style.width = payload.step === 'download' ? '25%' : '75%';
+        }
         // Row 2 — clear pip log when a new major step begins
-        if (logEl) logEl.textContent = '';
+        if (logEl) {
+            logEl.textContent = '';
+            logEl.style.display = 'none';
+        }
     }
   } else if (event === 'done') {
     bar.style.width    = '100%';
     msg.textContent    = payload.message || _t('Done!', 'Fatto!', '¡Hecho!');
-    icon.innerHTML     = '<i class="fas fa-check-circle" style="color:#10b981;"></i>';
+    icon.innerHTML     = '<i class="fas fa-check-circle" style="color:var(--accent);"></i>';
     title.textContent  = _t('Installed Successfully!', 'Installato con successo!', '¡Instalado con éxito!');
     
     const hintEl = document.getElementById('hpm-store-progress-hint');
@@ -302,15 +314,24 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, logEl, title, icon, modal,
     // ── Save NEW badge for Central Hub ──────────────────────────────────────
     if (payload.config_panel) {
         let newPanels = [];
+        let newPanelsTs = {};
         try { newPanels = JSON.parse(localStorage.getItem('hpm_new_panels') || '[]'); } catch(e) {}
+        try { newPanelsTs = JSON.parse(localStorage.getItem('hpm_new_panels_ts') || '{}'); } catch(e) {}
         
         const tabId = payload.config_panel || payload.id;
         const pkgId = payload.id || '';
+        const now = Date.now();
         for (const key of [tabId, pkgId]) {
-            if (key && !newPanels.includes(key)) newPanels.push(key);
+            if (key) {
+                if (!newPanels.includes(key)) newPanels.push(key);
+                newPanelsTs[key] = now;
+            }
         }
         
-        try { localStorage.setItem('hpm_new_panels', JSON.stringify(newPanels)); } catch(e) {}
+        try {
+            localStorage.setItem('hpm_new_panels', JSON.stringify(newPanels));
+            localStorage.setItem('hpm_new_panels_ts', JSON.stringify(newPanelsTs));
+        } catch(e) {}
     }
     // ────────────────────────────────────────────────────────────────────────
 

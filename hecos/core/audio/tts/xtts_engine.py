@@ -70,30 +70,23 @@ class XttsEngine(BaseTTSEngine):
     @staticmethod
     def is_available() -> bool:
         try:
-            from TTS.api import TTS  # noqa: F401
-            return True
-        except ImportError:
+            import importlib.util
+            return importlib.util.find_spec("TTS") is not None
+        except Exception:
             return False
 
     @staticmethod
     def model_ready() -> bool:
         """Returns True only if the XTTSv2 model files are already downloaded on disk."""
-        try:
-            import os
-            from TTS.utils.manage import ModelManager
-            manager = ModelManager()
-            model_path, _, _ = manager.download_model("tts_models/multilingual/multi-dataset/xtts_v2")
-            return os.path.exists(model_path)
-        except Exception:
-            # Fallback: check common HuggingFace/TTS cache paths
-            import os
-            home = os.path.expanduser("~")
-            possible_paths = [
-                os.path.join(home, ".local", "share", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
-                os.path.join(home, "AppData", "Local", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
-                os.path.join(home, "AppData", "Roaming", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
-            ]
-            return any(os.path.isdir(p) and os.listdir(p) for p in possible_paths)
+        import os
+        home = os.path.expanduser("~")
+        possible_paths = [
+            os.path.join(home, "AppData", "Local", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
+            os.path.join(home, ".local", "share", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
+            os.path.join(home, "AppData", "Roaming", "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
+        ]
+        # Fast local disk check: avoid network requests or DLL loading during status polling
+        return any(os.path.isdir(p) and (os.path.exists(os.path.join(p, "config.json")) or os.path.exists(os.path.join(p, "model.pth"))) for p in possible_paths)
 
     # ── Lazy model loading ────────────────────────────────────────────────────
 
@@ -105,6 +98,14 @@ class XttsEngine(BaseTTSEngine):
                 return True
             try:
                 import os
+                import sys
+                if sys.platform == "win32":
+                    try:
+                        import ctypes
+                        ctypes.windll.kernel32.SetErrorMode(0x0001 | 0x0002 | 0x8000)
+                    except Exception:
+                        pass
+
                 model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
 
                 # Auto-agree to Coqui TOS so it doesn't block on stdin
@@ -119,7 +120,6 @@ class XttsEngine(BaseTTSEngine):
                     logger.warning("XTTS", f"TTS compatibility patch failed (non-fatal): {patch_err}")
 
                 from TTS.api import TTS
-
 
                 is_ready = XttsEngine.model_ready()
                 if not is_ready:

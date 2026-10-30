@@ -1,0 +1,229 @@
+<div class="card" id="card-piper" style="border-top-left-radius:0; margin-top:-20px;">
+  <!-- Card Header & Status Badge -->
+  <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+    <div><i class="fas fa-volume-up"></i> Piper Engine (Default)</div>
+    <span class="badge-pill badge-neutral">Ultra Fast / Low Latency</span>
+  </div>
+
+  <!-- Engine Summary & Real-time Progress Bar -->
+  <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 16px; font-family: monospace; font-size: 11px; color: var(--muted);">
+    <div style="margin-bottom: 8px;">
+      Piper is an ultra-fast, lightweight neural text-to-speech engine optimized for real-time speech generation with minimal CPU latency.
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span id="piper-status-badge" class="badge-pill badge-ok">✅ Default System Engine</span>
+      <span id="v-timer" style="color: var(--accent); display: none;">0.0s</span>
+    </div>
+    <div id="v-progress-container" class="hp-track" style="display: none; margin-top: 8px;">
+      <div id="v-progress-bar" class="hp-fill" style="width: 0%;"></div>
+    </div>
+    <div id="v-progress-text" style="display: none; margin-top: 4px; color: var(--accent); text-align: right; font-size:11px; font-weight:600;">0%</div>
+  </div>
+
+  <!-- Piper Inference Parameters Preset -->
+  <div class="grid-2" style="margin-top:12px; margin-bottom:12px;">
+    <div class="field" style="grid-column: span 2; margin:0;">
+      <label><i class="fas fa-sliders-h"></i> Inference Parameters Preset</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select id="v-piper-inference-preset" onchange="loadPiperInferencePreset()" style="flex:1;">
+          <option value="">-- No Preset Selected --</option>
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" onclick="savePiperInferencePreset()" title="Save as New Inference Preset"><i class="fas fa-plus"></i> New</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="updatePiperInferencePreset()" title="Update Current Inference Preset"><i class="fas fa-sync-alt"></i> Update</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deletePiperInferencePreset()" title="Delete Inference Preset"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Executable Path & Voice Model Selection -->
+  <div class="grid-2" style="margin-bottom:12px;">
+    <!-- Piper Binary Path -->
+    <div class="field" style="margin:0;">
+      <label>
+        <i class="fas fa-terminal"></i> {{ t('webui_conf_voice_path') }}
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Path to piper.exe binary. Click Auto to automatically scan and link standard installation paths."></i>
+      </label>
+      <div style="display:flex; gap:6px; width:100%;">
+        <input type="text" id="v-piper" placeholder="C:\Hecos\bin\piper\piper.exe" style="flex:1;">
+        <button type="button" class="btn btn-secondary" onclick="browsePiperPath()" title="{{ t('webui_conf_voice_browse_title') }}"><i class="fas fa-folder-open"></i></button>
+        <button type="button" class="btn btn-secondary" onclick="autoFixPiperPath()" title="{{ t('webui_conf_voice_detect_title') }}"><i class="fas fa-search"></i> Auto</button>
+      </div>
+    </div>
+
+    <!-- Active ONNX Model Selection -->
+    <div class="field" style="margin:0;">
+      <label>
+        <i class="fas fa-file-audio"></i> {{ t('webui_conf_voice_onnx') }}
+        <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Voice model checkpoint (.onnx) loaded from piper voice directory."></i>
+      </label>
+      <select id="v-onnx-model" style="width:100%;"></select>
+      <p style="font-size:11px; color:var(--muted); margin-top:4px; margin-bottom:0;">{{ t('webui_conf_voice_info') }}</p>
+    </div>
+  </div>
+
+  <!-- Speech Speed & Sentence Silence -->
+  <div class="grid-2" style="margin-bottom:12px;">
+    <!-- Speech Speed -->
+    <div class="field">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:4px;">
+        <label style="margin:0;">
+          <i class="fas fa-tachometer-alt" style="color:var(--accent);"></i> {{ t('webui_conf_voice_speed') }}
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Speech rate modifier. 1.0 = standard speed. Higher values speak faster, lower values speak slower. Range: 0.5 to 2.5."></i>
+        </label>
+        <div style="display:flex; gap:3px;">
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-speed', 0.8)">0.8x</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-speed', 1.0)">1.0x</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-speed', 1.2)">1.2x</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-speed', 1.5)">1.5x</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-speed', 1.8)">1.8x</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-speed-range" min="0.5" max="2.5" step="0.05" value="1.0" style="flex:1;" oninput="document.getElementById('v-speed').value = this.value">
+        <input type="number" id="v-speed" min="0.5" max="3.0" step="0.05" value="1.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-speed-range').value = this.value">
+      </div>
+    </div>
+
+    <!-- Sentence Silence -->
+    <div class="field">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:4px;">
+        <label style="margin:0;">
+          <i class="fas fa-pause" style="color:var(--accent);"></i> {{ t('webui_conf_voice_silence') }}
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Silence duration in seconds inserted between sentence boundaries (requires . ! or ? in text). Range: 0.0s to 2.0s."></i>
+        </label>
+        <div style="display:flex; gap:3px;">
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-silence', 0.0)">0.0s (None)</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-silence', 0.2)">0.2s (Default)</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-silence', 0.5)">0.5s</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-silence', 1.0)">1.0s</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-silence', 1.5)">1.5s (Long)</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-silence-range" min="0.0" max="2.0" step="0.05" value="0.2" style="flex:1;" oninput="document.getElementById('v-silence').value = this.value">
+        <input type="number" id="v-silence" min="0.0" max="2.0" step="0.05" value="0.2" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-silence-range').value = this.value">
+      </div>
+      <p style="font-size:11px; color:var(--muted); margin-top:4px; margin-bottom:0;">Pause inserted at sentence ends (. ! ?). Requires 2+ sentences in text to hear gap.</p>
+    </div>
+  </div>
+
+  <!-- Noise Scales: Phoneme Noise Scale & Phoneme Width Noise -->
+  <div class="grid-2" style="margin-bottom:12px;">
+    <!-- Noise Scale (Phoneme Variation) -->
+    <div class="field">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:4px;">
+        <label style="margin:0;">
+          <i class="fas fa-wave-square" style="color:var(--accent);"></i> {{ t('webui_conf_voice_noise') }}
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Generator noise scale controlling phoneme variability and breathiness. Standard default: 0.667. Range: 0.0 to 2.0."></i>
+        </label>
+        <div style="display:flex; gap:3px;">
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-noise', 0.0)">0.00 (Flat)</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-noise', 0.33)">0.33</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-noise', 0.67)">0.67 (Default)</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-noise', 1.2)">1.20</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-noise', 1.8)">1.80 (Max)</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-noise-range" min="0.0" max="2.0" step="0.01" value="0.67" style="flex:1;" oninput="document.getElementById('v-noise').value = this.value">
+        <input type="number" id="v-noise" min="0.0" max="2.0" step="0.01" value="0.67" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-noise-range').value = this.value">
+      </div>
+      <p style="font-size:11px; color:var(--muted); margin-top:4px; margin-bottom:0;">Generator latent noise (0.0 = robotic / monotone, 1.8 = high breathiness). Does not shift musical pitch.</p>
+    </div>
+
+    <!-- Noise Width (Duration Noise) -->
+    <div class="field">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:4px;">
+        <label style="margin:0;">
+          <i class="fas fa-arrows-alt-h" style="color:var(--accent);"></i> {{ t('webui_conf_voice_noisew') }}
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Duration noise scale controlling vowel and consonant length variability. Standard default: 0.8. Range: 0.0 to 2.0."></i>
+        </label>
+        <div style="display:flex; gap:3px;">
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-noisew', 0.0)">0.00 (Stiff)</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-noisew', 0.5)">0.50</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-noisew', 0.8)">0.80 (Default)</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-noisew', 1.2)">1.20</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-noisew', 1.8)">1.80 (Max)</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-noisew-range" min="0.0" max="2.0" step="0.01" value="0.8" style="flex:1;" oninput="document.getElementById('v-noisew').value = this.value">
+        <input type="number" id="v-noisew" min="0.0" max="2.0" step="0.01" value="0.8" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-noisew-range').value = this.value">
+      </div>
+      <p style="font-size:11px; color:var(--muted); margin-top:4px; margin-bottom:0;">Phoneme duration flux (0.0 = rigid cadence, 1.8 = flexible timing across vowels and consonants).</p>
+    </div>
+  </div>
+
+  <!-- Volume & Piper Timeout -->
+  <div class="grid-2" style="margin-bottom:14px;">
+    <!-- Volume Factor -->
+    <div class="field">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:4px;">
+        <label style="margin:0;">
+          <i class="fas fa-volume-up" style="color:var(--accent);"></i> Volume
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Output audio volume multiplier. Range: 0.1 to 2.0 (default: 1.0)."></i>
+        </label>
+        <div style="display:flex; gap:3px;">
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-volume', 0.5)">0.5x</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-volume', 0.8)">0.8x</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-volume', 1.0)">1.0x</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-volume', 1.2)">1.2x</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-volume', 1.5)">1.5x</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-volume-range" min="0.1" max="2.0" step="0.05" value="1.0" style="flex:1;" oninput="document.getElementById('v-volume').value = this.value">
+        <input type="number" id="v-volume" min="0.1" max="2.0" step="0.05" value="1.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-volume-range').value = this.value">
+      </div>
+    </div>
+
+    <!-- Piper Timeout Field -->
+    <div class="field">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:4px;">
+        <label style="margin:0;">
+          <i class="fas fa-stopwatch" style="color:var(--accent);"></i> Piper Timeout (sec)
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Maximum synthesis process timeout in seconds before aborting long audio generation. Range: 10s to 600s."></i>
+        </label>
+        <div style="display:flex; gap:3px;">
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-timeout', 60)">60s</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-timeout', 120)">120s</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-timeout', 180)">180s</button>
+          <button type="button" class="badge-pill" style="cursor:pointer; border:1px solid var(--border); background:var(--bg3); font-size:9px; padding:2px 5px;" onclick="setPiperParamPreset('v-timeout', 300)">300s</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="range" id="v-timeout-range" min="10" max="600" step="10" value="180" style="flex:1;" oninput="document.getElementById('v-timeout').value = this.value">
+        <input type="number" id="v-timeout" min="10" max="600" step="10" value="180" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-timeout-range').value = this.value">
+      </div>
+    </div>
+  </div>
+
+  <!-- Test Voice Section -->
+  <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+    <div class="card-title" style="font-size:14px; margin-bottom:12px;">{{ t('webui_voice_test_title') }}</div>
+    <div class="field" style="margin-bottom:8px;">
+      <input type="text" id="v-test-text" placeholder="{{ t('webui_voice_test_ph') }}" value="Hecos system test. Voice generation is operational.">
+    </div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button type="button" class="btn btn-primary btn-sm" onclick="testVoice('web', 'piper')">
+        <i class="fas fa-play"></i> {{ t('webui_voice_test_web') }}
+      </button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="testVoice('console', 'piper')">
+        <i class="fas fa-desktop"></i> {{ t('webui_voice_test_pc') }}
+      </button>
+      <button type="button" class="btn btn-danger btn-sm" id="v-test-stop" style="display:none;" onclick="stopVoice('piper')">
+        <i class="fas fa-stop"></i> {{ t('webui_voice_test_stop') }}
+      </button>
+      <span id="v-test-status" style="font-size:12px; color:var(--muted); margin-left:auto;"></span>
+    </div>
+  </div>
+
+  <script>
+    function setPiperParamPreset(id, val) {
+      const num = document.getElementById(id);
+      const rng = document.getElementById(id + '-range');
+      if (num) num.value = val;
+      if (rng) rng.value = val;
+    }
+  </script>
+</div>

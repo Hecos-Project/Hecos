@@ -1,115 +1,216 @@
-active_engine: xtts2
+active_engine: kokoro
 voice_status: true
-piper_path: C:\Hecos\bin\piper\piper.exe
-onnx_model: C:\Hecos\bin\piper\it_IT-paola-medium.onnx
+piper_path: ''
+onnx_model: C:\piper\it_IT-paola-medium.onnx
 speed: 1.0
-noise_scale: 0.8
-noise_w: 1.0
+noise_scale: 0.667
+noise_w: 0.8
 sentence_silence: 0.2
+volume: 1.0
 piper_timeout: 180
+piper_current_inference_preset: ''
+piper_inference_presets:
+  Standard & Balanced:
+    speed: 1.0
+    sentence_silence: 0.2
+    noise_scale: 0.67
+    noise_w: 0.8
+    volume: 1.0
+  Expressive & Dynamic:
+    speed: 1.05
+    sentence_silence: 0.25
+    noise_scale: 1.2
+    noise_w: 1.2
+    volume: 1.0
+  Fast & Direct:
+    speed: 1.35
+    sentence_silence: 0.05
+    noise_scale: 0.6
+    noise_w: 0.7
+    volume: 1.0
+  Stable & Monotone:
+    speed: 1.0
+    sentence_silence: 0.15
+    noise_scale: 0.0
+    noise_w: 0.0
+    volume: 1.0
+  Creative & Wild:
+    speed: 1.15
+    sentence_silence: 0.35
+    noise_scale: 1.6
+    noise_w: 1.5
+    volume: 1.0
 kokoro:
   speed: 1.0
-  voice: af_heart
-  sentence_silence: 0.0
+  voice: if_goblin_folletto
+  lang_code: auto
+  blend_voice: ''
+  alpha: 1.0
+  beta: 1.0
+  sentence_silence: 0.1
   model_path: ''
+  volume: 1.0
+  normalize: true
+  current_preset: voce2donna
+  current_inference_preset: ''
+kokoro_presets: {}
+kokoro_inference_presets:
+  Dynamic Prosody:
+    alpha: 1
+    beta: 1.25
+    blend_voice: ''
+    lang_code: auto
+    normalize: true
+    sentence_silence: 0.1
+    speed: 1
+    volume: 1
+  Fast & Direct:
+    alpha: 1
+    beta: 1
+    blend_voice: ''
+    lang_code: auto
+    normalize: true
+    sentence_silence: 0.05
+    speed: 1.35
+    volume: 1
+  Hyper-Speed Assistant:
+    alpha: 1
+    beta: 1
+    blend_voice: ''
+    lang_code: auto
+    normalize: true
+    sentence_silence: 0
+    speed: 1.6
+    volume: 1
+  Slow & Articulated:
+    alpha: 1
+    beta: 1.1
+    blend_voice: ''
+    lang_code: auto
+    normalize: true
+    sentence_silence: 0.2
+    speed: 0.85
+    volume: 1
+  Standard & Balanced:
+    alpha: 1
+    beta: 1
+    blend_voice: ''
+    lang_code: auto
+    normalize: true
+    sentence_silence: 0
+    speed: 1
+    volume: 1
 xtts:
-  speed: 1.4
+  speed: 1.0
   language: it
-  speaker: Camilla Holmström
-  gpu_acceleration: gpu
+  speaker: if_goblin_folletto
+  gpu_acceleration: auto
   chunk_sentences: true
-  speaker_wav: C:\Hecos\hecos\assets\voice_clones\voce antonio 1.wav
-  temperature: 0.6
-  repetition_penalty: 4.0
-  top_k: 40
-  top_p: 0.8
-  length_penalty: 0.9
+  speaker_wav: ''
+  temperature: 0.75
+  repetition_penalty: 5.0
+  top_k: 50
+  top_p: 0.85
+  length_penalty: 1.0
   current_preset: default
-xtts_presets:
-  8bitMamma 1:
-    chunk_sentences: true
-    gpu_acceleration: gpu
-    language: it
-    length_penalty: 0.9
-    repetition_penalty: 4
-    speaker: Claribel Dervla
-    speaker_wav: C:\Hecos\hecos\assets\voice_clones\8bitMamma_voce1.wav
-    speed: 1.4
-    temperature: 0.6
-    top_k: 40
-    top_p: 0.8
-  Antonio 1:
-    chunk_sentences: true
-    gpu_acceleration: gpu
-    language: it
-    length_penalty: 0.9
-    repetition_penalty: 4
-    speaker: Colette Olivier
-    speaker_wav: C:\Hecos\hecos\assets\voice_clones\voce antonio 1.wav
-    speed: 1.4
-    temperature: 0.6
-    top_k: 40
-    top_p: 0.8
-  Emanuela P:
-    chunk_sentences: true
-    gpu_acceleration: gpu
-    language: it
+xtts_presets: {}
+xtts_inference_presets:
+  Creative & Wild:
     length_penalty: 1.5
     repetition_penalty: 8
-    speaker: Claribel Dervla
-    speaker_wav: C:\Hecos\hecos\assets\voice_clones\Emanuela Pacotto voce 3 .wav
     speed: 1.1
     temperature: 1.2
     top_k: 90
     top_p: 0.95
-  Rowena 1:
-    chunk_sentences: true
-    gpu_acceleration: gpu
-    language: it
+  Expressive & Dynamic:
     length_penalty: 1.2
     repetition_penalty: 6
-    speaker: Claribel Dervla
-    speaker_wav: C:\Hecos\hecos\assets\voice_clones\Rowena voce 001.wav
     speed: 1
     temperature: 0.9
     top_k: 70
     top_p: 0.9
-xtts_inference_presets:
   Fast & Direct:
+    length_penalty: 0.9
+    repetition_penalty: 4
     speed: 1.4
     temperature: 0.6
-    repetition_penalty: 4
     top_k: 40
     top_p: 0.8
-    length_penalty: 0.9
-  Expressive & Dynamic:
-    speed: 1
-    temperature: 0.9
-    repetition_penalty: 6
-    top_k: 70
-    top_p: 0.9
-    length_penalty: 1.2
   Slow & Clear:
+    length_penalty: 0.8
+    repetition_penalty: 3
     speed: 0.8
     temperature: 0.4
-    repetition_penalty: 3
     top_k: 30
     top_p: 0.7
-    length_penalty: 0.8
-  Creative & Wild:
-    speed: 1.1
-    temperature: 1.2
-    repetition_penalty: 8
-    top_k: 90
-    top_p: 0.95
-    length_penalty: 1.5
   Stable & Monotone:
+    length_penalty: 1
+    repetition_penalty: 10
     speed: 1
     temperature: 0.1
-    repetition_penalty: 10
     top_k: 10
     top_p: 0.5
-    length_penalty: 1
+fish_speech:
+  api_url: http://127.0.0.1:8080/v1/tts
+  api_key: ''
+  reference_id: ''
+  reference_audio: ''
+  reference_text: ''
+  temperature: 0.7
+  top_p: 0.7
+  repetition_penalty: 1.2
+  max_new_tokens: 1024
+  chunk_length: 200
+  seed: 0
+  normalize: true
+  use_memory_cache: true
+  chunk_sentences: true
+  current_preset: default
+  current_inference_preset: ''
+  model_checkpoint: s2-pro
+  volume: 1.0
+fish_speech_presets: {}
+fish_speech_inference_presets:
+  Creative & Wild:
+    chunk_length: 220
+    max_new_tokens: 512
+    normalize: true
+    repetition_penalty: 1.25
+    temperature: 0.75
+    top_p: 0.8
+    use_memory_cache: true
+  Expressive & Dynamic:
+    chunk_length: 220
+    max_new_tokens: 512
+    normalize: true
+    repetition_penalty: 1.25
+    temperature: 0.75
+    top_p: 0.8
+    use_memory_cache: true
+  Fast & Direct:
+    chunk_length: 160
+    max_new_tokens: 384
+    normalize: true
+    repetition_penalty: 1.15
+    temperature: 0.5
+    top_p: 0.6
+    use_memory_cache: true
+  Stable & Monotone:
+    chunk_length: 200
+    max_new_tokens: 512
+    normalize: true
+    repetition_penalty: 1.3
+    temperature: 0.4
+    top_p: 0.5
+    use_memory_cache: true
+  Standard & Balanced:
+    chunk_length: 200
+    max_new_tokens: 512
+    normalize: true
+    repetition_penalty: 1.2
+    temperature: 0.7
+    top_p: 0.7
+    use_memory_cache: true
 listening_status: true
 energy_threshold: 450
 silence_timeout: 5
@@ -124,3 +225,5 @@ ptt_sources:
   custom_key: false
 custom_ptt_key: ''
 tts_history_max_files: 100
+tts_cache_enabled: true
+tts_cache_max_mb: 500

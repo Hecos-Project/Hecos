@@ -37,17 +37,23 @@ class LegacyTagParser:
                 is_img = cmd_clean.lower().startswith(("/img", "/image", "/photo", "/foto"))
                 if is_img:
                     img_cmd_count += 1
-                    # Hard cap per single LLM response: at most 2 images in one text
-                    if img_cmd_count > 2:
+                    # Safety upper bound for single response (tool_dispatcher will enforce precise limit)
+                    if img_cmd_count > 20:
                         continue
                 tags_found.append(("direct_command", cmd_clean, "slash", None))
                 
-            # Fallback: some LLMs might hallucinate HTML tags like <img description>
+            # Fallback: some LLMs might emit HTML tags like <img description> or <img prompt="description">
             if img_cmd_count == 0:
                 html_img_matches = re.findall(r'<img\s+([^>]+)>', base_text, flags=re.IGNORECASE)
                 for img_desc in html_img_matches:
-                    cmd_clean = f"/img {img_desc.strip()}"
+                    # Ignore actual HTML tags with URLs/paths in src (e.g. <img src="/api/images/...">)
+                    if re.search(r'src\s*=\s*["\'](?:/api/|http|data:|file:)', img_desc, re.IGNORECASE):
+                        continue
+                    clean_desc = re.sub(r'^(?:prompt|alt|title)\s*=\s*["\'](.*?)["\']', r'\1', img_desc.strip(), flags=re.IGNORECASE)
+                    cmd_clean = f"/img {clean_desc.strip()}"
                     if cmd_clean not in seen_cmds:
                         seen_cmds.add(cmd_clean)
+                        img_cmd_count += 1
                         tags_found.append(("direct_command", cmd_clean, "slash", None))
-                        break  # Cap at 1 fallback image
+                        if img_cmd_count >= 20:
+                            break

@@ -18,6 +18,8 @@
     };
 </script>
 <script>
+    window.VERSION = "{{ version }}";
+    window.HECOS_VERSION = "{{ version }}";
     window.cfg = {{ zconfig | tojson | safe }};
     window.sysOptions = {% if zoptions %}{{ zoptions | tojson | safe }}{% else %}{}{% endif %};
     window.currentUser = {

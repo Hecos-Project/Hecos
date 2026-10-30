@@ -160,7 +160,14 @@ window.bindPTTKeyboard = function() {
       if (_isPTTKeyDown) return; // Ignore repeat events
 
       // PTT must be enabled (or mic on)
-      if (typeof window.currentPTTOn !== 'undefined' && !window.currentPTTOn) {
+      if (typeof window.currentPTTOn !== 'undefined' && !window.currentPTTOn && !window.currentMicOn) {
+        return;
+      }
+
+      // If system STT / backend hardware PTT is active (default in Hecos),
+      // ptt_bus.py (pynput) is already capturing Ctrl+Shift globally on the host.
+      // Do not duplicate with browser WebAudio recording!
+      if (window.currentSTTSource !== 'web') {
         return;
       }
 

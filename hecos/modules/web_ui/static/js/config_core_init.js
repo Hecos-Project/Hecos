@@ -111,7 +111,12 @@ async function initAll(attempt = 1) {
 
         fetchWithTimeout('/api/audio/config')
             .then(r => r.ok ? r.json() : null)
-            .then(data => { if (data && data.config) audioConfig = data.config; })
+            .then(data => {
+                if (data && data.config) {
+                    audioConfig = data.config;
+                    window.audioConfig = data.config;
+                }
+            })
             .catch(() => {});
 
         // 2e. Media config (fast)

@@ -63,7 +63,21 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
 
         try:
             registry, installer, _ = _get_hpm_components(_hecos_src)
-            result = installer.install_bytes(hpkg_bytes, require_signature=not allow_unsigned, skip_dep_check=skip_dep)
+            from hecos.core.progress import progress
+            phases = [
+                ("validation", "Validation", 0.10),
+                ("signature", "Signature check", 0.10),
+                ("dependencies", "Dependencies", 0.35),
+                ("install", "Installing files", 0.35),
+                ("register", "Registration", 0.10),
+            ]
+            task_id = f"hpm_local_{hpkg_file.filename}"
+            with progress.task(task_id, title=f"Installing {hpkg_file.filename}", source="HPM", phases=phases, cancellable=False) as ptask:
+                result = installer.install_bytes(hpkg_bytes, require_signature=not allow_unsigned, skip_dep_check=skip_dep)
+                if result.success:
+                    ptask.done(f"{hpkg_file.filename} installed successfully.")
+                else:
+                    ptask.fail(result.error or "Installation failed.")
 
             if result.success:
                 # ── Clear Config Panel Cache ──
@@ -250,7 +264,21 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
             try:
                 hpkg_bytes = hpkg_file.read()
                 log.info(f"[HPM:Batch] Installing: {filename} ({len(hpkg_bytes)} bytes)")
-                result = installer.install_bytes(hpkg_bytes, require_signature=not allow_unsigned, skip_dep_check=skip_dep)
+                from hecos.core.progress import progress
+                phases = [
+                    ("validation", "Validation", 0.10),
+                    ("signature", "Signature check", 0.10),
+                    ("dependencies", "Dependencies", 0.35),
+                    ("install", "Installing files", 0.35),
+                    ("register", "Registration", 0.10),
+                ]
+                task_id = f"hpm_local_{filename}"
+                with progress.task(task_id, title=f"Installing {filename}", source="HPM", phases=phases, cancellable=False) as ptask:
+                    result = installer.install_bytes(hpkg_bytes, require_signature=not allow_unsigned, skip_dep_check=skip_dep)
+                    if result.success:
+                        ptask.done(f"{filename} installed successfully.")
+                    else:
+                        ptask.fail(result.error or "Installation failed.")
 
                 if result.success:
                     # ── Hot-patch Jinja & re-discover extensions ──

@@ -75,11 +75,13 @@ def init_system_diagnostic_routes(app, cfg_mgr, logger):
         """Triggers the async background installation of a dependency."""
         try:
             from hecos.core.ext_deps import install_dep_async
+            body = request.get_json(silent=True) or {}
+            force = body.get("force", False) or (request.args.get("force", "0") in ("1", "true"))
             
             def _on_done(success, message):
                 logger.info(f"[EDM API] Async install for {dep_id} finished. Success: {success}, msg: {message}")
 
-            install_dep_async(dep_id, on_done=_on_done)
+            install_dep_async(dep_id, on_done=_on_done, force=force)
             return jsonify({"ok": True, "message": f"Installation of {dep_id} started in background."})
         except ImportError:
             return jsonify({"ok": False, "error": "EDM module not available"}), 501

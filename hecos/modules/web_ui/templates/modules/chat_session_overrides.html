@@ -187,9 +187,11 @@
                 <div class="sf-control-group">
                     <label>TTS Engine</label>
                     <select id="so-tts-engine-select" class="form-control" onchange="window.soDirty(); window.soUpdateVoicesDropdown()">
+                        <option value="">-- System Default --</option>
                         <option value="xtts2">XTTSv2</option>
                         <option value="piper">Piper</option>
                         <option value="kokoro">Kokoro</option>
+                        <option value="fish_speech">Fish Speech</option>
                     </select>
                 </div>
                 <div class="sf-control-group">
@@ -246,6 +248,100 @@
                     <div class="sf-slider-item">
                         <label>Length Penalty <span id="so-val-xtts-length-penalty">1.0</span></label>
                         <input type="range" id="so-xtts-length-penalty" min="0.0" max="5.0" step="0.1" value="1.0" oninput="window.soUpdateSliderVal(this, 'so-val-xtts-length-penalty'); window.soDirty()">
+                    </div>
+                </div>
+            </div>
+
+            <div id="so-fish-controls" style="display:none; margin-top:15px;">
+                <div class="sf-controls-row" style="margin-bottom:15px;">
+                    <div class="sf-control-group" style="flex: 1;">
+                        <label>Fish Speech Preset</label>
+                        <select id="so-fish-preset-select" class="form-control" onchange="window.soApplyFishPreset(this.value)">
+                            <option value="">-- No Fish Preset --</option>
+                        </select>
+                    </div>
+                    <div class="sf-control-group" style="flex: 2;">
+                        <label>Voice Clone Reference (.wav path)</label>
+                        <input type="text" id="so-fish-speaker-wav" class="form-control" placeholder="/path/to/voice.wav" oninput="window.soDirty()" style="width: 100%; box-sizing: border-box;">
+                    </div>
+                </div>
+                <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>Fish Speech Inference Parameters</span>
+                    <div style="display:flex; gap:4px; align-items:center;">
+                        <div class="sf-control-group" style="flex:unset; width:150px; margin-bottom:0;">
+                            <select id="so-fish-inference-preset-select" class="form-control" onchange="window.soApplyFishInferencePreset(this.value)" style="padding: 2px 5px; font-size:11px; width:100%;">
+                                <option value="">-- Inference Preset --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="sf-sliders-grid">
+                    <div class="sf-slider-item">
+                        <label>Temperature <span id="so-val-fish-temp">0.7</span></label>
+                        <input type="range" id="so-fish-temp" min="0.1" max="2.0" step="0.05" value="0.7" oninput="window.soUpdateSliderVal(this, 'so-val-fish-temp'); window.soDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Top P <span id="so-val-fish-topp">0.7</span></label>
+                        <input type="range" id="so-fish-topp" min="0.1" max="1.0" step="0.01" value="0.7" oninput="window.soUpdateSliderVal(this, 'so-val-fish-topp'); window.soDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Repetition Pen. <span id="so-val-fish-reppen">1.2</span></label>
+                        <input type="range" id="so-fish-reppen" min="1.0" max="3.0" step="0.05" value="1.2" oninput="window.soUpdateSliderVal(this, 'so-val-fish-reppen'); window.soDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Chunk Length <span id="so-val-fish-chunk-length">200</span></label>
+                        <input type="range" id="so-fish-chunk-length" min="50" max="500" step="10" value="200" oninput="window.soUpdateSliderVal(this, 'so-val-fish-chunk-length'); window.soDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Max Tokens <span id="so-val-fish-max-tokens">1024</span></label>
+                        <input type="range" id="so-fish-max-tokens" min="256" max="2048" step="64" value="1024" oninput="window.soUpdateSliderVal(this, 'so-val-fish-max-tokens'); window.soDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Volume / Gain <span id="so-val-fish-volume">1.0</span></label>
+                        <input type="range" id="so-fish-volume" min="0.5" max="2.0" step="0.05" value="1.0" oninput="window.soUpdateSliderVal(this, 'so-val-fish-volume'); window.soDirty()">
+                    </div>
+                </div>
+            </div>
+
+            <div id="so-kokoro-controls" style="display:none; margin-top:15px;">
+                <div class="sf-controls-row" style="margin-bottom:15px;">
+                    <div class="sf-control-group" style="flex: 1;">
+                        <label>Kokoro Preset</label>
+                        <select id="so-kokoro-preset-select" class="form-control" onchange="window.soApplyKokoroPreset(this.value)">
+                            <option value="">-- No Kokoro Preset --</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>Kokoro Inference Parameters</span>
+                    <div style="display:flex; gap:4px; align-items:center;">
+                        <div class="sf-control-group" style="flex:unset; width:150px; margin-bottom:0;">
+                            <select id="so-kokoro-inference-preset-select" class="form-control" onchange="window.soApplyKokoroInferencePreset(this.value)" style="padding: 2px 5px; font-size:11px; width:100%;">
+                                <option value="">-- Inference Preset --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="sf-sliders-grid">
+                    <div class="sf-slider-item">
+                        <label>Speed <span id="so-val-kokoro-speed">1.0</span></label>
+                        <input type="range" id="so-kokoro-speed" min="0.5" max="2.0" step="0.05" value="1.0" oninput="window.soUpdateSliderVal(this, 'so-val-kokoro-speed'); window.soDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Sentence Silence (s) <span id="so-val-kokoro-silence">0.0</span></label>
+                        <input type="range" id="so-kokoro-silence" min="0.0" max="2.0" step="0.05" value="0.0" oninput="window.soUpdateSliderVal(this, 'so-val-kokoro-silence'); window.soDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Voice Weight (Alpha) <span id="so-val-kokoro-alpha">1.0</span></label>
+                        <input type="range" id="so-kokoro-alpha" min="0.0" max="1.0" step="0.05" value="1.0" oninput="window.soUpdateSliderVal(this, 'so-val-kokoro-alpha'); window.soDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Blend Weight (Beta) <span id="so-val-kokoro-beta">1.0</span></label>
+                        <input type="range" id="so-kokoro-beta" min="0.0" max="1.0" step="0.05" value="1.0" oninput="window.soUpdateSliderVal(this, 'so-val-kokoro-beta'); window.soDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Volume <span id="so-val-kokoro-volume">1.0</span></label>
+                        <input type="range" id="so-kokoro-volume" min="0.1" max="2.0" step="0.05" value="1.0" oninput="window.soUpdateSliderVal(this, 'so-val-kokoro-volume'); window.soDirty()">
                     </div>
                 </div>
             </div>

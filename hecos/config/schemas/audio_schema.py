@@ -17,8 +17,16 @@ class PttSources(BaseModel):
 class KokoroConfig(BaseModel):
     speed: float = 1.0
     voice: str = "af_heart"   # Default kokoro voice ID
+    lang_code: str = "auto"   # Auto-detect or explicit G2P language ('i', 'a', 'b', 'e', 'f', 'j', 'z', 'p', 'h')
+    blend_voice: str = ""     # Secondary voice for StyleTTS 2 voice blending
+    alpha: float = 1.0        # Timbre / Style weight (0.0 - 2.0, 1.0 = standard / 100% primary)
+    beta: float = 1.0         # Prosody / Cadence weight (0.0 - 2.0, 1.0 = standard / 100% primary)
     sentence_silence: float = 0.0 # Pause in seconds between chunks
     model_path: str = ""      # Optional offline model path
+    volume: float = 1.0       # Audio output volume factor / gain (0.5 - 2.0)
+    normalize: bool = True    # Loudness normalization to match broadcast / system levels
+    current_preset: str = "default"
+    current_inference_preset: str = "" # Selected inference preset
 
 class XttsConfig(BaseModel):
     speed: float = 1.0
@@ -34,11 +42,31 @@ class XttsConfig(BaseModel):
     length_penalty: float = 1.0
     current_preset: str = "default"
 
+class FishSpeechConfig(BaseModel):
+    api_url: str = "http://127.0.0.1:8080/v1/tts"
+    api_key: str = ""
+    reference_id: str = ""            # Local folder in references/ or Fish Audio cloud model ID
+    reference_audio: str = ""         # Path or filename in assets/voice_clones
+    reference_text: str = ""          # Transcript of reference audio
+    temperature: float = 0.7
+    top_p: float = 0.7
+    repetition_penalty: float = 1.2
+    max_new_tokens: int = 1024
+    chunk_length: int = 200           # Iterative prompt window length (100 - 300)
+    seed: int = 0                     # 0 = random, >0 = deterministic
+    normalize: bool = True            # Text normalization
+    use_memory_cache: bool = True     # In-memory VQ-GAN cache for fast repeat inference
+    chunk_sentences: bool = True
+    current_preset: str = "default"
+    current_inference_preset: str = ""
+    model_checkpoint: str = "s2-pro"  # Subfolder in hecos/engines/fish_speech/checkpoints/
+    volume: float = 1.0               # Audio output loudness normalization and volume factor
+
 class AudioConfig(BaseModel):
     """Root schema for config/audio.yaml"""
 
     # --- TTS Engine Routing ---
-    active_engine: str = "piper"  # 'piper', 'kokoro', 'xtts2'
+    active_engine: str = "piper"  # 'piper', 'kokoro', 'xtts2', 'fish_speech'
     
     # --- TTS (Piper) ---
     voice_status: bool = True
@@ -48,10 +76,27 @@ class AudioConfig(BaseModel):
     noise_scale: float = 0.817
     noise_w: float = 0.9
     sentence_silence: float = 0.1
+    volume: float = 1.0
     piper_timeout: int = 180
+    piper_current_inference_preset: str = ""
+    piper_inference_presets: dict = {
+        "Standard & Balanced": {"speed": 1.0, "sentence_silence": 0.2, "noise_scale": 0.67, "noise_w": 0.8, "volume": 1.0},
+        "Expressive & Dynamic": {"speed": 1.05, "sentence_silence": 0.25, "noise_scale": 1.2, "noise_w": 1.2, "volume": 1.0},
+        "Fast & Direct": {"speed": 1.35, "sentence_silence": 0.05, "noise_scale": 0.6, "noise_w": 0.7, "volume": 1.0},
+        "Stable & Monotone": {"speed": 1.0, "sentence_silence": 0.15, "noise_scale": 0.0, "noise_w": 0.0, "volume": 1.0},
+        "Creative & Wild": {"speed": 1.15, "sentence_silence": 0.35, "noise_scale": 1.6, "noise_w": 1.5, "volume": 1.0}
+    }
 
     # --- TTS (Kokoro) ---
     kokoro: KokoroConfig = KokoroConfig()
+    kokoro_presets: dict = {}
+    kokoro_inference_presets: dict = {
+        "Standard & Balanced": {"speed": 1.0, "alpha": 1.0, "beta": 1.0, "sentence_silence": 0.0, "blend_voice": "", "lang_code": "auto", "volume": 1.0, "normalize": True},
+        "Fast & Direct": {"speed": 1.35, "alpha": 1.0, "beta": 1.0, "sentence_silence": 0.05, "blend_voice": "", "lang_code": "auto", "volume": 1.0, "normalize": True},
+        "Slow & Articulated": {"speed": 0.85, "alpha": 1.0, "beta": 1.1, "sentence_silence": 0.2, "blend_voice": "", "lang_code": "auto", "volume": 1.0, "normalize": True},
+        "Hyper-Speed Assistant": {"speed": 1.6, "alpha": 1.0, "beta": 1.0, "sentence_silence": 0.0, "blend_voice": "", "lang_code": "auto", "volume": 1.0, "normalize": True},
+        "Dynamic Prosody": {"speed": 1.0, "alpha": 1.0, "beta": 1.25, "sentence_silence": 0.1, "blend_voice": "", "lang_code": "auto", "volume": 1.0, "normalize": True}
+    }
     
     # --- TTS (XTTS2) ---
     xtts: XttsConfig = XttsConfig()
@@ -62,6 +107,17 @@ class AudioConfig(BaseModel):
         "Slow & Clear": {"speed": 0.8, "temperature": 0.4, "repetition_penalty": 3.0, "top_k": 30, "top_p": 0.7, "length_penalty": 0.8},
         "Creative & Wild": {"speed": 1.1, "temperature": 1.2, "repetition_penalty": 8.0, "top_k": 90, "top_p": 0.95, "length_penalty": 1.5},
         "Stable & Monotone": {"speed": 1.0, "temperature": 0.1, "repetition_penalty": 10.0, "top_k": 10, "top_p": 0.5, "length_penalty": 1.0}
+    }
+
+    # --- TTS (Fish Speech) ---
+    fish_speech: FishSpeechConfig = FishSpeechConfig()
+    fish_speech_presets: dict = {}
+    fish_speech_inference_presets: dict = {
+        "Standard & Balanced": {"temperature": 0.7, "top_p": 0.7, "repetition_penalty": 1.2, "max_new_tokens": 512, "chunk_length": 200, "normalize": True, "use_memory_cache": True},
+        "Expressive & Dynamic": {"temperature": 0.75, "top_p": 0.8, "repetition_penalty": 1.25, "max_new_tokens": 512, "chunk_length": 220, "normalize": True, "use_memory_cache": True},
+        "Fast & Direct": {"temperature": 0.5, "top_p": 0.6, "repetition_penalty": 1.15, "max_new_tokens": 384, "chunk_length": 160, "normalize": True, "use_memory_cache": True},
+        "Creative & Wild": {"temperature": 0.75, "top_p": 0.8, "repetition_penalty": 1.25, "max_new_tokens": 512, "chunk_length": 220, "normalize": True, "use_memory_cache": True},
+        "Stable & Monotone": {"temperature": 0.4, "top_p": 0.5, "repetition_penalty": 1.3, "max_new_tokens": 512, "chunk_length": 200, "normalize": True, "use_memory_cache": True}
     }
 
     # --- STT / Listening ---
@@ -76,5 +132,7 @@ class AudioConfig(BaseModel):
     ptt_sources:    PttSources = PttSources()
     custom_ptt_key: str = ""           # e.g. "f8" or "ctrl+alt+space"
 
-    # --- TTS Audio History ---
+    # --- TTS Audio History & Cache ---
     tts_history_max_files: int = 100   # Max WAV files to keep in media/audio/history/
+    tts_cache_enabled: bool = True     # Persistent cache for synthesized TTS audio
+    tts_cache_max_mb: int = 500        # Maximum size in MB for TTS cache folder

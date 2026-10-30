@@ -52,5 +52,15 @@
     "hub_mod_mail": "Mail",
     "hub_mod_templates": "Templates",
     "hub_mod_lists": "Liste",
-    "hub_mod_backup": "Backup Globale"
+    "hub_mod_backup": "Backup Globale",
+    "hub_show_all": "Mostra tutti",
+    "hub_paginate": "Pagina",
+    "hub_page": "pagina",
+    "hub_pages": "pagine",
+    "hub_prev_page": "Pagina precedente (Freccia Sinistra)",
+    "hub_next_page": "Pagina successiva (Freccia Destra)",
+    "hub_cards_per_page": "Card per pagina",
+    "hub_contains_new": "Contiene nuovi pannelli installati",
+    "hub_paginate_cat_tip": "Attiva paginazione per questa categoria",
+    "hub_show_all_tip": "Mostra tutte le card (disattiva paginazione)"
 }

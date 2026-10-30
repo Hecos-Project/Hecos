@@ -44,6 +44,13 @@ class MediaInterceptor:
                 if isinstance(out, str) and ("HTML:" in out or "PDF:" in out):
                     if "HTML:" not in extracted_text or "PDF:" not in extracted_text:
                         extracted_text += f"\n\n{out}"
+
+                # 4. Handle Deep Search [[HSEARCH:...]] session tokens
+                if isinstance(out, str):
+                    hsearch_tags = re.findall(r'\[\[HSEARCH:([a-zA-Z0-9_-]+)\]\]', out)
+                    for sid in hsearch_tags:
+                        if f"[[HSEARCH:{sid}]]" not in extracted_text:
+                            extracted_text += f"\n\n[[HSEARCH:{sid}]]"
                     
         return extracted_text
 

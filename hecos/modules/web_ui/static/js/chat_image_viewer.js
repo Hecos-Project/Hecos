@@ -69,15 +69,23 @@ window.openChatGallery = async function(url) {
 };
 
 // ── Open media folder directly ───────────────────────────────────────────────
-window.openMediaFolder = async function() {
-  try {
-    const res = await fetch('/api/open_media_folder', { method: 'POST' });
-    const data = await res.json();
-    if (!data.ok) console.error("Error opening folder:", data.error);
-  } catch (err) {
-    console.error("Failed to call API:", err);
-  }
-};
+if (!window.openMediaFolder) {
+  window.openMediaFolder = async function() {
+    try {
+      const res = await fetch('/hecos/api/media/open-folder', { method: 'POST', credentials: 'include' });
+      const data = await res.json();
+      if (data.ok) {
+        if (window.showToast) window.showToast('📂 Cartella Media aperta');
+      } else {
+        console.error("Error opening folder:", data.error);
+        if (window.showToast) window.showToast('⚠️ ' + (data.error || 'Impossibile aprire la cartella'), 'error');
+      }
+    } catch (err) {
+      console.error("Failed to call API:", err);
+      if (window.showToast) window.showToast('⚠️ Errore apertura cartella', 'error');
+    }
+  };
+}
 
 // ── Open persona folder directly ───────────────────────────────────────────────
 window.openPersonaMediaFolder = async function(persona) {

@@ -229,6 +229,10 @@ window.appendMessage = function(role, text, opts = {}) {
     let displayHtml = text;
     let thinkText = null;
 
+    if (role === 'user' && displayHtml && displayHtml.includes('[CONTESTO ALLEGATO]:')) {
+        displayHtml = displayHtml.split('[CONTESTO ALLEGATO]:')[0].trim();
+    }
+
     if (role !== 'user' && text) {
         // 1. Native JSON format fallback for history
         if (text.trim().startsWith('{') && text.trim().endsWith('}')) {
@@ -260,7 +264,11 @@ window.appendMessage = function(role, text, opts = {}) {
         }
     }
 
-    const { bubble } = window.addBubble(role, displayHtml, null, opts);
+    const { msg, bubble } = window.addBubble(role, displayHtml, null, opts);
+    if (bubble && bubble.querySelector('.chat-pdf-preview')) {
+        bubble.classList.add('has-pdf');
+        if (msg) msg.classList.add('has-pdf');
+    }
     if (thinkText && window.renderThinkBlock) {
         window.renderThinkBlock(thinkText, bubble);
     }

@@ -14,11 +14,13 @@ Registers:
 ────────────────────────────────────────────────────────────────────────────
 """
 import os
+import json
 import base64
 import subprocess
 import logging
 from flask import jsonify, request, send_from_directory, send_file
-from hecos.core.constants import SNAPSHOTS_DIR, IMAGES_DIR
+from urllib.parse import quote, unquote
+from hecos.core.constants import SNAPSHOTS_DIR, IMAGES_DIR, MEDIA_DIR
 
 _chat_log = logging.getLogger("HecosChatRoutes")
 
@@ -83,7 +85,8 @@ def init_chat_media_routes(app, logger):
                     save_path = os.path.join(docs_dir, name)
                     with open(save_path, "wb") as out:
                         out.write(raw_data)
-                    saved_files.append({"name": name, "path": save_path, "url": f"/api/local_file?path={save_path}"})
+                    norm_path = save_path.replace("\\", "/")
+                    saved_files.append({"name": name, "path": norm_path, "url": f"/api/local_file?path={quote(norm_path)}"})
 
                 elif ext == ".pdf":
                     try:
@@ -98,7 +101,8 @@ def init_chat_media_routes(app, logger):
                     save_path = os.path.join(docs_dir, name)
                     with open(save_path, "wb") as out:
                         out.write(raw_data)
-                    saved_files.append({"name": name, "path": save_path, "url": f"/api/local_file?path={save_path}"})
+                    norm_path = save_path.replace("\\", "/")
+                    saved_files.append({"name": name, "path": norm_path, "url": f"/api/local_file?path={quote(norm_path)}"})
 
                 elif ext == ".docx":
                     try:
@@ -113,7 +117,8 @@ def init_chat_media_routes(app, logger):
                     save_path = os.path.join(docs_dir, name)
                     with open(save_path, "wb") as out:
                         out.write(raw_data)
-                    saved_files.append({"name": name, "path": save_path, "url": f"/api/local_file?path={save_path}"})
+                    norm_path = save_path.replace("\\", "/")
+                    saved_files.append({"name": name, "path": norm_path, "url": f"/api/local_file?path={quote(norm_path)}"})
 
                 elif ext in (".png", ".jpg", ".jpeg", ".webp"):
                     b64      = base64.b64encode(raw_data).decode("utf-8")
@@ -125,7 +130,8 @@ def init_chat_media_routes(app, logger):
                     save_path = os.path.join(IMAGES_DIR, name)
                     with open(save_path, "wb") as out:
                         out.write(raw_data)
-                    saved_files.append({"name": name, "path": save_path, "url": f"/api/images/{name}"})
+                    norm_path = save_path.replace("\\", "/")
+                    saved_files.append({"name": name, "path": norm_path, "url": f"/api/images/{name}"})
 
                 else:
                     context_parts.append(f"--- {name} ---\n[Tipo file non supportato: {ext}]")
@@ -133,7 +139,8 @@ def init_chat_media_routes(app, logger):
                     save_path = os.path.join(docs_dir, name)
                     with open(save_path, "wb") as out:
                         out.write(raw_data)
-                    saved_files.append({"name": name, "path": save_path, "url": f"/api/local_file?path={save_path}"})
+                    norm_path = save_path.replace("\\", "/")
+                    saved_files.append({"name": name, "path": norm_path, "url": f"/api/local_file?path={quote(norm_path)}"})
 
             except Exception as e:
                 context_parts.append(f"--- {name} ---\n[Errore durante la lettura: {e}]")
@@ -170,16 +177,18 @@ def init_chat_media_routes(app, logger):
             return send_from_directory(IMAGES_DIR, filename)
         return jsonify({"error": "Image not found"}), 404
 
-    @app.route("/api/open_media_folder", methods=["POST"])
+    @app.route("/api/open_media_folder", methods=["GET", "POST"])
     def api_open_media_folder():
-        """Opens the media/images folder in the OS file manager."""
-        os.makedirs(IMAGES_DIR, exist_ok=True)
+        """Opens the centralized media folder (or subfolder) in the native OS file manager."""
+        target = request.args.get("target") or (request.get_json(silent=True) or {}).get("target")
+        folder = IMAGES_DIR if target == "images" else MEDIA_DIR
+        os.makedirs(folder, exist_ok=True)
         try:
-            if os.name == "nt":
-                os.startfile(IMAGES_DIR)
-            else:
-                subprocess.Popen(["xdg-open", IMAGES_DIR])
-            return jsonify({"ok": True})
+            from hecos.core.system.os_adapter import OSAdapter
+            details = OSAdapter.open_path_detailed(folder)
+            if details.get("ok"):
+                return jsonify({"ok": True, "path": folder, "details": details})
+            return jsonify({"ok": False, "error": details.get("error") or "Native file manager failed to launch", "details": details}), 500
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
     @app.route("/api/serve_html", methods=["GET"])
@@ -257,8 +266,39 @@ def init_chat_media_routes(app, logger):
         from flask import Response
 
         path = request.args.get("path", "")
+        # Recursively unwrap if path was nested inside /api/local_file?path= or URL-encoded
+        while "?path=" in path:
+            path = unquote(path.split("?path=", 1)[1])
+        path = path.replace("\\", "/")
+
+        # If path does not exist directly, try resolving candidate files
         if not path or not os.path.exists(path):
-            return jsonify({"error": "File not found"}), 404
+            docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "media", "documents")
+            basename = os.path.basename(path)
+            candidate = os.path.join(docs_dir, basename)
+            if os.path.exists(candidate):
+                path = candidate
+            else:
+                # Match if filename was concatenated without slashes (e.g. C:Hecos...file.pdf)
+                matched = False
+                if os.path.exists(docs_dir):
+                    for fname in os.listdir(docs_dir):
+                        if path.lower().endswith(fname.lower()):
+                            candidate_match = os.path.join(docs_dir, fname)
+                            if os.path.exists(candidate_match):
+                                path = candidate_match
+                                matched = True
+                                break
+                if not matched and os.path.exists(IMAGES_DIR):
+                    for fname in os.listdir(IMAGES_DIR):
+                        if path.lower().endswith(fname.lower()):
+                            candidate_match = os.path.join(IMAGES_DIR, fname)
+                            if os.path.exists(candidate_match):
+                                path = candidate_match
+                                matched = True
+                                break
+                if not matched and not os.path.exists(path):
+                    return jsonify({"error": "File not found"}), 404
 
         try:
             file_size = os.path.getsize(path)
@@ -297,12 +337,18 @@ def init_chat_media_routes(app, logger):
                 rv.headers["Accept-Ranges"] = "bytes"
                 rv.headers["Content-Length"] = str(length)
                 rv.headers["Content-Type"] = mime_type
+                rv.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                rv.headers["Pragma"] = "no-cache"
+                rv.headers["Expires"] = "0"
                 return rv
             else:
                 # No Range header: serve the whole file but advertise range support
                 resp = send_file(path, mimetype=mime_type)
                 resp.headers["Accept-Ranges"] = "bytes"
                 resp.headers["Content-Length"] = str(file_size)
+                resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                resp.headers["Pragma"] = "no-cache"
+                resp.headers["Expires"] = "0"
                 return resp
 
         except Exception as e:
@@ -419,4 +465,78 @@ def init_chat_media_routes(app, logger):
         except Exception as e:
             _chat_log.error(f"[ChatMedia] doc_generate_pdf_from_editor error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/api/plugins/document_maker/config", methods=["GET"])
+    def doc_config_get():
+        """Get Document Maker configuration."""
+        try:
+            hecos_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            cfg_path = os.path.join(hecos_root, "hecos", "hpm", "document_maker", "docs_config.json")
+            if not os.path.exists(cfg_path):
+                cfg_path = os.path.join(hecos_root, "hpm", "document_maker", "docs_config.json")
+            data = {}
+            if os.path.exists(cfg_path):
+                with open(cfg_path, "r", encoding="utf-8-sig") as f:
+                    data = json.load(f)
+            return jsonify(data)
+        except Exception as e:
+            _chat_log.error(f"[ChatMedia] doc_config GET error: {e}")
+            return jsonify({}), 500
+
+    @app.route("/hecos/api/plugins/document_maker/config", methods=["POST"])
+    def doc_config_post():
+        """Save Document Maker configuration."""
+        try:
+            payload = request.get_json(force=True) or {}
+            hecos_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            paths = [
+                os.path.join(hecos_root, "hecos", "hpm", "document_maker", "docs_config.json"),
+                os.path.join(hecos_root, "hpm", "document_maker", "docs_config.json"),
+                os.path.join("C:\\Hecos-Packages\\sources\\plugins\\document_maker_src", "docs_config.json")
+            ]
+            saved = False
+            for p in paths:
+                try:
+                    os.makedirs(os.path.dirname(p), exist_ok=True)
+                    with open(p, "w", encoding="utf-8") as f:
+                        json.dump(payload, f, indent=4, ensure_ascii=False)
+                    saved = True
+                except Exception:
+                    pass
+            if saved:
+                return jsonify({"ok": True})
+            return jsonify({"ok": False, "error": "Could not write config"}), 500
+        except Exception as e:
+            _chat_log.error(f"[ChatMedia] doc_config POST error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/api/plugins/document_maker/templates", methods=["GET"])
+    def doc_templates_get():
+        """Return available templates for Document Maker."""
+        try:
+            hecos_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            tpl_file = os.path.join(hecos_root, "hecos", "data", "templates.json")
+            if not os.path.exists(tpl_file):
+                tpl_file = os.path.join(hecos_root, "data", "templates.json")
+            templates = []
+            if os.path.exists(tpl_file):
+                with open(tpl_file, "r", encoding="utf-8") as f:
+                    raw = json.load(f)
+                items = raw.values() if isinstance(raw, dict) else raw
+                for t in items:
+                    if t.get("channel") in ("document", "doc") or "doc" in t.get("id", "") or "rivista" in t.get("name", "").lower():
+                        templates.append({
+                            "id": t.get("id"),
+                            "name": t.get("name"),
+                            "channel": t.get("channel", "document"),
+                            "description": t.get("description", ""),
+                            "variables": t.get("variables", []),
+                            "body_html": t.get("body_html", ""),
+                            "body_text": t.get("body_text", "")
+                        })
+            return jsonify({"ok": True, "templates": templates, "count": len(templates)})
+        except Exception as e:
+            _chat_log.error(f"[ChatMedia] doc_templates GET error: {e}")
+            return jsonify({"ok": False, "templates": [], "error": str(e)}), 500
+
 

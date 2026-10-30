@@ -251,31 +251,21 @@ class DependencyResolver:
             logger.info(f"[HPM:Resolver] pip install: {req}")
             self._emit("hpm:progress", {"step": "pip", "message": f"pip install {req}..."})
             try:
-                proc = subprocess.Popen(
-                    [python_exe, "-m", "pip", "install", req, "--no-input"],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    bufsize=1
+                from hecos.core.progress.adapters.pip import run_pip
+                def _pip_cb(data):
+                    self._emit("hpm:progress", data)
+
+                retcode, output = run_pip(
+                    ["install", req, "--no-input"],
+                    python_exe=python_exe,
+                    on_progress=_pip_cb,
                 )
-                for line in iter(proc.stdout.readline, ""):
-                    if line:
-                        line_clean = line.strip()
-                        # Also log to file if needed, but primarily emit to UI
-                        self._emit("hpm:progress", {"step": "pip_log", "message": line_clean})
-                proc.stdout.close()
-                retcode = proc.wait(timeout=600)
-                
                 if retcode != 0:
                     logger.error(f"[HPM:Resolver] pip install failed for {req} with code {retcode}.")
                     report.pip_failures.append(req)
                 else:
                     logger.info(f"[HPM:Resolver] pip: '{req}' installed successfully.")
                     report.pip_installed.append(req)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                logger.error(f"[HPM:Resolver] pip install timed out for {req}.")
-                report.pip_failures.append(req)
             except Exception as e:
                 logger.error(f"[HPM:Resolver] pip install error for {req}: {e}")
                 report.pip_failures.append(req)

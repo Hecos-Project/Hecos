@@ -156,7 +156,15 @@ window.hpmStoreShowReadMe = async function (pkgId) {
                        color:${meta.color};background:${meta.color}18;padding:2px 8px;border-radius:20px;border:1px solid ${meta.color}44;display:inline-flex;align-items:center;line-height:1.2;">
             <i class="fas ${meta.icon}" style="margin-right:4px;"></i>${meta.shortLabel || meta.label}
           </span>
-          <span style="font-size:0.75em;color:var(--muted);">v${_hesc(pkg.version)}</span>
+          <span style="font-size:0.75em;color:var(--muted);" title="Store catalog version">v${_hesc(pkg.version)}</span>
+          ${pkg.installed && pkg.installed_version && pkg.update_available ? `
+            <span style="font-size:0.72em;font-weight:700;color:#f59e0b;background:rgba(245,158,11,0.14);border:1px solid rgba(245,158,11,0.3);padding:2px 8px;border-radius:12px;display:inline-flex;align-items:center;gap:4px;" title="Installed version: v${_hesc(pkg.installed_version)}">
+              <i class="fas fa-hdd" style="font-size:0.85em;opacity:0.8;"></i>Installata: v${_hesc(pkg.installed_version)}
+            </span>` : ''}
+          ${pkg.installed && pkg.installed_version && !pkg.update_available && pkg.installed_version !== pkg.version ? `
+            <span style="font-size:0.72em;font-weight:700;color:#10b981;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.3);padding:2px 8px;border-radius:12px;display:inline-flex;align-items:center;gap:4px;" title="Local version: v${_hesc(pkg.installed_version)}">
+              <i class="fas fa-code-branch" style="font-size:0.85em;opacity:0.8;"></i>Locale dev: v${_hesc(pkg.installed_version)}
+            </span>` : ''}
           ${sizeFmt ? `<span style="font-size:0.72em;color:var(--muted);"><i class="fas fa-weight-hanging" style="margin-right:3px;opacity:.4;"></i>${sizeFmt}</span>` : ''}
           <span style="font-size:0.72em;color:var(--muted);"><i class="fas fa-user" style="margin-right:3px;opacity:.4;"></i>${_hesc(pkg.author || 'Unknown')}</span>
         </div>
@@ -196,11 +204,11 @@ window.hpmStoreShowReadMe = async function (pkgId) {
         <button onclick="document.getElementById('hpm-store-detail-modal').style.display='none';window.hpmStoreInstall('${pkg.id}','${pkg.download_url}','${pkg.name}')"
                 style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;
                        border-radius:8px;padding:8px 20px;font-size:0.85em;font-weight:700;cursor:pointer;">
-          <i class="fas fa-arrow-up" style="margin-right:6px;"></i>Update to v${pkg.version}</button>`;
+          <i class="fas fa-arrow-up" style="margin-right:6px;"></i>Update to v${pkg.catalog_version || pkg.version}</button>`;
     } else {
       installBtn.innerHTML = `
-        <span style="display:inline-flex;align-items:center;gap:6px;font-size:0.82em;color:#10b981;
-                     background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);padding:5px 12px;border-radius:20px;font-weight:600;">
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:0.82em;color:var(--accent);
+                     background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);padding:5px 12px;border-radius:20px;font-weight:600;">
           <i class="fas fa-check-circle"></i> Installed</span>`;
     }
   }
@@ -298,19 +306,17 @@ function _hpmStoreBuildProgressModal() {
     <div id="hpm-store-progress-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);
          z-index:10000;align-items:center;justify-content:center;padding:20px;"
          ondblclick="this.style.display='none'">
-      <div style="background:var(--bg2);border:1px solid var(--border-color);border-radius:16px;
+      <div class="hp-widget" style="background:var(--bg2);border:1px solid var(--border-color);border-radius:16px;
                   max-width:420px;width:100%;padding:32px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);cursor:default;">
         <div id="hpm-store-progress-icon" style="font-size:2.5em;margin-bottom:16px;">
           <i class="fas fa-download" style="color:var(--accent);animation:pulse 1.5s infinite;"></i>
         </div>
         <div id="hpm-store-progress-title" style="font-weight:700;font-size:1.1em;margin-bottom:8px;color:var(--text);">Installing…</div>
-        <div style="background:var(--border-color);border-radius:6px;height:6px;overflow:hidden;margin:14px 0;">
-          <div id="hpm-store-progress-bar"
-               style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2,#7c3aed));
-                      border-radius:6px;transition:width .4s ease;"></div>
+        <div class="hp-track" style="margin:14px 0;">
+          <div id="hpm-store-progress-bar" class="hp-fill"></div>
         </div>
         <div id="hpm-store-progress-msg" style="font-size:0.82em;color:var(--muted);min-height:1.4em;"></div>
-        <div id="hpm-store-progress-log" style="font-size:0.84em;color:var(--accent);min-height:1.2em;margin-top:6px;font-family:monospace;white-space:normal;word-break:break-all;text-align:left;opacity:0.85;"></div>
+        <div id="hpm-store-progress-log" class="hp-log-line" style="display:none;margin-top:6px;"></div>
         <div id="hpm-store-progress-hint" style="display:none;font-size:0.75em;color:var(--muted);margin-top:20px;opacity:0.6;">
           ${_t('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar')}
         </div>

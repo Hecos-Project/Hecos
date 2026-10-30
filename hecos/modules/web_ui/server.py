@@ -6,6 +6,15 @@ import sys
 import os
 import threading
 import logging
+
+if sys.platform == "win32":
+    try:
+        import ctypes
+        # SEM_FAILCRITICALERRORS (0x0001) | SEM_NOGPFAULTERRORBOX (0x0002) | SEM_NOOPENFILEERRORBOX (0x8000)
+        ctypes.windll.kernel32.SetErrorMode(0x0001 | 0x0002 | 0x8000)
+    except Exception:
+        pass
+
 from flask import Flask, send_from_directory, request, redirect, url_for, jsonify
 from flask_login import LoginManager, current_user
 from .routes import init_routes
@@ -65,6 +74,14 @@ class HecosWebUIServer:
             self.logger.info("[WebUI] PTT Bus started.")
         except Exception as e:
             self.logger.warning(f"[WebUI] PTT Bus could not start: {e}")
+
+        # Pre-load active TTS engine in background (Fish Speech or Piper)
+        try:
+            from hecos.core.audio.tts_manager import preload_active_engine
+            preload_active_engine(delay=2.0)
+        except Exception as _tts_e:
+            self.logger.debug(f"[WebUI] TTS auto-startup skipped: {_tts_e}")
+
 
         def _run():
             try:
@@ -210,13 +227,13 @@ if __name__ == "__main__":
     sm.ptt_hotkey      = acfg.get('ptt_hotkey', 'ctrl+shift')
     set_state_manager(sm)
 
-    # Pre-load Piper TTS daemon in background to eliminate cold-start latency
+    # Pre-load active TTS engine in background (Fish Speech daemon or Piper) to eliminate cold-start latency
     try:
-        from hecos.core.audio.piper_daemon import get_daemon
-        get_daemon().preload(delay=3.0)  # Loads model 3s after start, non-blocking
-        logger.info("[WEB] Piper TTS daemon pre-loading scheduled (3s delay).")
+        from hecos.core.audio.tts_manager import preload_active_engine
+        preload_active_engine(delay=2.0)
+        logger.info("[WEB] Active TTS engine pre-loading scheduled (2s delay).")
     except Exception as _pe:
-        logger.debug(f"[WEB] Piper preload skipped: {_pe}")
+        logger.debug(f"[WEB] TTS preload skipped: {_pe}")
 
     # Start the listening thread (Whisper + PTT)
     logger.info("[WEB] Starting standalone audio engine...")
@@ -273,4 +290,15 @@ if __name__ == "__main__":
             time.sleep(1)
     except KeyboardInterrupt:
         print("Hecos WebUI server stopped.")
+    finally:
+        try:
+            from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
+            FishSpeechDaemon.get_instance().stop()
+        except:
+            pass
+        try:
+            from hecos.core.audio import ptt_bus
+            ptt_bus.stop()
+        except:
+            pass
 

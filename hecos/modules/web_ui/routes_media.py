@@ -32,14 +32,17 @@ def init_media_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
 
 
-    @app.route("/hecos/api/media/open-folder", methods=["POST"])
+    @app.route("/hecos/api/media/open-folder", methods=["GET", "POST"])
+    @app.route("/api/media/open-folder", methods=["GET", "POST"])
     def open_media_folder():
-        """Opens the root media/ folder in the OS file explorer."""
+        """Opens the root media/ folder in the native OS file explorer."""
         try:
             os.makedirs(MEDIA_DIR, exist_ok=True)
             from hecos.core.system.os_adapter import OSAdapter
-            OSAdapter.open_path(MEDIA_DIR)
-            return jsonify({"ok": True, "message": "Folder opened"})
+            details = OSAdapter.open_path_detailed(MEDIA_DIR)
+            if details.get("ok"):
+                return jsonify({"ok": True, "message": "Folder opened", "path": MEDIA_DIR, "details": details})
+            return jsonify({"ok": False, "error": details.get("error") or "Native file manager failed to launch", "details": details}), 500
         except Exception as exc:
             logger.error(f"[WebUI] open_media_folder error: {exc}")
             return jsonify({"ok": False, "error": str(exc)}), 500

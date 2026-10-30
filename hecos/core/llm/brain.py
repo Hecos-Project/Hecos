@@ -83,7 +83,8 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     )
     
     # 5. History Persistence
-    personality_name = config.get('ai', {}).get('active_personality', 'Hecos_System_Soul').replace('.yaml', '')
+    raw_pname = (config.get('ai') or {}).get('active_personality') or (config.get('persona') or {}).get('soul_file') or 'Hecos_System_Soul'
+    personality_name = raw_pname.replace('.yaml', '').strip() if isinstance(raw_pname, str) and raw_pname.strip() else 'Hecos_System_Soul'
     HistoryManager.save_interaction(
         user_text, response, save_history, config, user_id, session_id, sender_tab_id, personality_name, backend_config
     )

@@ -32,7 +32,8 @@ class CommandInterceptor:
                 for unwanted in ["a photo of ", "a picture of ", "una foto di ", "un'immagine di ", "photo of ", "picture of "]:
                     clean_target = clean_target.replace(unwanted, "")
                     
-                active_p = agent.config.get('ai', {}).get('active_personality', 'Hecos_System_Soul').replace('.yaml', '')
+                raw_p = (agent.config.get('ai') or {}).get('active_personality') or (agent.config.get('persona') or {}).get('soul_file') or 'Hecos_System_Soul'
+                active_p = raw_p.replace('.yaml', '').strip() if isinstance(raw_p, str) and raw_p.strip() else 'Hecos_System_Soul'
                 persona_name_raw = active_p.replace('_', ' ').lower()
                 persona_short = persona_name_raw.split(' ')[0]
                 

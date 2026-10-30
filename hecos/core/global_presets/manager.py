@@ -83,9 +83,22 @@ def get_active_soul_id(session_id: str) -> Optional[str]:
         
         # Fallback to global
         import sys
-        if hasattr(sys, "hecos_config_manager"):
+        if hasattr(sys, "hecos_config_manager") and sys.hecos_config_manager:
             cfg = sys.hecos_config_manager.config.get("ai", {})
-            return cfg.get("active_global_preset")
+            val = cfg.get("active_global_preset")
+            if val:
+                return val
+        
+        # Direct file fallback if config manager is not in sys
+        try:
+            sys_yaml = os.path.join(CONFIG_DATA_DIR, "system.yaml")
+            if os.path.exists(sys_yaml):
+                import yaml
+                with open(sys_yaml, "r", encoding="utf-8") as _f:
+                    data = yaml.safe_load(_f) or {}
+                return data.get("ai", {}).get("active_global_preset")
+        except Exception:
+            pass
     except Exception as e:
         logger.error(f"[GlobalPresets] Error getting active soul for session {session_id}: {e}")
     return None

@@ -9,6 +9,28 @@
  * @param {Array}   packages     - The currently loaded packages array
  * @param {boolean} showFeedback - If true, shows toasts and button spinner (manual call)
  */
+/**
+ * Checks if remoteVer is strictly newer than localVer (SemVer).
+ */
+function _hpmIsNewerVersion(remoteVer, localVer) {
+  if (!remoteVer || !localVer || localVer === 'built-in' || String(localVer).toLowerCase() === 'unknown') return false;
+  const clean = v => String(v).replace(/^[vV]/, '').trim();
+  const rStr = clean(remoteVer);
+  const lStr = clean(localVer);
+  if (rStr === lStr) return false;
+  const rParts = rStr.split('.').map(x => parseInt(x, 10) || 0);
+  const lParts = lStr.split('.').map(x => parseInt(x, 10) || 0);
+  const maxLen = Math.max(rParts.length, lParts.length);
+  for (let i = 0; i < maxLen; i++) {
+    const r = rParts[i] || 0;
+    const l = lParts[i] || 0;
+    if (r > l) return true;
+    if (r < l) return false;
+  }
+  return false;
+}
+window._hpmIsNewerVersion = _hpmIsNewerVersion;
+
 window._hpmCheckUpdatesBackground = async function (packages, showFeedback = false) {
   const checkBtn = document.querySelector('button[onclick*="hpmCheckUpdates"]');
 
@@ -40,7 +62,7 @@ window._hpmCheckUpdatesBackground = async function (packages, showFeedback = fal
       const catalogVersion = catalogMap[pkg.id];
       if (!catalogVersion || pkg.version === 'built-in') return;
 
-      const hasUpdate = catalogVersion !== pkg.version;
+      const hasUpdate = _hpmIsNewerVersion(catalogVersion, pkg.version);
       pkg.update_available = hasUpdate;
       pkg.catalog_version = catalogVersion;
 
@@ -136,7 +158,7 @@ window._hpmShowUpdateToast = function (msg, type) {
   document.getElementById('hpm-update-toast')?.remove();
 
   const colors = {
-    ok:     { bg: 'rgba(16,185,129,.12)', border: '#10b981', text: '#10b981' },
+    ok:     { bg: 'rgba(99,102,241,.12)', border: 'var(--accent, #6366f1)', text: 'var(--accent, #6366f1)' },
     update: { bg: 'rgba(245,158,11,.12)', border: '#f59e0b', text: '#f59e0b' },
     warn:   { bg: 'rgba(239,68,68,.1)',   border: '#ef4444', text: '#ef4444' },
   };

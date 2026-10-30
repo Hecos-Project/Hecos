@@ -69,7 +69,7 @@ window.hpmUninstall = async function(id, name) {
       const hintHTML = `<div style="font-size:1em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${lblHint}</div>`;
 
       if (typeof window.hpmSetProgress === 'function') {
-        window.hpmSetProgress(true, `<div style="text-align:center; padding: 10px 0;"><i class="fas fa-check-circle" style="margin-right:6px; color:#10b981; font-size:1.5em; margin-bottom:8px; display:block;"></i> <b style="font-size:1.1em; color:var(--text)">${lblSuccess}</b>${hintHTML}</div>`, 100);
+        window.hpmSetProgress(true, `<div style="text-align:center; padding: 10px 0;"><i class="fas fa-check-circle" style="margin-right:6px; color:var(--accent); font-size:1.5em; margin-bottom:8px; display:block;"></i> <b style="font-size:1.1em; color:var(--text)">${lblSuccess}</b>${hintHTML}</div>`, 100);
 
         const container = document.getElementById('hpm-install-progress');
         if (container) {
@@ -207,7 +207,7 @@ window.hpmUninstallSelected = function() {
 
             let extraHTML = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:150px; overflow-y:auto; font-size:1em; border:1px solid rgba(255,255,255,0.05);">`;
             results.forEach(r => {
-                const icon = r.ok ? '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>' : '<i class="fas fa-times" style="color:#ef4444; margin-right:6px; width:14px;"></i>';
+                const icon = r.ok ? '<i class="fas fa-check" style="color:var(--accent); margin-right:6px; width:14px;"></i>' : '<i class="fas fa-times" style="color:#ef4444; margin-right:6px; width:14px;"></i>';
                 const removedMsg = r.ok
                     ? `<span style="color:var(--muted)">${_ti('removed', 'rimosso', 'eliminado')}</span>`
                     : `<span style="color:#ef4444">${r.error || 'error'}</span>`;
@@ -230,7 +230,7 @@ window.hpmUninstallSelected = function() {
             const lblSuccess = failed === 0
                 ? _ti('Batch uninstall completed!', 'Disinstallazione batch completata!', '¡Desinstalación por lotes completada!')
                 : _ti('Completed with some errors', 'Completato con alcuni errori', 'Completado con algunos errores');
-            const mainIconColor = failed === 0 ? '#10b981' : (succeeded > 0 ? '#f59e0b' : '#ef4444');
+            const mainIconColor = failed === 0 ? 'var(--accent, #6366f1)' : (succeeded > 0 ? '#f59e0b' : '#ef4444');
             const mainIcon = failed === 0 ? 'fa-check-circle' : (succeeded > 0 ? 'fa-exclamation-circle' : 'fa-times-circle');
 
             window.hpmSetProgress(true, `
@@ -282,7 +282,7 @@ window.hpmFactoryReset = function() {
 
             if (data.ok) {
                 if (typeof window.hpmSetProgress === 'function') {
-                    window.hpmSetProgress(true, `<div style="text-align:center; padding: 10px 0;"><i class="fas fa-check-circle" style="margin-right:6px; color:#10b981; font-size:1.5em; margin-bottom:8px; display:block;"></i> <b style="font-size:1.1em; color:var(--text)">${_ti('Factory Reset Completed!', 'Ripristino Completato!', '¡Restablecimiento Completado!')}</b><br><br><span style="font-size:1em;color:var(--muted);">${_ti('Please restart Hecos to complete the process.', 'Riavvia Hecos per completare il processo.', 'Reinicia Hecos para completar el proceso.')}</span></div>`, 100);
+                    window.hpmSetProgress(true, `<div style="text-align:center; padding: 10px 0;"><i class="fas fa-check-circle" style="margin-right:6px; color:var(--accent); font-size:1.5em; margin-bottom:8px; display:block;"></i> <b style="font-size:1.1em; color:var(--text)">${_ti('Factory Reset Completed!', 'Ripristino Completato!', '¡Restablecimiento Completado!')}</b><br><br><span style="font-size:1em;color:var(--muted);">${_ti('Please restart Hecos to complete the process.', 'Riavvia Hecos per completare il processo.', 'Reinicia Hecos para completar el proceso.')}</span></div>`, 100);
                 }
                 
                 // Aggiorna l'interfaccia

@@ -12,7 +12,8 @@ class PersonaVision:
         """Attempts to extract a visual description of the current AI identity from YAML or fallback."""
         try:
             # 1. Identify the active personality file
-            active_p = config.get('ai', {}).get('active_personality', 'Hecos_System_Soul').replace('.yaml', '')
+            raw_p = (config.get('ai') or {}).get('active_personality') or (config.get('persona') or {}).get('soul_file') or 'Hecos_System_Soul'
+            active_p = raw_p.replace('.yaml', '').strip() if isinstance(raw_p, str) and raw_p.strip() else 'Hecos_System_Soul'
             
             # 2. Try to load the YAML file
             root_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))

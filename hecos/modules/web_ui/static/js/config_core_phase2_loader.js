@@ -16,7 +16,7 @@
 (function () {
     'use strict';
 
-    const V = window.VERSION || '';
+    const V = window.VERSION || window.HECOS_VERSION || Date.now();
     const VER = V ? `?v=${V}` : '';
 
     // ── Phase 2 script list — loaded AFTER hub menu is visible ────────────────
@@ -36,10 +36,19 @@
             `/static/js/hecos_file_picker.js${VER}`,
             `/static/js/config_audio/ca_core.js${VER}`,
             `/static/js/config_audio/ca_modals.js${VER}`,
+            `/static/js/config_audio/ca_tts_testing.js${VER}`,
+            `/static/js/config_audio/ca_piper_presets.js${VER}`,
+            `/static/js/config_audio/ca_kokoro_models.js${VER}`,
             `/static/js/config_audio/ca_tts_utils.js${VER}`,
             `/static/js/config_audio/ca_voice_clones.js${VER}`,
+            `/static/js/config_audio/ca_kokoro_clones.js${VER}`,
+            `/static/js/config_audio/ca_kokoro_presets.js${VER}`,
+            `/static/js/config_audio/ca_kokoro_inference.js${VER}`,
             `/static/js/config_audio/ca_xtts_presets.js${VER}`,
             `/static/js/config_audio/ca_xtts_inference.js${VER}`,
+            `/static/js/config_audio/ca_fish_presets.js${VER}`,
+            `/static/js/config_audio/ca_fish_recorder.js${VER}`,
+            `/static/js/config_audio/ca_fish_server.js${VER}`,
             `/static/js/config_audio/ca_history.js${VER}`,
             `/static/js/config_media_logic.js${VER}`,
             `/static/js/config_system_logic.js${VER}`,
