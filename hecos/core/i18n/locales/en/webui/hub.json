@@ -50,5 +50,15 @@
     "hub_mod_mail": "Mail",
     "hub_mod_templates": "Templates",
     "hub_mod_lists": "Lists Manager",
-    "hub_mod_backup": "Global Backup"
+    "hub_mod_backup": "Global Backup",
+    "hub_show_all": "Show All",
+    "hub_paginate": "Paginate",
+    "hub_page": "page",
+    "hub_pages": "pages",
+    "hub_prev_page": "Previous page (Left Arrow)",
+    "hub_next_page": "Next page (Right Arrow)",
+    "hub_cards_per_page": "Cards per page",
+    "hub_contains_new": "Contains newly installed panels",
+    "hub_paginate_cat_tip": "Paginate this category",
+    "hub_show_all_tip": "Show all cards (disable pagination)"
 }

@@ -59,9 +59,13 @@ async function showTab(name, skipScroll = false) {
   // Clear NEW badge if present
   try {
       let newPanels = JSON.parse(localStorage.getItem('hpm_new_panels') || '[]');
+      let newPanelsTs = JSON.parse(localStorage.getItem('hpm_new_panels_ts') || '{}');
       if (newPanels.includes(targetId) || newPanels.includes(name)) {
           newPanels = newPanels.filter(p => p !== targetId && p !== name);
+          delete newPanelsTs[targetId];
+          delete newPanelsTs[name];
           localStorage.setItem('hpm_new_panels', JSON.stringify(newPanels));
+          localStorage.setItem('hpm_new_panels_ts', JSON.stringify(newPanelsTs));
           // Remove badge from DOM immediately
           document.querySelectorAll(`#tab-${name} .new-badge, button.tab[onclick="showTab('${name}')"] .new-badge, div.module-card[onclick="showTab('${name}')"] .new-badge`).forEach(el => el.remove());
       }
@@ -281,6 +285,7 @@ function setViewMode(mode, silent = false) {
 
 /** Collapses/expands a category group and persists the state. */
 function toggleCategory(catId) {
+    if (catId) window.hpmMarkCategorySeen?.(catId);
     const idx = uiState.collapsedCategories.indexOf(catId);
     if (idx === -1) {
         uiState.collapsedCategories.push(catId);
@@ -304,6 +309,7 @@ function toggleAllCategories(expanded) {
 function setCategoryFilter(cat) {
     window.activeCategoryFilter = cat;
     sessionStorage.setItem('hecos-config-filter', cat);
+    if (cat && cat !== 'ALL') window.hpmMarkCategorySeen?.(cat);
 
     if (activeTab === 'welcome') {
         const welcomeContainer = document.getElementById('config-welcome-container');

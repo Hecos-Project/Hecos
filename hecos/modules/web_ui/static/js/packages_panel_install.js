@@ -270,7 +270,9 @@ function _hpmShowFinalSummary() {
     const lblCfg  = _ti('Configuration available in', 'Configurazione disponibile in', 'Configuración disponible en');
 
     let newPanels = [];
+    let newPanelsTs = {};
     try { newPanels = JSON.parse(localStorage.getItem('hpm_new_panels') || '[]'); } catch(e) {}
+    try { newPanelsTs = JSON.parse(localStorage.getItem('hpm_new_panels_ts') || '{}'); } catch(e) {}
 
     let singleExtraHTML = '';
     window._hpmInstallQueue.forEach(item => {
@@ -281,8 +283,12 @@ function _hpmShowFinalSummary() {
         if (r.config_panel) {
             const tabId = r.config_panel.tab_id || r.id;
             const pkgId = r.id || '';
+            const now = Date.now();
             for (const key of [tabId, pkgId]) {
-                if (key && !newPanels.includes(key)) newPanels.push(key);
+                if (key) {
+                    if (!newPanels.includes(key)) newPanels.push(key);
+                    newPanelsTs[key] = now;
+                }
             }
         }
 
@@ -312,8 +318,11 @@ function _hpmShowFinalSummary() {
         }
     });
 
-    // Persist updated NEW panels list
-    try { localStorage.setItem('hpm_new_panels', JSON.stringify(newPanels)); } catch(e) {}
+    // Persist updated NEW panels list with timestamps
+    try {
+        localStorage.setItem('hpm_new_panels', JSON.stringify(newPanels));
+        localStorage.setItem('hpm_new_panels_ts', JSON.stringify(newPanelsTs));
+    } catch(e) {}
 
     // ── Build extraHTML ──────────────────────────────────────────────────────
     let extraHTML = '';

@@ -258,6 +258,40 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
+    "CALENDAR": {
+        "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
+        "commands": {
+            "add_event": "Adds an event to the calendar.",
+            "list_events": "Lists upcoming calendar events.",
+            "delete_event": "Deletes a calendar event by ID.",
+            "get_date_info": "Gets current date context, including localized formatting and upcoming holidays."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"far fa-calendar-alt\"></i>",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "calendar",
+                "manifest_version": "1",
+                "aliases": [
+                    "/calendar",
+                    "/calendario",
+                    "/appuntamenti"
+                ],
+                "description": "Lists the upcoming events in the calendar",
+                "usage": "/calendar",
+                "example": "/calendar",
+                "icon": "📅",
+                "method": "list_events",
+                "requires_args": false
+            }
+        ]
+    },
     "DOCS": {
         "description": "Generates and modifies PDF/HTML documents from templates or raw HTML using Playwright.",
         "commands": {
@@ -436,6 +470,107 @@
         "module_type": "hpm",
         "slash_commands": []
     },
+    "LISTS": {
+        "description": "Create and manage multiple lists (e.g. groceries, todos) with Hecos. Supports custom colors, archived lists, item states, and LLM autonomous management.",
+        "commands": {
+            "create_list": "Creates a new empty list.",
+            "list_lists": "Shows all active lists with the count of items.",
+            "show_list": "Shows all items of a specific list.",
+            "add_to_list": "Adds one or more items to a list. Creates the list if it doesn't exist.",
+            "check_item": "Marks an item as completed in a list.",
+            "uncheck_item": "Restores an item as to-do.",
+            "remove_from_list": "Permanently deletes an item from a list.",
+            "clear_done": "Removes all completed items from a list.",
+            "delete_list": "Deletes an entire list.",
+            "archive_list": "Archives a list (hides it from the main view)."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-list-check",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "lists",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list",
+                    "/lists",
+                    "/liste"
+                ],
+                "description": "Shows all lists",
+                "usage": "/list",
+                "example": "/list",
+                "icon": "📋",
+                "method": "list_lists",
+                "requires_args": false
+            },
+            {
+                "id": "list_show",
+                "manifest_version": "1",
+                "aliases": [
+                    "/lista"
+                ],
+                "description": "Shows a list",
+                "usage": "/lista <nome>",
+                "example": "/lista Spesa",
+                "icon": "🔍",
+                "method": "show_list",
+                "requires_args": true
+            },
+            {
+                "id": "list_add",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list add",
+                    "/lista aggiungi"
+                ],
+                "description": "Adds item",
+                "usage": "/list add <lista> <elemento>",
+                "example": "/list add Spesa Uova",
+                "icon": "➕",
+                "method": "add_to_list",
+                "requires_args": true
+            },
+            {
+                "id": "list_done",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list done",
+                    "/lista spunta"
+                ],
+                "description": "Checks item",
+                "usage": "/list done <lista> <elemento>",
+                "example": "/list done Spesa Uova",
+                "icon": "✅",
+                "method": "check_item",
+                "requires_args": true
+            }
+        ]
+    },
+    "MESSENGER": {
+        "description": "Send messages via Telegram, WhatsApp, and Discord.",
+        "commands": {
+            "check_connection": "Method",
+            "force_send": "Method",
+            "list_accounts": "Method",
+            "msg_command": "Direct command invoked via /msg <target> <text>",
+            "register_pre_callback": "Registra un pre-callback che intercetta i messaggi in ingresso.",
+            "resolve_contact_address": "Looks up a contact in the address book and returns their platform-specific address (e.g., chat ID).",
+            "send_message": "Send a message to a contact or channel.",
+            "send_photo": "Send a photo to a contact or channel (Telegram only for now)."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
+    },
     "AUTOMATION": {
         "description": "PC Automation: control the mouse, keyboard, and application windows. Use with desktop_screenshot for a full see-and-act loop.",
         "commands": {
@@ -465,6 +600,54 @@
         "icon": "",
         "category": "PLUGINS",
         "slash_commands": []
+    },
+    "REMINDER": {
+        "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
+        "commands": {
+            "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
+            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "cancel_reminder": "Cancels an active reminder by ID.",
+            "snooze_reminder": "Postpones a reminder by N minutes from now."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-clock",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "reminder",
+                "manifest_version": "1",
+                "aliases": [
+                    "/reminder",
+                    "/ricorda",
+                    "/promemoria"
+                ],
+                "description": "Imposta un nuovo promemoria",
+                "usage": "/reminder <titolo> alle <ora>",
+                "example": "/reminder chiamata Marco alle 15:30",
+                "icon": "⏱",
+                "method": "set_reminder",
+                "requires_args": true
+            },
+            {
+                "id": "reminders",
+                "manifest_version": "1",
+                "aliases": [
+                    "/reminders",
+                    "/promemoria list"
+                ],
+                "description": "Lists all active reminders",
+                "usage": "/reminders",
+                "example": "/reminders",
+                "icon": "📋",
+                "method": "list_reminders",
+                "requires_args": false
+            }
+        ]
     },
     "VOICE_FORGE": {
         "description": "Vocal Timbre Sculpting & Forging Studio for Fish Speech S2-Pro. Crafts custom, original acoustic voice profiles via WORLD vocoder analysis-synthesis, pitch, formant warping, aperiodicity and spectral morphing without using existing human voices.",

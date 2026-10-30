@@ -234,6 +234,27 @@ def _fetch_remote_catalog(cfg_mgr, custom_url: str | None = None) -> dict:
     raise RuntimeError(f"All attempts to fetch catalog failed for {url}. Last error: {last_error}")
 
 
+def _is_newer_version(remote_ver: str | None, local_ver: str | None) -> bool:
+    """Return True if remote_ver is strictly newer than local_ver via SemVer comparison."""
+    if not remote_ver or not local_ver:
+        return False
+    r_str = str(remote_ver).strip()
+    l_str = str(local_ver).strip()
+    if r_str == l_str or l_str.lower() in ("built-in", "unknown"):
+        return False
+    try:
+        from packaging.version import Version
+        return Version(r_str.lstrip("vV")) > Version(l_str.lstrip("vV"))
+    except Exception:
+        try:
+            import re
+            r_parts = [int(x) for x in re.findall(r"\d+", r_str)]
+            l_parts = [int(x) for x in re.findall(r"\d+", l_str)]
+            return r_parts > l_parts
+        except Exception:
+            return False
+
+
 def _enrich_catalog(catalog: dict, registry) -> dict:
     """
     Enrich each catalog entry with local installation state:
@@ -256,7 +277,7 @@ def _enrich_catalog(catalog: dict, registry) -> dict:
         pkg["installed"] = inst_ver is not None
         pkg["installed_version"] = inst_ver
         pkg["update_available"] = (
-            inst_ver is not None and inst_ver != pkg.get("version", "")
+            inst_ver is not None and _is_newer_version(pkg.get("version", ""), inst_ver)
         )
         enriched.append(pkg)
 

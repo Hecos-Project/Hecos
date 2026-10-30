@@ -314,15 +314,24 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, logEl, title, icon, modal,
     // ── Save NEW badge for Central Hub ──────────────────────────────────────
     if (payload.config_panel) {
         let newPanels = [];
+        let newPanelsTs = {};
         try { newPanels = JSON.parse(localStorage.getItem('hpm_new_panels') || '[]'); } catch(e) {}
+        try { newPanelsTs = JSON.parse(localStorage.getItem('hpm_new_panels_ts') || '{}'); } catch(e) {}
         
         const tabId = payload.config_panel || payload.id;
         const pkgId = payload.id || '';
+        const now = Date.now();
         for (const key of [tabId, pkgId]) {
-            if (key && !newPanels.includes(key)) newPanels.push(key);
+            if (key) {
+                if (!newPanels.includes(key)) newPanels.push(key);
+                newPanelsTs[key] = now;
+            }
         }
         
-        try { localStorage.setItem('hpm_new_panels', JSON.stringify(newPanels)); } catch(e) {}
+        try {
+            localStorage.setItem('hpm_new_panels', JSON.stringify(newPanels));
+            localStorage.setItem('hpm_new_panels_ts', JSON.stringify(newPanelsTs));
+        } catch(e) {}
     }
     // ────────────────────────────────────────────────────────────────────────
 

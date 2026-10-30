@@ -49,8 +49,21 @@
                     <button id="zs-clear" title="Clear (Esc)" style="display:none;background:none;border:none;cursor:pointer;padding:4px 10px;color:var(--muted);font-size:14px;">✕</button>
                 </div>
                 <span id="zs-count" style="font-size:11px;color:var(--muted);min-width:70px;text-align:center;"></span>
+                <!-- DEFAULT HUB PAGINATION CONTROLS (Between search bar & search settings) -->
+                <div id="zs-hub-pagination-control" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:4px 10px;height:34px;box-sizing:border-box;user-select:none;flex-shrink:0;">
+                    <i class="fas fa-layer-group" style="font-size:11px;color:var(--accent);"></i>
+                    <span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">Cards / page:</span>
+                    <select id="hub-default-page-size-select" style="background:transparent;border:none;color:var(--text);font-size:11.5px;font-weight:700;cursor:pointer;outline:none;padding:0 2px;" onchange="window.hubSetDefaultPageSize ? window.hubSetDefaultPageSize(this.value) : (localStorage.setItem('hub_default_page_size', this.value));" title="Default cards per page">
+                        <option value="4" style="background:var(--bg2,#141726);color:var(--text);">4</option>
+                        <option value="6" style="background:var(--bg2,#141726);color:var(--text);">6</option>
+                        <option value="8" style="background:var(--bg2,#141726);color:var(--text);">8</option>
+                        <option value="12" style="background:var(--bg2,#141726);color:var(--text);">12</option>
+                        <option value="18" style="background:var(--bg2,#141726);color:var(--text);">18</option>
+                        <option value="24" style="background:var(--bg2,#141726);color:var(--text);">24</option>
+                    </select>
+                </div>
                 <div style="position:relative;">
-                    <button id="zs-settings-btn" title="Search Settings" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--muted);font-size:13px;">⚙️</button>
+                    <button id="zs-settings-btn" title="Search Settings" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--muted);font-size:13px;height:34px;display:inline-flex;align-items:center;justify-content:center;">⚙️</button>
                     <div id="zs-settings-panel" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--bg2,#111);border:1px solid var(--border);border-radius:12px;padding:16px;z-index:9999;min-width:290px;box-shadow:0 8px 30px rgba(0,0,0,.5);">
                         ${buildSettingsHTML()}
                     </div>
@@ -60,6 +73,11 @@
             <div id="zs-results" style="display:none;flex-direction:column;gap:10px;margin-bottom:10px;max-height:60vh;overflow-y:auto;padding-right:4px;"></div>
         `;
         anchor.parentNode.insertBefore(bar, anchor);
+
+        const defSel = document.getElementById('hub-default-page-size-select');
+        if (defSel) {
+            defSel.value = String(window.HUB_DEFAULT_PAGE_SIZE || localStorage.getItem('hub_default_page_size') || '6');
+        }
 
         // Events
         const inp = document.getElementById('zs-input');
@@ -314,9 +332,14 @@
     });
 
     // ── Boot ──────────────────────────────────────────────────────────────────
+    function safeBootInject() {
+        inject();
+        setTimeout(inject, 100);
+        setTimeout(inject, 500);
+    }
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => setTimeout(inject, 700));
+        document.addEventListener('DOMContentLoaded', safeBootInject);
     } else {
-        setTimeout(inject, 700);
+        safeBootInject();
     }
 })();

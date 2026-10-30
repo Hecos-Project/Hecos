@@ -49,5 +49,15 @@
     "hub_mod_mail": "Correo",
     "hub_mod_templates": "Plantillas",
     "hub_mod_lists": "Administrador de listas",
-    "hub_mod_backup": "Copia de seguridad global"
+    "hub_mod_backup": "Copia de seguridad global",
+    "hub_show_all": "Mostrar todos",
+    "hub_paginate": "Paginar",
+    "hub_page": "página",
+    "hub_pages": "páginas",
+    "hub_prev_page": "Página anterior (Flecha Izquierda)",
+    "hub_next_page": "Página siguiente (Flecha Derecha)",
+    "hub_cards_per_page": "Tarjetas por página",
+    "hub_contains_new": "Contiene paneles recién instalados",
+    "hub_paginate_cat_tip": "Paginar esta categoría",
+    "hub_show_all_tip": "Mostrar todas las tarjetas (desactivar paginación)"
 }

@@ -156,7 +156,15 @@ window.hpmStoreShowReadMe = async function (pkgId) {
                        color:${meta.color};background:${meta.color}18;padding:2px 8px;border-radius:20px;border:1px solid ${meta.color}44;display:inline-flex;align-items:center;line-height:1.2;">
             <i class="fas ${meta.icon}" style="margin-right:4px;"></i>${meta.shortLabel || meta.label}
           </span>
-          <span style="font-size:0.75em;color:var(--muted);">v${_hesc(pkg.version)}</span>
+          <span style="font-size:0.75em;color:var(--muted);" title="Store catalog version">v${_hesc(pkg.version)}</span>
+          ${pkg.installed && pkg.installed_version && pkg.update_available ? `
+            <span style="font-size:0.72em;font-weight:700;color:#f59e0b;background:rgba(245,158,11,0.14);border:1px solid rgba(245,158,11,0.3);padding:2px 8px;border-radius:12px;display:inline-flex;align-items:center;gap:4px;" title="Installed version: v${_hesc(pkg.installed_version)}">
+              <i class="fas fa-hdd" style="font-size:0.85em;opacity:0.8;"></i>Installata: v${_hesc(pkg.installed_version)}
+            </span>` : ''}
+          ${pkg.installed && pkg.installed_version && !pkg.update_available && pkg.installed_version !== pkg.version ? `
+            <span style="font-size:0.72em;font-weight:700;color:#10b981;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.3);padding:2px 8px;border-radius:12px;display:inline-flex;align-items:center;gap:4px;" title="Local version: v${_hesc(pkg.installed_version)}">
+              <i class="fas fa-code-branch" style="font-size:0.85em;opacity:0.8;"></i>Locale dev: v${_hesc(pkg.installed_version)}
+            </span>` : ''}
           ${sizeFmt ? `<span style="font-size:0.72em;color:var(--muted);"><i class="fas fa-weight-hanging" style="margin-right:3px;opacity:.4;"></i>${sizeFmt}</span>` : ''}
           <span style="font-size:0.72em;color:var(--muted);"><i class="fas fa-user" style="margin-right:3px;opacity:.4;"></i>${_hesc(pkg.author || 'Unknown')}</span>
         </div>
@@ -196,7 +204,7 @@ window.hpmStoreShowReadMe = async function (pkgId) {
         <button onclick="document.getElementById('hpm-store-detail-modal').style.display='none';window.hpmStoreInstall('${pkg.id}','${pkg.download_url}','${pkg.name}')"
                 style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;
                        border-radius:8px;padding:8px 20px;font-size:0.85em;font-weight:700;cursor:pointer;">
-          <i class="fas fa-arrow-up" style="margin-right:6px;"></i>Update to v${pkg.version}</button>`;
+          <i class="fas fa-arrow-up" style="margin-right:6px;"></i>Update to v${pkg.catalog_version || pkg.version}</button>`;
     } else {
       installBtn.innerHTML = `
         <span style="display:inline-flex;align-items:center;gap:6px;font-size:0.82em;color:var(--accent);
