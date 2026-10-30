@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
-# Hecos - Version 0.53.0 (Phase II: Ghost Fire)
+# Hecos - Version 0.54.0 (Phase II: Ghost Fire)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -16,7 +16,7 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
-> **Status: Phase II (Ghost Fire)**: Hecos is currently in `v0.53.0`. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution.
+> **Status: Phase II (Ghost Fire)**: Hecos is currently in `v0.54.0`. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution.
 >
 > ⚠️ **Important Notice**: Starting from this major release (0.50.0+), the primary development and target environment is officially **Windows 11**.
 
@@ -29,11 +29,18 @@ Built on our core pillars:
 * ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness.
 * 🧊 **Total Simplicity** — Professional dashboard and a modular design that makes advanced orchestration intuitive.
 
-Now fully migrated to a **Phase II: Ghost Fire stable architecture**, Hecos 0.53.0 brings a dedicated Web Interface (Chat + Config) and full internationalization. Powered by **LiteLLM**, it supports Ollama, Llama.cpp, KoboldCpp, and major cloud providers with real-time streaming and local TTS (Kokoro & Piper).
+Now fully migrated to a **Phase II: Ghost Fire stable architecture**, Hecos 0.54.0 brings a dedicated Web Interface (Chat + Config) and full internationalization. Powered by **LiteLLM**, it supports Ollama, Llama.cpp, KoboldCpp, and major cloud providers with real-time streaming and local TTS (Kokoro, Piper, Fish Speech, and XTTS).
 
 ---
 
-## ✨ Key Features (v0.53.0)
+## ✨ Key Features (v0.54.0)
+* 🎙️ **Voice Forge Studio** — Advanced vocal synthesis and sculpting studio featuring real-time acoustic analysis (Formants, Radar vocal profile, Spectrogram) and multi-preset voice blending.
+* 🐟 **Fish Speech SOTA Zero-Shot TTS** — Cutting-edge neural speech synthesis with instant voice cloning running locally via dedicated daemon and server.
+* 🧬 **Kokoro Voice Cloning & Voice Manager** — Custom voice cloning integration for Kokoro TTS with a dedicated clone manager UI and live inference preview.
+* 🎛️ **Modular Audio Architecture** — Redesigned card-based audio control room (Fish Speech, Kokoro, Piper, XTTS, dynamic audio routing, hardware mic) with high-performance unified TTS caching.
+* 📑 **Config Hub Pagination & Deep Search** — Centralized module browser with customizable per-category and global pagination, live deep search, and category new-item highlights with automatic 3-day TTL expiration.
+* 📊 **Unified Task Progress Engine** — Standardized asynchronous progress tracking framework (`hecos.core.progress`) for downloads, pip installations, and background routines across CLI and WebUI.
+* 📦 **HPM SemVer Engine & Visual Badges** — Strict semantic versioning comparison eliminating downgrade warnings, enriched with visual badges displaying installed vs. store version on cards and modals.
 * 📢 **Presenter & Playbook (Training, Coach, Roleplay)** — Interactive engine natively built into the Core for system announcements, active notifications, and real-time voice narration. Combined with the packaged **Playbook** module, Hecos transforms into a versatile interactive training and simulation platform: it acts as a personal coach, facilitates roleplay and simulation scenarios, assists in language learning, and guides users step-by-step through any educational or operational workflow.
 * 🌐 **Global Presets (Soul Profiles)** — Infinite creation possibilities by freely combining AI personalities, TTS audio engines and voices, text backends, and inference presets into cohesive master profiles.
 * 🎭 **Inline Chat Overrides & Infinite Personalities** — Override the AI Model, Persona, and Voice directly within the chat interface on the fly. Create infinite personalities instantly for each conversation session.
