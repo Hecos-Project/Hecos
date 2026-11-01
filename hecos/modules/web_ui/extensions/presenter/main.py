@@ -44,6 +44,7 @@ def init_routes(app, root_dir: str = None):
             if 'panel_default' in data: cfg.panel_default = data['panel_default']
             if 'live_commentary' in data: cfg.live_commentary = data['live_commentary']
             if 'commentary_on_messages' in data: cfg.commentary_on_messages = data['commentary_on_messages']
+            if 'commentary_on_search' in data: cfg.commentary_on_search = data['commentary_on_search']
             if 'verbosity' in data: cfg.verbosity = data['verbosity']
             if 'briefing_on_new_chat' in data: cfg.briefing_on_new_chat = data['briefing_on_new_chat']
             
@@ -61,6 +62,46 @@ def init_routes(app, root_dir: str = None):
             return jsonify({"ok": True})
         except Exception as e:
             logger.error(f"[Presenter] Error saving config: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/ext/presenter/toggle_context", methods=["POST"])
+    def toggle_presenter_context():
+        try:
+            from .config.store import load_presenter_config, save_presenter_config
+            from .engine import get_engine
+
+            data = request.json or {}
+            context = str(data.get("context", "chat")).lower()
+            enabled = bool(data.get("enabled", True))
+
+            cfg = load_presenter_config()
+
+            if context in ("netsearch", "search"):
+                cfg.commentary_on_search = enabled
+                logger.info(f"[Presenter] Context toggle: NetSearch commentary set to {enabled}")
+            else:
+                cfg.commentary_on_messages = enabled
+                logger.info(f"[Presenter] Context toggle: Chat commentary set to {enabled}")
+
+            # If turning ON either context, make sure global enabled is True
+            if enabled:
+                cfg.enabled = True
+
+            save_presenter_config(cfg)
+
+            if cfg.enabled:
+                get_engine().start()
+
+            return jsonify({
+                "ok": True,
+                "context": context,
+                "enabled": enabled,
+                "commentary_on_search": getattr(cfg, "commentary_on_search", True),
+                "commentary_on_messages": getattr(cfg, "commentary_on_messages", True),
+                "global_enabled": cfg.enabled
+            })
+        except Exception as e:
+            logger.error(f"[Presenter] Error in toggle_presenter_context: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 
     @app.route("/api/ext/presenter/test", methods=["POST"])

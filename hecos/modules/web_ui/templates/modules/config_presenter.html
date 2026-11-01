@@ -62,6 +62,14 @@
     </div>
 
     <div class="toggle-row" style="margin-top:12px;">
+      <div class="toggle-info">Commentary on Deep Search<br><small style="color:var(--muted); font-size:10px;">LLM-generated commentary &amp; insights on search results</small></div>
+      <label class="switch">
+        <input type="checkbox" id="presenter-commentary-on-search" onchange="savePresenterConfig()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row" style="margin-top:12px;">
       <div class="toggle-info">Allow Tools / Commands<br><small style="color:var(--muted); font-size:10px;">If enabled, the Presenter can execute direct commands (e.g. /img)</small></div>
       <label class="switch">
         <input type="checkbox" id="presenter-allow-commands" onchange="savePresenterConfig()">
@@ -464,34 +472,45 @@
 
   async function loadPresenterConfig() {
     try {
-      // 1. Load config
       const res = await fetch('/api/ext/presenter/config');
       const data = await res.json();
       if (data.ok) {
-        presenterConfig = data.config;
-        document.getElementById('presenter-enabled').checked = presenterConfig.enabled;
-        document.getElementById('presenter-display-mode').value = presenterConfig.panel_default;
-        document.getElementById('presenter-live-commentary').checked = presenterConfig.live_commentary !== false;
-        document.getElementById('presenter-commentary-on-messages').checked = presenterConfig.commentary_on_messages === true;
-        document.getElementById('presenter-allow-commands').checked = presenterConfig.allow_commands === true;
-        document.getElementById('presenter-briefing-on-new-chat').checked = presenterConfig.briefing_on_new_chat !== false;
-        
-        // 2. Load Global Presets
+        presenterConfig = data.config || {};
+        const setChecked = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.checked = !!val;
+        };
+        const setValue = (id, val) => {
+          const el = document.getElementById(id);
+          if (el && val !== undefined) el.value = val;
+        };
+
+        setChecked('presenter-enabled', presenterConfig.enabled !== false);
+        setValue('presenter-display-mode', presenterConfig.panel_default || 'embedded');
+        setChecked('presenter-live-commentary', presenterConfig.live_commentary !== false);
+        setChecked('presenter-commentary-on-messages', presenterConfig.commentary_on_messages !== false);
+        setChecked('presenter-commentary-on-search', presenterConfig.commentary_on_search !== false);
+        setChecked('presenter-allow-commands', presenterConfig.allow_commands === true);
+        setChecked('presenter-briefing-on-new-chat', presenterConfig.briefing_on_new_chat !== false);
+
+        // Load Global Presets
         const sRes = await fetch('/api/souls');
         if (sRes.ok) {
           const sData = await sRes.json();
           const select = document.getElementById('presenter-preset-id');
-          select.innerHTML = '<option value="">Use Global Defaults</option>';
-          if (sData.souls && Array.isArray(sData.souls)) {
-            sData.souls.forEach(soul => {
-              const opt = document.createElement('option');
-              opt.value = soul.meta.id;
-              opt.innerText = soul.meta.name || soul.meta.id;
-              select.appendChild(opt);
-            });
-          }
-          if (presenterConfig.voice && presenterConfig.voice.preset_id) {
-            select.value = presenterConfig.voice.preset_id;
+          if (select) {
+            select.innerHTML = '<option value="">Use Global Defaults</option>';
+            if (sData.souls && Array.isArray(sData.souls)) {
+              sData.souls.forEach(soul => {
+                const opt = document.createElement('option');
+                opt.value = soul.meta.id;
+                opt.innerText = soul.meta.name || soul.meta.id;
+                select.appendChild(opt);
+              });
+            }
+            if (presenterConfig.voice && presenterConfig.voice.preset_id) {
+              select.value = presenterConfig.voice.preset_id;
+            }
           }
         }
       }
@@ -501,15 +520,23 @@
   }
 
   async function savePresenterConfig() {
-    presenterConfig.enabled = document.getElementById('presenter-enabled').checked;
-    presenterConfig.panel_default = document.getElementById('presenter-display-mode').value;
-    presenterConfig.live_commentary = document.getElementById('presenter-live-commentary').checked;
-    presenterConfig.commentary_on_messages = document.getElementById('presenter-commentary-on-messages').checked;
-    presenterConfig.allow_commands = document.getElementById('presenter-allow-commands').checked;
-    presenterConfig.briefing_on_new_chat = document.getElementById('presenter-briefing-on-new-chat').checked;
-    
+    const isChecked = (id, defVal = true) => {
+      const el = document.getElementById(id);
+      return el ? el.checked : defVal;
+    };
+    presenterConfig.enabled = isChecked('presenter-enabled', true);
+    presenterConfig.panel_default = document.getElementById('presenter-display-mode')?.value || 'embedded';
+    presenterConfig.live_commentary = isChecked('presenter-live-commentary', true);
+    presenterConfig.commentary_on_messages = isChecked('presenter-commentary-on-messages', true);
+    presenterConfig.commentary_on_search = isChecked('presenter-commentary-on-search', true);
+    presenterConfig.allow_commands = isChecked('presenter-allow-commands', false);
+    presenterConfig.briefing_on_new_chat = isChecked('presenter-briefing-on-new-chat', true);
+
     if (!presenterConfig.voice) presenterConfig.voice = {};
-    presenterConfig.voice.preset_id = document.getElementById('presenter-preset-id').value;
+    const presetSelect = document.getElementById('presenter-preset-id');
+    if (presetSelect) {
+      presenterConfig.voice.preset_id = presetSelect.value;
+    }
 
     try {
       const res = await fetch('/api/ext/presenter/config', {
@@ -529,8 +556,7 @@
                 }
             }, 3500);
         }
-        
-        // Notify the UI to update mode
+
         if (window.Presenter) {
            window.Presenter.setEnabled(presenterConfig.enabled);
            window.Presenter.setDisplayMode(presenterConfig.panel_default);
@@ -543,6 +569,8 @@
     } catch (e) {
       console.error("[Presenter] Failed to save config", e);
     }
+  }
+
   // Instant search filter for notification types
   function filterPresenterNotificationTypes(query) {
     const q = (query || '').toLowerCase().trim();
@@ -568,11 +596,21 @@
     }
   }
 
-  // Hook into the tab display event to load data
-  document.getElementById('tab-presenter').addEventListener('tab-active', () => {
-    loadPresenterConfig();
-  });
+  // Export globally for tab activation handlers
+  window.loadPresenterConfig = loadPresenterConfig;
+  window.savePresenterConfig = savePresenterConfig;
+  window.filterPresenterNotificationTypes = filterPresenterNotificationTypes;
 
-  // Also call it once just in case the event already fired
-  setTimeout(loadPresenterConfig, 200);
+  // Hook into the tab display event to load data
+  const tabPres = document.getElementById('tab-presenter');
+  if (tabPres) {
+    tabPres.addEventListener('tab-active', () => {
+      loadPresenterConfig();
+    });
+  }
+
+  // Immediate and delayed execution to ensure controls populate on fragment injection
+  loadPresenterConfig();
+  setTimeout(loadPresenterConfig, 150);
+  setTimeout(loadPresenterConfig, 600);
 </script>

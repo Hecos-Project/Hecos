@@ -5,6 +5,8 @@ Delegates to MCP, Core, System, and native/legacy Plugins.
 """
 import time
 import json
+import re
+import inspect
 from hecos.core.logging import logger
 from hecos.core.i18n import translator
 from hecos.core.processing.parsers.reasoning_parser import ReasoningParser
@@ -403,18 +405,47 @@ def extract_and_execute_tools(raw_response, current_config: dict, sm=None):
                 actual_method_name = method_name
                 actual_args = action_or_args
                 
-                if not actual_method_name and isinstance(action_or_args, str) and ":" in action_or_args:
-                    m_name, m_args = action_or_args.split(":", 1)
-                    m_name = m_name.strip()
-                    if hasattr(plugin_obj.tools, m_name):
-                        actual_method_name = m_name
-                        actual_args = {"prompt": m_args.strip()}
+                if not actual_method_name and isinstance(action_or_args, str):
+                    clean_str = action_or_args.strip()
+                    # 1. Match method(args...) syntax e.g. web_search(query="...", engine="SearXNG")
+                    call_match = re.match(r'^([a-zA-Z0-9_]+)\s*\((.*?)\)$', clean_str, re.DOTALL)
+                    if call_match:
+                        cand_name = call_match.group(1).strip()
+                        raw_call_args = call_match.group(2).strip()
+                        if hasattr(plugin_obj.tools, cand_name):
+                            actual_method_name = cand_name
+                            parsed_kwargs = {}
+                            kwarg_matches = re.findall(r'([a-zA-Z0-9_]+)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s,]+))', raw_call_args)
+                            if kwarg_matches:
+                                for kw, v1, v2, v3 in kwarg_matches:
+                                    parsed_kwargs[kw] = v1 or v2 or v3
+                                actual_args = parsed_kwargs
+                            elif raw_call_args:
+                                actual_args = raw_call_args.strip('"\'')
+                            else:
+                                actual_args = {}
+                    # 2. Match method:arg syntax e.g. web_search: flying horses
+                    elif ":" in clean_str:
+                        m_name, m_args = clean_str.split(":", 1)
+                        m_name = m_name.strip()
+                        if hasattr(plugin_obj.tools, m_name):
+                            actual_method_name = m_name
+                            actual_args = {"query": m_args.strip(), "prompt": m_args.strip()}
                 
                 if actual_method_name:
                     logger.info(f"[SYSTEM] {translator.t('executing_module', module=module_to_call.upper())}")
                     try:
+                        import inspect
                         method = getattr(plugin_obj.tools, actual_method_name)
-                        result = method(**actual_args) if isinstance(actual_args, dict) else method(actual_args)
+                        if isinstance(actual_args, dict):
+                            sig = inspect.signature(method)
+                            valid_kwargs = {k: v for k, v in actual_args.items() if k in sig.parameters}
+                            if not valid_kwargs and len(sig.parameters) >= 1 and actual_args:
+                                first_param = [p for p in sig.parameters.keys() if p != 'self'][0]
+                                valid_kwargs = {first_param: list(actual_args.values())[0]}
+                            result = method(**valid_kwargs)
+                        else:
+                            result = method(actual_args)
                         if result:
                             logger.info(f"[OUTPUT {module_to_call.upper()}]:\n{result}")
                             tool_results.append({"id": call_id, "output": str(result), "tag": module_to_call.upper()})

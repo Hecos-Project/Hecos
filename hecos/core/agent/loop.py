@@ -111,6 +111,19 @@ class AgentExecutor:
 
             gen_hb_thread = threading.Thread(target=_gen_heartbeat, daemon=True)
             gen_hb_thread.start()
+            # --- UNIFIED MULTIMODAL PERCEPTION (VISION ROUTER) ---
+            if images:
+                try:
+                    from hecos.modules.web_ui.vision import VisionRouter
+                    from app.model_manager import ModelManager
+                    _btype, _mname = ModelManager.get_effective_model_info(current_cfg)
+                    user_text, images = VisionRouter.process_incoming_turn(
+                        user_text, images, _mname, _btype, emit_callback=self._emit
+                    )
+                except Exception as _v_err:
+                    logger.debug(f"[AGENT] Vision routing exception: {_v_err}")
+            # -----------------------------------------------------
+
             try:
                 raw_response = brain.generate_response(
                     user_text, 
@@ -225,6 +238,7 @@ class AgentExecutor:
                     })
                     
                     images = MediaInterceptor.load_vision_images(output_text, images, self._emit)
+                    images = MediaInterceptor.load_search_vision_images(output_text, images, self._emit)
                     
                 # Short-circuit on successful image generation ONLY if:
                 # 1. All requested images in this turn have been completed.
@@ -242,8 +256,24 @@ class AgentExecutor:
                 )
                 doc_satisfied = (not wants_doc) or has_doc
 
-                if has_generated_img and all_images_done and doc_satisfied and extracted_text and len(extracted_text.strip()) > 10:
-                    self._emit("Image generated and response formulated.", level="success")
+                # Short-circuit on search completion if response is already formulated
+                has_search_card = any(
+                    r.get("tag") in ("NETSEARCH", "SLASH_COMMAND") or
+                    "[[HSEARCH:" in str(r.get("output", "")) or
+                    "[[HMEDIA:" in str(r.get("output", ""))
+                    for r in accumulated_tool_results
+                )
+                
+                has_pending_vision_review = bool(images and len(images) > 0 and iteration == 1 and has_search_card)
+
+                should_short_circuit = (
+                    (has_generated_img and all_images_done and doc_satisfied and extracted_text and len(extracted_text.strip()) > 10) or
+                    (has_search_card and not has_pending_vision_review and doc_satisfied and extracted_text and len(extracted_text.strip()) > 10)
+                )
+
+                if should_short_circuit:
+                    circuit_msg = "Search completed and response formulated." if has_search_card else "Image generated and response formulated."
+                    self._emit(circuit_msg, level="success")
 
                     if think_block:
                         extracted_text = f"<think>\n{think_block}\n</think>\n\n{extracted_text}"

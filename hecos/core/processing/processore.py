@@ -56,6 +56,13 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
         marker = f"__IMG_{j}__"
         _placeholders[marker] = img_tag
         base_text = base_text.replace(img_tag, marker, 1)
+
+    # Protect [[HSEARCH:...]] and [[HMEDIA:...]] tags from regex stripping
+    _search_tags = _re.findall(r'\[\[H(?:SEARCH|MEDIA):[^\]]+\]\]', base_text)
+    for k, s_tag in enumerate(_search_tags):
+        marker = f"__HSEARCH_{k}__"
+        _placeholders[marker] = s_tag
+        base_text = base_text.replace(s_tag, marker, 1)
     
     # Extract tags (for UI rendering if legacy tags were used instead of native functions)
     base_video = _re.sub(r'\[.*?:.*?\]', '', base_text).strip()

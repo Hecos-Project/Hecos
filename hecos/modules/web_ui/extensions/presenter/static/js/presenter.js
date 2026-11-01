@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Hecos Presenter — Full Featured Extension JS (Core Module)
  * ─────────────────────────────────────────────────────────────────────
  * Unified notification system: toast, briefing, live commentary, feed.
@@ -37,11 +37,9 @@
 
         UI.ensureBuilt(target);
 
-        // Auto-expand when message arrives
+        // Respect collapsed state: do not force auto-expand when collapsed
         if (target.classList.contains('collapsed')) {
-            target.classList.remove('collapsed');
-            const icon = target.querySelector('#hbs-presenter-toggle i');
-            if (icon) { icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up'); }
+            // Keep collapsed
         }
 
         const msgEl = target.querySelector('.hbs-presenter-body');
@@ -58,6 +56,9 @@
 
         // Append line instead of replacing
         if (msgEl) {
+            const emptyNotice = msgEl.querySelector('.hbs-presenter-empty-search');
+            if (emptyNotice) emptyNotice.remove();
+
             const line = document.createElement('div');
             line.className = 'hbs-presenter-line';
             line.dataset.logType = type || 'system_info';
@@ -146,6 +147,11 @@
             msgEl.innerHTML = feedData.html;
             STATE.feedHistory = Array.isArray(feedData.history) ? [...feedData.history] : [];
             msgEl.scrollTop = msgEl.scrollHeight;
+            if (window.HBSPresenterStats && typeof window.HBSPresenterStats.syncFromDOM === 'function') {
+                window.HBSPresenterStats.syncFromDOM();
+            } else if (window.HBSPresenterStatsUI && typeof window.HBSPresenterStatsUI.render === 'function') {
+                window.HBSPresenterStatsUI.render();
+            }
             return true;
         }
         return false;
@@ -184,6 +190,11 @@
             const parts = displayHtml.split('</think>');
             thinkText = parts[0].trim();
             displayHtml = parts.slice(1).join('').trim();
+        } else if (displayHtml.includes('<think>')) {
+            // Unclosed <think> tag
+            const parts = displayHtml.split('<think>');
+            thinkText = parts.slice(1).join('').trim();
+            displayHtml = parts[0].trim();
         }
 
         const timestamp = opts.timestamp || new Date().toISOString();
@@ -229,6 +240,12 @@
     // ── Playbook Status & Header Pill ─────────────────────────────────
     async function _updatePlaybookStatus(notify = false) {
         try {
+            const emb = UI.getEmbedded();
+            if (emb && (emb.classList.contains('netsearch-presenter-embedded') || emb.closest('.search-copilot') || (window.location && window.location.pathname.includes('/netsearch')))) {
+                const pill = emb.querySelector('#hbs-presenter-playbook-pill');
+                if (pill) pill.style.display = 'none';
+                return;
+            }
             const chatId = (window.chatHistoryState && window.chatHistoryState.activeSessionId) ||
                            localStorage.getItem('hecos_active_session_id') ||
                            (window.privacy_manager && typeof window.privacy_manager.get_session_id === 'function' ? window.privacy_manager.get_session_id() : 'default') ||
@@ -313,9 +330,12 @@
         const el = UI.getEmbedded();
         if (el) {
             UI.ensureBuilt(el);
-            // Restore active state
-            if (localStorage.getItem('hecos_presenter_active') === 'true') {
-                el.classList.add('active');
+            // Always active so it is visible immediately
+            el.classList.add('active');
+            localStorage.setItem('hecos_presenter_active', 'true');
+            // Flush any counts that were already in memory before DOM was built
+            if (window.HBSPresenterStatsUI && typeof window.HBSPresenterStatsUI.render === 'function') {
+                window.HBSPresenterStatsUI.render();
             }
         }
     }
@@ -417,6 +437,45 @@
             }
         },
 
+        togglePower: function(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const emb = UI.getEmbedded();
+            if (!emb) return;
+            const isColl = emb.classList.contains('collapsed');
+            const nextActive = isColl; // if collapsed, turn ON; else turn OFF
+            Presenter.setContextEnabled(nextActive);
+        },
+
+        setContextEnabled: function(active) {
+            const emb = UI.getEmbedded();
+            const isNetSearch = (window.location && window.location.pathname.includes('/netsearch')) || (emb && emb.classList.contains('netsearch-presenter-embedded'));
+            const ctx = isNetSearch ? 'netsearch' : 'chat';
+            const storageKey = isNetSearch ? 'hecos_netsearch_presenter_collapsed' : 'hecos_chat_presenter_collapsed';
+
+            if (emb) {
+                if (active) {
+                    emb.classList.remove('collapsed');
+                    localStorage.setItem(storageKey, 'false');
+                } else {
+                    emb.classList.add('collapsed');
+                    localStorage.setItem(storageKey, 'true');
+                }
+            }
+            if (UI && typeof UI.updatePowerUI === 'function') {
+                UI.updatePowerUI(active);
+            }
+
+            // Sync with backend independent context toggle
+            fetch('/api/ext/presenter/toggle_context', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ context: ctx, enabled: !!active })
+            }).catch(err => console.error('[Presenter] Failed to toggle context:', err));
+        },
+
         clear: function() {
             STATE.feedHistory.length = 0;
             const emb = UI.getEmbedded();
@@ -488,7 +547,10 @@
 
         toggleAllFilters: function(btn) {
             const allHidden = btn._allHidden;
-            const allTypes = Object.keys(STATE.TYPE_META).filter(k => k !== 'default');
+            const isNetSearch = (window.location && window.location.pathname.includes('/netsearch')) || (UI.getEmbedded() && UI.getEmbedded().classList.contains('netsearch-presenter-embedded'));
+            const allTypes = isNetSearch
+                ? ['search_milestone', 'search_commentary']
+                : Object.keys(STATE.TYPE_META).filter(k => k !== 'default' && !['search_milestone', 'search_commentary'].includes(k));
             
             if (allHidden) {
                 // Show all: clear hidden types
@@ -600,12 +662,19 @@
                     if (STATE.currentSessionId !== sessionId) return;
 
                     Presenter.clear();
+                    const isNetSearch = (window.location && window.location.pathname.includes('/netsearch')) || (UI.getEmbedded() && UI.getEmbedded().classList.contains('netsearch-presenter-embedded'));
                     const hasEntries = data.ok && Array.isArray(data.entries) && data.entries.length > 0;
+                    let renderedCount = 0;
                     if (hasEntries) {
                         data.entries.forEach(entry => {
                             const entryType = entry.event_name || 'system_info';
                             const entryText = entry.text || '';
+                            if (isNetSearch) {
+                                const isSearch = entryType.startsWith('search_') || entryText.includes('[NetSearch]');
+                                if (!isSearch) return; // Skip non-search entries in NetSearch
+                            }
                             if (entryText) {
+                                renderedCount++;
                                 _notify({
                                     type: entryType === 'presenter_feed' ? 'system_info' : entryType,
                                     text: entryText,
@@ -616,8 +685,20 @@
                                 });
                             }
                         });
-                    } else {
-                        // If session has no persisted feed entries yet, show playbook status quietly
+                    }
+                    // After feed replay, ensure the stats sub-bar reflects all accumulated counts.
+                    if (window.HBSPresenterStats && typeof window.HBSPresenterStats.syncFromDOM === 'function') {
+                        window.HBSPresenterStats.syncFromDOM();
+                    } else if (window.HBSPresenterStatsUI && typeof window.HBSPresenterStatsUI.render === 'function') {
+                        window.HBSPresenterStatsUI.render();
+                    }
+                    if (isNetSearch && renderedCount === 0) {
+                        const emb = UI.getEmbedded();
+                        const msgEl = emb ? emb.querySelector('.hbs-presenter-body') : null;
+                        if (msgEl) {
+                            msgEl.innerHTML = '<div class="hbs-presenter-empty-search" style="color:var(--muted);font-size:11px;font-style:italic;padding:14px 6px;text-align:center;opacity:0.7;"><i class="fas fa-satellite-dish" style="margin-right:6px;"></i>Waiting for search events &amp; live commentary...</div>';
+                        }
+                    } else if (!isNetSearch && !hasEntries) {
                         _updatePlaybookStatus(true);
                     }
                     _saveCurrentSessionFeed(sessionId);
@@ -661,7 +742,12 @@
             // Clear panel DOM
             Presenter.clear();
 
-            // Run fresh boot sequence and announcements
+            if (isNetSearch) {
+                Presenter.loadSessionFeed('global', false);
+                return;
+            }
+
+            // Run fresh boot sequence and announcements in chat
             _notify({
                 type: 'system_info',
                 text: 'Presenter core reloaded.',
@@ -685,6 +771,14 @@
         const text = ev.text || (ev.data && ev.data.text);
         const eventType = ev.event_name || ev.type || 'system_info';
         const evSessionId = ev.session_id || null;
+
+        const isNetSearch = (window.location && window.location.pathname.includes('/netsearch')) || (UI.getEmbedded() && UI.getEmbedded().classList.contains('netsearch-presenter-embedded'));
+        if (isNetSearch) {
+            const isSearch = eventType.startsWith('search_') || (text && text.includes('[NetSearch]'));
+            if (!isSearch) {
+                return; // Ignore non-search events in NetSearch sidebar
+            }
+        }
 
         if (eventType === 'new_chat') {
             const sid = evSessionId || localStorage.getItem('hecos_active_session_id');
@@ -737,10 +831,22 @@
         // Clear legacy flag
         try { sessionStorage.removeItem('hecos_presenter_booted'); } catch(e) {}
 
-        const initialSid = localStorage.getItem('hecos_active_session_id');
-        if (initialSid) {
-            Presenter.loadSessionFeed(initialSid, false);
-            STATE.appBooted = true;
+        const isNetSearch = (window.location && window.location.pathname.includes('/netsearch')) || (UI.getEmbedded() && UI.getEmbedded().classList.contains('netsearch-presenter-embedded'));
+        const targetSid = isNetSearch ? 'global' : (localStorage.getItem('hecos_active_session_id') || 'global');
+        Presenter.loadSessionFeed(targetSid, false);
+        STATE.appBooted = true;
+
+        const storageKey = isNetSearch ? 'hecos_netsearch_presenter_collapsed' : 'hecos_chat_presenter_collapsed';
+        const isSavedCollapsed = localStorage.getItem(storageKey) === 'true';
+        const embInit = UI.getEmbedded();
+        if (embInit) {
+            if (isSavedCollapsed) {
+                embInit.classList.add('collapsed');
+                if (UI && typeof UI.updatePowerUI === 'function') UI.updatePowerUI(false);
+            } else {
+                embInit.classList.remove('collapsed');
+                if (UI && typeof UI.updatePowerUI === 'function') UI.updatePowerUI(true);
+            }
         }
 
         fetch('/api/ext/presenter/config')
@@ -748,9 +854,16 @@
             .then(d => {
                 if (d.ok && d.config) {
                     Presenter.setEnabled(d.config.enabled);
-                    Presenter.setDisplayMode(d.config.panel_default);
-                    if (d.config.enabled) {
-                        // Only run initial boot banner if no chat was active and app hasn't booted yet
+                    if (!isNetSearch) {
+                        Presenter.setDisplayMode(d.config.panel_default);
+                    }
+                    // If a saved collapsed state exists in localStorage, sync with backend context
+                    if (localStorage.getItem(storageKey) !== null) {
+                        Presenter.setContextEnabled(!isSavedCollapsed);
+                    }
+
+                    if (d.config.enabled && !isNetSearch) {
+                        // Only run initial boot banner in chat
                         if (!initialSid && !STATE.appBooted) {
                             STATE.appBooted = true;
                             _notify({
@@ -764,7 +877,7 @@
                                 setTimeout(() => Presenter.logShortcuts(), 4800);
                             }
                         }
-                    } else {
+                    } else if (!d.config.enabled) {
                         // Render the disabled notice immediately
                         UI.renderDisabledState();
                     }
@@ -774,6 +887,15 @@
 
         // Active Playbook Pill & Status Integration
         setTimeout(() => _updatePlaybookStatus(false), 800);
+
+        // Ensure Notification Stats are synced and rendered
+        setTimeout(() => {
+            if (window.HBSPresenterStats && typeof window.HBSPresenterStats.syncFromDOM === 'function') {
+                window.HBSPresenterStats.syncFromDOM();
+            } else if (window.HBSPresenterStatsUI && typeof window.HBSPresenterStatsUI.render === 'function') {
+                window.HBSPresenterStatsUI.render();
+            }
+        }, 500);
 
         // Listen for storage events (sync when Playbooks are toggled/edited in another tab)
         window.addEventListener('storage', (e) => {

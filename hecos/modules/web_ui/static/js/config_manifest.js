@@ -23,6 +23,7 @@ window.CONFIG_HUB = {
         { id: 'filters',   label: 'hub_mod_filters',      icon: '<i class="fas fa-filter"></i>', cat: 'INTELLIGENZA', isCore: true },
         { id: 'memory',    label: 'hub_mod_memory',       icon: '<i class="fas fa-memory"></i>', cat: 'INTELLIGENZA', pluginTag: 'MEMORY', isCore: true },
         { id: 'agent',     label: 'hub_mod_agent',        icon: '<i class="fas fa-robot"></i>', cat: 'INTELLIGENZA', isCore: true },
+        { id: 'vision',    label: 'Multimodal Perception', icon: '<i class="fas fa-eye"></i>', cat: 'INTELLIGENZA', isCore: true },
         
         { id: 'voice',     label: 'hub_mod_voice',        icon: '<i class="fas fa-microphone-alt"></i>', cat: 'MULTIMEDIA', isCore: true },
 

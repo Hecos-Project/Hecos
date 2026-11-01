@@ -209,8 +209,55 @@ window.sendMessage = async function() {
       } else if(ev.type === 'token') {
         const tokenText = (ev.text !== undefined && ev.text !== null) ? ev.text : (ev.token || '');
         aiText += tokenText;
-        aiBubble.innerHTML = window.renderMarkdown(aiText);
-        aiBubble.appendChild(cursor);
+
+        // ── Search Card Streaming Protection ──────────────────────────────
+        // Detect [[HSEARCH:id]] or [[HMEDIA:id]] in the accumulated text.
+        // Once found, we NEVER use innerHTML= on the bubble again — that
+        // would destroy the card DOM (and its async-populated media) on
+        // every single token.  Instead we split the bubble into:
+        //   .hsearch-pre-text  (AI prose — re-rendered on each token)
+        //   .hsearch-chat-card (rendered ONCE, populated async, untouched)
+        const hsearchTokenMatch = aiText.match(/\[\[H(?:SEARCH|MEDIA):([a-zA-Z0-9_-]+)\]\]/);
+        if (hsearchTokenMatch) {
+          const sid = hsearchTokenMatch[1];
+          const isMedia = aiText.includes('[[HMEDIA:');
+          const existingCard = aiBubble.querySelector('.hsearch-chat-card');
+          const textPart = aiText.replace(/\[\[H(?:SEARCH|MEDIA):[a-zA-Z0-9_-]+\]\]/g, '');
+
+          if (existingCard) {
+            // Card already in DOM — only refresh the text above it
+            let textEl = aiBubble.querySelector('.hsearch-pre-text');
+            if (textEl) {
+              textEl.innerHTML = window.renderMarkdown(textPart);
+            }
+          } else {
+            // First time the token appears — build the bubble via DOM ops
+            aiBubble.innerHTML = '';
+
+            // 1. Text div (everything except the token)
+            const preDiv = document.createElement('div');
+            preDiv.className = 'hsearch-pre-text';
+            preDiv.innerHTML = window.renderMarkdown(textPart);
+            aiBubble.appendChild(preDiv);
+
+            // 2. Search card shell (rendered via the exported helper)
+            const cardHtml = (typeof window.renderHSearchCard === 'function')
+              ? window.renderHSearchCard(sid, isMedia)
+              : '';
+            if (cardHtml) {
+              const tmp = document.createElement('div');
+              tmp.innerHTML = cardHtml;
+              while (tmp.firstChild) aiBubble.appendChild(tmp.firstChild);
+            }
+
+            // 3. Re-attach cursor
+            aiBubble.appendChild(cursor);
+          }
+        } else {
+          // No search token — normal full re-render
+          aiBubble.innerHTML = window.renderMarkdown(aiText);
+          aiBubble.appendChild(cursor);
+        }
         if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
       } else if(ev.type === 'camera_request') {
         if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
@@ -282,7 +329,25 @@ window.sendMessage = async function() {
         if (window.AgentUI) window.AgentUI.finalize();
         cursor.remove();
         const existingBadge = aiBubble.querySelector('.audio-badge');
-        aiBubble.innerHTML = window.renderMarkdown(aiText||(ev.type==='error'?'❌ '+ev.text:''));
+        const existingSearchCard = aiBubble.querySelector('.hsearch-chat-card');
+        if (existingSearchCard) {
+          // Don't wipe the populated search card — only update the text portion above it
+          const finalText = (aiText || (ev.type === 'error' ? '❌ ' + ev.text : ''))
+            .replace(/\[\[H(?:SEARCH|MEDIA):[a-zA-Z0-9_-]+\]\]/g, '');
+          let textEl = aiBubble.querySelector('.hsearch-pre-text');
+          if (textEl) {
+            textEl.innerHTML = window.renderMarkdown(finalText);
+          } else if (finalText.trim()) {
+            // No pre-text div yet — create one before the card
+            const newTextEl = document.createElement('div');
+            newTextEl.className = 'hsearch-pre-text';
+            newTextEl.innerHTML = window.renderMarkdown(finalText);
+            aiBubble.insertBefore(newTextEl, existingSearchCard);
+          }
+        } else {
+          // No search card present — normal full re-render
+          aiBubble.innerHTML = window.renderMarkdown(aiText||(ev.type==='error'?'❌ '+ev.text:''));
+        }
         if (existingBadge) {
           aiBubble.appendChild(existingBadge);
         }
@@ -413,8 +478,55 @@ window.sendInternalMessage = async function(text) {
       } else if(ev.type === 'token') {
         const tokenText = (ev.text !== undefined && ev.text !== null) ? ev.text : (ev.token || '');
         aiText += tokenText;
-        aiBubble.innerHTML = window.renderMarkdown(aiText);
-        aiBubble.appendChild(cursor);
+
+        // ── Search Card Streaming Protection ──────────────────────────────
+        // Detect [[HSEARCH:id]] or [[HMEDIA:id]] in the accumulated text.
+        // Once found, we NEVER use innerHTML= on the bubble again — that
+        // would destroy the card DOM (and its async-populated media) on
+        // every single token.  Instead we split the bubble into:
+        //   .hsearch-pre-text  (AI prose — re-rendered on each token)
+        //   .hsearch-chat-card (rendered ONCE, populated async, untouched)
+        const hsearchTokenMatch = aiText.match(/\[\[H(?:SEARCH|MEDIA):([a-zA-Z0-9_-]+)\]\]/);
+        if (hsearchTokenMatch) {
+          const sid = hsearchTokenMatch[1];
+          const isMedia = aiText.includes('[[HMEDIA:');
+          const existingCard = aiBubble.querySelector('.hsearch-chat-card');
+          const textPart = aiText.replace(/\[\[H(?:SEARCH|MEDIA):[a-zA-Z0-9_-]+\]\]/g, '');
+
+          if (existingCard) {
+            // Card already in DOM — only refresh the text above it
+            let textEl = aiBubble.querySelector('.hsearch-pre-text');
+            if (textEl) {
+              textEl.innerHTML = window.renderMarkdown(textPart);
+            }
+          } else {
+            // First time the token appears — build the bubble via DOM ops
+            aiBubble.innerHTML = '';
+
+            // 1. Text div (everything except the token)
+            const preDiv = document.createElement('div');
+            preDiv.className = 'hsearch-pre-text';
+            preDiv.innerHTML = window.renderMarkdown(textPart);
+            aiBubble.appendChild(preDiv);
+
+            // 2. Search card shell (rendered via the exported helper)
+            const cardHtml = (typeof window.renderHSearchCard === 'function')
+              ? window.renderHSearchCard(sid, isMedia)
+              : '';
+            if (cardHtml) {
+              const tmp = document.createElement('div');
+              tmp.innerHTML = cardHtml;
+              while (tmp.firstChild) aiBubble.appendChild(tmp.firstChild);
+            }
+
+            // 3. Re-attach cursor
+            aiBubble.appendChild(cursor);
+          }
+        } else {
+          // No search token — normal full re-render
+          aiBubble.innerHTML = window.renderMarkdown(aiText);
+          aiBubble.appendChild(cursor);
+        }
         if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
       } else if(ev.type === 'camera_request') {
         if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);

@@ -437,6 +437,14 @@ window.processAiMedia = function(html) {
       finalHtml = window.processAiImages(finalHtml);
   }
 
+  // Support Net Search [[HSEARCH:...]] and [[HMEDIA:...]] tokens natively in chat renderer
+  if (finalHtml.includes('[[HSEARCH:') || finalHtml.includes('[[HMEDIA:')) {
+    if (typeof window.renderHSearchCard === 'function') {
+      finalHtml = finalHtml.replace(/\[\[HSEARCH:([a-zA-Z0-9_-]+)\]\]/g, (match, sid) => window.renderHSearchCard(sid, false));
+      finalHtml = finalHtml.replace(/\[\[HMEDIA:([a-zA-Z0-9_-]+)\]\]/g, (match, sid) => window.renderHSearchCard(sid, true));
+    }
+  }
+
   // --- Photo Wall Feature ---
   // Group consecutive .chat-img-wrap elements into a grid gallery
   try {

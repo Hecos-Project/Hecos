@@ -310,30 +310,29 @@
   
   <div style="flex: 1;"></div>
   
-  <button class="toolbar-btn" title="Toggle Presenter" onclick="
+  <button class="toolbar-btn" title="Toggle Chat Presenter" onclick="
     if (!window.Presenter) return;
-    const isCurrentlyEnabled = window._presenterEnabled;
-    const nextState = !isCurrentlyEnabled;
-    
-    // Update frontend state immediately
-    window.Presenter.setEnabled(nextState);
     const el = document.getElementById('hbs-presenter-embedded');
-    if (el) {
-        if (nextState) {
-            el.classList.add('active');
-            localStorage.setItem('hecos_presenter_active', 'true');
-        } else {
-            el.classList.remove('active');
-            localStorage.setItem('hecos_presenter_active', 'false');
-        }
-    }
+    const isCurrentlyActive = el ? (!el.classList.contains('collapsed') && el.classList.contains('active')) : !!window._presenterEnabled;
+    const nextState = !isCurrentlyActive;
     
-    // Tell the backend to actually shut down or start up to save resources
-    fetch('/api/ext/presenter/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: nextState })
-    }).catch(err => console.error('Failed to toggle presenter config', err));
+    if (typeof window.Presenter.setContextEnabled === 'function') {
+        window.Presenter.setContextEnabled(nextState);
+        if (el) {
+            el.classList.toggle('active', nextState);
+        }
+    } else {
+        window.Presenter.setEnabled(nextState);
+        if (el) {
+            el.classList.toggle('active', nextState);
+            el.classList.toggle('collapsed', !nextState);
+        }
+        fetch('/api/ext/presenter/toggle_context', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ context: 'chat', enabled: nextState })
+        }).catch(err => console.error('Failed to toggle chat presenter context', err));
+    }
   ">
     <span class="tb-icon" style="color: #ff512f;"><i class="fas fa-bullhorn"></i></span> Presenter
   </button>

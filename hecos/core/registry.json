@@ -181,12 +181,19 @@
             "file_search": "Hunts for downloadable files and documents using multi-extension dork queries and Archive.org.",
             "media_search": "Searches for images, videos, audio and podcasts matching the query.",
             "osint_search": "OSINT identity hunt: finds active user profiles across 15+ social and coding platforms.",
+            "slash_audio": "Method",
             "slash_dark": "Method",
+            "slash_fetch": "Method",
             "slash_files": "Method",
+            "slash_images": "Method",
+            "slash_media": "Method",
             "slash_netsearch": "Method",
             "slash_osint": "Method",
             "slash_search": "Method",
+            "slash_search_config": "Method",
+            "slash_search_engines": "Method",
             "slash_tor_new": "Method",
+            "slash_videos": "Method",
             "web_search": "Searches the Clearnet using privacy-preserving aggregators (SearXNG, DuckDuckGo, Brave, etc.)."
         },
         "status": "ONLINE",
@@ -196,12 +203,197 @@
         "icon": "fas fa-satellite-dish",
         "category": "SISTEMA",
         "slash_commands": [
-            "/netsearch",
-            "/search",
-            "/dark",
-            "/tor_new",
-            "/files",
-            "/osint"
+            {
+                "id": "search",
+                "aliases": [
+                    "/search",
+                    "/netsearch",
+                    "/cerca",
+                    "/websearch"
+                ],
+                "description": "Searches the web, dark web, media, and files across all engines",
+                "usage": "/search <query>",
+                "example": "/search artificial intelligence",
+                "icon": "🌐",
+                "category": "NETSEARCH",
+                "method": "slash_search",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "dark",
+                "aliases": [
+                    "/dark",
+                    "/onion",
+                    "/tor_search"
+                ],
+                "description": "Searches the Tor Dark Web (.onion hidden services)",
+                "usage": "/dark <query>",
+                "example": "/dark cybersecurity",
+                "icon": "🧅",
+                "category": "NETSEARCH",
+                "method": "slash_dark",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "media",
+                "aliases": [
+                    "/media",
+                    "/find_media"
+                ],
+                "description": "Searches for images, videos, podcasts and audio online",
+                "usage": "/media <query>",
+                "example": "/media 4k nature",
+                "icon": "🎬",
+                "category": "NETSEARCH",
+                "method": "slash_media",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "videos",
+                "aliases": [
+                    "/videos",
+                    "/video",
+                    "/cerca_video"
+                ],
+                "description": "Searches for videos across YouTube, Vimeo, Peertube, and web sources",
+                "usage": "/videos <query>",
+                "example": "/videos flying horses",
+                "icon": "📹",
+                "category": "NETSEARCH",
+                "method": "slash_videos",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "images",
+                "aliases": [
+                    "/images",
+                    "/immagini",
+                    "/foto_web",
+                    "/cerca_immagini"
+                ],
+                "description": "Searches the web for real photos, illustrations, and images",
+                "usage": "/images <query>",
+                "example": "/images flying horses",
+                "icon": "🖼️",
+                "category": "NETSEARCH",
+                "method": "slash_images",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "files",
+                "aliases": [
+                    "/files",
+                    "/file",
+                    "/dorks",
+                    "/cerca_file"
+                ],
+                "description": "Hunts for downloadable files, PDFs, ebooks, and archives online",
+                "usage": "/files <query>",
+                "example": "/files machine learning pdf",
+                "icon": "📁",
+                "category": "NETSEARCH",
+                "method": "slash_files",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "osint",
+                "aliases": [
+                    "/osint",
+                    "/whois_user"
+                ],
+                "description": "Searches for a username across 15+ social and coding platforms",
+                "usage": "/osint <username>",
+                "example": "/osint johndoe",
+                "icon": "🕵️",
+                "category": "NETSEARCH",
+                "method": "slash_osint",
+                "args_schema": {
+                    "username": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "fetch",
+                "aliases": [
+                    "/fetch",
+                    "/scrape",
+                    "/read_page"
+                ],
+                "description": "Fetches and extracts clean text from any URL (Clearnet or Tor .onion)",
+                "usage": "/fetch <url>",
+                "example": "/fetch https://example.com",
+                "icon": "📄",
+                "category": "NETSEARCH",
+                "method": "slash_fetch",
+                "args_schema": {
+                    "url": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "tor_new",
+                "aliases": [
+                    "/tor_new",
+                    "/new_circuit"
+                ],
+                "description": "Requests a new Tor identity circuit",
+                "usage": "/tor_new",
+                "example": "/tor_new",
+                "icon": "🧅",
+                "category": "NETSEARCH",
+                "method": "slash_tor_new",
+                "args_schema": {},
+                "requires_args": false
+            },
+            {
+                "id": "search_engines",
+                "aliases": [
+                    "/search_engines",
+                    "/engines"
+                ],
+                "description": "Displays the status of active search engines and daemons",
+                "usage": "/search_engines",
+                "example": "/search_engines",
+                "icon": "🛰️",
+                "category": "NETSEARCH",
+                "method": "slash_search_engines",
+                "args_schema": {},
+                "requires_args": false
+            },
+            {
+                "id": "search_config",
+                "aliases": [
+                    "/search_config"
+                ],
+                "description": "Inspects or updates Net Search configuration",
+                "usage": "/search_config [set <key> <val>]",
+                "example": "/search_config",
+                "icon": "⚙️",
+                "category": "NETSEARCH",
+                "method": "slash_search_config",
+                "args_schema": {
+                    "args": "str"
+                },
+                "requires_args": false
+            }
         ]
     },
     "PERSONALITY": {

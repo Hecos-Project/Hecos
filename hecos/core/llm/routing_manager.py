@@ -19,6 +19,13 @@ class RoutingManager:
         try:
             # 1. Load active plugin tags
             active_tags = get_active_tags()
+            if not active_tags:
+                try:
+                    from hecos.core.system.module_loader import update_capability_registry
+                    update_capability_registry(config, debug_log=False)
+                    active_tags = get_active_tags()
+                except Exception as _reg_err:
+                    logger.debug(f"RoutingManager: capability update skipped: {_reg_err}")
             
             # 2. Load instructions from registry
             registry_data = {}

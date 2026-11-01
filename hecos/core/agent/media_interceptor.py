@@ -45,12 +45,16 @@ class MediaInterceptor:
                     if "HTML:" not in extracted_text or "PDF:" not in extracted_text:
                         extracted_text += f"\n\n{out}"
 
-                # 4. Handle Deep Search [[HSEARCH:...]] session tokens
+                # 4. Handle Deep Search [[HSEARCH:...]] and [[HMEDIA:...]] session tokens
                 if isinstance(out, str):
                     hsearch_tags = re.findall(r'\[\[HSEARCH:([a-zA-Z0-9_-]+)\]\]', out)
                     for sid in hsearch_tags:
                         if f"[[HSEARCH:{sid}]]" not in extracted_text:
                             extracted_text += f"\n\n[[HSEARCH:{sid}]]"
+                    hmedia_tags = re.findall(r'\[\[HMEDIA:([a-zA-Z0-9_-]+)\]\]', out)
+                    for sid in hmedia_tags:
+                        if f"[[HMEDIA:{sid}]]" not in extracted_text and f"[[HSEARCH:{sid}]]" not in extracted_text:
+                            extracted_text += f"\n\n[[HMEDIA:{sid}]]"
                     
         return extracted_text
 
@@ -90,3 +94,28 @@ class MediaInterceptor:
                     except Exception as e:
                         logger.debug(f"[MediaInterceptor] Failed to load intercepted image path {path}: {e}")
         return images_list
+
+    @staticmethod
+    def load_search_vision_images(output_text: str, images_list: list, agent_emit) -> list:
+        """
+        Intercepts [[HSEARCH:...]] or [[HMEDIA:...]] tokens from tool output,
+        fetches search thumbnails via the unified vision subsystem, and appends
+        them to images_list for visual verification.
+        """
+        if output_text and isinstance(output_text, str):
+            sids = re.findall(r'\[\[(?:HSEARCH|HMEDIA):([a-zA-Z0-9_-]+)\]\]', output_text)
+            if sids:
+                try:
+                    from hecos.modules.web_ui.vision import extract_search_session_images
+                    for sid in set(sids):
+                        thumbs = extract_search_session_images(sid)
+                        if thumbs:
+                            if images_list is None:
+                                images_list = []
+                            images_list.extend(thumbs)
+                            agent_emit(f"Vision: loaded {len(thumbs)} search thumbnail(s) for verification.", level="info")
+                            logger.info(f"[AGENT] Vision: loaded {len(thumbs)} thumbnails from search session {sid}")
+                except Exception as e:
+                    logger.debug(f"[MediaInterceptor] Failed to extract search thumbnails: {e}")
+        return images_list
+

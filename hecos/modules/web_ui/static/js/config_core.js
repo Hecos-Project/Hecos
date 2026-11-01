@@ -33,7 +33,9 @@ let uiState = {
 let viewMode = localStorage.getItem('hecos-config-view') || 'tabs';
 const navType   = window.performance?.getEntriesByType("navigation")[0]?.type;
 const isRefresh = navType === 'reload';
-let activeTab = window.location.hash.substring(1)
+let rawHash = window.location.hash.substring(1);
+if (rawHash && rawHash.startsWith('tab-')) rawHash = rawHash.slice(4);
+let activeTab = rawHash
     || sessionStorage.getItem('hecos-config-tab')
     || (isRefresh ? 'backend' : 'welcome');
 window.activeCategoryFilter = sessionStorage.getItem('hecos-config-filter') || '';
@@ -119,7 +121,8 @@ document.addEventListener('change', (e) => {
 
 // Deep-linking via URL hash changes (e.g. from dashboard widgets)
 window.addEventListener('hashchange', () => {
-    const tab = window.location.hash.substring(1);
+    let tab = window.location.hash.substring(1);
+    if (tab && tab.startsWith('tab-')) tab = tab.slice(4);
     if (tab && typeof showTab === 'function') showTab(tab);
 });
 

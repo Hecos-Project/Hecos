@@ -12,6 +12,9 @@
  * Subsequent clicks served from DOM (no fetch).
  */
 async function showTab(name, skipScroll = false) {
+  if (name && typeof name === "string" && name.startsWith("tab-")) {
+    name = name.slice(4);
+  }
   let targetId = name;
   const hub = window.CONFIG_HUB;
   const mod = (hub && hub.modules) ? hub.modules.find(m => m.id === name) : null;
@@ -154,6 +157,8 @@ async function showTab(name, skipScroll = false) {
   if (name === 'builder' && typeof window.builderRefreshSources === 'function') window.builderRefreshSources();
   if (name === 'hpm-settings' && typeof window.hpmLoadSettingsRepos === 'function') window.hpmLoadSettingsRepos();
   if (name === 'packages' && typeof window.hpmLoadRepositories === 'function') window.hpmLoadRepositories();
+  if ((name === 'netsearch' || targetId === 'netsearch') && typeof window.loadNetSearchPanelConfig === 'function') window.loadNetSearchPanelConfig();
+  if ((name === 'presenter' || targetId === 'presenter') && typeof window.loadPresenterConfig === 'function') window.loadPresenterConfig();
   
   // Scroll panel container to top
   if (!skipScroll) {

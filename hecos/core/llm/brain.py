@@ -46,7 +46,10 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         return translator.t("error")
     
     # 2. Model resolution
-    from app.model_manager import ModelManager
+    try:
+        from app.model_manager import ModelManager
+    except ImportError:
+        from hecos.app.model_manager import ModelManager
     effective_backend_type, effective_default_model = ModelManager.get_effective_model_info(config)
     
     backend_config = config.get('backend', {}).get(effective_backend_type, {}).copy() # Copy to not pollute global config

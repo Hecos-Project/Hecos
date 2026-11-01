@@ -63,9 +63,130 @@
 .hbs-presenter-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    flex-wrap: wrap;
+    row-gap: 8px;
+    column-gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     padding-bottom: 8px;
+    box-sizing: border-box;
+}
+
+.hbs-presenter-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.hbs-presenter-spacer {
+    flex: 1 1 10px;
+    min-width: 6px;
+}
+
+.hbs-presenter-controls {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    font-size: 11px;
+}
+
+.hbs-presenter-controls > * {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.hbs-presenter-ctrl-label {
+    color: var(--muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    user-select: none;
+    font-size: 11px;
+}
+
+.hbs-presenter-max-lines-box {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 4px;
+    padding: 2px 6px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.hbs-presenter-max-lines-box span {
+    color: var(--muted);
+    margin-right: 4px;
+    white-space: nowrap;
+    user-select: none;
+    font-size: 11px;
+}
+
+.hbs-presenter-max-lines-box input#hbs-presenter-max-lines {
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 48px !important;
+    background: transparent !important;
+    border: none !important;
+    color: var(--text) !important;
+    font-size: 11px !important;
+    outline: none !important;
+    text-align: center !important;
+    padding: 0 2px !important;
+    flex-shrink: 0 !important;
+    -moz-appearance: textfield;
+}
+
+.hbs-presenter-max-lines-box button {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text);
+    font-size: 10px;
+    margin-left: 6px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.hbs-presenter-max-lines-box button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.hbs-presenter-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 4px;
+    margin-left: auto;
+}
+
+/* Multiline responsiveness for medium and narrow layouts */
+@media (max-width: 960px) {
+    .hbs-presenter-header {
+        row-gap: 8px;
+    }
+    .hbs-presenter-controls {
+        width: 100%;
+        order: 3;
+        padding-top: 4px;
+        justify-content: flex-start;
+    }
+    .hbs-presenter-toggle-btn {
+        order: 2;
+    }
 }
 
 .hbs-presenter-avatar {
@@ -94,6 +215,31 @@
     color: var(--text-muted, #a0a0a0);
     line-height: 1.5;
     animation: presenterFadeIn 0.3s ease;
+    padding-right: 12px;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.15);
+}
+
+.hbs-presenter-body::-webkit-scrollbar {
+    width: 6px;
+}
+.hbs-presenter-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+}
+.hbs-presenter-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+.hbs-presenter-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.hbs-presenter-line {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    padding-right: 6px;
 }
 
 .hbs-presenter-body i {
@@ -112,6 +258,65 @@
 @keyframes presenterFadeIn {
     from { opacity: 0; transform: translateY(4px); }
     to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Presenter Sub-bar (Playbook + Stats) ────────────────────────── */
+
+/* The sub-bar sits between the header and the advanced panel.
+   It is hidden by default (no .open class) and slides down smoothly. */
+.hbs-presenter-subbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease, padding 0.25s ease, opacity 0.2s ease;
+    opacity: 0;
+    padding: 0 12px;
+    border-bottom: 0px solid rgba(255, 255, 255, 0.06);
+}
+
+.hbs-presenter-subbar.open {
+    max-height: 120px;
+    opacity: 1;
+    padding: 5px 12px 6px 12px;
+    border-bottom-width: 1px;
+}
+
+/* Collapsed presenter: hide subbar unconditionally */
+#hbs-presenter-embedded.collapsed .hbs-presenter-subbar {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    padding: 0 12px !important;
+    border-bottom-width: 0 !important;
+}
+
+.hbs-presenter-subbar-spacer {
+    flex: 1 1 10px;
+    min-width: 6px;
+}
+
+/* Stats container inside subbar */
+.hbs-presenter-stats-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 10px;
+    color: var(--muted);
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+/* Playbook pill inside subbar — flex-shrink so it can truncate */
+#hbs-presenter-subbar .hbs-presenter-playbook-pill {
+    margin-left: 0;
+    flex-shrink: 1;
 }
 
 /* Presenter Custom UI Controls */

@@ -71,6 +71,13 @@ async function initAll(attempt = 1) {
                 if (rAgent.ok) window.cfg.agent = await rAgent.json();
             } catch(e) { console.warn('[Init] Agent config fetch failed:', e); }
         }
+        // Fetch vision config if missing (small payload, fast)
+        if (!window.cfg.vision) {
+            try {
+                const rVision = await fetchWithTimeout('/hecos/config/vision');
+                if (rVision.ok) window.cfg.vision = await rVision.json();
+            } catch(e) { console.warn('[Init] Vision config fetch failed:', e); }
+        }
 
         // ── PHASE 2: Background metadata — fully independent, non-blocking ──────
         // Each request is processed as soon as it resolves.

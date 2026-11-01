@@ -80,6 +80,20 @@ select option {
   color: var(--text, #f0f0f5);
 }
 
+.field-help,
+.field-sub,
+.field-hint,
+.field-desc {
+  font-size: 11px !important;
+  color: var(--muted, #8b92a5) !important;
+  margin-top: 5px !important;
+  line-height: 1.45 !important;
+  font-weight: 400 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+
 /* Slider + Number combo */
 .slider-field {
   display: flex;

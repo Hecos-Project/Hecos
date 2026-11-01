@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ zconfig.language or 'en' }}">
 <head>
 <meta charset="UTF-8">
@@ -30,7 +30,7 @@
 <link rel="stylesheet" href="/ext/emoticons/static/css/emoticons.css?v={{ version }}">
 <!-- WEB_UI HBS & Presenter Extensions -->
 <link rel="stylesheet" href="/ext/hbs_common/static/css/hbs_base.css?v={{ version }}">
-<link rel="stylesheet" href="/ext/presenter/static/css/presenter.css?v={{ version }}">
+<link rel="stylesheet" href="/ext/presenter/static/css/presenter.css?v={{ version }}&t=20261101_stats_v3">
 <!-- WEB_UI DCC Extension -->
 <link rel="stylesheet" href="/ext/dcc/static/css/dcc.css?v={{ version }}">
 <!-- Hecos Unified Progress Component -->
@@ -154,6 +154,7 @@
 <script src="/static/js/chat_extensions.js"></script>
 <script src="/static/vendor/marked.min.js"></script>
 <script src="/static/js/chat_media_processor.js?v={{ version }}&t=20261024_en"></script>
+<script src="/netsearch_static/js/search/search_chat_card.js?v={{ version }}&t=20261031_v2"></script>
 <script>
   // Expose the global history to window so the renderer can read it
   window.chatHistory = [];
@@ -190,8 +191,8 @@
 <script src="/static/js/client_camera.js?v={{ version }}"></script>
 <!-- Refactored Audio UI Modules -->
 <script src="/static/js/audio_encoder.js?v={{ version }}"></script>
-<script src="/static/js/audio_recorder.js?v={{ version }}&t=20261027_nopttdup"></script>
-<script src="/static/js/audio_ui.js?v={{ version }}&t=20261027_nopttdup"></script>
+<script src="/static/js/audio_recorder.js?v={{ version }}&t=20261031_pttfix"></script>
+<script src="/static/js/audio_ui.js?v={{ version }}&t=20261031_pttfix"></script>
 <script src="/static/js/mobile/mobile_logic.js?v={{ version }}"></script>
 <script src="/static/js/pull_to_refresh.js?v={{ version }}"></script>
 <script src="/static/js/chat_history/ch_state.js?v={{ version }}"></script>
@@ -222,11 +223,11 @@
 <script src="/ext/emoticons/static/js/emoticons.js?v={{ version }}"></script>
 <!-- WEB_UI HBS & Presenter Extensions -->
 <script src="/ext/hbs_common/static/js/hbs_utils.js?v={{ version }}"></script>
-<script src="/ext/presenter/static/js/presenter_state.js?v={{ version }}"></script>
-<script src="/ext/presenter/static/js/presenter_stats.js?v={{ version }}"></script>
-<script src="/ext/presenter/static/js/presenter_stats_ui.js?v={{ version }}"></script>
-<script src="/ext/presenter/static/js/presenter_ui.js?v={{ version }}"></script>
-<script src="/ext/presenter/static/js/presenter.js?v={{ version }}"></script>
+<script src="/ext/presenter/static/js/presenter_state.js?v={{ version }}&t=20261101_stats_v3"></script>
+<script src="/ext/presenter/static/js/presenter_stats.js?v={{ version }}&t=20261101_stats_v3"></script>
+<script src="/ext/presenter/static/js/presenter_stats_ui.js?v={{ version }}&t=20261101_stats_v3"></script>
+<script src="/ext/presenter/static/js/presenter_ui.js?v={{ version }}&t=20261101_stats_v3"></script>
+<script src="/ext/presenter/static/js/presenter.js?v={{ version }}&t=20261101_stats_v3"></script>
 <!-- HDCS Command Palette (self-contained, no ES modules) -->
 <link rel="stylesheet" href="/assets/css/cmd_palette.css?v={{ version }}">
 <script src="/static/js/commands/hecos_cmd_palette.js?v={{ version }}"></script>

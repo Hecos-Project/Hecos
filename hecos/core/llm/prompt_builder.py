@@ -101,6 +101,7 @@ class PromptBuilder:
             f"{rules['identity_rules']}"
             f"{rules['file_manager_rules']}"
             f"{rules['force_clause']}"
+            f"{rules['netsearch_protocol']}"
             f"{rules['plugin_guidelines']}"
             f"{rules['media_formatting_rules']}"
             f"{RoutingManager.get_dynamic_instructions(config)}"
@@ -329,6 +330,44 @@ class PromptBuilder:
             f"{translator.t('root_security_desc')}\n"
         )
         
+        netsearch_protocol = (
+            "\n### NET SEARCH & WEB INTELLIGENCE PROTOCOL ###\n"
+            "CRITICAL DISTINCTION — SEARCH vs GENERATION:\n"
+            "- When the user asks to 'cerca', 'trova', 'search', 'find', 'cerca in rete', 'cerca sul web', 'cerca video', 'cerca immagini online', 'cerca foto di...', 'cerca notizie', 'search google/duckduckgo':\n"
+            "  THEY WANT A REAL-TIME WEB SEARCH, NOT AI IMAGE GENERATION OR PDF DOCUMENT CREATION!\n"
+            "  NEVER call IMAGE_GEN__generate_image or /img when the user is searching for real/existing images or photos on the internet!\n"
+            "  NEVER call DOCS__generate_pdf or make a PDF report/magazine when the user just asks to search for videos, images, or web links!\n"
+            "\n"
+            "AVAILABLE WAYS TO EXECUTE SEARCHES:\n"
+            "1. DIRECT COMMANDS (Fastest & Preferred — emit on its own line):\n"
+            "   - `/search <query>` : Web search across SearXNG, DuckDuckGo, Google, Qwant, etc.\n"
+            "   - `/images <query>` : Search online images across image engines.\n"
+            "   - `/videos <query>` : Search online videos (YouTube, Vimeo, Dailymotion, web videos).\n"
+            "   - `/media <query>`  : Unified search for images, videos, and music.\n"
+            "   - `/files <query>`  : Search documents, PDFs, torrents, archives, and files.\n"
+            "   - `/dark <query>`   : Tor Dark Web search (.onion hidden services via Ahmia/TorDex).\n"
+            "   - `/fetch <url>`    : Read, scrape, and extract content from any web page.\n"
+            "\n"
+            "2. NATIVE FUNCTION CALLING (When tool-calling is active):\n"
+            "   - `NETSEARCH__web_search(query=\"...\")`\n"
+            "   - `NETSEARCH__media_search(query=\"...\", media_type=\"image|video|music\")`\n"
+            "   - `NETSEARCH__file_search(query=\"...\")`\n"
+            "   - `NETSEARCH__dark_search(query=\"...\")`\n"
+            "   - `NETSEARCH__fetch_page(url=\"...\")`\n"
+            "\n"
+            "3. BRACKET CALL SYNTAX (Supported for all models):\n"
+            "   - `[NETSEARCH: web_search(query=\"...\")]`\n"
+            "   - `[NETSEARCH: media_search(query=\"...\", media_type=\"image\")]`\n"
+            "   - `[NETSEARCH: media_search(query=\"...\", media_type=\"video\")]`\n"
+            "   - `[NETSEARCH: file_search(query=\"...\")]`\n"
+            "   - `[NETSEARCH: dark_search(query=\"...\")]`\n"
+            "   - `[NETSEARCH: fetch_page(url=\"...\")]`\n"
+            "\n"
+            "INTERACTIVE CARDS & RENDERING:\n"
+            "- When a search completes, Hecos automatically renders a rich interactive card ([[HSEARCH:...]]) in the chat UI with filters, pagination, links, and media previews.\n"
+            "- Accompany the search execution with a concise, helpful response in character.\n"
+        )
+
         plugin_guidelines = (
             "\n### PLUGIN GUIDELINES ###\n"
             "- PRIORITY: Always respond with TEXT first. Only use a tool if the user explicitly asks for an action.\n"
@@ -338,6 +377,7 @@ class PromptBuilder:
             "- [SYSTEM: explore:folder] - Open folder graphically\n"
             "- [DRIVE: list:folder] - List files for analysis\n"
             "- [DASHBOARD: resources] - Get hardware telemetry\n"
+            "- [NETSEARCH: web_search(query=\"...\")] - Real-time web search\n"
             "- MEDIA PLAYBACK: When the user asks to 'play', 'open', 'riproduce', 'manda in play', or 'avvia' a video or audio file, ALWAYS use EXECUTOR__open_media_file(file_path) with the EXACT absolute path. NEVER use execute_shell_command for media playback.\n"
             "\n### IMAGE GENERATION PROTOCOL ###\n"
             "When the user asks you to generate, create, draw, or show an image or photo of ANYTHING:\n"
@@ -422,6 +462,7 @@ class PromptBuilder:
             "identity_rules": identity_rules,
             "file_manager_rules": file_manager_rules,
             "force_clause": force_clause,
+            "netsearch_protocol": netsearch_protocol,
             "plugin_guidelines": plugin_guidelines,
             "media_formatting_rules": media_formatting_rules,
             "special_instructions_block": special_instructions_block,

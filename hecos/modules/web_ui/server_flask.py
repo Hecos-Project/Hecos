@@ -104,7 +104,7 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
         exempt_paths = [
             '/login', '/logout', '/static', '/assets', '/favicon.ico', '/ext', '/hpm_plugin',
             '/api/open_media_folder', '/hecos/api/media/open-folder', '/api/media/open-folder',
-            '/api/system/explorer/open-folder'
+            '/api/system/explorer/open-folder', '/api/hsearch/media_proxy'
         ]
         if any(request.path.startswith(p) for p in exempt_paths): return
         

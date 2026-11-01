@@ -1,0 +1,228 @@
+<!-- VISION / MULTIMODAL PERCEPTION PANEL -->
+<div id="tab-vision" class="panel">
+    <!-- Header Banner -->
+    <div class="card" style="margin-bottom:14px; padding:12px 16px; background:linear-gradient(135deg, rgba(var(--accent-rgb),0.08), var(--bg2));">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, var(--accent), #06b6d4); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <i class="fas fa-eye" style="color:#fff; font-size:16px;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700; color:var(--text); font-size:0.95em;">Multimodal Perception (Vision AI)</div>
+                    <div style="font-size:0.75em; color:var(--muted); margin-top:2px;">Unified visual intelligence for Chat, Webcam, Net Search, and local models</div>
+                </div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <span class="badge-pill badge-neutral" style="font-size:11px; padding:4px 8px;">
+                    <i class="fas fa-microchip"></i> DUAL-TRACK ENGINE
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Master Settings & Image Processing -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title-group">
+                <div class="card-title"><i class="fas fa-sliders-h"></i> General Vision Settings</div>
+                <div class="card-desc">Capture parameters, image scaling, and token consumption controls.</div>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <!-- Master Toggle -->
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    Enable Multimodal Vision
+                    <div class="toggle-sub">Allows the AI assistant to receive, inspect, and analyze images and video frames.</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="vision-enabled">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:14px; margin-top:14px;">
+                <!-- Max Resolution -->
+                <div class="field">
+                    <label for="vision-max-res">Max Resolution (px)</label>
+                    <select id="vision-max-res" class="config-input">
+                        <option value="384">384 px (Lowest token cost)</option>
+                        <option value="512" selected>512 px (Balanced — recommended)</option>
+                        <option value="768">768 px (High Definition)</option>
+                        <option value="1024">1024 px (Maximum detail)</option>
+                    </select>
+                    <div class="field-help" style="font-size:11px; color:var(--muted); margin-top:4px;">Images are resized proportionally using Pillow.</div>
+                </div>
+
+                <!-- JPEG Quality -->
+                <div class="field">
+                    <label for="vision-quality">JPEG Quality (%)</label>
+                    <input type="number" id="vision-quality" min="40" max="95" step="5" value="80" class="config-input">
+                    <div class="field-help" style="font-size:11px; color:var(--muted); margin-top:4px;">Compression level to optimize bandwidth and speed.</div>
+                </div>
+
+                <!-- Fetch Timeout -->
+                <div class="field">
+                    <label for="vision-timeout">Download Timeout (sec)</label>
+                    <input type="number" id="vision-timeout" min="2" max="20" step="1" value="5" class="config-input">
+                    <div class="field-help" style="font-size:11px; color:var(--muted); margin-top:4px;">Maximum time allowed to fetch external thumbnails.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Vision Bridge / Sidecar Mode -->
+    <div class="card" style="margin-top:14px;">
+        <div class="card-header">
+            <div class="card-title-group">
+                <div class="card-title" style="color:var(--accent);"><i class="fas fa-brain"></i> Vision Bridge / Sidecar (Text-Only Local Models)</div>
+                <div class="card-desc">
+                    Provides true vision to text-only local models (Gemma, Qwen, Llama text) by automatically analyzing images
+                    and injecting verified visual context into prompts, completely eliminating hallucinations.
+                </div>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <!-- Bridge Toggle -->
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    Enable Vision Bridge
+                    <div class="toggle-sub">Automatically analyzes images and injects real visual descriptions when the chat model has no native vision weights.</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="vision-bridge-enabled">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <!-- Mode Selector -->
+            <div class="field" style="margin-top:14px;">
+                <label for="vision-bridge-mode">Inspector Mode &amp; Offline Privacy Boundary</label>
+                <select id="vision-bridge-mode" class="config-input" onchange="window._applyVisionModeVisibility(this.value)">
+                    <option value="active_model">🎯 Use Active Chat Model (Default)</option>
+                    <option value="local_ollama">🖥️ Local Offline Only (Ollama — No Cloud)</option>
+                    <option value="cloud">☁️ Cloud Inspector (Gemini / OpenAI)</option>
+                    <option value="auto" selected>⚡ Auto (Local if vision model available, else Cloud fallback)</option>
+                    <option value="disabled">❌ Disabled (Only models with native vision weights can see)</option>
+                </select>
+                <div class="field-help" style="font-size:11px; color:var(--muted); margin-top:4px;">
+                    Choose where image analysis runs. Select "Local Offline Only" to strictly prevent any cloud communication.
+                </div>
+            </div>
+
+            <!-- Offline Shield Banner -->
+            <div id="vision-offline-notice" style="display:none; align-items:center; gap:8px; padding:10px 14px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:10px; color:#10b981; font-size:12px; font-weight:600; margin-top:12px;">
+                <i class="fas fa-shield-alt" style="font-size:15px;"></i>
+                <span>100% Local &amp; Offline Mode Active — Online and Cloud AI services are strictly excluded.</span>
+            </div>
+
+            <!-- LOCAL OLLAMA MODEL SELECTOR (Rich Dropdown mirroring AI Backend) -->
+            <div class="field" id="card-vision-local" style="margin-top:14px;">
+                <label for="vision-local-model">Local Ollama Vision Model</label>
+                <div style="display:flex; gap:8px;">
+                    <select id="vision-local-model" class="config-input" style="flex:1;">
+                        <!-- Dynamically populated by populateVisionUI via populateRichSelect -->
+                    </select>
+                    <button type="button" class="btn btn-secondary" onclick="refreshModels()" title="Sync local models from Ollama daemon" style="padding:8px 14px; border-radius:10px; display:flex; align-items:center; gap:6px;">
+                        <i class="fas fa-sync"></i> Sync
+                    </button>
+                </div>
+                <div class="field-help" style="font-size:11px; color:var(--muted); margin-top:4px;">
+                    Multimodal vision model installed in Ollama for offline computer vision (e.g. moondream, llama3.2-vision, minicpm-v).
+                </div>
+            </div>
+
+            <!-- CLOUD INSPECTOR SELECTOR (Rich Dropdown mirroring AI Backend) -->
+            <div class="field" id="card-vision-cloud" style="margin-top:14px; display:none;">
+                <label for="vision-cloud-model">Cloud Vision Inspector Model</label>
+                <div style="display:flex; gap:8px;">
+                    <select id="vision-cloud-model" class="config-input" style="flex:1;">
+                        <!-- Dynamically populated by populateVisionUI via populateRichSelect -->
+                    </select>
+                    <button type="button" class="btn btn-secondary" onclick="refreshModels()" title="Sync cloud models" style="padding:8px 14px; border-radius:10px; display:flex; align-items:center; gap:6px;">
+                        <i class="fas fa-sync"></i> Sync
+                    </button>
+                </div>
+                <div class="field-help" style="font-size:11px; color:var(--muted); margin-top:4px;">
+                    High-speed cloud model for image inspection. Uses keys configured in KeyManager.
+                </div>
+            </div>
+
+            <!-- Inspection Prompt -->
+            <div class="field" id="card-vision-prompt" style="margin-top:14px;">
+                <label for="vision-inspection-prompt">Objective Inspection Prompt</label>
+                <textarea id="vision-inspection-prompt" rows="3" class="config-input" style="resize:vertical;"></textarea>
+                <div class="field-help" style="font-size:11px; color:var(--muted); margin-top:4px;">Instructions sent to the visual inspector to describe subjects, actions, text, and scene details.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Net Search Multimodal Verification -->
+    <div class="card" style="margin-top:14px;">
+        <div class="card-header">
+            <div class="card-title-group">
+                <div class="card-title"><i class="fas fa-satellite-dish"></i> Net Search Visual Verification</div>
+                <div class="card-desc">The AI visually inspects web search media thumbnails before formulating final answers.</div>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <!-- Verify Toggle -->
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    Automatic Visual Verification of Web Results
+                    <div class="toggle-sub">Feeds search thumbnails to the AI's visual cortex to eliminate irrelevant or broken links.</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="vision-netsearch-verify">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <!-- Max Thumbnails -->
+            <div class="field" style="max-width:300px; margin-top:10px;">
+                <label for="vision-netsearch-max">Max Thumbnails to Review per Turn</label>
+                <input type="number" id="vision-netsearch-max" min="1" max="8" step="1" value="4" class="config-input">
+                <div class="field-help" style="font-size:11px; color:var(--muted); margin-top:4px;">Recommended: 3 to 5 thumbnails to maintain speed and avoid context bloat.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+window._applyVisionModeVisibility = function(mode) {
+    const cloudCard = document.getElementById('card-vision-cloud');
+    const localCard = document.getElementById('card-vision-local');
+    const promptCard = document.getElementById('card-vision-prompt');
+    const offlineNotice = document.getElementById('vision-offline-notice');
+    
+    if (mode === 'local_ollama') {
+        if (cloudCard) cloudCard.style.display = 'none';
+        if (localCard) localCard.style.display = 'block';
+        if (promptCard) promptCard.style.display = 'block';
+        if (offlineNotice) offlineNotice.style.display = 'flex';
+    } else if (mode === 'cloud') {
+        if (cloudCard) cloudCard.style.display = 'block';
+        if (localCard) localCard.style.display = 'none';
+        if (promptCard) promptCard.style.display = 'block';
+        if (offlineNotice) offlineNotice.style.display = 'none';
+    } else if (mode === 'active_model') {
+        if (cloudCard) cloudCard.style.display = 'none';
+        if (localCard) localCard.style.display = 'none';
+        if (promptCard) promptCard.style.display = 'block';
+        if (offlineNotice) offlineNotice.style.display = 'none';
+    } else if (mode === 'disabled') {
+        if (cloudCard) cloudCard.style.display = 'none';
+        if (localCard) localCard.style.display = 'none';
+        if (promptCard) promptCard.style.display = 'none';
+        if (offlineNotice) offlineNotice.style.display = 'none';
+    } else { // 'auto'
+        if (cloudCard) cloudCard.style.display = 'block';
+        if (localCard) localCard.style.display = 'block';
+        if (promptCard) promptCard.style.display = 'block';
+        if (offlineNotice) offlineNotice.style.display = 'none';
+    }
+};
+</script>

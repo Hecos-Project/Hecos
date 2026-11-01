@@ -67,8 +67,15 @@ async function saveConfig(silent = false) {
       body: JSON.stringify(agentPayload.agent || {})
     });
     const agentData = await resAgent.json();
+    const visionPayload = (typeof buildVisionPayload === 'function') ? buildVisionPayload() : {};
+    const resVision = await fetch('/hecos/config/vision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(visionPayload.vision || {})
+    });
+    const visionData = await resVision.json();
 
-    if (data.ok && audData.ok && medData.ok && agentData.ok) {
+    if (data.ok && audData.ok && medData.ok && agentData.ok && (visionData.ok !== false)) {
       window.cfg        = payload;
       window.audioConfig = audioPayload;
       try { if (typeof audioConfig !== 'undefined') audioConfig = audioPayload; } catch (_) {}
@@ -78,6 +85,7 @@ async function saveConfig(silent = false) {
           window.mediaConfig = mediaPayload;
       }
       if (window.cfg.agent) window.cfg.agent = agentPayload.agent;
+      if (window.cfg.vision) window.cfg.vision = visionPayload.vision;
 
       if (!silent) {
           setSaveMsg(I18N.msg_saved || 'Saved', 'ok');

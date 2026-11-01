@@ -45,54 +45,88 @@
         
         const uiState = JSON.parse(localStorage.getItem('hecos_presenter_ui_state') || '{"save":false, "lines":4, "height":""}');
         const state = window.HBSPresenterState;
-        
+        const isNetSearch = container.classList.contains('netsearch-presenter-embedded') || container.closest('.search-copilot') || (window.location && window.location.pathname.includes('/netsearch'));
+        const filterTypes = isNetSearch
+            ? Object.entries(state.TYPE_META).filter(([k]) => ['search_milestone', 'search_commentary'].includes(k))
+            : Object.entries(state.TYPE_META).filter(([k]) => k !== 'default' && !['search_milestone', 'search_commentary'].includes(k));
+
+        // Subbar is hidden in NetSearch context (no playbook or event stats needed there)
+        const subbarHidden = isNetSearch ? 'display:none;' : '';
+        // Restore subbar open/closed state from localStorage
+        const subbarOpen = localStorage.getItem('hecos_presenter_subbar_open') !== 'false';
+
         container.innerHTML = `
             <div class="hbs-presenter-header" style="cursor: pointer;">
-                <div class="hbs-presenter-avatar"><i class="fas fa-bullhorn"></i></div>
-                <div class="hbs-presenter-title">Presenter</div>
-                <div style="flex:1"></div>
-                
-                <div class="hbs-presenter-controls" style="display: flex; align-items: center; gap: 12px; margin-right: 12px; font-size: 11px;">
-                    <label style="color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:4px;" title="Remember height and max lines for next sessions">
-                        <input type="checkbox" id="hbs-presenter-remember-size" ${uiState.save ? 'checked' : ''} onchange="window.Presenter.saveUIState()"> Save UI
-                    </label>
-                    <div style="display:flex; align-items:center; background: rgba(0,0,0,0.2); border-radius: 4px; padding: 2px 4px; border: 1px solid var(--border-color, #333);">
-                        <span style="color:var(--muted); margin-right:4px;">Max lines:</span>
-                        <input type="number" id="hbs-presenter-max-lines" class="presenter-dark-input" value="${uiState.lines}" min="1" max="500" onchange="window.Presenter.saveUIState(); window.Presenter.adaptHeight();" style="width: 45px; background: transparent; border: none; color: var(--text); font-size: 11px; outline: none; text-align: center;">
-                        <button onclick="window.Presenter.adaptHeight()" title="Adatta altezza alle righe visibili" style="background: rgba(255,255,255,0.1); border: none; color: var(--text); font-size: 10px; margin-left: 6px; padding: 2px 6px; border-radius: 3px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Adapt</button>
-                    </div>
-                    <button id="hbs-presenter-reset-btn" onclick="window.Presenter.resetFeed(event)" title="Reset &amp; reload Presenter feed" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer; display:flex; align-items:center; gap:4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'; this.style.color='var(--text)';" onmouseout="this.style.background='rgba(255,255,255,0.07)'; this.style.color='var(--muted)';">
-                        <i class="fas fa-sync-alt"></i> Reset
+                <div class="hbs-presenter-brand">
+                    <div class="hbs-presenter-avatar"><i class="fas fa-bullhorn"></i></div>
+                    <div class="hbs-presenter-title">Presenter</div>
+                    <button id="hbs-presenter-power-btn" onclick="window.Presenter.togglePower(event)"
+                        title="Toggle Presenter (Turn ON/OFF)"
+                        style="display:inline-flex; align-items:center; gap:4px; margin-left: 6px; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.35); color: #c084fc; padding: 1.5px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; line-height: 1.2;">
+                        <i class="fas fa-power-off" style="font-size: 8.5px;"></i>
+                        <span class="power-label">ON</span>
                     </button>
-                    <button id="hbs-presenter-advanced-toggle" onclick="window.Presenter.toggleAdvanced()" title="Advanced filters &amp; search" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer; display:flex; align-items:center; gap:4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">
-                        <i class="fas fa-sliders-h"></i> Advanced
-                    </button>
-                    <a href="/hecos/config/ui#presenter" target="_blank" title="Open Presenter Settings" style="display:flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-size: 11px; cursor: pointer; transition: all 0.2s; text-decoration:none;" onmouseover="this.style.background='rgba(255,255,255,0.18)'; this.style.color='var(--text)';" onmouseout="this.style.background='rgba(255,255,255,0.07)'; this.style.color='var(--muted)';">
-                        <i class="fas fa-cog"></i>
-                    </a>
                 </div>
 
-                <button id="hbs-presenter-toggle" style="background:none;border:none;color:var(--muted);cursor:pointer;" title="Collapse/Expand">
+                <div class="hbs-presenter-spacer"></div>
+
+                <div class="hbs-presenter-controls">
+                    <label class="hbs-presenter-ctrl-label" title="Remember height and max lines for next sessions">
+                        <input type="checkbox" id="hbs-presenter-remember-size" ${uiState.save ? 'checked' : ''} onchange="window.Presenter.saveUIState()"> Save UI
+                    </label>
+                    <div class="hbs-presenter-max-lines-box">
+                        <span>Max lines:</span>
+                        <input type="number" id="hbs-presenter-max-lines" class="presenter-dark-input" value="${uiState.lines}" min="1" max="500" onchange="window.Presenter.saveUIState(); window.Presenter.adaptHeight();">
+                        <button onclick="window.Presenter.adaptHeight()" title="Adatta altezza alle righe visibili">Adapt</button>
+                    </div>
+                    <button id="hbs-presenter-reset-btn" onclick="window.Presenter.resetFeed(event)" title="Reset &amp; reload Presenter feed" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer; display:flex; align-items:center; gap:4px; transition: all 0.2s; white-space:nowrap; flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,0.15)'; this.style.color='var(--text)';" onmouseout="this.style.background='rgba(255,255,255,0.07)'; this.style.color='var(--muted)';">
+                        <i class="fas fa-sync-alt"></i> Reset
+                    </button>
+                    <button id="hbs-presenter-advanced-toggle" onclick="window.Presenter.toggleAdvanced()" title="Advanced filters &amp; search" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer; display:flex; align-items:center; gap:4px; transition: background 0.2s; white-space:nowrap; flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-sliders-h"></i> Advanced
+                    </button>
+                    <a href="/hecos/config/ui#presenter" target="_blank" title="Open Presenter Settings" style="display:flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-size: 11px; cursor: pointer; transition: all 0.2s; text-decoration:none; flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,0.18)'; this.style.color='var(--text)';" onmouseout="this.style.background='rgba(255,255,255,0.07)'; this.style.color='var(--muted)';">
+                        <i class="fas fa-cog"></i>
+                    </a>
+                    ${!isNetSearch ? `
+                    <button id="hbs-presenter-subbar-btn"
+                        title="${subbarOpen ? 'Hide info bar (Playbook & Stats)' : 'Show info bar (Playbook & Stats)'}"
+                        onclick="window.HBSPresenterUI.toggleSubbar(event)"
+                        style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:4px; background: ${subbarOpen ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.07)'}; border: 1px solid ${subbarOpen ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.1)'}; color: ${subbarOpen ? '#a5b4fc' : 'var(--muted)'}; font-size: 11px; cursor: pointer; transition: all 0.2s; flex-shrink:0;"
+                        onmouseover="this.style.background='rgba(99,102,241,0.28)'; this.style.borderColor='rgba(99,102,241,0.55)'; this.style.color='#c7d2fe';"
+                        onmouseout="this.style.background=window.HBSPresenterUI.isSubbarOpen()?'rgba(99,102,241,0.18)':'rgba(255,255,255,0.07)'; this.style.borderColor=window.HBSPresenterUI.isSubbarOpen()?'rgba(99,102,241,0.4)':'rgba(255,255,255,0.1)'; this.style.color=window.HBSPresenterUI.isSubbarOpen()?'#a5b4fc':'var(--muted)';">
+                        <i class="fas fa-layer-group" style="font-size:9.5px;"></i>
+                    </button>` : ''}
+                </div>
+
+                <button id="hbs-presenter-toggle" class="hbs-presenter-toggle-btn" title="Collapse/Expand">
                     <i class="fas fa-chevron-up"></i>
                 </button>
+            </div>
+
+            <!-- Sub-bar: Playbook pill + Event stats — hidden in NetSearch context -->
+            <div id="hbs-presenter-subbar" class="hbs-presenter-subbar ${subbarOpen ? 'open' : ''}" style="${subbarHidden}">
+                <div id="hbs-presenter-playbook-pill" class="hbs-presenter-playbook-pill" style="display:none;"></div>
+                <div id="hbs-presenter-stats-container" class="hbs-presenter-stats-container"></div>
+                <div class="hbs-presenter-subbar-spacer"></div>
             </div>
 
             <!-- Advanced panel: hidden by default -->
             <div id="hbs-presenter-advanced" style="display:none; padding: 6px 12px 8px 12px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.06);">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                     <i class="fas fa-search" style="color:var(--muted); font-size:11px;"></i>
-                    <input id="hbs-presenter-search" type="text" placeholder="Search messages..." oninput="window.Presenter.setSearch(this.value)" style="flex:1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 4px 8px; color: var(--text); font-size: 11px; outline: none;">
+                    <input id="hbs-presenter-search" type="text" placeholder="${isNetSearch ? 'Search events &amp; commentary...' : 'Search messages...'}" oninput="window.Presenter.setSearch(this.value)" style="flex:1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 4px 8px; color: var(--text); font-size: 11px; outline: none;">
                     <button onclick="document.getElementById('hbs-presenter-search').value=''; window.Presenter.setSearch('');" title="Clear search" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:12px;"><i class="fas fa-times"></i></button>
                 </div>
-                <div style="font-size:10px; color:var(--muted); margin-bottom:5px; letter-spacing:0.5px; text-transform:uppercase;">Filter by type:</div>
+                <div style="font-size:10px; color:var(--muted); margin-bottom:5px; letter-spacing:0.5px; text-transform:uppercase;">${isNetSearch ? 'Filter search events:' : 'Filter by type:'}</div>
                 <div id="hbs-presenter-filter-chips" style="display:flex; flex-wrap:wrap; gap:5px;">
-                    <button id="hbs-presenter-filter-all" onclick="window.Presenter.toggleAllFilters(this)" 
+                    <button id="hbs-presenter-filter-all" onclick="window.Presenter.toggleAllFilters(this)"
                         title="Toggle all categories"
                         style="display:inline-flex;align-items:center;gap:4px; font-size:10px; padding:2px 8px; border-radius:12px; border:1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.12); color:var(--text); cursor:pointer; transition: all 0.15s; font-weight:700;">
                         <i class="fas fa-eye" style="font-size:9px;"></i> All
                     </button>
-                    ${Object.entries(state.TYPE_META).filter(([k]) => k !== 'default').map(([k, v]) => `
-                        <button data-filter-type="${k}" onclick="window.Presenter.toggleFilter('${k}', this)" 
+                    ${filterTypes.map(([k, v]) => `
+                        <button data-filter-type="${k}" onclick="window.Presenter.toggleFilter('${k}', this)"
                             title="Toggle ${v.tooltip || k}"
                             style="display:inline-flex;align-items:center;gap:4px; font-size:10px; padding:2px 8px; border-radius:12px; border:1px solid ${v.color}44; background: ${v.color}22; color:${v.color}; cursor:pointer; transition: all 0.15s; opacity:1;">
                             <i class="${v.icon}" style="font-size:9px;"></i> ${v.tooltip || k}
@@ -107,7 +141,6 @@
             <div class="hbs-presenter-body" style="overflow-y: auto; resize: vertical; min-height: 40px; max-height: 50vh; display: flex; flex-direction: column; gap: 4px; padding-bottom: 4px; ${uiState.save && uiState.height ? 'height:'+uiState.height+'px;' : 'height: auto;'}"></div>
             <div class="hbs-presenter-footer" style="display:none;"></div>
         `;
-
         // Listen for resize events using ResizeObserver
         const bodyEl = container.querySelector('.hbs-presenter-body');
         if (bodyEl) {
@@ -214,28 +247,15 @@
     function renderPlaybookPill(status) {
         const emb = getEmbedded();
         if (!emb) return;
-        const header = emb.querySelector('.hbs-presenter-header');
-        if (!header) return;
-
-        let pill = header.querySelector('#hbs-presenter-playbook-pill');
-        if (!pill) {
-            pill = document.createElement('div');
-            pill.id = 'hbs-presenter-playbook-pill';
-            pill.className = 'hbs-presenter-playbook-pill';
-            
-            // Insert it right after stats container if present, otherwise after title
-            const statsContainer = header.querySelector('#hbs-presenter-stats-container');
-            if (statsContainer && statsContainer.nextSibling) {
-                header.insertBefore(pill, statsContainer.nextSibling);
-            } else {
-                const titleEl = header.querySelector('.hbs-presenter-title');
-                if (titleEl && titleEl.nextSibling) {
-                    header.insertBefore(pill, titleEl.nextSibling);
-                } else {
-                    header.appendChild(pill);
-                }
-            }
+        if (emb.classList.contains('netsearch-presenter-embedded') || emb.closest('.search-copilot') || (window.location && window.location.pathname.includes('/netsearch'))) {
+            const existing = emb.querySelector('#hbs-presenter-playbook-pill');
+            if (existing) existing.style.display = 'none';
+            return;
         }
+        // Pill is pre-rendered inside #hbs-presenter-subbar by ensureBuilt() — just look it up.
+        // No dynamic insertBefore needed; this eliminates the DOMException from the old approach.
+        let pill = emb.querySelector('#hbs-presenter-playbook-pill');
+        if (!pill) return; // subbar not yet built
 
         if (!status || !status.installed) {
             pill.style.display = 'none';
@@ -363,29 +383,86 @@
         }
     }
 
-    // Toggle Collapse Events
+    function updatePowerUI(active) {
+        const emb = getEmbedded();
+        if (!emb) return;
+        const pwr = emb.querySelector('#hbs-presenter-power-btn');
+        if (pwr) {
+            const lbl = pwr.querySelector('.power-label');
+            if (active) {
+                pwr.style.background = 'rgba(168, 85, 247, 0.15)';
+                pwr.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+                pwr.style.color = '#c084fc';
+                if (lbl) lbl.textContent = 'ON';
+                pwr.title = 'Presenter is ACTIVE (Click to turn OFF and save resources)';
+            } else {
+                pwr.style.background = 'rgba(255, 255, 255, 0.06)';
+                pwr.style.borderColor = 'rgba(255, 255, 255, 0.14)';
+                pwr.style.color = 'var(--muted)';
+                if (lbl) lbl.textContent = 'OFF';
+                pwr.title = 'Presenter is OFF (Click to turn ON)';
+            }
+        }
+        const toggleBtn = emb.querySelector('#hbs-presenter-toggle');
+        if (toggleBtn) {
+            const icon = toggleBtn.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('fa-chevron-up', active);
+                icon.classList.toggle('fa-chevron-down', !active);
+            }
+        }
+    }
+
+    // ── Sub-bar toggle ────────────────────────────────────────────────
+    function isSubbarOpen() {
+        return localStorage.getItem('hecos_presenter_subbar_open') !== 'false';
+    }
+
+    function toggleSubbar(e) {
+        if (e) e.stopPropagation();
+        const subbar = document.getElementById('hbs-presenter-subbar');
+        const btn    = document.getElementById('hbs-presenter-subbar-btn');
+        if (!subbar) return;
+
+        const willOpen = !subbar.classList.contains('open');
+        subbar.classList.toggle('open', willOpen);
+        localStorage.setItem('hecos_presenter_subbar_open', willOpen ? 'true' : 'false');
+
+        if (btn) {
+            btn.title = willOpen ? 'Hide info bar (Playbook & Stats)' : 'Show info bar (Playbook & Stats)';
+            btn.style.background     = willOpen ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.07)';
+            btn.style.borderColor    = willOpen ? 'rgba(99,102,241,0.4)'  : 'rgba(255,255,255,0.1)';
+            btn.style.color          = willOpen ? '#a5b4fc'               : 'var(--muted)';
+        }
+    }
+
+    // Toggle Collapse & Power Events
     document.addEventListener('click', (e) => {
         const header = e.target.closest('.hbs-presenter-header');
         if (!header) return;
-        
+
+        // Sub-bar toggle button — handled by its own onclick, do not collapse
+        if (e.target.closest('#hbs-presenter-subbar-btn')) return;
+
         // Prevent collapse if clicking on controls, inputs, links, or playbook pill
         if (e.target.closest('.hbs-presenter-controls') || e.target.closest('input') || e.target.closest('a') || e.target.closest('.hbs-presenter-playbook-pill')) {
-            if (!e.target.closest('#hbs-presenter-toggle')) {
+            if (!e.target.closest('#hbs-presenter-toggle') && !e.target.closest('#hbs-presenter-power-btn')) {
                 return;
             }
         }
 
         const container = document.getElementById('hbs-presenter-embedded');
         if (!container) return;
-        container.classList.toggle('collapsed');
-        
-        const toggleBtn = header.querySelector('#hbs-presenter-toggle');
-        if (toggleBtn) {
-            const icon = toggleBtn.querySelector('i');
-            if (icon) {
-                icon.classList.toggle('fa-chevron-up', !container.classList.contains('collapsed'));
-                icon.classList.toggle('fa-chevron-down', container.classList.contains('collapsed'));
-            }
+
+        // If power button clicked, let button onclick handle it
+        if (e.target.closest('#hbs-presenter-power-btn')) {
+            return;
+        }
+
+        if (window.Presenter && typeof window.Presenter.togglePower === 'function') {
+            window.Presenter.togglePower(e);
+        } else {
+            container.classList.toggle('collapsed');
         }
     });
 
@@ -399,7 +476,10 @@
         clearDisabledState,
         applyFilters,
         renderPlaybookPill,
-        simAction
+        updatePowerUI,
+        simAction,
+        toggleSubbar,
+        isSubbarOpen
     };
 
 })();

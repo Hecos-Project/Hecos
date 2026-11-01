@@ -143,11 +143,21 @@ window.webptt_loadPrefs = function() {
 // ── Keyboard PTT (Control+Shift hold) ────────────────────────────────────
 let _isPTTKeyDown = false;
 let _pttAbortDueToThirdKey = false;
+let _pttKeyboardBound = false;
 
 window.bindPTTKeyboard = function() {
+  if (_pttKeyboardBound) return;
+  _pttKeyboardBound = true;
+
+  const isCtrlOrShift = (e) => {
+    return e.key === 'Control' || e.key === 'Shift' ||
+           e.code === 'ControlLeft' || e.code === 'ControlRight' ||
+           e.code === 'ShiftLeft' || e.code === 'ShiftRight';
+  };
+
   document.addEventListener('keydown', (e) => {
     // If user presses a third non-modifier key while holding Ctrl+Shift (e.g. Ctrl+Shift+R, Ctrl+Shift+I):
-    if (_isPTTKeyDown && e.key !== 'Control' && e.key !== 'Shift') {
+    if (_isPTTKeyDown && !isCtrlOrShift(e)) {
       _pttAbortDueToThirdKey = true;
       if (window.isWebAudioRecording && window.cancelWebAudioRecording) {
         window.cancelWebAudioRecording();
@@ -156,20 +166,15 @@ window.bindPTTKeyboard = function() {
     }
 
     const isCtrlShift = (e.ctrlKey || e.metaKey) && e.shiftKey;
-    if (isCtrlShift && (e.key === 'Control' || e.key === 'Shift')) {
+    if (isCtrlShift && isCtrlOrShift(e)) {
       if (_isPTTKeyDown) return; // Ignore repeat events
 
-      // PTT must be enabled (or mic on)
-      if (typeof window.currentPTTOn !== 'undefined' && !window.currentPTTOn && !window.currentMicOn) {
-        return;
-      }
-
-      // If system STT / backend hardware PTT is active (default in Hecos),
-      // ptt_bus.py (pynput) is already capturing Ctrl+Shift globally on the host.
-      // Do not duplicate with browser WebAudio recording!
-      if (window.currentSTTSource !== 'web') {
-        return;
-      }
+      // =========================================================================
+      // ⚠️ CRITICAL NOTICE: NEVER ADD 'window.currentSTTSource !== "web"' HERE!
+      // In the Web UI chat, keyboard PTT (Ctrl+Shift) MUST ALWAYS trigger WebAudio.
+      // Host-level deduplication is handled downstream in audio_recorder.js
+      // and chat_events.js via window._lastVoiceCmdText debounce.
+      // =========================================================================
 
       _isPTTKeyDown = true;
       _pttAbortDueToThirdKey = false;
@@ -184,7 +189,7 @@ window.bindPTTKeyboard = function() {
   });
 
   document.addEventListener('keyup', (e) => {
-    if (_isPTTKeyDown && (e.key === 'Control' || e.key === 'Shift')) {
+    if (_isPTTKeyDown && isCtrlOrShift(e)) {
       _isPTTKeyDown = false;
       window.isTouchHold = false;
 
@@ -208,11 +213,27 @@ window.bindPTTKeyboard = function() {
       }
     }
   });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && _isPTTKeyDown) {
+      _isPTTKeyDown = false;
+      window.isTouchHold = false;
+      if (window.isWebAudioRecording && window.stopWebAudioRecording) {
+        window.stopWebAudioRecording();
+      }
+    }
+  });
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+function _initAudioUI() {
   if (window.bindWebPTT) window.bindWebPTT('web-ptt-btn');
   if (window.bindPTTKeyboard) window.bindPTTKeyboard();
   if (window._webptt_setButtonState) window._webptt_setButtonState('idle');
   if (window.webptt_loadPrefs) window.webptt_loadPrefs();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _initAudioUI);
+} else {
+  _initAudioUI();
+}

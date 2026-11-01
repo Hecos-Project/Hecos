@@ -192,7 +192,11 @@ class CommandExecutor:
 
         if plugin_tag and method_name:
             from hecos.core.system import module_loader
+            if not module_loader.get_active_tags():
+                module_loader.update_capability_registry(config, debug_log=False)
             plugin_module = module_loader.get_plugin_module(plugin_tag)
+            if plugin_module is None:
+                plugin_module = module_loader.get_plugin_module(plugin_tag, legacy=True)
             if plugin_module is None:
                 raise RuntimeError(f"Plugin '{plugin_tag}' not available.")
 
