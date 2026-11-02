@@ -1,0 +1,463 @@
+
+/* ==========================================================================
+   Exclusion System, Operator Tips & Query Operator Indicator
+   Added: 2026-11-01
+   ========================================================================== */
+
+/* ── Provider Chip: Excluded State ───────────────────────────────────────── */
+.provider-chip.excluded-provider {
+  background: rgba(220, 38, 38, 0.12) !important;
+  border-color: rgba(220, 38, 38, 0.5) !important;
+  color: var(--text-dim) !important;
+  text-decoration: line-through;
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+.provider-chip.excluded-provider:hover {
+  background: rgba(220, 38, 38, 0.22) !important;
+  border-color: rgba(220, 38, 38, 0.75) !important;
+  opacity: 1;
+}
+
+.provider-chip-excl-badge {
+  font-size: 10px;
+  color: #ef4444;
+  margin-left: 2px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ── Exclusion Bar ────────────────────────────────────────────────────────── */
+.exclusion-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 12px;
+  margin-top: 6px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.exclusion-bar i {
+  color: #ef4444;
+  margin-right: 4px;
+}
+
+.excl-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(220, 38, 38, 0.15);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.excl-remove {
+  cursor: pointer;
+  color: #ef4444;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 2px;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+
+.excl-remove:hover {
+  background: rgba(220, 38, 38, 0.3);
+}
+
+.excl-clear-all {
+  background: none;
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  color: #ef4444;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: auto;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.excl-clear-all:hover {
+  background: rgba(220, 38, 38, 0.15);
+  border-color: #ef4444;
+}
+
+/* ── Query Operator Indicator Badge ──────────────────────────────────────── */
+.op-indicator-badge {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--accent-cyan);
+  background: rgba(var(--accent-rgb, 6, 182, 212), 0.08);
+  border: 1px solid rgba(var(--accent-rgb, 6, 182, 212), 0.25);
+  border-radius: 6px;
+  padding: 3px 10px;
+  margin-left: 6px;
+  white-space: nowrap;
+  font-weight: 500;
+  cursor: default;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.op-indicator-badge i {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* ── Operator Tips Help Button ────────────────────────────────────────────── */
+.search-op-tip-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.btn-search-ops-help {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-search-ops-help:hover {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  background: rgba(var(--accent-rgb, 6, 182, 212), 0.08);
+}
+
+/* ── Operator Tips Popover ────────────────────────────────────────────────── */
+.search-ops-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 999;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 360px;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  animation: fadeInDown 0.15s ease;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ops-popover-header {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-main);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ops-popover-header i {
+  color: var(--accent-cyan);
+}
+
+.ops-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.ops-table tr {
+  border-bottom: 1px solid var(--border);
+}
+
+.ops-table tr:last-child {
+  border-bottom: none;
+}
+
+.ops-table td {
+  padding: 6px 8px;
+  vertical-align: middle;
+  color: var(--text);
+}
+
+.ops-table td:first-child {
+  width: 42%;
+}
+
+.ops-table code {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  color: var(--accent-cyan);
+  white-space: nowrap;
+}
+
+.ops-popover-hint {
+  margin-top: 12px;
+  padding: 8px 10px;
+  background: rgba(var(--accent-rgb, 6, 182, 212), 0.06);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 6px 6px 0;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.ops-popover-hint i {
+  color: #f59e0b;
+  margin-right: 4px;
+}
+
+
+
+/* ==========================================================================
+   Presenter Toggle Button & Collapsed Box
+   ========================================================================== */
+.copilot-card-title.presenter-card-title {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+.btn-presenter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.2;
+  transition: all 0.2s ease;
+}
+.btn-presenter-toggle:hover {
+  background: rgba(168, 85, 247, 0.28);
+  border-color: rgba(168, 85, 247, 0.65);
+}
+.btn-presenter-toggle.is-disabled {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #71717a;
+}
+.btn-presenter-toggle.is-disabled:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #d4d4d8;
+}
+.btn-presenter-toggle i {
+  font-size: 8px;
+}
+.copilot-presenter-card.presenter-collapsed {
+  opacity: 0.65;
+  padding-bottom: 6px;
+  background: rgba(168, 85, 247, 0.015);
+  border-left-color: rgba(168, 85, 247, 0.25);
+  transition: all 0.2s ease;
+}
+.copilot-presenter-card.presenter-collapsed .copilot-presenter-feed,
+.copilot-presenter-card.presenter-collapsed .presenter-resizer {
+  display: none !important;
+}
+
+
+/* ==========================================================================
+   Unified Presenter Embedded Widget inside Deep Search Sidebar
+   ========================================================================== */
+#hbs-presenter-embedded.netsearch-presenter-embedded,
+.search-copilot #hbs-presenter-embedded,
+div#hbs-presenter-embedded {
+  display: flex !important;
+  flex-direction: column !important;
+  margin: 0 0 14px 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  border-radius: 8px !important;
+  padding: 8px 10px !important;
+  background: var(--bg-card, rgba(20, 20, 28, 0.75)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-left: 3px solid var(--accent2, #a855f7) !important;
+  box-shadow: none !important;
+}
+
+/* Hide Playbook Pill completely in Search Sidebar */
+.search-copilot #hbs-presenter-playbook-pill,
+.netsearch-presenter-embedded #hbs-presenter-playbook-pill,
+#hbs-presenter-embedded.netsearch-presenter-embedded #hbs-presenter-playbook-pill,
+#hbs-presenter-playbook-pill.pb-pill-hidden {
+  display: none !important;
+}
+
+/* Hide Stats Excel container in Search Sidebar */
+.search-copilot #hbs-presenter-stats-container,
+.netsearch-presenter-embedded #hbs-presenter-stats-container,
+#hbs-presenter-embedded.netsearch-presenter-embedded #hbs-presenter-stats-container {
+  display: none !important;
+}
+
+/* Streamlined header */
+.search-copilot #hbs-presenter-embedded .hbs-presenter-header,
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-header {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+  padding-bottom: 6px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.search-copilot #hbs-presenter-embedded .hbs-presenter-avatar,
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-avatar {
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+.search-copilot #hbs-presenter-embedded .hbs-presenter-title,
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-title {
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+/* Hide desktop-only controls in sidebar mode */
+.search-copilot #hbs-presenter-remember-size,
+.search-copilot label[title*="Remember height"],
+.search-copilot .hbs-presenter-controls > div[style*="border-radius: 4px"],
+.search-copilot .hbs-presenter-max-lines-box,
+.search-copilot .hbs-presenter-ctrl-label,
+#hbs-presenter-embedded.netsearch-presenter-embedded #hbs-presenter-remember-size,
+#hbs-presenter-embedded.netsearch-presenter-embedded label[title*="Remember height"],
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-controls > div[style*="border-radius: 4px"],
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-max-lines-box,
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-ctrl-label {
+  display: none !important;
+}
+
+/* Controls cluster */
+.search-copilot #hbs-presenter-embedded .hbs-presenter-controls,
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-controls {
+  margin-left: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  margin-right: 4px !important;
+}
+
+/* Compact Reset and Advanced buttons */
+.search-copilot #hbs-presenter-reset-btn,
+.search-copilot #hbs-presenter-advanced-toggle,
+#hbs-presenter-embedded.netsearch-presenter-embedded #hbs-presenter-reset-btn,
+#hbs-presenter-embedded.netsearch-presenter-embedded #hbs-presenter-advanced-toggle {
+  font-size: 9.5px !important;
+  padding: 2px 6px !important;
+  white-space: nowrap !important;
+}
+
+.search-copilot .hbs-presenter-controls a[href*="presenter"],
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-controls a[href*="presenter"] {
+  display: none !important;
+}
+
+.search-copilot #hbs-presenter-embedded .hbs-presenter-body,
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-body {
+  max-height: 220px !important;
+  min-height: 45px !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  padding-right: 14px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.15) !important;
+}
+
+.search-copilot #hbs-presenter-embedded .hbs-presenter-body::-webkit-scrollbar,
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-body::-webkit-scrollbar {
+  width: 5px !important;
+}
+
+.search-copilot #hbs-presenter-embedded .hbs-presenter-body::-webkit-scrollbar-track,
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-body::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.15) !important;
+  border-radius: 4px !important;
+}
+
+.search-copilot #hbs-presenter-embedded .hbs-presenter-body::-webkit-scrollbar-thumb,
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.search-copilot #hbs-presenter-embedded .hbs-presenter-body::-webkit-scrollbar-thumb:hover,
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35) !important;
+}
+
+.search-copilot #hbs-presenter-embedded .hbs-presenter-line,
+#hbs-presenter-embedded.netsearch-presenter-embedded .hbs-presenter-line {
+  padding-right: 8px !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+.search-copilot #hbs-presenter-embedded.collapsed,
+#hbs-presenter-embedded.netsearch-presenter-embedded.collapsed {
+  padding: 6px 10px !important;
+  opacity: 0.75;
+}
+
+.search-copilot #hbs-presenter-embedded.collapsed .hbs-presenter-body,
+.search-copilot #hbs-presenter-embedded.collapsed .hbs-presenter-footer,
+.search-copilot #hbs-presenter-embedded.collapsed #hbs-presenter-advanced,
+#hbs-presenter-embedded.netsearch-presenter-embedded.collapsed .hbs-presenter-body,
+#hbs-presenter-embedded.netsearch-presenter-embedded.collapsed .hbs-presenter-footer,
+#hbs-presenter-embedded.netsearch-presenter-embedded.collapsed #hbs-presenter-advanced {
+  display: none !important;
+}
+
+
+/* Presenter Power ON/OFF Button Styling */
+#hbs-presenter-power-btn {
+  font-family: inherit;
+  transition: all 0.2s ease !important;
+}
+#hbs-presenter-power-btn:hover {
+  filter: brightness(1.2);
+}
+.search-copilot #hbs-presenter-power-btn,
+#hbs-presenter-embedded.netsearch-presenter-embedded #hbs-presenter-power-btn {
+  font-size: 9.5px !important;
+  padding: 1.5px 6px !important;
+  line-height: 1.2 !important;
+  vertical-align: middle !important;
+}

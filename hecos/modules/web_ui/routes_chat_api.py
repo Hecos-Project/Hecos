@@ -41,12 +41,40 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         try:
             profile      = auth_mgr.get_profile(current_user.username) if current_user.is_authenticated else None
             translations = get_translator().get_translations()
+
+            # Resolve active persona & avatar for immediate UI hydration (no flash / no race conditions)
+            active_persona = cfg_mgr.config.get("ai", {}).get("active_personality", "Hecos_System_Soul")
+            active_preset_id = cfg_mgr.config.get("ai", {}).get("active_global_preset")
+            if active_preset_id:
+                try:
+                    from hecos.core.global_presets import get_soul
+                    active_soul = get_soul(active_preset_id)
+                    if active_soul and active_soul.persona and active_soul.persona.soul_file:
+                        active_persona = active_soul.persona.soul_file
+                except Exception:
+                    pass
+            if active_persona.endswith(".yaml"):
+                active_persona = active_persona[:-5]
+
+            active_avatar_url = "/assets/Hecos_Logo_NBG.png"
+            active_avatar_type = "image"
+            try:
+                from hecos.core.persona.persona_media import PersonaMediaManager
+                av_info = PersonaMediaManager.resolve_avatar(active_persona)
+                active_avatar_url = av_info.get("url", "/assets/Hecos_Logo_NBG.png")
+                active_avatar_type = av_info.get("type", "image")
+            except Exception:
+                pass
+
             resp = make_response(render_template(
                 "chat.html",
                 profile=profile,
                 zconfig=cfg_mgr.config,
                 translations=translations,
                 sidebar_widgets=get_sidebar_widgets(config=cfg_mgr.config),
+                active_persona=active_persona,
+                active_avatar_url=active_avatar_url,
+                active_avatar_type=active_avatar_type,
             ))
             resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
             resp.headers["Pragma"] = "no-cache"

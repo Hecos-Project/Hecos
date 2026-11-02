@@ -137,6 +137,12 @@ class SystemBootstrapper:
                 logger.info("[APP] RAG warm-up thread avviato in background (non-bloccante).")
         except Exception as _rag_boot_e:
             logger.warning("APP", f"RAG warm-up thread error (non-fatal): {_rag_boot_e}")
+        # ── Ollama Lifecycle — Auto-start server & Model Warm-Up ──────────────────
+        try:
+            from hecos.core.llm.ollama_lifecycle import run_ollama_startup_sequence
+            run_ollama_startup_sequence(config)
+        except Exception as _ollama_boot_e:
+            logger.warning(f"[APP] Ollama startup sequence error (non-fatal): {_ollama_boot_e}")
         # ──────────────────────────────────────────────────────────────────────────
 
     def show_boot_animation(self):

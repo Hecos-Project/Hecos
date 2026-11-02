@@ -6,9 +6,23 @@
       {{ t('webui_payload_desc') }}
     </p>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom:10px; border-bottom:1px solid var(--border);">
-      <div class="toggle-info">
-        <strong>Model:</strong> <span id="pl-model" style="color: var(--accent); font-weight:600;">N/A</span>
+    <!-- Header: Model info & Granular Status Badges -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div class="toggle-info">
+          <strong>Model:</strong> <span id="pl-model" style="color: var(--accent); font-weight:600;">N/A</span>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <span style="font-size:11px; padding: 2px 7px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border);">
+            Tools: <strong id="pl-badge-tools" style="color: var(--accent);">ON</strong>
+          </span>
+          <span style="font-size:11px; padding: 2px 7px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border);">
+            Soul: <strong id="pl-badge-soul" style="color: #4ade80;">ON</strong>
+          </span>
+          <span style="font-size:11px; padding: 2px 7px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border);">
+            Memory: <strong id="pl-badge-mem" style="color: #60a5fa;">ON</strong>
+          </span>
+        </div>
       </div>
       <div>
         <button type="button" class="btn btn-secondary" onclick="loadPayloadData()"><i class="fas fa-sync"></i> {{ t('webui_payload_btn_refresh') }}</button>
@@ -78,6 +92,29 @@ async function loadPayloadData() {
       document.getElementById('pl-tot').textContent   = (pl.total_chars || 0).toLocaleString() + " chars";
       document.getElementById('pl-tks').textContent   = "~ " + (pl.approx_tokens || 0).toLocaleString() + " Tokens";
       
+      // Update Granular Badges
+      if (pl.payload_control) {
+        const bTools = document.getElementById('pl-badge-tools');
+        if (bTools) {
+          const tOn = pl.payload_control.send_tools;
+          const tCnt = pl.payload_control.tools_count || 0;
+          bTools.textContent = tOn ? `ON (${tCnt} tools)` : 'OFF';
+          bTools.style.color = tOn ? 'var(--accent)' : 'var(--muted)';
+        }
+        const bSoul = document.getElementById('pl-badge-soul');
+        if (bSoul) {
+          const sOn = pl.payload_control.send_personality !== false;
+          bSoul.textContent = sOn ? 'ON' : 'OFF (Raw)';
+          bSoul.style.color = sOn ? '#4ade80' : '#f87171';
+        }
+        const bMem = document.getElementById('pl-badge-mem');
+        if (bMem) {
+          const mOn = pl.payload_control.send_memory !== false;
+          bMem.textContent = mOn ? 'ON' : 'OFF';
+          bMem.style.color = mOn ? '#60a5fa' : 'var(--muted)';
+        }
+      }
+
       const pBox = document.getElementById('pl-plugins-box');
       if (pl.plugins_cost && Object.keys(pl.plugins_cost).length > 0) {
         let html = "";
@@ -92,17 +129,26 @@ async function loadPayloadData() {
         pBox.style.display = "none";
       }
 
-      let preText = "Nessun dato disponibile.";
-      if (pl.messages_count > 0 && Array.isArray(pl.messages_preview)) {
+      let preText = "No payload data available yet.";
+      if (pl.messages_preview && pl.messages_preview.length > 0) {
          preText = JSON.stringify(pl.messages_preview, null, 2);
+      } else if (pl.messages_count > 0) {
+         preText = `Last payload contained ${pl.messages_count} messages (${pl.total_chars} chars).`;
       }
       document.getElementById('pl-preview').textContent = preText;
     }
   } catch (err) {
-    console.error("Errore fetch payload", err);
-    document.getElementById('pl-preview').textContent = "Errore di connessione a Hecos: " + err.message;
+    console.error("Payload fetch error:", err);
+    document.getElementById('pl-preview').textContent = "Connection error to Hecos: " + err.message;
   } finally {
     if (btn) { btn.textContent = oldText; btn.disabled = false; }
   }
 }
+
+// Auto-load payload data when document is ready
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof loadPayloadData === 'function') {
+    loadPayloadData();
+  }
+});
 </script>

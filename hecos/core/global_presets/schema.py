@@ -100,6 +100,11 @@ class SoulModel(BaseModel):
     backend_type: Optional[str] = None
     model_name: Optional[str] = None
 
+class SoulPayload(BaseModel):
+    send_tools: Optional[bool] = None
+    send_personality: Optional[bool] = None
+    send_memory: Optional[bool] = None
+
 class SoulProfile(BaseModel):
     model_config = ConfigDict(extra='ignore')
     
@@ -108,3 +113,4 @@ class SoulProfile(BaseModel):
     inference: SoulInference = Field(default_factory=SoulInference)
     voice: SoulVoice = Field(default_factory=SoulVoice)
     model: SoulModel = Field(default_factory=SoulModel)
+    payload: SoulPayload = Field(default_factory=SoulPayload)

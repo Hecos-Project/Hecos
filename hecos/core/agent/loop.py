@@ -115,7 +115,10 @@ class AgentExecutor:
             if images:
                 try:
                     from hecos.modules.web_ui.vision import VisionRouter
-                    from app.model_manager import ModelManager
+                    try:
+                        from app.model_manager import ModelManager
+                    except ImportError:
+                        from hecos.app.model_manager import ModelManager
                     _btype, _mname = ModelManager.get_effective_model_info(current_cfg)
                     user_text, images = VisionRouter.process_incoming_turn(
                         user_text, images, _mname, _btype, emit_callback=self._emit

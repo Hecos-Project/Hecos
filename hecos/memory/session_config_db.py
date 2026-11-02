@@ -5,7 +5,7 @@ Manages the per-session configuration overrides stored as JSON.
 import sqlite3
 import json
 from hecos.core.logging import logger
-from hecos.memory.session_state import PATH_DB, _ram_sessions
+from hecos.memory.session_state import PATH_DB, _ram_sessions, _is_ram_mode
 
 def init_session_config_db():
     """Ensures the config_override column exists in the sessions table."""
@@ -65,7 +65,9 @@ def set_session_config(session_id: str, overrides: dict) -> bool:
     overrides = _clean_null_overrides(overrides) if overrides else {}
     if session_id in _ram_sessions:
         _ram_sessions[session_id]["config_override"] = overrides
-        return True
+        mode = _ram_sessions[session_id].get("privacy_mode", "")
+        if _is_ram_mode(mode):
+            return True
         
     try:
         conn = sqlite3.connect(PATH_DB)

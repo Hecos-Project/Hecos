@@ -116,13 +116,18 @@ async function populateBackendUI() {
 
     setVal('cloud-temp',     c.backend?.cloud?.temperature   ?? 0.7);
     setVal('ollama-temp',         c.backend?.ollama?.temperature    ?? 0.3);
-    setVal('ollama-gpu',          c.backend?.ollama?.num_gpu        ?? 25);
-    setVal('ollama-predict',      c.backend?.ollama?.num_predict    ?? 250);
+    setVal('ollama-gpu',          c.backend?.ollama?.num_gpu        ?? 99);
+    setVal('ollama-predict',      c.backend?.ollama?.num_predict    ?? 4096);
     setVal('ollama-ctx',          c.backend?.ollama?.num_ctx        ?? 4096);
-    setVal('ollama-top-p',        c.backend?.ollama?.top_p          ?? 0.9);
+    setVal('ollama-top-p',        c.backend?.ollama?.top_p          ?? 0.95);
     setVal('ollama-repeat',       c.backend?.ollama?.repeat_penalty ?? 1.1);
     setVal('ollama-probe-timeout',c.backend?.ollama?.probe_timeout_sec ?? 3);
     setVal('ollama-url',          c.backend?.ollama?.url            || 'http://localhost:11434');
+    setVal('ollama-bin-path',     c.backend?.ollama?.binary_path    || '');
+    setCheck('ollama-auto-start', c.backend?.ollama?.auto_start_server ?? false);
+    if (typeof checkOllamaStatus === 'function') checkOllamaStatus();
+    setCheck('ollama-warmup',     c.backend?.ollama?.warmup_model ?? false);
+    setVal('ollama-warmup-keepalive', c.backend?.ollama?.warmup_keep_alive || '120m');
 
     setVal('kobold-url',   c.backend?.kobold?.url         || 'http://localhost:5001');
     setVal('kobold-model', c.backend?.kobold?.model       || '');
@@ -178,6 +183,18 @@ async function populateBackendUI() {
     setVal('fl-tonde',  _boolStr(fi.remove_round_brackets,  'voice'));
     setVal('fl-quadre', _boolStr(fi.remove_square_brackets, 'none'));
     if (window.HecosTextFilters) window.HecosTextFilters.populate(fi.custom_filters || []);
+
+    // Ensure all backend sliders and labels are in sync with loaded config
+    if (typeof window.syncOllamaSliders === 'function') {
+        window.syncOllamaSliders();
+    } else if (typeof syncOllamaSliders === 'function') {
+        syncOllamaSliders();
+    }
+    if (typeof window.syncLlamaCppSliders === 'function') {
+        window.syncLlamaCppSliders();
+    } else if (typeof syncLlamaCppSliders === 'function') {
+        syncLlamaCppSliders();
+    }
 }
 
 /**
@@ -199,31 +216,44 @@ function buildBackendPayload(out) {
         return cfgFallback || '';
     };
 
+    const parseNum = (v, def) => {
+        const n = parseInt(v, 10);
+        return isNaN(n) ? def : n;
+    };
+    const parseFloatNum = (v, def) => {
+        const n = parseFloat(v);
+        return isNaN(n) ? def : n;
+    };
+
     out.backend.cloud.model           = getSelectV('cloud-model', window.cfg.backend?.cloud?.model);
-    out.backend.cloud.temperature     = parseFloat(getV('cloud-temp',    window.cfg.backend?.cloud?.temperature))     || 0.7;
+    out.backend.cloud.temperature     = parseFloatNum(getV('cloud-temp',    window.cfg.backend?.cloud?.temperature),     0.7);
     out.backend.ollama.model          = getSelectV('ollama-model', window.cfg.backend?.ollama?.model);
-    out.backend.ollama.temperature    = parseFloat(getV('ollama-temp',    window.cfg.backend?.ollama?.temperature))    || 0.3;
-    out.backend.ollama.num_gpu        = parseInt(getV('ollama-gpu',        window.cfg.backend?.ollama?.num_gpu))        || 33;
-    out.backend.ollama.num_predict    = parseInt(getV('ollama-predict',    window.cfg.backend?.ollama?.num_predict))    || 1024;
-    out.backend.ollama.num_ctx        = parseInt(getV('ollama-ctx',        window.cfg.backend?.ollama?.num_ctx))        || 4096;
-    out.backend.ollama.top_p          = parseFloat(getV('ollama-top-p',   window.cfg.backend?.ollama?.top_p))          || 0.95;
-    out.backend.ollama.repeat_penalty = parseFloat(getV('ollama-repeat',  window.cfg.backend?.ollama?.repeat_penalty)) || 1.1;
-    out.backend.ollama.probe_timeout_sec = parseInt(getV('ollama-probe-timeout', window.cfg.backend?.ollama?.probe_timeout_sec)) || 3;
+    out.backend.ollama.temperature    = parseFloatNum(getV('ollama-temp',    window.cfg.backend?.ollama?.temperature),    0.3);
+    out.backend.ollama.num_gpu        = parseNum(getV('ollama-gpu',        window.cfg.backend?.ollama?.num_gpu),        99);
+    out.backend.ollama.num_predict    = parseNum(getV('ollama-predict',    window.cfg.backend?.ollama?.num_predict),    4096);
+    out.backend.ollama.num_ctx        = parseNum(getV('ollama-ctx',        window.cfg.backend?.ollama?.num_ctx),        4096);
+    out.backend.ollama.top_p          = parseFloatNum(getV('ollama-top-p',   window.cfg.backend?.ollama?.top_p),          0.95);
+    out.backend.ollama.repeat_penalty = parseFloatNum(getV('ollama-repeat',  window.cfg.backend?.ollama?.repeat_penalty), 1.1);
+    out.backend.ollama.probe_timeout_sec = parseNum(getV('ollama-probe-timeout', window.cfg.backend?.ollama?.probe_timeout_sec), 3);
     out.backend.ollama.url            = getV('ollama-url', window.cfg.backend?.ollama?.url || 'http://localhost:11434');
+    out.backend.ollama.binary_path    = getV('ollama-bin-path', window.cfg.backend?.ollama?.binary_path || '');
+    out.backend.ollama.auto_start_server = getC('ollama-auto-start', window.cfg.backend?.ollama?.auto_start_server ?? false);
+    out.backend.ollama.warmup_model      = getC('ollama-warmup',     window.cfg.backend?.ollama?.warmup_model ?? false);
+    out.backend.ollama.warmup_keep_alive = getV('ollama-warmup-keepalive', window.cfg.backend?.ollama?.warmup_keep_alive || '120m');
     out.backend.kobold.url            = getV('kobold-url',   window.cfg.backend?.kobold?.url);
     out.backend.kobold.model          = getSelectV('kobold-model', window.cfg.backend?.kobold?.model);
-    out.backend.kobold.temperature    = parseFloat(getV('kobold-temp',  window.cfg.backend?.kobold?.temperature))    || 0.7;
-    out.backend.kobold.max_length     = parseInt(getV('kobold-max',     window.cfg.backend?.kobold?.max_length))     || 512;
-    out.backend.kobold.top_p          = parseFloat(getV('kobold-top-p', window.cfg.backend?.kobold?.top_p))          || 0.95;
-    out.backend.kobold.rep_pen        = parseFloat(getV('kobold-rep',   window.cfg.backend?.kobold?.rep_pen))        || 1.1;
+    out.backend.kobold.temperature    = parseFloatNum(getV('kobold-temp',  window.cfg.backend?.kobold?.temperature),    0.7);
+    out.backend.kobold.max_length     = parseNum(getV('kobold-max',     window.cfg.backend?.kobold?.max_length),     512);
+    out.backend.kobold.top_p          = parseFloatNum(getV('kobold-top-p', window.cfg.backend?.kobold?.top_p),          0.95);
+    out.backend.kobold.rep_pen        = parseFloatNum(getV('kobold-rep',   window.cfg.backend?.kobold?.rep_pen),        1.1);
     
     out.backend.llama_cpp = out.backend.llama_cpp || {};
     out.backend.llama_cpp.model        = getSelectV('llama-cpp-model', window.cfg.backend?.llama_cpp?.model);
-    out.backend.llama_cpp.temperature  = parseFloat(getV('llama-cpp-temp',   window.cfg.backend?.llama_cpp?.temperature))  || 0.7;
-    out.backend.llama_cpp.n_gpu_layers = parseInt(getV('llama-cpp-gpu',      window.cfg.backend?.llama_cpp?.n_gpu_layers)) ?? -1;
-    out.backend.llama_cpp.n_ctx        = parseInt(getV('llama-cpp-ctx',      window.cfg.backend?.llama_cpp?.n_ctx))        || 32768;
-    out.backend.llama_cpp.threads      = parseInt(getV('llama-cpp-threads',  window.cfg.backend?.llama_cpp?.threads))      || 4;
-    out.backend.llama_cpp.top_p        = parseFloat(getV('llama-cpp-top-p',  window.cfg.backend?.llama_cpp?.top_p))        || 0.95;
+    out.backend.llama_cpp.temperature  = parseFloatNum(getV('llama-cpp-temp',   window.cfg.backend?.llama_cpp?.temperature),  0.7);
+    out.backend.llama_cpp.n_gpu_layers = parseNum(getV('llama-cpp-gpu',      window.cfg.backend?.llama_cpp?.n_gpu_layers), -1);
+    out.backend.llama_cpp.n_ctx        = parseNum(getV('llama-cpp-ctx',      window.cfg.backend?.llama_cpp?.n_ctx),        32768);
+    out.backend.llama_cpp.threads      = parseNum(getV('llama-cpp-threads',  window.cfg.backend?.llama_cpp?.threads),      4);
+    out.backend.llama_cpp.top_p        = parseFloatNum(getV('llama-cpp-top-p',  window.cfg.backend?.llama_cpp?.top_p),        0.95);
     out.backend.llama_cpp.native_tool_calling   = getC('llama-cpp-native-tools', window.cfg.backend?.llama_cpp?.native_tool_calling ?? true);
     out.backend.llama_cpp.text_commands_enabled = getC('llama-cpp-text-commands', window.cfg.backend?.llama_cpp?.text_commands_enabled ?? true);
 

@@ -1,0 +1,510 @@
+/* ==========================================================================
+   search_filters.css
+   Hecos Deep Search: Category Tabs, Persistent Live Stream Bar,
+   Engine Chips, View Switcher, Infinite Scroll Sentinel & Pagination Bar.
+   ========================================================================== */
+
+/* ── Category Filter Bar ─────────────────────────────────────────────────── */
+.search-filter-bar {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  min-height: 48px;
+  box-shadow: var(--shadow);
+}
+
+.filter-categories {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Rectangular tab buttons with rounded corners */
+.filter-tab {
+  padding: 5px 12px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.filter-tab * {
+  pointer-events: none;
+}
+
+.filter-tab:hover {
+  background: var(--glass-b);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.filter-tab.active {
+  background: rgba(var(--accent-rgb), 0.16);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.25);
+}
+
+.filter-tab[data-filter="dark"].active,
+.filter-tab[data-filter^="dark_"].active,
+.filter-tab[data-filter="deep_dark"].active {
+  background: rgba(var(--accent2-rgb), 0.16);
+  border-color: var(--accent2);
+  color: var(--accent2);
+  box-shadow: 0 0 12px rgba(var(--accent2-rgb), 0.25);
+}
+
+.filter-tab i {
+  font-size: 12px;
+}
+
+/* DATA PILL: In Hecos, pills are used ONLY for displaying data/counts/status */
+.filter-count {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 12px;
+  /* PILL shape reserved for data */
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  min-width: 18px;
+  text-align: center;
+  margin-left: 2px;
+  transition: all 0.2s ease;
+}
+
+.filter-tab:hover .filter-count {
+  border-color: rgba(var(--accent-rgb), 0.3);
+  color: var(--text);
+}
+
+.filter-tab.active .filter-count {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.filter-tab[data-filter="dark"].active .filter-count,
+.filter-tab[data-filter^="dark_"].active .filter-count,
+.filter-tab[data-filter="deep_dark"].active .filter-count {
+  background: var(--accent2);
+  border-color: var(--accent2);
+  color: #fff;
+}
+
+.filter-tab.has-results:not(.active) .filter-count {
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.3);
+}
+
+/* ── Persistent Engine Stream & Interactive Filter Bar ───────────────────── */
+.stream-live-bar {
+  display: none;
+  background: var(--bg2);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow);
+  transition: all 0.25s ease;
+}
+
+.stream-live-bar.active {
+  display: flex;
+}
+
+.stream-live-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.stream-live-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.btn-clear-engine-filter {
+  background: rgba(var(--red-rgb), 0.12);
+  border: 1px solid rgba(var(--red-rgb), 0.3);
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  height: 26px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+}
+
+.btn-clear-engine-filter:hover {
+  background: var(--red);
+  color: #fff;
+}
+
+.stream-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Engine Chip Button (.btn-sm rectangular with rounded corners) */
+.engine-chip {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 3px 10px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.engine-chip>i,
+.engine-chip .chip-engine-name,
+.engine-chip .chip-count {
+  pointer-events: none;
+}
+
+/* .chip-cat-pill and .chip-cats keep pointer-events: auto for individual category filtering */
+
+.engine-chip:hover {
+  background: var(--glass-b);
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.engine-chip.running {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+  animation: pulseChip 1.5s infinite;
+}
+
+.engine-chip.done {
+  border-color: rgba(var(--green-rgb), 0.35);
+  color: var(--green);
+  background: rgba(var(--green-rgb), 0.1);
+  font-weight: 500;
+}
+
+.engine-chip.done:hover {
+  background: rgba(var(--green-rgb), 0.2);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.engine-chip.selected-engine {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #fff !important;
+  font-weight: 600;
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.35);
+  transform: translateY(-1px);
+}
+
+/* DATA PILL: Counter inside chip */
+.chip-count {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  /* PILL shape reserved for data */
+  background: rgba(0, 0, 0, 0.25);
+  display: inline-block;
+  line-height: 1.2;
+}
+
+.engine-chip.selected-engine .chip-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+/* Engine chip: zero-results state */
+.engine-chip.done.empty {
+  border-color: rgba(128, 128, 128, 0.3);
+  color: var(--muted);
+  background: rgba(128, 128, 128, 0.05);
+  opacity: 0.65;
+}
+
+.engine-chip.done.empty:hover {
+  opacity: 0.9;
+  border-color: rgba(128, 128, 128, 0.5);
+}
+
+/* Engine name inside chip */
+.chip-engine-name {
+  font-weight: 500;
+  pointer-events: none;
+}
+
+/* Category breakdown pills inside engine chip */
+.chip-cats {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 3px;
+  pointer-events: auto;
+  /* individual pills are clickable */
+}
+
+.chip-cat-pill {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.chip-cat-pill:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.engine-chip.selected-engine .chip-cat-pill {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.engine-chip.selected-engine .chip-cat-pill:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+@keyframes pulseChip {
+  0% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.6;
+  }
+}
+
+/* ── View Mode Switcher (Infinite Scroll vs Pagination) ───────────────────── */
+.results-header-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  font-size: 12.5px;
+  color: var(--muted);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.results-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.results-view-switcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.view-mode-title {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.view-mode-buttons {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--bg3);
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.view-mode-btn {
+  height: 26px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.view-mode-btn:hover {
+  color: var(--text);
+  background: var(--glass-b);
+}
+
+.view-mode-btn.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.3);
+}
+
+/* ── Infinite Scroll Sentinel & Status ────────────────────────────────────── */
+.infinite-scroll-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0 32px;
+}
+
+.infinite-scroll-status {
+  padding: 6px 16px;
+  border-radius: 16px;
+  /* DATA PILL for status */
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Classic Pagination Controls Bar ──────────────────────────────────────── */
+.pagination-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0 32px;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+
+.pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.page-btn {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.page-pills {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 4px;
+}
+
+.page-num-btn {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.page-num-btn:hover {
+  background: var(--glass-b);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.page-num-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.35);
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination-size-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.page-size-select {
+  height: 28px;
+  padding: 2px 8px;
+  font-size: 11.5px;
+  cursor: pointer;
+}

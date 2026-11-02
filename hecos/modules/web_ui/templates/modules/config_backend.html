@@ -1,3 +1,19 @@
+<style>
+  .slider-field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .slider-field input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .slider-field input[type="number"] {
+    width: 90px;
+    text-align: right;
+  }
+</style>
 <!-- BACKEND PANEL -->
 <div id="tab-backend" class="panel">
   <div class="card">
@@ -112,12 +128,113 @@
       </div>
     </div>
     <div class="grid-2">
-      <div class="field"><label>{{ t('webui_conf_temp') }}</label><input type="number" id="ollama-temp" min="0" max="2" step="0.05"></div>
-      <div class="field"><label>{{ t('webui_conf_gpu_layers') }}</label><input type="number" id="ollama-gpu" min="-1" max="200" step="1"></div>
-      <div class="field"><label>{{ t('webui_conf_num_predict') }}</label><input type="number" id="ollama-predict" min="50" max="8192" step="50"></div>
-      <div class="field"><label>{{ t('webui_conf_num_ctx') }}</label><input type="number" id="ollama-ctx" min="512" max="65536" step="512"></div>
-      <div class="field"><label>{{ t('webui_conf_top_p') }}</label><input type="number" id="ollama-top-p" min="0" max="1" step="0.05"></div>
-      <div class="field"><label>{{ t('webui_conf_repeat_penalty') }}</label><input type="number" id="ollama-repeat" min="0.5" max="2" step="0.05"></div>
+      <div class="field">
+        <label>Temperature <span class="tooltip-icon" title="Controls randomness and creativity. Lower values (0.1–0.4) produce focused, deterministic, and precise answers. Higher values (0.7–1.2) encourage variety and expressive language. Default: 0.3.">ⓘ</span></label>
+        <div class="slider-field">
+          <input type="range" id="ollama-temp-slider" min="0" max="2" step="0.05">
+          <input type="number" id="ollama-temp" min="0" max="2" step="0.05">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>GPU Layers (num_gpu) <span class="tooltip-icon" title="Number of neural network layers offloaded into GPU VRAM. Set to 99 or higher to offload 100% of the model to GPU for maximum performance. Set to 0 for CPU-only execution. Default: 99.">ⓘ</span></label>
+        <div class="slider-field">
+          <input type="range" id="ollama-gpu-slider" min="0" max="200" step="1">
+          <input type="number" id="ollama-gpu" min="0" max="200" step="1">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Num Predict (Max Output Tokens) <span class="tooltip-icon" title="Maximum number of tokens to generate in a single response. 4096 ensures comprehensive responses and reasoning traces without truncation. Can be increased up to 32768 for long generations, or lower (512–1024) to limit reply length. Default: 4096.">ⓘ</span> <span id="ollama-predict-label" style="font-size:11px; color:var(--text-muted); font-weight:normal; margin-left:6px;"></span></label>
+        <div class="slider-field">
+          <input type="range" id="ollama-predict-slider" min="128" max="32768" step="128">
+          <input type="number" id="ollama-predict" min="128" max="32768" step="128">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Top P (Nucleus Sampling) <span class="tooltip-icon" title="Alternative to temperature. Evaluates only the top tokens comprising cumulative probability P. 0.95 produces natural variety while excluding highly improbable tokens. Lower values make output more predictable. Default: 0.95.">ⓘ</span></label>
+        <div class="slider-field">
+          <input type="range" id="ollama-top-p-slider" min="0" max="1" step="0.05">
+          <input type="number" id="ollama-top-p" min="0" max="1" step="0.05">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Repeat Penalty <span class="tooltip-icon" title="Applies penalty to repeated tokens, discouraging duplicate words or circular loops. Standard: 1.05–1.15. Setting it too high (>1.3) can degrade coherence and syntax. Default: 1.1.">ⓘ</span></label>
+        <div class="slider-field">
+          <input type="range" id="ollama-repeat-slider" min="1.0" max="2.0" step="0.05">
+          <input type="number" id="ollama-repeat" min="1.0" max="2.0" step="0.05">
+        </div>
+      </div>
+
+      <div class="field" style="grid-column: 1 / -1;">
+        <label>Context Size (num_ctx) <span class="tooltip-icon" title="Total token window for user prompt, conversation history, and system instructions. 4096 is standard (~3000 words). Gemma-4 and modern models natively support up to 131072 (128K context, ~98K words). Higher values require more GPU VRAM for the KV cache. Default: 4096.">ⓘ</span> <span id="ollama-ctx-label" style="font-size:11px; color:var(--text-muted); font-weight:normal; margin-left:6px;"></span></label>
+        <div class="slider-field">
+          <input type="range" id="ollama-ctx-slider" min="1024" max="131072" step="1024">
+          <input type="number" id="ollama-ctx" min="1024" max="131072" step="1024">
+        </div>
+      </div>
+    </div>
+
+    <!-- Ollama Lifecycle & Startup Optimization -->
+    <div style="border-top: 1px solid var(--border); margin-top: 16px; padding-top: 16px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+        <span style="display:flex; align-items:center; gap:8px;">
+          <i class="fas fa-bolt" style="color:var(--accent);"></i> Startup & Speed Optimization
+          <span id="ollama-live-badge" style="font-size:10px; font-weight:600; padding:2px 8px; border-radius:12px; background:rgba(255,255,255,0.06); color:var(--text-muted); display:inline-flex; align-items:center; gap:4px;">
+            <i class="fas fa-circle" style="font-size:7px;"></i> Checking...
+          </span>
+        </span>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="triggerOllamaStart()" id="btn-ollama-start" style="font-size:11px; padding:3px 10px; height:auto; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fas fa-play" style="font-size:10px;"></i> Start Server Now
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="triggerOllamaWarmup()" id="btn-ollama-warmup" style="font-size:11px; padding:3px 10px; height:auto; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fas fa-bolt" style="font-size:10px;"></i> Preload Model Now
+          </button>
+        </div>
+      </div>
+
+      <!-- Executable Path Field with File Picker -->
+      <div class="field" style="margin-bottom: 12px;">
+        <label style="font-size:12px; display:flex; align-items:center; justify-content:space-between;">
+          <span>Ollama Executable Path <span class="tooltip-icon" title="Path to ollama.exe (for background daemon) or 'ollama app.exe' (to launch the Windows GUI tray app). If empty, auto-detects standard installation paths.">&#9432;</span></span>
+          <span id="ollama-bin-detected" style="font-size:11px; color:var(--text-muted); font-style:italic;"></span>
+        </label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="ollama-bin-path" placeholder="Auto-detected (e.g. C:\Users\...\AppData\Local\Programs\Ollama\ollama.exe)" style="flex:1; font-family:'JetBrains Mono', monospace; font-size:12px;">
+          <button type="button" class="btn btn-secondary" onclick="browseOllamaBinary()" title="Browse Ollama Executable" style="height:auto; padding:6px 14px; display:inline-flex; align-items:center; gap:6px;">
+            <i class="fas fa-folder-open"></i> Browse
+          </button>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field" style="margin-bottom: 8px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="ollama-auto-start" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span>Auto-Start Ollama Server
+              <span class="tooltip-icon" title="Automatically launches 'ollama serve' in background if not already active when Hecos starts. Runs non-blocking as a background daemon.">ⓘ</span>
+            </span>
+          </label>
+        </div>
+        <div class="field" style="margin-bottom: 8px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="ollama-warmup" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span>Preload Model at Boot (GPU Warmup)
+              <span class="tooltip-icon" title="Pre-loads the configured default model directly into GPU VRAM at Hecos startup, eliminating cold-start latency on the first message.">ⓘ</span>
+            </span>
+          </label>
+        </div>
+        <div class="field" style="margin-top: 4px;">
+          <label style="font-size:12px;">Warmup Keep-Alive <span class="tooltip-icon" title="Duration the pre-loaded model stays held in GPU memory. Examples: '120m' (2 hours), '24h' (1 day), '-1' (indefinitely until manually unloaded). Default: '120m'.">ⓘ</span></label>
+          <input type="text" id="ollama-warmup-keepalive" placeholder="120m" style="max-width:140px; font-family:'JetBrains Mono', monospace; font-size:12px;">
+        </div>
+        <div class="field" style="margin-top: 4px; display:flex; align-items:flex-end;">
+          <span id="ollama-warmup-status" style="font-size:11px; color:var(--text-muted); font-style:italic;"></span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -161,11 +278,10 @@
         </div>
       </div>
       <div class="field" style="grid-column: 1 / -1;">
-        <label>Context Size (n_ctx) <span class="tooltip-icon" title="Memoria di lavoro del modello in token. 4096 = ~3000 parole. 32768 = ~24000 parole. Aumenta se ricevi errori 'Context Window Exceeded'. Richiede più RAM/VRAM.">ⓘ</span></label>
+        <label>Context Size (n_ctx) <span class="tooltip-icon" title="Memoria di lavoro del modello in token. 4096 = ~3000 parole. 32768 = ~24000 parole. Aumenta se ricevi errori 'Context Window Exceeded'. Richiede più RAM/VRAM.">ⓘ</span> <span id="llama-cpp-ctx-label" style="font-size:11px; color:var(--text-muted); font-weight:normal; margin-left:6px;"></span></label>
         <div class="slider-field">
           <input type="range" id="llama-cpp-ctx-slider" min="512" max="131072" step="512" oninput="document.getElementById('llama-cpp-ctx').value=this.value">
-          <input type="number" id="llama-cpp-ctx" min="512" max="131072" step="512" style="width:100px" oninput="document.getElementById('llama-cpp-ctx-slider').value=this.value">
-          <span id="llama-cpp-ctx-label" style="font-size:11px; color:var(--text-muted); white-space:nowrap; align-self:center;"></span>
+          <input type="number" id="llama-cpp-ctx" min="512" max="131072" step="512" oninput="document.getElementById('llama-cpp-ctx-slider').value=this.value">
         </div>
       </div>
       <div class="field">
@@ -215,6 +331,60 @@
     }
   })();
 
+  // ── Slider sync for Ollama fields ──────────────────────────────────────────
+  function updateOllamaCtxLabel(v) {
+    var words = Math.round(Number(v || 0) * 0.75);
+    var label = words >= 1000 ? '≈ ' + (words / 1000).toFixed(0) + 'K words' : '≈ ' + words + ' words';
+    var el = document.getElementById('ollama-ctx-label');
+    if (el) el.textContent = label;
+  }
+
+  function updateOllamaPredictLabel(v) {
+    var words = Math.round(Number(v || 0) * 0.75);
+    var label = words >= 1000 ? '≈ ' + (words / 1000).toFixed(0) + 'K words' : '≈ ' + words + ' words';
+    var el = document.getElementById('ollama-predict-label');
+    if (el) el.textContent = label;
+  }
+
+  function syncOllamaSliders() {
+    var pairs = [
+      ['ollama-temp', 'ollama-temp-slider'],
+      ['ollama-gpu', 'ollama-gpu-slider'],
+      ['ollama-predict', 'ollama-predict-slider'],
+      ['ollama-ctx', 'ollama-ctx-slider'],
+      ['ollama-top-p', 'ollama-top-p-slider'],
+      ['ollama-repeat', 'ollama-repeat-slider']
+    ];
+    pairs.forEach(function(pair) {
+      var num = document.getElementById(pair[0]);
+      var sld = document.getElementById(pair[1]);
+      if (num && sld) {
+        if (num.value !== '') {
+          sld.value = num.value;
+        } else if (sld.value !== '') {
+          num.value = sld.value;
+        }
+        if (pair[0] === 'ollama-ctx') updateOllamaCtxLabel(num.value || sld.value);
+        if (pair[0] === 'ollama-predict') updateOllamaPredictLabel(num.value || sld.value);
+
+        if (!num._syncBound) {
+          num._syncBound = true;
+          num.addEventListener('input', function() {
+            sld.value = this.value;
+            if (pair[0] === 'ollama-ctx') updateOllamaCtxLabel(this.value);
+            if (pair[0] === 'ollama-predict') updateOllamaPredictLabel(this.value);
+          });
+          sld.addEventListener('input', function() {
+            num.value = this.value;
+            if (pair[0] === 'ollama-ctx') updateOllamaCtxLabel(this.value);
+            if (pair[0] === 'ollama-predict') updateOllamaPredictLabel(this.value);
+          });
+        }
+      }
+    });
+  }
+  window.syncOllamaSliders = syncOllamaSliders;
+
   // ── Slider sync for LlamaCPP fields ──────────────────────────────────────
   function syncLlamaCppSliders() {
     var ctxVal = document.getElementById('llama-cpp-ctx');
@@ -243,13 +413,13 @@
   }
 
   // Run on load and when the llama-cpp card becomes visible
-  document.addEventListener('DOMContentLoaded', syncLlamaCppSliders);
+  document.addEventListener('DOMContentLoaded', function() { syncLlamaCppSliders(); syncOllamaSliders(); });
   // Also hook into the config save/load cycle
   if (typeof window.onConfigSectionLoaded === 'function') {
     var _orig = window.onConfigSectionLoaded;
-    window.onConfigSectionLoaded = function() { _orig.apply(this, arguments); syncLlamaCppSliders(); };
+    window.onConfigSectionLoaded = function() { _orig.apply(this, arguments); syncLlamaCppSliders(); syncOllamaSliders(); };
   }
-  // Observe visibility in case the card is shown later
+  // Observe visibility in case cards are shown later
   var _llamaCard = document.getElementById('card-llama-cpp');
   if (_llamaCard && window.MutationObserver) {
     new MutationObserver(function(mutations) {
@@ -259,5 +429,145 @@
         }
       });
     }).observe(_llamaCard, { attributes: true });
+  }
+  var _ollamaCard = document.getElementById('card-ollama');
+  if (_ollamaCard && window.MutationObserver) {
+    new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        if (m.attributeName === 'style' && _ollamaCard.style.display !== 'none') {
+          syncOllamaSliders();
+          if (typeof checkOllamaStatus === 'function') checkOllamaStatus();
+        }
+      });
+    }).observe(_ollamaCard, { attributes: true });
+  }
+
+  function browseOllamaBinary() {
+    var input = document.getElementById('ollama-bin-path');
+    var current = input ? input.value : '';
+    if (!current) {
+      current = 'C:\\Users\\' + (window.HecosUserName || '') + '\\AppData\\Local\\Programs\\Ollama';
+    }
+    if (typeof HecosFilePicker !== 'undefined') {
+      HecosFilePicker.open({
+        title: 'Select Ollama Executable (ollama.exe or ollama app.exe)',
+        initialPath: current,
+        onSelect: function(p) {
+          if (input) {
+            input.value = p;
+            input.dispatchEvent(new Event('change'));
+            if (typeof checkOllamaStatus === 'function') checkOllamaStatus();
+          }
+        }
+      });
+    }
+  }
+
+  function checkOllamaStatus() {
+    var badge = document.getElementById('ollama-live-badge');
+    var detectedSpan = document.getElementById('ollama-bin-detected');
+    fetch('/hecos/backend/ollama/status')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (badge) {
+          if (d.running) {
+            badge.innerHTML = '<i class="fas fa-circle" style="color:var(--green,#22c55e); font-size:7px;"></i> <span style="color:var(--green,#22c55e);">Online</span>';
+          } else {
+            badge.innerHTML = '<i class="fas fa-circle" style="color:var(--text-muted); font-size:7px;"></i> Offline';
+          }
+        }
+        if (detectedSpan && d.detected_binary) {
+          var input = document.getElementById('ollama-bin-path');
+          if (input && !input.value) {
+            var fileName = d.detected_binary.split(/[\\/]/).pop();
+            detectedSpan.textContent = 'Auto: ' + fileName;
+            detectedSpan.title = d.detected_binary;
+          } else {
+            detectedSpan.textContent = '';
+          }
+        }
+      })
+      .catch(function() {});
+  }
+
+  // Periodic status poll while config is open
+  setInterval(checkOllamaStatus, 6000);
+
+  function triggerOllamaStart() {
+    var btn = document.getElementById('btn-ollama-start');
+    var status = document.getElementById('ollama-warmup-status');
+    var binPath = document.getElementById('ollama-bin-path')?.value || '';
+    if (btn) btn.disabled = true;
+    if (status) status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking & launching Ollama...';
+    fetch('/hecos/backend/ollama/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ binary_path: binPath })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (status) {
+        if (data.already_running) {
+          status.innerHTML = '<span style="color:var(--green,#22c55e);"><i class="fas fa-check-circle"></i> Ollama is already running!</span>';
+        } else if (data.ok) {
+          status.innerHTML = '<span style="color:var(--green,#22c55e);"><i class="fas fa-check-circle"></i> Ollama server launched in background!</span>';
+          var warmupCheck = document.getElementById('ollama-warmup');
+          if (warmupCheck && warmupCheck.checked) {
+            setTimeout(triggerOllamaWarmup, 3500);
+          }
+        } else {
+          status.innerHTML = '<span style="color:var(--red,#ef4444);"><i class="fas fa-times-circle"></i> ' + (data.error || 'Failed to start') + '</span>';
+        }
+      }
+    })
+    .catch(function(err) {
+      if (status) status.innerHTML = '<span style="color:var(--red,#ef4444);"><i class="fas fa-times-circle"></i> ' + err.message + '</span>';
+    })
+    .finally(function() {
+      if (btn) btn.disabled = false;
+      if (typeof checkOllamaStatus === 'function') setTimeout(checkOllamaStatus, 1500);
+      setTimeout(function() { if (status) status.textContent = ''; }, 7000);
+    });
+  }
+
+  // Auto-launch Ollama immediately when the user checks the Auto-Start checkbox
+  var _autoStartEl = document.getElementById('ollama-auto-start');
+  if (_autoStartEl) {
+    _autoStartEl.addEventListener('change', function() {
+      if (this.checked) {
+        triggerOllamaStart();
+      }
+    });
+  }
+
+  function triggerOllamaWarmup() {
+    var btn = document.getElementById('btn-ollama-warmup');
+    var status = document.getElementById('ollama-warmup-status');
+    var modelEl = document.getElementById('ollama-model');
+    var model = modelEl ? modelEl.value : '';
+    if (btn) btn.disabled = true;
+    if (status) status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Pre-warming ' + (model || 'model') + '...';
+    fetch('/hecos/backend/ollama/warmup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: model })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (status) {
+        if (data.ok) {
+          status.innerHTML = '<span style="color:var(--green,#22c55e);"><i class="fas fa-check-circle"></i> Pre-load signal sent! Loading into VRAM.</span>';
+        } else {
+          status.innerHTML = '<span style="color:var(--red,#ef4444);"><i class="fas fa-times-circle"></i> ' + (data.error || 'Failed') + '</span>';
+        }
+      }
+    })
+    .catch(function(err) {
+      if (status) status.innerHTML = '<span style="color:var(--red,#ef4444);"><i class="fas fa-times-circle"></i> ' + err.message + '</span>';
+    })
+    .finally(function() {
+      if (btn) btn.disabled = false;
+      setTimeout(function() { if (status) status.textContent = ''; }, 6000);
+    });
   }
 </script>

@@ -65,7 +65,10 @@ class LLMManager:
         if not cfg:
             return ""
         
-        from app.model_manager import ModelManager
+        try:
+            from app.model_manager import ModelManager
+        except ImportError:
+            from hecos.app.model_manager import ModelManager
         _, modello = ModelManager.get_effective_model_info(cfg)
         return modello
 

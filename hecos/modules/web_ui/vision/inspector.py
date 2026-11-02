@@ -91,14 +91,33 @@ def inspect_image(
     if mode == "cloud":
         return _inspect_via_cloud(image_dict, prompt, bridge_cfg)
 
-    # 4. Auto Mode: try Local first if local model is available; fallback to Cloud
+    # 4. Auto Mode: try Local first; fallback to Cloud ONLY if no local model resolves.
+    # If the active chat model is a local Ollama model, 'auto' stays local-only
+    # to respect offline boundaries and avoid unexpected cloud calls.
     if mode == "auto":
         local_m = bridge_cfg.get("local_model", "default")
+        # Resolve "default" to the active Ollama model from system config
+        if local_m in ("default", None, ""):
+            cfg = _get_system_config()
+            local_m = (cfg.get("backend") or {}).get("ollama", {}).get("model", "")
+
+        active_source = (_get_system_config().get("backend") or {}).get("active_model_source", "ollama")
+
         if local_m and local_m != "disabled":
-            desc = _inspect_via_ollama(image_dict, prompt, bridge_cfg)
+            desc = _inspect_via_ollama(image_dict, prompt, {**bridge_cfg, "local_model": local_m})
             if desc:
                 return desc
-        # Fallback to cloud
+            # Local failed — only fallback to cloud if explicitly using cloud chat
+            if active_source != "cloud":
+                logger.warning(
+                    "[VisionInspector] Auto mode: local Ollama inspection failed. "
+                    "Cloud fallback suppressed (active model is local). "
+                    "Hint: install a vision-capable Ollama model or switch mode to 'cloud'."
+                )
+                return None
+
+        # Cloud fallback (only if active_model_source=cloud or no local model configured)
+        logger.info("[VisionInspector] Auto mode: falling back to cloud inspector.")
         return _inspect_via_cloud(image_dict, prompt, bridge_cfg)
 
     return None
@@ -167,10 +186,20 @@ def _inspect_via_cloud(image_dict: dict, prompt: str, bridge_cfg: dict) -> Optio
             timeout=35
         )
 
-        content = resp.choices[0].message.content
-        if content and len(content.strip()) > 10:
-            logger.info(f"[VisionInspector] Cloud inspection succeeded ({len(content)} chars)")
-            return content.strip()
+        choice = resp.choices[0] if getattr(resp, "choices", None) else None
+        if choice:
+            finish_reason = getattr(choice, "finish_reason", None)
+            if finish_reason == "content_filter":
+                logger.warning(
+                    f"[VisionInspector] Cloud model '{model_name}' BLOCKED the image: "
+                    f"finish_reason='content_filter'. (The image contains NSFW/nudity/content rejected by the cloud provider's safety filter)."
+                )
+                return None
+
+            content = getattr(choice.message, "content", None)
+            if content and len(content.strip()) > 10:
+                logger.info(f"[VisionInspector] Cloud inspection succeeded ({len(content)} chars)")
+                return content.strip()
 
     except Exception as e:
         logger.warning(f"[VisionInspector] Cloud inspection failed: {e}")
@@ -182,30 +211,57 @@ def _inspect_via_cloud(image_dict: dict, prompt: str, bridge_cfg: dict) -> Optio
 # ---------------------------------------------------------------------------
 # Known text-only / vision-capable model families for Ollama pre-flight check
 # ---------------------------------------------------------------------------
+# NOTE: _TEXT_ONLY_KEYWORDS is kept for documentation only — the heuristic
+# now uses _VISION_KEYWORDS as a whitelist plus a runtime Ollama probe.
 _TEXT_ONLY_KEYWORDS = (
-    "gemma", "llama", "mistral", "qwen", "phi", "deepseek", "vicuna",
+    "mistral", "qwen", "phi", "deepseek", "vicuna",
     "wizard", "orca", "falcon", "mpt", "starcoder", "codellama",
-    "solar", "yi", "command-r", "nous", "hermes", "abliterated",
+    "solar", "yi", "command-r", "nous", "hermes",
 )
 _VISION_KEYWORDS = (
+    # Dedicated vision model families
     "llava", "moondream", "bakllava", "cogvlm", "minicpm-v",
     "llama3.2-vision", "llama-3.2-vision", "qwen2-vl", "qwen-vl",
     "internvl", "phi3-vision", "phi-3-vision", "janus", "pixtral",
     "mistvision", "bunny", "idefics",
+    # Gemma 4+ supports multimodal natively (confirmed via Ollama API test)
+    "gemma-4", "gemma4",
+    # Gemma 3 (some variants are multimodal)
+    "gemma-3", "gemma3",
+    # llama 3.2 / 4 general (vision variants)
+    "llama-4", "llama4",
 )
+
+# Models explicitly tested and confirmed vision-capable at runtime.
+# Add entries here to bypass the keyword heuristic (namespace/tag stripped).
+_RUNTIME_CONFIRMED_VISION_MODELS: set = set()
 
 
 def _is_ollama_model_vision_capable(model_name: str) -> bool:
     """
-    Quick heuristic: returns True only if the model name matches a known
-    vision-capable family. Strips namespace prefixes (e.g. 'masska129/gemma-…').
+    Heuristic: returns True if the model name matches a known vision-capable
+    family. Strips namespace prefixes (e.g. 'masska129/gemma-4-abliterated:12b-qat').
+
+    Gemma-4 and newer multi-modal models that may carry text-only-looking
+    name fragments (abliterated, uncensored, etc.) are now correctly identified
+    by the base model family keyword (gemma-4, gemma4, llama-4…).
     """
     name_lower = model_name.lower()
+    # Strip namespace (e.g. 'masska129/...' → '...')
     if "/" in name_lower:
         name_lower = name_lower.split("/", 1)[-1]
+    # Strip tag (e.g. 'gemma-4-abliterated:12b-qat' → 'gemma-4-abliterated')
+    base = name_lower.split(":")[0]
+
+    # Check runtime confirmed set first
+    if base in _RUNTIME_CONFIRMED_VISION_MODELS:
+        return True
+
+    # Vision-capable keyword whitelist
     for kw in _VISION_KEYWORDS:
-        if kw in name_lower:
+        if kw in base:
             return True
+
     return False
 
 

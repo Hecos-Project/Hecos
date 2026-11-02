@@ -1,6 +1,6 @@
 ai:
   active_global_preset: urania_9800_gp
-  active_personality: Urania_9800
+  active_personality: antonio_meloni
   available_personalities:
     '1': Hecos_System_Soul
     '2': Urania_9800
@@ -35,7 +35,7 @@ ai:
   avatar_size: medium
 backend:
   type: ollama
-  active_model_source: cloud
+  active_model_source: ollama
   cloud:
     model: gemini/gemini-2.5-flash
     temperature: 0.7
@@ -62,13 +62,17 @@ backend:
       '10': lukey03/qwen3.5-9b-abliterated:latest
       '11': srchmnmichael/qwen3.5-9B-uncensored:latest
     num_ctx: 4096
-    num_gpu: 33
-    num_predict: 4096
+    num_gpu: 99
+    num_predict: 17280
     temperature: 0.3
     top_p: 0.95
     repeat_penalty: 1.1
     keep_alive: 120m
     probe_timeout_sec: 3
+    binary_path: C:\Users\melon\AppData\Roaming\Microsoft\Windows\Start Menu\Programs
+    auto_start_server: true
+    warmup_model: true
+    warmup_keep_alive: 120m
   llama_cpp:
     model: ''
     n_gpu_layers: -1

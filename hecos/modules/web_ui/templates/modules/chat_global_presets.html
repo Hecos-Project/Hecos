@@ -178,12 +178,12 @@
                 </div>
                 <div class="sf-slider-item">
                     <label>Max Tokens (Predict) <span id="sf-val-predict">1024</span></label>
-                    <input type="range" id="sf-predict" min="128" max="8192" step="128" value="1024"
+                    <input type="range" id="sf-predict" min="128" max="32768" step="128" value="1024"
                         oninput="window.sfUpdateSliderVal(this, 'sf-val-predict'); window.sfDirty()">
                 </div>
                 <div class="sf-slider-item">
                     <label>Context Size <span id="sf-val-ctx">Auto</span></label>
-                    <input type="range" id="sf-ctx" min="0" max="65536" step="512" value="0" oninput="
+                    <input type="range" id="sf-ctx" min="0" max="131072" step="512" value="0" oninput="
                         document.getElementById('sf-val-ctx').textContent = this.value == 0 ? 'Auto' : this.value;
                         window.sfDirty();
                     ">
@@ -198,6 +198,62 @@
                         window.sfDirty();
                     ">
                 </div>
+            </div>
+        </div>
+
+        <!-- PAYLOAD & TOOLS CONTROL -->
+        <div class="sf-section">
+            <div class="sf-section-header">
+                <i class="fas fa-sliders-h" style="color: var(--accent1);"></i> PAYLOAD &amp; TOOLS CONTROL
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Tools Toggle Row -->
+                <label class="sf-toggle-row">
+                    <div class="sf-toggle-info">
+                        <div class="sf-toggle-icon"><i class="fas fa-tools"></i></div>
+                        <div class="sf-toggle-text">
+                            <span class="sf-toggle-title">
+                                Function Calling Tools (JSON Schemas)
+                                <span class="sf-toggle-badge">~25k Tokens</span>
+                            </span>
+                            <span class="sf-toggle-desc">Send plugin functions to the LLM. Turn off to reduce prompt tokens and maximize inference speed.</span>
+                        </div>
+                    </div>
+                    <div class="sf-switch">
+                        <input type="checkbox" id="sf-payload-tools" checked onchange="window.sfDirty()">
+                        <span class="sf-slider"></span>
+                    </div>
+                </label>
+
+                <!-- Personality Toggle Row -->
+                <label class="sf-toggle-row">
+                    <div class="sf-toggle-info">
+                        <div class="sf-toggle-icon" style="color: #a78bfa; background: rgba(167, 139, 250, 0.1);"><i class="fas fa-masks-theater"></i></div>
+                        <div class="sf-toggle-text">
+                            <span class="sf-toggle-title">Soul &amp; Personality Directives</span>
+                            <span class="sf-toggle-desc">Inject active persona character, tone, and traits. Turn off for neutral Pure LLM mode.</span>
+                        </div>
+                    </div>
+                    <div class="sf-switch">
+                        <input type="checkbox" id="sf-payload-soul" checked onchange="window.sfDirty()">
+                        <span class="sf-slider"></span>
+                    </div>
+                </label>
+
+                <!-- Memory Toggle Row -->
+                <label class="sf-toggle-row">
+                    <div class="sf-toggle-info">
+                        <div class="sf-toggle-icon" style="color: #34d399; background: rgba(52, 211, 153, 0.1);"><i class="fas fa-brain"></i></div>
+                        <div class="sf-toggle-text">
+                            <span class="sf-toggle-title">Memory Vault &amp; History</span>
+                            <span class="sf-toggle-desc">Include past turns and memory recalls. Turn off for isolated single-turn queries.</span>
+                        </div>
+                    </div>
+                    <div class="sf-switch">
+                        <input type="checkbox" id="sf-payload-memory" checked onchange="window.sfDirty()">
+                        <span class="sf-slider"></span>
+                    </div>
+                </label>
             </div>
         </div>
 

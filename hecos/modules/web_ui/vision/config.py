@@ -33,27 +33,45 @@ def load_vision_config(force_reload: bool = False) -> dict:
             _VISION_CFG_CACHE = VisionConfig().model_dump()
     except Exception as e:
         logger.warning(f"[VisionConfig] Could not load vision.yaml ({e}), using default schema")
+        # Fallback 1: try loading vision.yaml directly with plain yaml (no pydantic required)
+        _loaded_raw = False
         try:
-            from hecos.config.schemas.vision_schema import VisionConfig
-            _VISION_CFG_CACHE = VisionConfig().model_dump()
-        except Exception:
-            _VISION_CFG_CACHE = {
-                "enabled": True,
-                "max_resolution_px": 512,
-                "jpeg_quality": 80,
-                "timeout_seconds": 5,
-                "bridge": {
+            import yaml
+            if os.path.exists(cfg_path):
+                with open(cfg_path, "r", encoding="utf-8") as _f:
+                    _raw = yaml.safe_load(_f) or {}
+                if _raw:
+                    _VISION_CFG_CACHE = _raw
+                    _loaded_raw = True
+                    logger.info("[VisionConfig] Loaded vision.yaml via plain yaml fallback (pydantic unavailable).")
+        except Exception as yaml_err:
+            logger.warning(f"[VisionConfig] Plain yaml fallback also failed: {yaml_err}")
+
+        if not _loaded_raw:
+            # Fallback 2: try pydantic schema default
+            try:
+                from hecos.config.schemas.vision_schema import VisionConfig
+                _VISION_CFG_CACHE = VisionConfig().model_dump()
+            except Exception:
+                # Fallback 3: hardcoded safe defaults
+                _VISION_CFG_CACHE = {
                     "enabled": True,
-                    "mode": "auto",
-                    "cloud_model": "gemini/gemini-2.5-flash",
-                    "local_model": "moondream",
-                    "inspection_prompt": "Descrivi in dettaglio e in modo oggettivo gli elementi visivi dell'immagine: soggetti, azioni, testo visibile, colori, ambiente e dettagli salienti."
-                },
-                "net_search": {
-                    "verify_results": True,
-                    "max_thumbnails": 4
+                    "max_resolution_px": 512,
+                    "jpeg_quality": 80,
+                    "timeout_seconds": 5,
+                    "bridge": {
+                        "enabled": True,
+                        "mode": "auto",
+                        "cloud_model": "gemini/gemini-2.5-flash",
+                        # "default" means: use the active Ollama model from system.yaml
+                        "local_model": "default",
+                        "inspection_prompt": "Descrivi in dettaglio e in modo oggettivo gli elementi visivi dell'immagine: soggetti, azioni, testo visibile, colori, ambiente e dettagli salienti."
+                    },
+                    "net_search": {
+                        "verify_results": True,
+                        "max_thumbnails": 4
+                    }
                 }
-            }
 
     return _VISION_CFG_CACHE
 

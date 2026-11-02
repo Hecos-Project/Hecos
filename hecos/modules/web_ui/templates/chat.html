@@ -160,6 +160,11 @@
   window.chatHistory = [];
   window.HecosUserAvatar = "{{ profile.avatar_path if (profile and profile.avatar_path) else '' }}";
   window.HecosUserName = "{{ current_user.username if current_user.is_authenticated else t('webui_user_label') }}";
+  window.HecosPersonaName = "{{ active_persona if active_persona else 'Hecos System Soul' }}";
+  window.HecosAvatar = "{{ active_avatar_url if active_avatar_url else '/assets/Hecos_Logo_NBG.png' }}";
+  window.HecosAvatarType = "{{ active_avatar_type if active_avatar_type else 'image' }}";
+  window._globalPersonaName = window.HecosPersonaName;
+  window._globalAvatar = window.HecosAvatar;
   window.cfg = {{ zconfig | tojson }};
   window.HECOS_VERSION = "{{ version }}";
 </script>

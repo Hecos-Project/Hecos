@@ -362,13 +362,17 @@ window.refreshStatus = async function() {
 
     const pSel = document.getElementById('chat-persona-select');
     const sessionPersona = pSel ? pSel.value : null;
-    // Check if a Soul Forge global preset is active (either via Chat Overrides or global panel)
-    const soulForgeActive = !!(window.soState && window.soState.activeSoulId)
-                         || !!(window.sfState && window.sfState.activeSoulId);
+    // Only a per-session override (Chat Overrides panel) should prevent /hecos/status
+    // from updating the persona/avatar. The global preset IS what /hecos/status returns.
+    const sessionOverrideActive = !!(window.soState && window.soState.activeSoulId);
     
-    if (!sessionPersona && !soulForgeActive) {
+    if (!sessionPersona && !sessionOverrideActive) {
+        const changed = (window.HecosAvatar !== d.avatar || window.HecosPersonaName !== d.persona);
         window.HecosPersonaName = d.persona || 'Hecos';
         if (d.avatar) window.HecosAvatar = d.avatar;
+        if (changed && window.HecosWelcome && typeof window.HecosWelcome.show === 'function') {
+            window.HecosWelcome.show(true);
+        }
     }
 
     const isConnected = !!d.model;

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tor Live Viewer — Hecos</title>
+  <link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  
+  <!-- Hecos Core Modular Design System -->
+  <link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
+  <link rel="stylesheet" href="/assets/css/core/base.css?v={{ version }}">
+  <link rel="stylesheet" href="/assets/css/core/layout.css?v={{ version }}">
+  <link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}">
+  <link rel="stylesheet" href="/netsearch_static/css/search.css?v={{ version }}">
+
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg0, #0f1017);
+      color: var(--text, #cad3f5);
+      font-family: var(--font-main, 'Inter', sans-serif);
+    }
+
+    .viewer-header {
+      height: 56px;
+      background: var(--bg1, #181926);
+      border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      gap: 12px;
+      box-sizing: border-box;
+      z-index: 20;
+      position: relative;
+    }
+
+    .viewer-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .viewer-address-bar {
+      flex: 1;
+      max-width: 650px;
+      display: flex;
+      align-items: center;
+      background: var(--bg0, #11121d);
+      border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+      border-radius: 6px;
+      padding: 2px 6px;
+      gap: 6px;
+    }
+
+    .viewer-address-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--accent-cyan, #06b6d4);
+      font-family: var(--font-mono, monospace);
+      font-size: 11.5px;
+      padding: 5px 6px;
+    }
+
+    .viewer-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .viewer-frame-wrap {
+      position: relative;
+      width: 100%;
+      height: calc(100vh - 56px);
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .viewer-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      background: #ffffff;
+    }
+
+    .viewer-loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: var(--bg0, #0f1017);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: opacity 0.3s ease;
+    }
+
+    .viewer-loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    @media (max-width: 900px) {
+      .btn-text-hide {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Top Toolbar ───────────────────────────────────────────────────────── -->
+  <header class="viewer-header">
+    <div class="viewer-left">
+      <a href="/search" class="btn btn-sm btn-secondary" style="border-radius:6px; text-decoration:none;" title="Return to Search">
+        <i class="fas fa-arrow-left"></i> <span class="btn-text-hide">Search</span>
+      </a>
+
+      <div style="display:flex; align-items:center; gap:6px;">
+        <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}" alt="Hecos" style="height:24px;">
+        <span class="badge-pill badge-neutral" style="font-size:10px;">
+          <i class="fas fa-user-secret" style="color:var(--accent-purple, #a855f7);"></i> Tor Gateway
+        </span>
+      </div>
+    </div>
+
+    <!-- URL Address Bar -->
+    <div class="viewer-address-bar">
+      <i class="fas fa-lock" style="color:var(--accent-purple, #a855f7); font-size:11px; margin-left:4px;" title="Encrypted Tor SOCKS5h Circuit"></i>
+      <input type="text" id="viewer-url-input" class="viewer-address-input" value="{{ target_url }}" placeholder="http://...onion" onkeydown="if(event.key==='Enter') navigateToUrl()">
+      <button type="button" class="btn-icon" style="width:24px; height:24px; border-radius:4px;" onclick="reloadViewer()" title="Reload page">
+        <i class="fas fa-redo" style="font-size:10px;"></i>
+      </button>
+      <button type="button" class="btn btn-sm btn-secondary" style="border-radius:4px; font-size:10px; padding:2px 8px;" onclick="navigateToUrl()">
+        Go
+      </button>
+    </div>
+
+    <!-- Right Actions -->
+    <div class="viewer-right">
+      <div class="badge-pill {{ 'badge-ok' if tor_online else 'badge-neutral' }}" id="viewer-tor-status" title="Tor connection state">
+        <div class="dot {{ 'val-ok' if tor_online else '' }}" style="width:7px; height:7px; border-radius:50%; background:{{ 'var(--green)' if tor_online else 'var(--muted)' }};"></div>
+        <span style="font-size:10px;">{{ 'Tor Active' if tor_online else 'Tor Offline' }}</span>
+      </div>
+
+      <button type="button" class="btn btn-sm btn-secondary" style="border-radius:6px; font-size:11px; padding:5px 10px;" onclick="openInTorBrowser()" title="Launch this link in Desktop Tor Browser">
+        <i class="fas fa-external-link-alt" style="color:var(--accent-purple, #a855f7);"></i> <span class="btn-text-hide">Tor Browser</span>
+      </button>
+
+      <button type="button" class="btn btn-sm btn-secondary" style="border-radius:6px; font-size:11px; padding:5px 10px;" onclick="copyOnionUrl()" title="Copy .onion link to clipboard">
+        <i class="fas fa-copy"></i> <span class="btn-text-hide">Copy</span>
+      </button>
+
+      <button type="button" class="btn btn-sm btn-primary" style="border-radius:6px; font-size:11px; padding:5px 12px;" onclick="readWithAi()" title="Clean and read with AI">
+        <i class="fas fa-file-alt"></i> <span class="btn-text-hide">Read with AI</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Main Web Viewport ─────────────────────────────────────────────────── -->
+  <main class="viewer-frame-wrap">
+    <div id="viewer-loading" class="viewer-loading-overlay">
+      <i class="fas fa-circle-notch fa-spin fa-2x" style="color:var(--accent-cyan, #06b6d4);"></i>
+      <p style="margin-top:14px; font-size:13px; color:var(--text); font-weight:600;">Routing through Tor SOCKS5h...</p>
+      <span style="font-size:11px; color:var(--muted); font-family:var(--font-mono);" id="viewer-loading-url">{{ target_url }}</span>
+    </div>
+
+    <iframe id="viewer-iframe" class="viewer-frame" src="/api/hsearch/onion_proxy?url={{ target_url_encoded }}" sandbox="allow-same-origin allow-scripts allow-forms allow-popups" onload="onFrameLoaded()"></iframe>
+  </main>
+
+  <!-- ── Read with AI Modal ────────────────────────────────────────────────── -->
+  <div class="search-modal-backdrop" id="page-reader-modal" onclick="if(event.target===this) closeModal()">
+    <div class="search-modal" style="max-width:720px;">
+      <div class="search-modal-header">
+        <h3 id="reader-modal-title" style="margin:0; font-size:15px; font-weight:700; color:var(--text);"><i class="fas fa-file-alt" style="color:var(--accent-cyan);"></i> Page Content</h3>
+        <button type="button" class="search-modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="search-modal-body" id="reader-modal-body" style="max-height:70vh; overflow-y:auto; padding:18px;">
+        <div style="text-align:center; padding:30px;"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:10px;">Extracting and cleaning text content...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUrl = {{ target_url | tojson }};
+
+    function onFrameLoaded() {
+      const overlay = document.getElementById('viewer-loading');
+      if (overlay) {
+        overlay.classList.add('hidden');
+      }
+    }
+
+    function reloadViewer() {
+      const overlay = document.getElementById('viewer-loading');
+      if (overlay) overlay.classList.remove('hidden');
+      const iframe = document.getElementById('viewer-iframe');
+      if (iframe) {
+        iframe.src = '/api/hsearch/onion_proxy?url=' + encodeURIComponent(currentUrl) + '&_t=' + Date.now();
+      }
+    }
+
+    function navigateToUrl() {
+      const inp = document.getElementById('viewer-url-input');
+      let val = inp ? inp.value.trim() : '';
+      if (!val) return;
+      if (!val.startsWith('http://') && !val.startsWith('https://')) {
+        val = 'http://' + val;
+      }
+      currentUrl = val;
+      if (inp) inp.value = val;
+      const loadingUrl = document.getElementById('viewer-loading-url');
+      if (loadingUrl) loadingUrl.innerText = val;
+      reloadViewer();
+    }
+
+    async function openInTorBrowser() {
+      try {
+        const res = await fetch('/api/hsearch/open_tor_browser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: currentUrl })
+        }).then(r => r.json());
+
+        if (res.ok) {
+          alert('Tor Browser launched successfully with ' + currentUrl);
+        } else {
+          alert('Could not launch Tor Browser: ' + (res.error || res.message) + '\n\nYou can continue viewing via this Live Viewer or copy the URL.');
+        }
+      } catch (err) {
+        alert('Error contacting Tor Browser launcher: ' + err.message);
+      }
+    }
+
+    function copyOnionUrl() {
+      navigator.clipboard.writeText(currentUrl).then(() => {
+        alert('Copied .onion link to clipboard:\n' + currentUrl);
+      });
+    }
+
+    async function readWithAi() {
+      const modal = document.getElementById('page-reader-modal');
+      const titleEl = document.getElementById('reader-modal-title');
+      const bodyEl = document.getElementById('reader-modal-body');
+      if (!modal) return;
+
+      titleEl.innerText = 'Extracting content...';
+      bodyEl.innerHTML = '<div style="text-align:center; padding:30px;"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--accent-cyan);"></i><p style="margin-top:10px;">Extracting and cleaning text via Tor SOCKS5h...</p></div>';
+      modal.classList.add('open');
+
+      try {
+        const res = await fetch('/api/hsearch/fetch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: currentUrl, max_chars: 8000 })
+        }).then(r => r.json());
+
+        if (res.ok) {
+          titleEl.innerText = res.title || currentUrl;
+          bodyEl.innerHTML = `
+            <div style="margin-bottom:12px; font-size:11px; color:var(--text-dim); display:flex; gap:12px;">
+              <span><i class="fas fa-link"></i> ${res.url}</span>
+              <span><i class="fas fa-bolt"></i> ${res.clean_method}</span>
+            </div>
+            ${res.description ? `<div style="padding:10px 14px; background:rgba(255,255,255,0.04); border-radius:8px; margin-bottom:16px; font-size:12px; color:var(--accent-cyan);"><strong>Description:</strong> ${res.description}</div>` : ''}
+            <div style="white-space:pre-wrap; line-height:1.7; font-size:13px; color:var(--text); font-family:var(--font-mono);">${res.text}</div>
+          `;
+        } else {
+          titleEl.innerText = 'Extraction Notice';
+          bodyEl.innerHTML = `<div style="color:var(--accent-rose); padding:20px;">${res.error || 'Unable to extract text.'}</div>`;
+        }
+      } catch (err) {
+        titleEl.innerText = 'Network Error';
+        bodyEl.innerHTML = `<div style="color:var(--accent-rose); padding:20px;">${err.message}</div>`;
+      }
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('page-reader-modal');
+      if (modal) modal.classList.remove('open');
+    }
+  </script>
+</body>
+</html>

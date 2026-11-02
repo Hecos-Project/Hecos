@@ -24,7 +24,14 @@ LAST_PAYLOAD_INFO = {
     "prompt_tokens": 0,
     "completion_tokens": 0,
     "messages_count": 0,
-    "plugins_cost": {}
+    "messages_preview": [],
+    "plugins_cost": {},
+    "payload_control": {
+        "send_tools": True,
+        "tools_count": 0,
+        "send_personality": True,
+        "send_memory": True
+    }
 }
 
 def get_active_model(cfg=None):
@@ -313,6 +320,17 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
             except Exception:
                 pass
         
+        preview_msgs = []
+        for _pm in params.get("messages", [])[-2:]:
+            _pm_cnt = str(_pm.get("content") or "")
+            if len(_pm_cnt) > 600:
+                _pm_cnt = _pm_cnt[:600] + " ... [TRUNCATED]"
+            preview_msgs.append({"role": _pm.get("role", "unknown"), "content": _pm_cnt})
+
+        _pctrl = specific_config.get("payload_control") or {}
+        _tools_on = bool(params.get("tools"))
+        _tools_cnt = len(params.get("tools") or [])
+
         LAST_PAYLOAD_INFO.update({
             "model": model_name,
             "provider": backend_type,
@@ -324,8 +342,19 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
             "prompt_tokens": 0,               # Reset prior counters
             "completion_tokens": 0,
             "messages_count": len(params.get("messages", [])),
-            "plugins_cost": plugins_cost
+            "messages_preview": preview_msgs,
+            "plugins_cost": plugins_cost,
+            "payload_control": {
+                "send_tools": _tools_on,
+                "tools_count": _tools_cnt,
+                "send_personality": _pctrl.get("send_personality", True),
+                "send_memory": _pctrl.get("send_memory", True)
+            }
         })
+
+        _t_label = f"ON ({_tools_cnt} tools, {tls_chars:,} chars)" if _tools_on else "OFF (0 chars)"
+        _approx_t = tot_chars // 3
+        zlog_info("LiteLLM", f"[PAYLOAD CONTROL] Tools: {_t_label} | System: {sys_chars:,} chars | User: {usr_chars:,} chars | Prompt: ~{_approx_t:,} tokens")
     except Exception as e:
         zlog_debug("LiteLLM", f"Payload analysis skipped: {e}")
 
@@ -451,6 +480,18 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                         LAST_PAYLOAD_INFO["prompt_tokens"] = _ollama_usage.get("prompt_tokens", 0)
                         LAST_PAYLOAD_INFO["completion_tokens"] = _ollama_usage.get("completion_tokens", 0)
                         LAST_PAYLOAD_INFO["approx_tokens"] = _ollama_usage.get("total_tokens", LAST_PAYLOAD_INFO["approx_tokens"])
+                    # Telemetry log: GPU residency verification from Ollama /api/ps
+                    try:
+                        _ps_resp = _requests.get(f"{_ollama_base}/api/ps", timeout=1.0).json()
+                        for _pm in _ps_resp.get("models", []):
+                            _m_clean = params["model"].replace("ollama/", "")
+                            if _pm.get("name") == _m_clean or _pm.get("name", "").startswith(_m_clean.split(":")[0]):
+                                _sz_mb = _pm.get("size", 0) / (1024 * 1024)
+                                _vr_mb = _pm.get("size_vram", 0) / (1024 * 1024)
+                                _pct = (_vr_mb / _sz_mb * 100) if _sz_mb > 0 else 0
+                                zlog_info("LiteLLM", f"[GPU MONITOR] Model '{_pm.get('name')}' resident in VRAM: {_vr_mb:.0f} MB / {_sz_mb:.0f} MB ({_pct:.1f}%%)")
+                    except Exception:
+                        pass
                 except Exception:
                     pass
                 

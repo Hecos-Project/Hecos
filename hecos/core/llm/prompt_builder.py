@@ -30,11 +30,28 @@ class PromptBuilder:
             raw_pname = 'Hecos_System_Soul'
         personality_name = raw_pname.replace('.yaml', '').strip() or 'Hecos_System_Soul'
         
-        personality_prompt, visual_identity_block = PromptBuilder._load_personality(personality_name)
-        
-        memory_context, self_awareness, history_block, rag_context_block = PromptBuilder._load_memory_context(
-            config, personality_name, user_id, session_id, user_text
-        )
+        # Check payload control flags
+        pctrl = config.get("payload_control") or {}
+        send_personality = pctrl.get("send_personality", True)
+        send_memory = pctrl.get("send_memory", True)
+
+        if send_personality:
+            personality_prompt, visual_identity_block = PromptBuilder._load_personality(personality_name)
+        else:
+            personality_prompt = "You are Hecos, a helpful, precise, and objective AI assistant."
+            visual_identity_block = ""
+            logger.info("[PromptBuilder] PayloadControl: Personality injection DISABLED.")
+
+        if send_memory:
+            memory_context, self_awareness, history_block, rag_context_block = PromptBuilder._load_memory_context(
+                config, personality_name, user_id, session_id, user_text
+            )
+        else:
+            memory_context = ""
+            self_awareness = ""
+            history_block = ""
+            rag_context_block = ""
+            logger.info("[PromptBuilder] PayloadControl: Memory and History injection DISABLED.")
         
         capabilities = PromptBuilder._load_capabilities()
         rules = PromptBuilder._build_rules(config, user_id, backend_config)

@@ -74,6 +74,11 @@ class OllamaBackendConfig(BaseModel):
     repeat_penalty: float = 1.1
     keep_alive: str = "120m"
     probe_timeout_sec: int = 3
+    # ── Lifecycle / startup flags ─────────────────────────────────────────────
+    binary_path: str = ""            # Path to ollama.exe or 'ollama app.exe' (auto-detected if empty)
+    auto_start_server: bool = False  # Launch "ollama serve" automatically if not running
+    warmup_model: bool = False       # Pre-load the default model into GPU VRAM at boot
+    warmup_keep_alive: str = "120m"  # keep_alive duration used during warm-up
 
 class LlamaCPPBackendConfig(BaseModel):
     model: str = ""

@@ -407,7 +407,18 @@ window.sfApplySoulToUI = async function(soul) {
     const fallbacks = window.sfSystemFallbacks || {};
     
     // Persona
-    document.getElementById('sf-persona-select').value = soul.persona?.soul_file || fallbacks.persona || "";
+    const pSel = document.getElementById('sf-persona-select');
+    const targetPersona = soul.persona?.soul_file || fallbacks.persona || "";
+    if (pSel && targetPersona) {
+        let opt = Array.from(pSel.options).find(o => o.value === targetPersona || o.value === targetPersona + '.yaml');
+        if (!opt) {
+            opt = document.createElement('option');
+            opt.value = targetPersona;
+            opt.textContent = targetPersona.replace('.yaml', '');
+            pSel.appendChild(opt);
+        }
+        pSel.value = opt.value;
+    }
     
     document.getElementById('sf-use-global-direct').checked = soul.persona?.use_global_direct_instructions !== false;
     document.getElementById('sf-use-global-safety').checked = soul.persona?.use_global_safety_instructions !== false;
@@ -416,6 +427,14 @@ window.sfApplySoulToUI = async function(soul) {
     document.getElementById('sf-send-notes-ai').checked = soul.persona?.send_notes_to_ai === true;
     
     // Model
+    // Payload & Tools Control
+    const payloadTools = document.getElementById('sf-payload-tools');
+    if (payloadTools) payloadTools.checked = soul.payload?.send_tools !== false;
+    const payloadSoul = document.getElementById('sf-payload-soul');
+    if (payloadSoul) payloadSoul.checked = soul.payload?.send_personality !== false;
+    const payloadMem = document.getElementById('sf-payload-memory');
+    if (payloadMem) payloadMem.checked = soul.payload?.send_memory !== false;
+
     document.getElementById('sf-backend-select').value = soul.model?.backend_type || fallbacks.backend || "ollama";
     window.sfUpdateModelsDropdown();
     document.getElementById('sf-model-select').value = soul.model?.model_name || fallbacks.model || "";
@@ -464,13 +483,20 @@ window.sfApplySoulToUI = async function(soul) {
     const ctxEl = document.getElementById('sf-ctx');
     if (ctxEl) {
         ctxEl.value = (soul.inference?.num_ctx !== undefined && soul.inference?.num_ctx !== null) ? soul.inference.num_ctx : 0;
-        ctxEl.dispatchEvent(new Event('input'));
+        const valEl = document.getElementById('sf-val-ctx');
+        if (valEl) valEl.textContent = ctxEl.value == 0 ? 'Auto' : ctxEl.value;
     }
     
     const gpuEl = document.getElementById('sf-gpu');
     if (gpuEl) {
         gpuEl.value = (soul.inference?.n_gpu_layers !== undefined && soul.inference?.n_gpu_layers !== null) ? soul.inference.n_gpu_layers : -2;
-        gpuEl.dispatchEvent(new Event('input'));
+        const valEl = document.getElementById('sf-val-gpu');
+        if (valEl) {
+            let txt = gpuEl.value;
+            if (gpuEl.value == -2) txt = 'Auto';
+            else if (gpuEl.value == -1) txt = 'Max (-1)';
+            valEl.textContent = txt;
+        }
     }
     
     document.getElementById('sf-xtts-preset-select').value = soul.voice?.xtts_preset || "";
@@ -685,6 +711,11 @@ window.sfCollectUIState = function() {
             send_notes_to_ai: getCheck('sf-send-notes-ai')
         },
         model: { backend_type: getVal('sf-backend-select'), model_name: getVal('sf-model-select') },
+        payload: {
+            send_tools: getCheck('sf-payload-tools'),
+            send_personality: getCheck('sf-payload-soul'),
+            send_memory: getCheck('sf-payload-memory')
+        },
         inference: {
             preset_name: getVal('sf-inference-preset-select'),
             temperature: getNum('sf-temp'),

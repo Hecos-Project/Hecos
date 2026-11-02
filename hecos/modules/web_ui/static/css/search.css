@@ -1,0 +1,10 @@
+/* ==========================================================================
+   HECOS DEEP SEARCH & INTELLIGENCE - MASTER STYLESHEET
+   Aggregates modular stylesheets for Base Layout, Filters & Live Stream,
+   Result Cards (Web, Media, Audio, Files), and Modals/Endpoints.
+   ========================================================================== */
+
+@import url("search_base.css");
+@import url("search_filters.css");
+@import url("search_cards.css");
+@import url("search_modals.css");

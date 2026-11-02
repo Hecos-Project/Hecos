@@ -147,6 +147,11 @@ window.sfLoadGlobalState = async function() {
                     backend_type: btype,
                     model_name: bdict.model
                 },
+                payload: {
+                    send_tools: cfg.payload_control?.send_tools !== false,
+                    send_personality: cfg.payload_control?.send_personality !== false,
+                    send_memory: cfg.payload_control?.send_memory !== false
+                },
                 voice: {
                     tts_engine: ttsEngine,
                     tts_voice: cfg.ai?.tts_voice,
@@ -241,5 +246,9 @@ window.sfActivateSoul = async function(soulId) {
 // before sfLoadGlobalState → sfApplySoulToUI → sfDirty uses it to resolve the persona name.
 document.addEventListener('DOMContentLoaded', async () => {
     if (window.sfUpdateFallbackLabels) await window.sfUpdateFallbackLabels();
-    if (window.sfLoadGlobalState) window.sfLoadGlobalState();
+    if (window.sfLoadData) {
+        await window.sfLoadData();
+    } else if (window.sfLoadGlobalState) {
+        await window.sfLoadGlobalState();
+    }
 });

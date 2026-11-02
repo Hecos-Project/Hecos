@@ -81,6 +81,27 @@ function populateSelect(id, list, currentValue, isFilenameOnly = false) {
 function setVal(id, val) {
   const el = document.getElementById(id);
   if (el) el.value = val ?? '';
+
+  // Synchronize paired range slider if present (e.g. 'ollama-ctx-slider')
+  const sld = document.getElementById(id + '-slider');
+  if (sld && val !== undefined && val !== null && val !== '') {
+    sld.value = val;
+  }
+
+  // Update contextual helper labels
+  if (id === 'ollama-ctx' || id === 'llama-cpp-ctx') {
+    const lbl = document.getElementById(id + '-label');
+    if (lbl && val !== undefined && val !== null && val !== '') {
+      const words = Math.round(Number(val) * 0.75);
+      lbl.textContent = words >= 1000 ? '≈ ' + (words / 1000).toFixed(0) + 'K words' : '≈ ' + words + ' words';
+    }
+  } else if (id === 'ollama-predict') {
+    const lbl = document.getElementById('ollama-predict-label');
+    if (lbl && val !== undefined && val !== null && val !== '') {
+      const words = Math.round(Number(val) * 0.75);
+      lbl.textContent = words >= 1000 ? '≈ ' + (words / 1000).toFixed(0) + 'K words' : '≈ ' + words + ' words';
+    }
+  }
 }
 
 function setCheck(id, val) {

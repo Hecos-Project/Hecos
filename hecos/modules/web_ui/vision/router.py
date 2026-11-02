@@ -125,8 +125,25 @@ class VisionRouter:
             # Return enriched message and None for images (since local text model cannot receive raw b64)
             return enriched_message, None
 
-        # If all inspections failed, pass original message
-        return user_message, None
+        # If all inspections failed (e.g. content_filter / NSFW block or timeout)
+        if emit_callback:
+            try:
+                emit_callback(
+                    "Vision Bridge: inspection failed or blocked by safety filter.",
+                    level="warning"
+                )
+            except Exception:
+                pass
+
+        fail_notice = (
+            "\n\n---\n"
+            "**[MULTIMODAL PERCEPTION NOTICE]**\n"
+            "The user attached an image, but the vision inspector could NOT analyze it (the image was blocked by content/safety filters or the vision service was unavailable). "
+            "Clearly inform the user that you cannot see the image because the vision inspection failed or was blocked by content safety filters. "
+            "Do NOT invent, guess, or hallucinate the visual content of the image.\n"
+            "---\n"
+        )
+        return user_message + fail_notice, None
 
     @classmethod
     def _optimize_images_list(cls, images: List[dict], cfg: dict) -> List[dict]:

@@ -59,6 +59,17 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
         if 'ai' not in merged: merged['ai'] = {}
         merged['ai']['send_notes_to_ai'] = soul.persona.send_notes_to_ai
 
+    # -- Payload Control Layer --
+    if hasattr(soul, 'payload') and soul.payload:
+        if 'payload_control' not in merged:
+            merged['payload_control'] = {}
+        if soul.payload.send_tools is not None:
+            merged['payload_control']['send_tools'] = soul.payload.send_tools
+        if soul.payload.send_personality is not None:
+            merged['payload_control']['send_personality'] = soul.payload.send_personality
+        if soul.payload.send_memory is not None:
+            merged['payload_control']['send_memory'] = soul.payload.send_memory
+
     # -- Model Layer --
     if soul.model.backend_type:
         if 'backend' not in merged: merged['backend'] = {}

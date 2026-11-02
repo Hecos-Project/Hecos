@@ -73,7 +73,14 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     
     # 4. LiteLLM Invocation
     logger.debug("BRAIN", f"LiteLLM call ({backend_config['backend_type']}) with model: {backend_config['model']}")
-    tools = get_tools_schema()
+    payload_ctrl = config.get("payload_control") or {}
+    send_tools = payload_ctrl.get("send_tools", True)
+    if config.get("disable_tools", False) or not send_tools:
+        tools = None
+        logger.info("[BRAIN] PayloadControl: Tools schema injection DISABLED.")
+    else:
+        tools = get_tools_schema()
+    backend_config["payload_control"] = payload_ctrl
     
     response = client.generate(
         system_prompt, 
