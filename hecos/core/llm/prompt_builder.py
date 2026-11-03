@@ -23,7 +23,7 @@ class PromptBuilder:
     
     @staticmethod
     def build_system_prompt(user_text, images, config, user_id, session_id, backend_config):
-        PromptBuilder._inject_vision_avatars(user_text, images, config, user_id)
+        PromptBuilder._inject_vision_avatars(user_text, images, config, user_id, backend_config)
         
         raw_pname = (config.get('ai') or {}).get('active_personality') or (config.get('persona') or {}).get('soul_file') or 'Hecos_System_Soul'
         if not isinstance(raw_pname, str):
@@ -36,15 +36,17 @@ class PromptBuilder:
         send_memory = pctrl.get("send_memory", True)
 
         if send_personality:
-            personality_prompt, visual_identity_block = PromptBuilder._load_personality(personality_name)
+            personality_prompt, visual_identity_block, display_name, v_desc = PromptBuilder._load_personality(personality_name)
         else:
             personality_prompt = "You are Hecos, a helpful, precise, and objective AI assistant."
             visual_identity_block = ""
+            display_name = "Hecos"
+            v_desc = ""
             logger.info("[PromptBuilder] PayloadControl: Personality injection DISABLED.")
 
         if send_memory:
             memory_context, self_awareness, history_block, rag_context_block = PromptBuilder._load_memory_context(
-                config, personality_name, user_id, session_id, user_text
+                config, personality_name, user_id, session_id, user_text, display_name=display_name
             )
         else:
             memory_context = ""
@@ -102,6 +104,22 @@ class PromptBuilder:
             except Exception as e:
                 logger.debug(f"[PromptBuilder] Playbook chat context injection skipped: {e}")
         
+        closing_identity_block = ""
+        if send_personality and personality_name and personality_name.lower() != "hecos_system_soul":
+            char_name = display_name if display_name else personality_name.replace("_", " ").strip()
+            closing_identity_block = (
+                f"\n### ACTIVE CHARACTER MANDATE ###\n"
+                f"FINAL MANDATE: You are {char_name}. Always stay strictly in character as {char_name}.\n"
+                f"Never identify yourself as an abstract AI assistant, language model, software, or storytelling engine.\n"
+                f"Never say that you lack a physical body or physical sensations.\n"
+                f"Your persona, tone, rules, and voice are exclusively {char_name}.\n"
+            )
+            if v_desc:
+                closing_identity_block += (
+                    f"PHYSICAL APPEARANCE & BODY:\n"
+                    f"When asked to describe yourself or how you are made, describe your physical body faithfully using your traits: {v_desc}.\n"
+                )
+
         system_prompt = (
             f"{playbook_mission_block}"
             f"{personality_prompt}\n"
@@ -128,6 +146,7 @@ class PromptBuilder:
             f"{rules['special_instructions_block']}"
             f"{playbook_chat_block}"
             f"{vision_note}"
+            f"{closing_identity_block}"
         )
 
         
@@ -135,8 +154,18 @@ class PromptBuilder:
         return system_prompt
 
     @staticmethod
-    def _inject_vision_avatars(user_text, images, config, user_id):
-        if not user_text or not isinstance(user_text, str):
+    def _inject_vision_avatars(user_text, images, config, user_id, backend_config=None):
+        if not user_text or not isinstance(user_text, str) or not isinstance(images, list):
+            return
+
+        # Check if active model actually supports native vision before injecting avatar images
+        b_type = (backend_config or {}).get("backend_type") or (config.get("backend", {}) or {}).get("type", "ollama")
+        m_name = (backend_config or {}).get("model") or ((config.get("backend", {}) or {}).get(b_type, {}) or {}).get("model", "")
+        try:
+            from hecos.core.llm.vision.factory import get_vision_adapter
+            if not get_vision_adapter(m_name, b_type):
+                return  # Skip avatar injection for text-only models
+        except Exception:
             return
             
         # 1. USER IDENTITY TRIGGER
@@ -150,14 +179,13 @@ class PromptBuilder:
                     try:
                         with open(avatar_file, "rb") as af:
                             b64_avatar = base64.b64encode(af.read()).decode("utf-8")
-                        if isinstance(images, list):
-                            images.append({"data_b64": b64_avatar, "mime_type": "image/jpeg", "name": f"user_avatar_{user_id}.jpg"})
+                        images.append({"data_b64": b64_avatar, "mime_type": "image/jpeg", "name": f"user_avatar_{user_id}.jpg"})
                         logger.info(f"[PromptBuilder] Injected user avatar for Vision AI.")
                     except Exception as e:
                         logger.error(f"[PromptBuilder] Failed to inject user avatar: {e}")
 
-        # 2. AI SELF-PERCEPTION TRIGGER
-        ai_id_keywords = r'\b(how do you look|describe yourself|describe your face|your photo|your picture|your avatar|che aspetto hai|descriviti|il tuo volto|la tua foto|come sei fatt[oa])\b'
+        # 2. AI SELF-PERCEPTION TRIGGER (Only for explicit photo/avatar requests on vision-capable models)
+        ai_id_keywords = r'\b(show me your face|show me your photo|show your picture|show your avatar|mostrami la tua foto|fammi vedere la tua foto|mostrami il tuo avatar|fammi vedere il tuo avatar)\b'
         if re.search(ai_id_keywords, user_text, re.IGNORECASE):
             raw_pname = (config.get('ai') or {}).get('active_personality') or (config.get('persona') or {}).get('soul_file') or 'Hecos_System_Soul'
             personality_name = raw_pname.replace(".yaml", "").strip() if isinstance(raw_pname, str) and raw_pname.strip() else 'Hecos_System_Soul'
@@ -169,10 +197,9 @@ class PromptBuilder:
                             av_path = os.path.join(persona_avatar_dir, f)
                             with open(av_path, "rb") as af:
                                 b64_av = base64.b64encode(af.read()).decode("utf-8")
-                            if isinstance(images, list):
-                                import mimetypes
-                                mime, _ = mimetypes.guess_type(av_path)
-                                images.append({"data_b64": b64_av, "mime_type": mime or "image/png", "name": f"ai_avatar_{personality_name}{os.path.splitext(f)[1]}"})
+                            import mimetypes
+                            mime, _ = mimetypes.guess_type(av_path)
+                            images.append({"data_b64": b64_av, "mime_type": mime or "image/png", "name": f"ai_avatar_{personality_name}{os.path.splitext(f)[1]}"})
                             logger.info(f"[PromptBuilder] Injected AI persona avatar ({personality_name}) for self-perception.")
                             break
                 except Exception as e:
@@ -233,9 +260,17 @@ class PromptBuilder:
                     if blocks:
                         personality_prompt += "\n\n" + "\n\n".join(blocks)
                     
+                    display_name = persona_data.get("name") or personality_name.replace(".yaml", "").replace("_", " ").title()
+                    
                     v_desc = persona_data.get("visual_description")
                     if anatomy and not v_desc:
-                        v_desc = f"{anatomy.get('sex', 'Person')}, {anatomy.get('body_type', 'average')} body, {anatomy.get('hair_color', 'dark')} hair, {anatomy.get('eye_color', 'dark')} eyes."
+                        parts = []
+                        if anatomy.get('sex'): parts.append(anatomy.get('sex'))
+                        if anatomy.get('body_type'): parts.append(f"{anatomy.get('body_type')} body")
+                        if anatomy.get('hair_color'): parts.append(f"{anatomy.get('hair_color')} hair")
+                        if anatomy.get('eye_color'): parts.append(f"{anatomy.get('eye_color')} eyes")
+                        if anatomy.get('breast_size') and anatomy.get('breast_size') != 'N/A': parts.append(f"{anatomy.get('breast_size')} breast")
+                        v_desc = ", ".join(parts) if parts else f"{anatomy.get('sex', 'Person')}, {anatomy.get('body_type', 'average')} body"
                     
                     if v_desc:
                         visual_identity_block = (
@@ -245,13 +280,18 @@ class PromptBuilder:
                         )
             except Exception as e:
                 logger.error(f"PromptBuilder: Personality reading error: {e}")
+                display_name = personality_name.replace(".yaml", "").replace("_", " ").title()
+                v_desc = ""
+        else:
+            display_name = "Hecos System Soul"
+            v_desc = ""
                 
-        return personality_prompt, visual_identity_block
+        return personality_prompt, visual_identity_block, display_name, v_desc
 
     @staticmethod
-    def _load_memory_context(config, personality_name, user_id, session_id, user_text):
+    def _load_memory_context(config, personality_name, user_id, session_id, user_text, display_name=None):
         cog = config.get('cognition', {})
-        clean_name = personality_name.replace(".yaml", "").replace("_", " ") if personality_name else "Hecos"
+        clean_name = display_name if display_name else (personality_name.replace(".yaml", "").replace("_", " ") if personality_name else "Hecos")
         
         memory_context = brain_interface.get_context(config, dynamic_name=clean_name, user_id=user_id) if cog.get('include_identity_context', True) else ""
         
@@ -269,11 +309,20 @@ class PromptBuilder:
                 self_awareness += f"- Total personality modules available: {souls_count}\n"
                 self_awareness += f"- Active Action Modules: {', '.join(active_plugins) if active_plugins else 'none'}\n"
                 self_awareness += f"- Core Subsystems: {core_count} integrated modules\n"
-                self_awareness += f"{translator.t('admin_structure_hint')}\n"
+                if personality_name.lower() == "hecos_system_soul":
+                    self_awareness += f"{translator.t('admin_structure_hint')}\n"
+                else:
+                    self_awareness += f"Note: This system awareness applies only to the Hecos platform architecture. When interacting in character, stay strictly true to your character's physical persona.\n"
             except Exception as e:
                 logger.error(f"PromptBuilder: Self-awareness error: {e}")
         
         history_block = ""
+        # Check whether thinking tags (<think>) should be preserved in conversation history
+        pctrl = config.get("payload_control") or {}
+        include_thinking = pctrl.get("include_thinking_in_history")
+        if include_thinking is None:
+            include_thinking = cog.get("include_thinking_in_history", False)
+
         if cog.get('memory_enabled', True) and cog.get('episodic_memory', True):
             max_h = int(cog.get('max_history_messages', 20))
             history_rows = brain_interface.get_history(limit=max_h, config=config, user_id=user_id, session_id=session_id)
@@ -281,8 +330,11 @@ class PromptBuilder:
                 history_block = "\n[RECENT CONVERSATION HISTORY]\n"
                 for row in history_rows:
                     role, msg = row[0], row[1]
-                    label = "User" if role == "user" else clean_name
-                    history_block += f"{label}: {msg}\n"
+                    if not include_thinking and msg:
+                        msg = re.sub(r'<think>.*?</think>', '', msg, flags=re.DOTALL).strip()
+                    if msg:
+                        label = "User" if role == "user" else clean_name
+                        history_block += f"{label}: {msg}\n"
                     
         rag_context_block = ""
         try:

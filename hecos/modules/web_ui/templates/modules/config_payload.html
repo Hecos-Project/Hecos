@@ -22,6 +22,9 @@
           <span style="font-size:11px; padding: 2px 7px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border);">
             Memory: <strong id="pl-badge-mem" style="color: #60a5fa;">ON</strong>
           </span>
+          <span style="font-size:11px; padding: 2px 7px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border);">
+            Thinking: <strong id="pl-badge-thinking" style="color: #a78bfa;">OFF</strong>
+          </span>
         </div>
       </div>
       <div>
@@ -112,6 +115,12 @@ async function loadPayloadData() {
           const mOn = pl.payload_control.send_memory !== false;
           bMem.textContent = mOn ? 'ON' : 'OFF';
           bMem.style.color = mOn ? '#60a5fa' : 'var(--muted)';
+        }
+        const bThink = document.getElementById('pl-badge-thinking');
+        if (bThink) {
+          const thOn = pl.payload_control.include_thinking === true;
+          bThink.textContent = thOn ? 'ON' : 'OFF';
+          bThink.style.color = thOn ? '#a78bfa' : 'var(--muted)';
         }
       }
 

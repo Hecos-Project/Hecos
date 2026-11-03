@@ -201,7 +201,8 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
     if backend_type == "ollama":
         if not model_name.startswith("ollama/"):
             params["model"] = f"ollama/{model_name}"
-        params["api_base"] = specific_config.get('url', 'http://localhost:11434').rstrip('/')
+        api_url = specific_config.get('url', 'http://127.0.0.1:11434').rstrip('/')
+        params["api_base"] = api_url.replace("localhost", "127.0.0.1")
         
         # CRITICAL: Parametri Ollama specifici per il caricamento GPU
         # Senza questi, LiteLLM usa solo i default di Ollama (nessuna GPU)
@@ -348,7 +349,8 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                 "send_tools": _tools_on,
                 "tools_count": _tools_cnt,
                 "send_personality": _pctrl.get("send_personality", True),
-                "send_memory": _pctrl.get("send_memory", True)
+                "send_memory": _pctrl.get("send_memory", True),
+                "include_thinking": _pctrl.get("include_thinking_in_history", False)
             }
         })
 

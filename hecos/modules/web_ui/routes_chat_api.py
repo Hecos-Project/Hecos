@@ -45,12 +45,18 @@ def init_chat_api_routes(app, cfg_mgr, logger):
             # Resolve active persona & avatar for immediate UI hydration (no flash / no race conditions)
             active_persona = cfg_mgr.config.get("ai", {}).get("active_personality", "Hecos_System_Soul")
             active_preset_id = cfg_mgr.config.get("ai", {}).get("active_global_preset")
+            active_preset_name = None
             if active_preset_id:
                 try:
                     from hecos.core.global_presets import get_soul
                     active_soul = get_soul(active_preset_id)
-                    if active_soul and active_soul.persona and active_soul.persona.soul_file:
-                        active_persona = active_soul.persona.soul_file
+                    if active_soul:
+                        if active_soul.meta and active_soul.meta.name:
+                            active_preset_name = active_soul.meta.name
+                        else:
+                            active_preset_name = active_preset_id
+                        if active_soul.persona and active_soul.persona.soul_file:
+                            active_persona = active_soul.persona.soul_file
                 except Exception:
                     pass
             if active_persona.endswith(".yaml"):
@@ -75,6 +81,7 @@ def init_chat_api_routes(app, cfg_mgr, logger):
                 active_persona=active_persona,
                 active_avatar_url=active_avatar_url,
                 active_avatar_type=active_avatar_type,
+                active_preset_name=active_preset_name,
             ))
             resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
             resp.headers["Pragma"] = "no-cache"

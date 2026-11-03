@@ -183,11 +183,12 @@ class OllamaLifecycleManager:
             # - For CLI daemon: CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW (no console flash)
             if os.name == "nt":
                 CREATE_NEW_PROCESS_GROUP = 0x00000200
+                DETACHED_PROCESS = 0x00000008
                 if is_gui_app:
-                    kwargs["creationflags"] = CREATE_NEW_PROCESS_GROUP
+                    kwargs["creationflags"] = CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS
                 else:
                     CREATE_NO_WINDOW = 0x08000000
-                    kwargs["creationflags"] = CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW
+                    kwargs["creationflags"] = CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW | DETACHED_PROCESS
             else:
                 kwargs["close_fds"] = True
 
@@ -457,10 +458,4 @@ def run_ollama_startup_sequence(config: dict):
         # Delay warm-up by 4s to give auto-start a head start
         warmup_delay = 4.0 if auto_start else 1.5
         mgr.maybe_warmup_model(config, delay=warmup_delay)
-
-    # Register graceful shutdown hook for normal exits (sys.exit, Ctrl+C).
-    # Windows CTRL_CLOSE_EVENT is handled separately in application.py via SetConsoleCtrlHandler.
-    import copy
-    _config_snapshot = copy.deepcopy(config)
-    atexit.register(mgr.on_application_exit, _config_snapshot)
 

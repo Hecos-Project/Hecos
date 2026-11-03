@@ -1,6 +1,6 @@
 ai:
   active_global_preset: urania_9800_gp
-  active_personality: antonio_meloni
+  active_personality: Urania_9800
   available_personalities:
     '1': Hecos_System_Soul
     '2': Urania_9800
@@ -89,6 +89,7 @@ cognition:
   clear_on_restart: false
   include_identity_context: true
   include_self_awareness: true
+  include_thinking_in_history: false
   max_history_messages: 20
   rag:
     enabled: true

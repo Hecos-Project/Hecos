@@ -52,6 +52,7 @@ function populateSystemUI() {
     setCheck('cog-memory-enabled', cog.memory_enabled ?? true);
     setCheck('cog-episodic', cog.episodic_memory ?? true);
     setCheck('cog-clear-restart', cog.clear_on_restart ?? false);
+    setCheck('cog-include-thinking', cog.include_thinking_in_history ?? false);
     setCheck('cog-identity', cog.include_identity_context ?? true);
     setCheck('cog-awareness', cog.include_self_awareness ?? true);
     setVal('cog-max-history', cog.max_history_messages ?? 20);
@@ -105,6 +106,7 @@ function buildSystemPayload() {
             memory_enabled:          getC('cog-memory-enabled', cog.memory_enabled ?? true),
             episodic_memory:         getC('cog-episodic', cog.episodic_memory ?? true),
             clear_on_restart:        getC('cog-clear-restart', cog.clear_on_restart ?? false),
+            include_thinking_in_history: getC('cog-include-thinking', cog.include_thinking_in_history ?? false),
             include_identity_context:getC('cog-identity', cog.include_identity_context ?? true),
             include_self_awareness:  getC('cog-awareness', cog.include_self_awareness ?? true),
             max_history_messages:    parseInt(getV('cog-max-history', cog.max_history_messages)) || 20,

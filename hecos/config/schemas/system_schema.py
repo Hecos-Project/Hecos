@@ -122,6 +122,7 @@ class CognitionConfig(BaseModel):
     include_identity_context: bool = True
     include_self_awareness: bool = True
     max_history_messages: int = 20
+    include_thinking_in_history: bool = False
     rag: RAGConfig = Field(default_factory=RAGConfig)
 
 

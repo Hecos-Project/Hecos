@@ -434,6 +434,8 @@ window.sfApplySoulToUI = async function(soul) {
     if (payloadSoul) payloadSoul.checked = soul.payload?.send_personality !== false;
     const payloadMem = document.getElementById('sf-payload-memory');
     if (payloadMem) payloadMem.checked = soul.payload?.send_memory !== false;
+    const payloadThinking = document.getElementById('sf-payload-thinking');
+    if (payloadThinking) payloadThinking.checked = soul.payload?.include_thinking_in_history === true;
 
     document.getElementById('sf-backend-select').value = soul.model?.backend_type || fallbacks.backend || "ollama";
     window.sfUpdateModelsDropdown();
@@ -562,10 +564,11 @@ window.sfUpdateTooltip = function(soul) {
     
     if (sbGD && sbGDLabel) {
         const isPreset = !!window.sfState.activeSoulId;
+        const presetDisplayName = (soul.meta && soul.meta.name) ? soul.meta.name : (window.sfState.activeSoulId || 'Preset');
         let lines = [];
         
         if (isPreset) {
-            lines.push(`🎭 Global Preset: ${window.sfState.activeSoulId}`);
+            lines.push(`🎭 Global Preset: ${presetDisplayName}`);
         } else {
             lines.push(`🎭 Active Configuration (Default)`);
         }
@@ -636,7 +639,7 @@ window.sfUpdateTooltip = function(soul) {
         
         if (isPreset) {
             sbGDLabel.innerHTML = '<i class="fas fa-cog"></i> Global Preset';
-            sbGD.textContent = window.sfState.activeSoulId;
+            sbGD.textContent = presetDisplayName;
             if (sbGDBtn) sbGDBtn.title = titleText;
         } else {
             sbGDLabel.innerHTML = '<i class="fas fa-cog"></i> Active Config';
@@ -714,7 +717,8 @@ window.sfCollectUIState = function() {
         payload: {
             send_tools: getCheck('sf-payload-tools'),
             send_personality: getCheck('sf-payload-soul'),
-            send_memory: getCheck('sf-payload-memory')
+            send_memory: getCheck('sf-payload-memory'),
+            include_thinking_in_history: getCheck('sf-payload-thinking')
         },
         inference: {
             preset_name: getVal('sf-inference-preset-select'),
