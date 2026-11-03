@@ -125,6 +125,7 @@ class OllamaLifecycleManager:
     def __init__(self):
         self._server_proc: Optional[subprocess.Popen] = None
         self._started_by_us = False
+        self._server_stopped = False
 
     @classmethod
     def get_instance(cls) -> "OllamaLifecycleManager":
@@ -194,6 +195,7 @@ class OllamaLifecycleManager:
 
             self._server_proc = subprocess.Popen(cmd, **kwargs)
             self._started_by_us = True
+            self._server_stopped = False
             logger.info(f"[OllamaLifecycle] 'ollama serve' spawned (PID {self._server_proc.pid}).")
 
             # Wait until the API responds
@@ -308,8 +310,12 @@ class OllamaLifecycleManager:
         which also kills the child 'ollama_llama_server.exe' GPU runner,
         ensuring VRAM is fully released.
         """
+        if getattr(self, "_server_stopped", False):
+            return
+        self._server_stopped = True
         try:
             if os.name == "nt":
+                creationflags = subprocess.CREATE_NO_WINDOW
                 # Kill both the main process and any child GPU runners
                 for exe_name in ("ollama.exe", "ollama_llama_server.exe", "ollama app.exe"):
                     try:
@@ -318,6 +324,7 @@ class OllamaLifecycleManager:
                             stdout=subprocess.DEVNULL,
                             stderr=subprocess.DEVNULL,
                             timeout=5,
+                            creationflags=creationflags,
                         )
                     except Exception:
                         pass

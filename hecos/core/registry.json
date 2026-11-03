@@ -55,21 +55,19 @@
         "slash_commands": []
     },
     "DASHBOARD": {
-        "description": "Hardware monitoring and AI backend status.",
+        "description": "plugin_dashboard_desc",
         "commands": {
             "get_backend_status": "Verifies if the AI backend (Ollama, Kobold, or Cloud) is online and ready.",
             "get_full_dashboard": "Returns a complete report of all hardware resources and AI backend status.",
             "get_gpu_status": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
             "get_system_resources": "Returns a summary of system CPU and RAM usage."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "plugin_dashboard_status_online",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true,
         "icon": "",
         "category": "PLUGINS",
-        "module_type": "core_module",
         "slash_commands": []
     },
     "DRIVE": {
@@ -442,17 +440,14 @@
         "description": "Native Web Interface — Chat + Config Panel on localhost:7070",
         "commands": {
             "get_panel_url": "Returns the URL of the chat interface.",
-            "open_browser": "Opens the Hecos web interface in the default browser if not already open.",
-            "set_state_manager": "Injects the live StateManager from the main application."
+            "open_browser": "Opens the Hecos web interface in the default browser if not already open."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true,
         "icon": "",
         "category": "PLUGINS",
-        "module_type": "core_module",
         "slash_commands": []
     },
     "CALENDAR": {
@@ -801,9 +796,9 @@
     "REMINDER": {
         "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
         "commands": {
-            "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
-            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
             "cancel_reminder": "Cancels an active reminder by ID.",
+            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
             "snooze_reminder": "Postpones a reminder by N minutes from now."
         },
         "status": "ONLINE (DORMANT)",
@@ -816,33 +811,33 @@
         "module_type": "hpm",
         "slash_commands": [
             {
-                "id": "reminder",
-                "manifest_version": "1",
                 "aliases": [
                     "/reminder",
                     "/ricorda",
                     "/promemoria"
                 ],
                 "description": "Imposta un nuovo promemoria",
-                "usage": "/reminder <titolo> alle <ora>",
                 "example": "/reminder chiamata Marco alle 15:30",
                 "icon": "⏱",
+                "id": "reminder",
+                "manifest_version": "1",
                 "method": "set_reminder",
-                "requires_args": true
+                "requires_args": true,
+                "usage": "/reminder <titolo> alle <ora>"
             },
             {
-                "id": "reminders",
-                "manifest_version": "1",
                 "aliases": [
                     "/reminders",
                     "/promemoria list"
                 ],
                 "description": "Lists all active reminders",
-                "usage": "/reminders",
                 "example": "/reminders",
                 "icon": "📋",
+                "id": "reminders",
+                "manifest_version": "1",
                 "method": "list_reminders",
-                "requires_args": false
+                "requires_args": false,
+                "usage": "/reminders"
             }
         ]
     },

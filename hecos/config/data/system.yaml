@@ -89,8 +89,8 @@ cognition:
   clear_on_restart: false
   include_identity_context: true
   include_self_awareness: true
-  include_thinking_in_history: false
   max_history_messages: 20
+  include_thinking_in_history: false
   rag:
     enabled: true
     embedder: sentence_transformers
