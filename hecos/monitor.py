@@ -284,4 +284,9 @@ if __name__ == "__main__":
         # Final safety kill for the child process and its entire tree before exiting
         if _current_child_process and _current_child_process.poll() is None:
             _kill_child_tree(_current_child_process)
+        try:
+            from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
+            OllamaLifecycleManager.get_instance().stop_server()
+        except Exception:
+            pass
         instance_lock.release_lock(lock_name)

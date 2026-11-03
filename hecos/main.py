@@ -59,6 +59,13 @@ def main():
     finally:
         # Ensures all external log consoles are closed in any case
         logger.close_all_consoles()
+        # Gracefully stop Ollama on normal application exit
+        try:
+            from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
+            _cfg = getattr(getattr(app, "config_manager", None), "config", {})
+            OllamaLifecycleManager.get_instance().on_application_exit(_cfg)
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     if not os.environ.get("HECOS_MONITORED_PROCESS"):

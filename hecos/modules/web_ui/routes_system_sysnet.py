@@ -28,6 +28,15 @@ def init_system_sysnet_routes(app, logger):
                 print(f"\n\033[91m[WEB_UI] Riavvio del sistema in corso...\033[0m")
                 winsound.Beep(600, 150)
                 winsound.Beep(400, 150)
+                # Stop Ollama before reboot so VRAM is freed cleanly
+                try:
+                    from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
+                    import sys as _sys
+                    _cfg_mgr = getattr(_sys, "hecos_config_manager", None)
+                    _cfg = getattr(_cfg_mgr, "config", {}) if _cfg_mgr else {}
+                    OllamaLifecycleManager.get_instance().on_application_exit(_cfg)
+                except Exception:
+                    pass
                 os._exit(42)
 
             threading.Thread(target=do_reboot, daemon=True).start()

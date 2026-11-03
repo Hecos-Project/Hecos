@@ -190,6 +190,9 @@
           <button type="button" class="btn btn-secondary btn-sm" onclick="triggerOllamaStart()" id="btn-ollama-start" style="font-size:11px; padding:3px 10px; height:auto; display:inline-flex; align-items:center; gap:6px;">
             <i class="fas fa-play" style="font-size:10px;"></i> Start Server Now
           </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="triggerOllamaStop()" id="btn-ollama-stop" style="font-size:11px; padding:3px 10px; height:auto; display:inline-flex; align-items:center; gap:6px; color:#ff6b6b;">
+            <i class="fas fa-stop" style="font-size:10px;"></i> Stop Server Now
+          </button>
           <button type="button" class="btn btn-secondary btn-sm" onclick="triggerOllamaWarmup()" id="btn-ollama-warmup" style="font-size:11px; padding:3px 10px; height:auto; display:inline-flex; align-items:center; gap:6px;">
             <i class="fas fa-bolt" style="font-size:10px;"></i> Preload Model Now
           </button>
@@ -234,6 +237,15 @@
         <div class="field" style="margin-top: 4px; display:flex; align-items:flex-end;">
           <span id="ollama-warmup-status" style="font-size:11px; color:var(--text-muted); font-style:italic;"></span>
         </div>
+      </div>
+      <!-- Auto-Stop on Exit -->
+      <div class="field" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06);">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="ollama-auto-stop" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+          <span>Auto-Stop Ollama on Exit
+            <span class="tooltip-icon" title="When Hecos shuts down or reboots, automatically unload all models from GPU VRAM and stop the Ollama server. Frees VRAM and RAM completely. Recommended if Ollama was started by Hecos.">ⓘ</span>
+          </span>
+        </label>
       </div>
     </div>
   </div>
@@ -466,6 +478,7 @@
   function checkOllamaStatus() {
     var badge = document.getElementById('ollama-live-badge');
     var detectedSpan = document.getElementById('ollama-bin-detected');
+    var binInput = document.getElementById('ollama-bin-path');
     fetch('/hecos/backend/ollama/status')
       .then(function(r) { return r.json(); })
       .then(function(d) {
@@ -476,14 +489,24 @@
             badge.innerHTML = '<i class="fas fa-circle" style="color:var(--text-muted); font-size:7px;"></i> Offline';
           }
         }
-        if (detectedSpan && d.detected_binary) {
-          var input = document.getElementById('ollama-bin-path');
-          if (input && !input.value) {
-            var fileName = d.detected_binary.split(/[\\/]/).pop();
-            detectedSpan.textContent = 'Auto: ' + fileName;
+        if (detectedSpan) {
+          var curVal = binInput ? binInput.value.trim() : '';
+          // Warn if path is a folder (no .exe extension)
+          var looksLikeDir = curVal && !curVal.toLowerCase().endsWith('.exe');
+          if (looksLikeDir) {
+            detectedSpan.innerHTML = '<span style="color:#f59e0b;font-style:normal;"><i class="fas fa-exclamation-triangle"></i> Set full path to .exe</span>';
+            detectedSpan.title = 'Needs full path to ollama.exe or "ollama app.exe", not a folder';
+          } else if (!curVal && d.detected_binary) {
+            detectedSpan.textContent = 'Auto: ' + d.detected_binary.split(/[\\/]/).pop();
+            detectedSpan.title = d.detected_binary;
+            detectedSpan.style.color = '';
+          } else if (curVal && d.detected_binary) {
+            detectedSpan.textContent = '\u2713 ' + d.detected_binary.split(/[\\/]/).pop();
+            detectedSpan.style.color = 'var(--green, #22c55e)';
             detectedSpan.title = d.detected_binary;
           } else {
             detectedSpan.textContent = '';
+            detectedSpan.style.color = '';
           }
         }
       })
@@ -568,6 +591,46 @@
     .finally(function() {
       if (btn) btn.disabled = false;
       setTimeout(function() { if (status) status.textContent = ''; }, 6000);
+    });
+  }
+
+  function triggerOllamaStop() {
+    var btn = document.getElementById('btn-ollama-stop');
+    var status = document.getElementById('ollama-warmup-status');
+    if (btn) btn.disabled = true;
+    if (status) status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Stopping Ollama &amp; freeing VRAM...';
+    fetch('/hecos/backend/ollama/stop', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (status) {
+        if (data.ok) {
+          var msg = data.was_running
+            ? '<span style="color:var(--green,#22c55e);"><i class="fas fa-check-circle"></i> Stop signal sent! Ollama shutting down...</span>'
+            : '<span style="color:var(--muted,#888);"><i class="fas fa-info-circle"></i> Ollama was not running.</span>';
+          status.innerHTML = msg;
+          // Poll badge after ~3s to confirm Ollama is actually down
+          if (data.was_running) {
+            setTimeout(function() {
+              if (typeof checkOllamaStatus === 'function') checkOllamaStatus();
+            }, 3000);
+            setTimeout(function() {
+              if (typeof checkOllamaStatus === 'function') checkOllamaStatus();
+            }, 6000);
+          }
+        } else {
+          status.innerHTML = '<span style="color:var(--red,#ef4444);"><i class="fas fa-times-circle"></i> ' + (data.error || 'Failed') + '</span>';
+        }
+      }
+    })
+    .catch(function(err) {
+      if (status) status.innerHTML = '<span style="color:var(--red,#ef4444);"><i class="fas fa-times-circle"></i> ' + err.message + '</span>';
+    })
+    .finally(function() {
+      if (btn) btn.disabled = false;
+      setTimeout(function() { if (status) status.textContent = ''; }, 8000);
     });
   }
 </script>

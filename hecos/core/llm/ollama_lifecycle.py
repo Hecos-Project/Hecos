@@ -1,8 +1,9 @@
 """
 MODULE: Ollama Lifecycle Manager
-DESCRIPTION: Manages automatic startup and model pre-warming for the Ollama backend.
+DESCRIPTION: Manages automatic startup, model pre-warming, and clean shutdown for the Ollama backend.
              - Auto-starts the Ollama server process if not running (configurable)
              - Pre-warms the configured default model into VRAM at boot (configurable)
+             - Gracefully unloads all models and stops the server on Hecos exit (configurable)
              - All operations are non-blocking (daemon threads), fully safe on failure
              - Only activates when backend.type == 'ollama' OR when forced via config flag
 
@@ -10,8 +11,10 @@ Config keys (backend.ollama):
     auto_start_server  : bool  (default: False) — Launch 'ollama serve' if not already running
     warmup_model       : bool  (default: False) — Pre-load model into GPU at Hecos startup
     warmup_keep_alive  : str   (default: '120m') — keep_alive value sent during warm-up
+    auto_stop_server   : bool  (default: True)  — Stop Ollama server when Hecos exits
 """
 
+import atexit
 import os
 import sys
 import time
@@ -60,6 +63,7 @@ def is_ollama_running(ollama_url: str, timeout: int = _DEFAULT_TIMEOUT) -> bool:
 def find_ollama_executable(preferred_path: Optional[str] = None) -> Optional[str]:
     """Locate the ollama binary or GUI app. Returns full path or None.
     If preferred_path is provided and points to a file or folder, it takes precedence.
+    Emits a clear warning when preferred_path is a directory but contains no Ollama binary.
     """
     if preferred_path and preferred_path.strip():
         p = preferred_path.strip().strip('"').strip("'")
@@ -69,7 +73,20 @@ def find_ollama_executable(preferred_path: Optional[str] = None) -> Optional[str
             for candidate in ("ollama app.exe", "ollama.exe"):
                 sub = os.path.join(p, candidate)
                 if os.path.isfile(sub):
+                    logger.info(f"[OllamaLifecycle] Found Ollama in directory: {sub}")
                     return sub
+            # Directory exists but no Ollama binary inside — log a clear hint
+            logger.warning(
+                f"[OllamaLifecycle] ⚠️  binary_path '{p}' is a directory but contains no ollama.exe. "
+                f"Please set the FULL PATH to the executable (e.g. C:\\Users\\...\\AppData\\Local\\Programs\\Ollama\\ollama.exe). "
+                f"Falling back to auto-detection."
+            )
+        elif p:
+            # Path specified but neither file nor directory — may be a shortcut or broken path
+            logger.warning(
+                f"[OllamaLifecycle] ⚠️  binary_path '{p}' does not exist. "
+                f"Falling back to auto-detection."
+            )
 
     # 1. System PATH
     found = shutil.which("ollama")
@@ -85,6 +102,7 @@ def find_ollama_executable(preferred_path: Optional[str] = None) -> Optional[str
     ]
     for c in candidates:
         if c and os.path.isfile(c):
+            logger.info(f"[OllamaLifecycle] Auto-detected Ollama at: {c}")
             return c
     # 3. Linux/macOS common paths
     for c in ("/usr/local/bin/ollama", "/usr/bin/ollama", "/opt/homebrew/bin/ollama"):
@@ -220,6 +238,135 @@ class OllamaLifecycleManager:
         )
         t.start()
 
+    # ── Graceful shutdown ──────────────────────────────────────────────────────
+
+    def unload_all_models(self, ollama_url: str, timeout: int = 10):
+        """
+        Asks Ollama to evict every loaded model from GPU VRAM by sending
+        keep_alive=0 to /api/generate for each model currently listed by /api/ps.
+
+        This is a best-effort call: any failure is silently logged.
+        """
+        try:
+            import json
+            import urllib.request
+            import urllib.error
+
+            base = ollama_url.rstrip("/")
+
+            # Resolve localhost → 127.0.0.1 to avoid IPv6 timeouts on Windows
+            base_4 = base.replace("localhost", "127.0.0.1") if "localhost" in base else base
+
+            # Retrieve currently-loaded models from /api/ps
+            loaded_models = []
+            for ps_base in (base, base_4):
+                try:
+                    req = urllib.request.Request(f"{ps_base}/api/ps", method="GET")
+                    with urllib.request.urlopen(req, timeout=timeout) as resp:
+                        data = json.loads(resp.read())
+                        loaded_models = [m["name"] for m in data.get("models", [])]
+                    break
+                except Exception:
+                    pass
+
+            if not loaded_models:
+                logger.info("[OllamaLifecycle] No models loaded in VRAM — nothing to unload.")
+                return
+
+            logger.info(f"[OllamaLifecycle] Unloading {len(loaded_models)} model(s) from VRAM: {loaded_models}")
+
+            for model in loaded_models:
+                payload = json.dumps({
+                    "model":      model,
+                    "prompt":     "",
+                    "keep_alive": 0,     # 0 = unload immediately
+                    "stream":     False,
+                }).encode()
+                for gen_base in (base, base_4):
+                    try:
+                        req = urllib.request.Request(
+                            f"{gen_base}/api/generate",
+                            data    = payload,
+                            headers = {"Content-Type": "application/json"},
+                            method  = "POST",
+                        )
+                        with urllib.request.urlopen(req, timeout=timeout) as _:
+                            pass
+                        logger.info(f"[OllamaLifecycle] ✅ Model '{model}' unloaded from VRAM.")
+                        break
+                    except Exception as e:
+                        logger.debug(f"[OllamaLifecycle] Could not unload '{model}' via {gen_base}: {e}")
+
+        except Exception as e:
+            logger.warning(f"[OllamaLifecycle] unload_all_models error (non-fatal): {e}")
+
+    def stop_server(self):
+        """
+        Terminates the Ollama server process that was started by Hecos (if any).
+        On Windows, uses taskkill /F /T to kill the full process tree,
+        which also kills the child 'ollama_llama_server.exe' GPU runner,
+        ensuring VRAM is fully released.
+        """
+        try:
+            if os.name == "nt":
+                # Kill both the main process and any child GPU runners
+                for exe_name in ("ollama.exe", "ollama_llama_server.exe", "ollama app.exe"):
+                    try:
+                        subprocess.run(
+                            ["taskkill", "/F", "/T", "/IM", exe_name],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                            timeout=5,
+                        )
+                    except Exception:
+                        pass
+                logger.info("[OllamaLifecycle] ✅ taskkill sent to Ollama process tree.")
+            else:
+                # POSIX: terminate the process we spawned
+                if self._server_proc and self._server_proc.poll() is None:
+                    self._server_proc.terminate()
+                    try:
+                        self._server_proc.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        self._server_proc.kill()
+                    logger.info("[OllamaLifecycle] ✅ Ollama process terminated (POSIX).")
+                else:
+                    logger.info("[OllamaLifecycle] Ollama process already gone or was not started by us.")
+        except Exception as e:
+            logger.warning(f"[OllamaLifecycle] stop_server error (non-fatal): {e}")
+
+    def on_application_exit(self, config: Optional[dict] = None):
+        """
+        Called at Hecos shutdown to cleanly stop Ollama.
+        Respects the auto_stop_server config flag (default: True).
+        Steps:
+          1. Unload all models from VRAM via keep_alive=0
+          2. Kill the Ollama process tree
+        """
+        try:
+            cfg = config or {}
+            ollama_cfg = cfg.get("backend", {}).get("ollama", {})
+            auto_stop  = ollama_cfg.get("auto_stop_server", True)
+
+            if not auto_stop:
+                logger.info("[OllamaLifecycle] auto_stop_server=False — leaving Ollama running.")
+                return
+
+            ollama_url = ollama_cfg.get("url", "http://localhost:11434")
+
+            # Only act if Ollama was started by us OR is actually reachable
+            if not self._started_by_us and not is_ollama_running(ollama_url, timeout=2):
+                logger.info("[OllamaLifecycle] Ollama was not started by Hecos and is not running — nothing to stop.")
+                return
+
+            logger.info("[OllamaLifecycle] Hecos shutting down — unloading models and stopping Ollama...")
+            self.unload_all_models(ollama_url, timeout=8)
+            self.stop_server()
+
+        except Exception as e:
+            logger.warning(f"[OllamaLifecycle] on_application_exit error (non-fatal): {e}")
+
+
     def _warmup_bg(self, ollama_url: str, model: str, keep_alive: str, delay: float):
         """Background thread: sends an empty-prompt request to load the model into GPU VRAM."""
         try:
@@ -310,4 +457,10 @@ def run_ollama_startup_sequence(config: dict):
         # Delay warm-up by 4s to give auto-start a head start
         warmup_delay = 4.0 if auto_start else 1.5
         mgr.maybe_warmup_model(config, delay=warmup_delay)
+
+    # Register graceful shutdown hook for normal exits (sys.exit, Ctrl+C).
+    # Windows CTRL_CLOSE_EVENT is handled separately in application.py via SetConsoleCtrlHandler.
+    import copy
+    _config_snapshot = copy.deepcopy(config)
+    atexit.register(mgr.on_application_exit, _config_snapshot)
 

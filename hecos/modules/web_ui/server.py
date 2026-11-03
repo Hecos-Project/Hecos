@@ -235,6 +235,15 @@ if __name__ == "__main__":
     except Exception as _pe:
         logger.debug(f"[WEB] TTS preload skipped: {_pe}")
 
+    # ── Ollama Lifecycle — Auto-start server & Model Warm-Up ──────────────────
+    try:
+        from hecos.core.llm.ollama_lifecycle import run_ollama_startup_sequence
+        run_ollama_startup_sequence(cfg.config)
+        logger.info("[WEB] Ollama startup sequence triggered.")
+    except Exception as _oe:
+        logger.warning(f"[WEB] Ollama startup sequence error: {_oe}")
+    # ──────────────────────────────────────────────────────────────────────────
+
     # Start the listening thread (Whisper + PTT)
     logger.info("[WEB] Starting standalone audio engine...")
     audio_th = AscoltoThread(sm)
@@ -274,6 +283,24 @@ if __name__ == "__main__":
     # [Removed] - Auto-open logic is now fully managed by tray_app.py or plugin wrappers 
     # to avoid race conditions and redundant browser tabs.
 
+    # Register Windows console close handler so X button stops Ollama cleanly
+    if sys.platform == "win32":
+        try:
+            import ctypes, ctypes.wintypes
+            _HANDLER = ctypes.WINFUNCTYPE(ctypes.wintypes.BOOL, ctypes.wintypes.DWORD)
+            @_HANDLER
+            def _web_ctrl_handler(ctrl_type):
+                if ctrl_type in (0, 1, 2, 5, 6):
+                    try:
+                        from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
+                        OllamaLifecycleManager.get_instance().on_application_exit(cfg.config)
+                    except Exception:
+                        pass
+                return False
+            ctypes.windll.kernel32.SetConsoleCtrlHandler(_web_ctrl_handler, True)
+        except Exception:
+            pass
+
     from hecos.core.system import instance_lock
     if not os.environ.get("HECOS_MONITORED_PROCESS"):
         if not instance_lock.acquire_lock("hecos_web"):
@@ -291,6 +318,11 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Hecos WebUI server stopped.")
     finally:
+        try:
+            from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
+            OllamaLifecycleManager.get_instance().on_application_exit(cfg.config)
+        except Exception:
+            pass
         try:
             from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
             FishSpeechDaemon.get_instance().stop()

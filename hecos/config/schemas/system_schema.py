@@ -76,7 +76,8 @@ class OllamaBackendConfig(BaseModel):
     probe_timeout_sec: int = 3
     # ── Lifecycle / startup flags ─────────────────────────────────────────────
     binary_path: str = ""            # Path to ollama.exe or 'ollama app.exe' (auto-detected if empty)
-    auto_start_server: bool = False  # Launch "ollama serve" automatically if not running
+    auto_start_server: bool = False  # Launch Ollama automatically if not running
+    auto_stop_server: bool = True    # Stop Ollama and release VRAM/RAM when Hecos exits
     warmup_model: bool = False       # Pre-load the default model into GPU VRAM at boot
     warmup_keep_alive: str = "120m"  # keep_alive duration used during warm-up
 

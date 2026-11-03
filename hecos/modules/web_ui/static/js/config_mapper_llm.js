@@ -128,6 +128,7 @@ async function populateBackendUI() {
     if (typeof checkOllamaStatus === 'function') checkOllamaStatus();
     setCheck('ollama-warmup',     c.backend?.ollama?.warmup_model ?? false);
     setVal('ollama-warmup-keepalive', c.backend?.ollama?.warmup_keep_alive || '120m');
+    setCheck('ollama-auto-stop',  c.backend?.ollama?.auto_stop_server ?? true);
 
     setVal('kobold-url',   c.backend?.kobold?.url         || 'http://localhost:5001');
     setVal('kobold-model', c.backend?.kobold?.model       || '');
@@ -240,6 +241,7 @@ function buildBackendPayload(out) {
     out.backend.ollama.auto_start_server = getC('ollama-auto-start', window.cfg.backend?.ollama?.auto_start_server ?? false);
     out.backend.ollama.warmup_model      = getC('ollama-warmup',     window.cfg.backend?.ollama?.warmup_model ?? false);
     out.backend.ollama.warmup_keep_alive = getV('ollama-warmup-keepalive', window.cfg.backend?.ollama?.warmup_keep_alive || '120m');
+    out.backend.ollama.auto_stop_server  = getC('ollama-auto-stop',  window.cfg.backend?.ollama?.auto_stop_server ?? true);
     out.backend.kobold.url            = getV('kobold-url',   window.cfg.backend?.kobold?.url);
     out.backend.kobold.model          = getSelectV('kobold-model', window.cfg.backend?.kobold?.model);
     out.backend.kobold.temperature    = parseFloatNum(getV('kobold-temp',  window.cfg.backend?.kobold?.temperature),    0.7);

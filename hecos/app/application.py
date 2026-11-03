@@ -36,6 +36,16 @@ def _console_ctrl_handler(ctrl_type):
     # CTRL_C=0, CTRL_BREAK=1, CTRL_CLOSE=2, CTRL_LOGOFF=5, CTRL_SHUTDOWN=6
     if ctrl_type in (0, 1, 2, 5, 6):
         logger.close_all_consoles()
+        # Gracefully stop Ollama on console close (X button).
+        # CTRL_CLOSE_EVENT bypasses Python atexit hooks, so we handle it here explicitly.
+        try:
+            from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
+            import sys as _sys
+            _cfg_mgr = getattr(_sys, "hecos_config_manager", None)
+            _cfg = getattr(_cfg_mgr, "config", {}) if _cfg_mgr else {}
+            OllamaLifecycleManager.get_instance().on_application_exit(_cfg)
+        except Exception:
+            pass
     return False  # False = lascia proseguire la terminazione normale
 
 ctypes.windll.kernel32.SetConsoleCtrlHandler(_console_ctrl_handler, True)

@@ -69,8 +69,9 @@ backend:
     repeat_penalty: 1.1
     keep_alive: 120m
     probe_timeout_sec: 3
-    binary_path: C:\Users\melon\AppData\Roaming\Microsoft\Windows\Start Menu\Programs
+    binary_path: C:\Users\melon\AppData\Local\Programs\Ollama\ollama.exe
     auto_start_server: true
+    auto_stop_server: true
     warmup_model: true
     warmup_keep_alive: 120m
   llama_cpp:
