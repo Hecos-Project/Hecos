@@ -35,13 +35,13 @@
 
         {
             id: 'ui.chat_overrides',
-            label: 'Open Chat Overrides',
+            label: 'Open Quick Config',
             icon: 'fas fa-sliders-h',
             category: 'ui',
-            description: 'Open the Session Overrides Panel',
+            description: 'Open the Unified Quick Config & Soul Forge Panel',
             contexts: ['chat'],
             handler: function() {
-                if (window.soTogglePanel) window.soTogglePanel();
+                if (window.sfTogglePanel) window.sfTogglePanel();
             }
         },
 
@@ -81,8 +81,8 @@
 
         {
             id: 'ui.global_defaults',
-            label: 'Global Defaults Panel',
-            description: 'Open the Global Defaults Panel',
+            label: 'Quick Config / Global Defaults Panel',
+            description: 'Open the Unified Quick Config & Soul Forge Panel',
             icon: 'fas fa-globe',
             category: 'ui',
             contexts: ['global', 'chat', 'hub', 'home'],
@@ -90,7 +90,7 @@
                 if (window.sfTogglePanel) {
                     window.sfTogglePanel();
                 } else {
-                    console.log("Global Defaults not available in this context.");
+                    console.log("Quick Config panel not available in this context.");
                 }
             }
         },
@@ -443,20 +443,13 @@
             description: 'Close active panels/modals, or stop TTS/generation sequentially',
             contexts: ['global', 'chat', 'hub', 'home'],
             handler: function() {
-                // ── PRIORITY 1: Quick Config HUD ─────────────────────────────
-                const qcOverlay = document.getElementById('qc-hud-overlay');
-                if (qcOverlay && !qcOverlay.classList.contains('qc-hud-hidden')) {
-                    if (window.closeQuickConfig) window.closeQuickConfig();
-                    return;
-                }
-
-                // ── PRIORITY 2: HKS Overlay (Cheatsheet) ─────────────────────
+                // ── PRIORITY 1: HKS Overlay (Cheatsheet) ─────────────────────
                 if (window.HKS_OVERLAY && window.HKS_OVERLAY.isVisible()) {
                     window.HKS_OVERLAY.hide();
                     return;
                 }
 
-                // ── PRIORITY 3: HDCS Spotlight (Command Palette) ─────────────
+                // ── PRIORITY 2: HDCS Spotlight (Command Palette) ─────────────
                 if (window.HecosCmd && typeof window.HecosCmd.close === 'function') {
                     const overlay = document.getElementById('hdcs-overlay');
                     if (overlay && overlay.style.display !== 'none') {
@@ -465,14 +458,14 @@
                     }
                 }
 
-                // ── PRIORITY 4: Paste Modal ──────────────────────────────────
+                // ── PRIORITY 3: Paste Modal ──────────────────────────────────
                 const pasteModal = document.getElementById('paste-modal');
                 if (pasteModal && pasteModal.classList.contains('open')) {
                     if (window.closePasteModal) window.closePasteModal();
                     return;
                 }
 
-                // ── PRIORITY 5: Document Reader (Voice & Fullscreen Reader) ───
+                // ── PRIORITY 4: Document Reader (Voice & Fullscreen Reader) ───
                 if (window.DocReader) {
                     // 1. If actively speaking / reading aloud, stop the voice first
                     if (typeof window.DocReader.isReading === 'function' && window.DocReader.isReading()) {
@@ -490,14 +483,14 @@
                     }
                 }
 
-                // ── PRIORITY 6: Doc Preview ──────────────────────────────────
+                // ── PRIORITY 5: Doc Preview ──────────────────────────────────
                 const docModal = document.getElementById('doc-preview-modal');
                 if (docModal && docModal.classList.contains('active')) {
                     if (window.closeDocPreview) window.closeDocPreview();
                     return;
                 }
 
-                // ── PRIORITY 7: Chat PDF/HTML Preview Zoom ────────────────────
+                // ── PRIORITY 6: Chat PDF/HTML Preview Zoom ────────────────────
                 const expandedPreview = document.querySelector('.chat-pdf-preview.expanded, .chat-html-preview.expanded');
                 if (expandedPreview) {
                     if (typeof window.togglePdfPreviewZoom === 'function') {
@@ -506,14 +499,14 @@
                     }
                 }
 
-                // ── PRIORITY 8: Chat Image Lightbox ──────────────────────────
+                // ── PRIORITY 7: Chat Image Lightbox ──────────────────────────
                 const lightbox = document.getElementById('img-lightbox');
                 if (lightbox && lightbox.classList.contains('open')) {
                     lightbox.classList.remove('open');
                     return;
                 }
 
-                // ── PRIORITY 9: Chat Image Gallery ───────────────────────────
+                // ── PRIORITY 8: Chat Image Gallery ───────────────────────────
                 const gallery = document.getElementById('hg-gallery-modal');
                 if (gallery && gallery.classList.contains('open')) {
                     gallery.classList.remove('open');
@@ -522,16 +515,10 @@
                     return;
                 }
 
-                // ── PRIORITY 10: Generic Modals / Panels ──────────────────────
+                // ── PRIORITY 9: Quick Config / Soul Forge & Generic Panels ───
                 const sfPanel = document.getElementById('soul-forge-panel');
                 if (sfPanel && sfPanel.classList.contains('open')) {
                     if (window.sfTogglePanel) window.sfTogglePanel(false);
-                    return;
-                }
-
-                const soPanel = document.getElementById('session-overrides-panel');
-                if (soPanel && soPanel.classList.contains('open')) {
-                    if (window.soTogglePanel) window.soTogglePanel(false);
                     return;
                 }
 
@@ -549,7 +536,7 @@
                     }
                 }
                 
-                // ── PRIORITY 11: Stop TTS Audio (if playing) ──────────────────
+                // ── PRIORITY 10: Stop TTS Audio (if playing) ──────────────────
                 if (window.DocReader && typeof window.DocReader.isReading === 'function' && window.DocReader.isReading()) {
                     window.DocReader.stop();
                     if (window.showToast) window.showToast('🔇 Document Reader voice stopped', 'info');
@@ -563,7 +550,7 @@
                     }
                 }
 
-                // ── PRIORITY 12: Stop LLM Generation (if active) ─────────────
+                // ── PRIORITY 11: Stop LLM Generation (if active) ─────────────
                 if (typeof window.stopGeneration === 'function') {
                     if (window.stopGeneration()) {
                         if (window.showToast) window.showToast('⛔ Generation stopped', 'info');

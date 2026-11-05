@@ -19,9 +19,29 @@ def _kill_child_tree(proc):
     """Recursively terminates a child process and all its descendants (e.g. Fish Speech server) on Windows."""
     if not proc or proc.poll() is not None:
         return
+    # 1. Primary: silent, in-memory process tree kill via psutil (no console windows)
+    try:
+        import psutil
+        p = psutil.Process(proc.pid)
+        for child in p.children(recursive=True):
+            try:
+                child.kill()
+            except Exception:
+                pass
+        p.kill()
+        return
+    except Exception:
+        pass
+
+    # 2. Fallback
     try:
         if sys.platform == "win32":
-            subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True, timeout=5)
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                capture_output=True,
+                timeout=5,
+                creationflags=subprocess.CREATE_NO_WINDOW
+            )
         else:
             proc.terminate()
             proc.wait(timeout=3)

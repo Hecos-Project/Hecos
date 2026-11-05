@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ch_actions.js
  * ─────────────────────────────────────────────────────────────────────────────
  * Hecos Chat History — User Actions and Interactions
@@ -20,9 +20,6 @@ window.newChatSession = async function (mode = null) {
     localStorage.setItem('hecos_active_session_id', res.session_id);
 
     window.chatHistoryState.isUIRendered = true;
-
-    // Reset topbar dropdowns (persona, model, tts) to defaults
-    if (window.resetSessionDropdowns) window.resetSessionDropdowns();
 
     // Reset Soul Forge / overrides panel (topbar quick preset, sidebar panel, etc.)
     if (window.soLoadActiveSessionState) await window.soLoadActiveSessionState();

@@ -44,7 +44,7 @@ class SoulPersona(BaseModel):
     use_global_safety_instructions: Optional[bool] = None
     custom_instructions: Optional[str] = None
     user_notes: Optional[str] = None
-    send_notes_to_ai: Optional[bool] = False
+    send_notes_to_ai: Optional[bool] = None
 
 class SoulInference(BaseModel):
     preset_name: Optional[str] = None
@@ -95,6 +95,7 @@ class SoulVoice(BaseModel):
     fish_normalize: Optional[bool] = None
     fish_use_memory_cache: Optional[bool] = None
     fish_reference_id: Optional[str] = None
+    fish_volume: Optional[float] = None
 
 class SoulModel(BaseModel):
     backend_type: Optional[str] = None
@@ -104,6 +105,7 @@ class SoulPayload(BaseModel):
     send_tools: Optional[bool] = None
     send_personality: Optional[bool] = None
     send_memory: Optional[bool] = None
+    include_thinking_in_history: Optional[bool] = None
 
 class SoulProfile(BaseModel):
     model_config = ConfigDict(extra='ignore')

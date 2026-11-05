@@ -297,17 +297,22 @@ def open_debug_log():
 def close_debug_log():
     """Closes technical debug window via title search."""
     try:
-        subprocess.run('taskkill /FI "WINDOWTITLE eq Hecos - Technical Debug (LiteLLM)*" /F', 
-                       shell=True, capture_output=True)
+        kwargs = {"shell": True, "capture_output": True}
+        if sys.platform == "win32":
+            kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+        subprocess.run('taskkill /FI "WINDOWTITLE eq Hecos - Technical Debug (LiteLLM)*" /F', **kwargs)
     except:
         pass
 
 def close_activity_log():
     """Closes activity log window via title search."""
     try:
+        kwargs = {"shell": True, "capture_output": True}
+        if sys.platform == "win32":
+            kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
         # Match both old and new titles for safety during transition
-        subprocess.run('taskkill /FI "WINDOWTITLE eq Hecos - Activity Log*" /F', shell=True, capture_output=True)
-        subprocess.run('taskkill /FI "WINDOWTITLE eq Hecos - Log Attivit\u00e0*" /F', shell=True, capture_output=True)
+        subprocess.run('taskkill /FI "WINDOWTITLE eq Hecos - Activity Log*" /F', **kwargs)
+        subprocess.run('taskkill /FI "WINDOWTITLE eq Hecos - Log Attivit\u00e0*" /F', **kwargs)
     except:
         pass
 

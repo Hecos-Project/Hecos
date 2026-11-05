@@ -1,142 +1,98 @@
-<!-- ⚡ SOUL FORGE: Global Presets Panel -->
+<!-- ⚡ SOUL FORGE: Unified Quick Config & Chat Draft Panel -->
 <div id="soul-forge-overlay" onclick="window.sfTogglePanel(false)"></div>
 <div id="soul-forge-panel">
     <div class="sf-header">
-        <div>
-            <i class="fas fa-bolt" style="color: var(--accent1);"></i>
-            <span id="sf-panel-title">Global Defaults</span>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <i class="fas fa-sliders-h" style="color: var(--accent1);"></i>
+            <span id="sf-panel-title">Quick Config · Soul Forge</span>
+            <span id="sf-draft-badge" class="sf-draft-badge">✓ Synced</span>
         </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-            <button class="btn btn-secondary btn-sm" style="padding: 2px 8px;" onclick="window.sfExportSoul()"
+        <div style="display: flex; gap: 6px; align-items: center;">
+            <button class="btn btn-secondary btn-sm" style="padding: 3px 8px;" onclick="window.sfExportSoul()"
                 title="Export .global_preset.json file">
                 <i class="fas fa-file-export"></i>
             </button>
-            <button class="btn btn-secondary btn-sm" style="padding: 2px 8px;"
+            <button class="btn btn-secondary btn-sm" style="padding: 3px 8px;"
                 onclick="document.getElementById('sf-import-input').click()" title="Import .global_preset.json file">
                 <i class="fas fa-file-import"></i>
             </button>
             <input type="file" id="sf-import-input" accept=".json" style="display:none;"
                 onchange="window.sfImportSoul(event)">
-            <button class="sf-close-btn" style="margin-left: 8px;" onclick="window.sfTogglePanel(false)"><i
-                    class="fas fa-times"></i></button>
+            <button class="sf-close-btn" style="margin-left: 6px;" onclick="window.sfTogglePanel(false)" title="Close (Esc — changes remain active for this chat)">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
     </div>
 
     <div class="sf-body">
-        <div id="sf-panel-desc" style="font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.3;">
-            These are the system's <b>Global Defaults</b>. Settings saved here are automatically applied as the
-            foundation for every new chat and are independent of Chat Overrides.
-        </div>
-
-        <!-- ACTIVE SOUL -->
+        <!-- PRESET & PROMOTION BAR -->
         <div class="sf-section sf-active-soul">
+            <div class="sf-context-bar" id="sf-context-bar">
+                <span><i class="fas fa-comment-dots" style="color:var(--accent1);"></i> This chat: <strong id="sf-chat-preset-label">Base Configuration</strong></span>
+                <span class="sf-context-sep">·</span>
+                <span><i class="fas fa-globe" style="color:var(--text-muted);"></i> New chats default: <strong id="sf-global-preset-label">Base Configuration</strong></span>
+            </div>
+
+            <div class="sf-controls-row" style="margin-top: 8px;">
+                <div class="sf-control-group" style="flex: 1;">
+                    <label>Global Preset (quick selector)</label>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <select id="sf-active-soul-select" class="form-control" style="flex: 1;"
+                            onchange="window.sfSelectSessionSoul(this.value)">
+                            <option value="">-- Base Configuration (No Preset) --</option>
+                        </select>
+                        <button class="btn btn-secondary btn-sm" onclick="window.sfRenameSoul()"
+                            title="Rename selected preset" style="padding: 5px 9px;">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="window.sfDeleteSoul()"
+                            title="Delete selected preset" style="padding: 5px 9px;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sf-promotion-bar">
+                <button id="sf-top-save-btn" class="btn btn-primary btn-sm sf-promo-btn" onclick="window.sfOverwriteSoul()"
+                    title="Update selected Global Preset with current settings">
+                    <i class="fas fa-save"></i> <span>Update Preset</span>
+                </button>
+                <button id="sf-new-preset-btn" class="btn btn-secondary btn-sm sf-promo-btn" onclick="window.sfSaveAsNewSoul()"
+                    title="Save current settings as new Global Preset">
+                    <i class="fas fa-plus"></i> <span>New Preset</span>
+                </button>
+                <button id="sf-set-default-btn" class="btn btn-info btn-sm sf-promo-btn" onclick="window.sfSetAsGlobalDefault()"
+                    title="Set this configuration (with or without preset) as Global Default for all new chats">
+                    <i class="fas fa-star"></i> <span>Use as Default</span>
+                </button>
+                <button id="sf-revert-btn" class="btn btn-warning btn-sm sf-promo-btn" onclick="window.sfRevertSessionDraft()"
+                    title="Discard changes for this chat and revert to default settings">
+                    <i class="fas fa-undo"></i> <span>Reset Chat</span>
+                </button>
+            </div>
+            <div id="sf-panel-desc" class="sf-live-hint">
+                <i class="fas fa-bolt" style="color:var(--accent1);"></i> Changes are <b>immediately active in this chat</b> for instant testing. Use the buttons above only to save into a Preset or as Global Default for new chats.
+            </div>
+        </div>
+
+        <!-- MODEL (Backend + Model) -->
+        <div class="sf-section">
             <div class="sf-section-header">
-                <i class="fas fa-globe"></i> ACTIVE GLOBAL DEFAULT
+                <span><i class="fas fa-robot"></i> MODEL &amp; BACKEND</span>
             </div>
             <div class="sf-controls-row">
-                <div class="sf-control-group" style="flex:2;">
-                    <select id="sf-active-soul-select" class="form-control"
-                        onchange="window.sfActivateSoul(this.value)">
-                        <option value="">-- No active global default --</option>
-                    </select>
-                </div>
-                <button class="btn btn-primary btn-sm" onclick="window.sfSaveAsNewSoul()"
-                    title="Save current config as new Global Default">
-                    <i class="fas fa-plus"></i>
-                </button>
-                <button id="sf-top-save-btn" class="btn btn-primary btn-sm" onclick="window.sfOverwriteSoul()"
-                    title="Overwrite current Global Default">
-                    <i class="fas fa-save"></i>
-                </button>
-                <button class="btn btn-info btn-sm" onclick="window.sfRenameSoul()"
-                    title="Rename current Global Default">
-                    <i class="fas fa-pencil-alt"></i>
-                </button>
-                <button class="btn btn-warning btn-sm" onclick="window.sfRevertSoul()" title="Revert to saved values">
-                    <i class="fas fa-undo"></i>
-                </button>
-                <button class="btn btn-danger btn-sm" onclick="window.sfDeleteSoul()"
-                    title="Delete current Global Default">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- SOUL -->
-        <div class="sf-section">
-            <div class="sf-section-header"><i class="fas fa-masks-theater"></i> SOUL (PERSONALITY)</div>
-            <div class="sf-controls-row">
-                <div class="sf-control-group">
-                    <label>Soul File</label>
-                    <select id="sf-persona-select" class="form-control" onchange="window.sfDirty()">
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <!-- INSTRUCTIONS -->
-        <div class="sf-section">
-            <div class="sf-section-header"><i class="fas fa-terminal"></i> AI INSTRUCTIONS</div>
-            <div class="sf-controls-row">
-                <div class="sf-control-group">
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                        <input type="checkbox" id="sf-use-global-direct" checked onchange="window.sfDirty()">
-                        Include Global Direct Instructions
-                    </label>
-                </div>
-                <div class="sf-control-group">
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                        <input type="checkbox" id="sf-use-global-safety" checked onchange="window.sfDirty()">
-                        Include Global Safety Disclaimer
-                    </label>
-                </div>
-            </div>
-            <div class="sf-controls-row" style="margin-top: 10px;">
-                <div class="sf-control-group" style="flex:1;">
-                    <label>Custom Direct Instructions</label>
-                    <textarea id="sf-custom-instructions" class="form-control"
-                        style="width: 100%; min-height: 80px; resize: vertical;"
-                        placeholder="Type custom instructions for this global preset here..."
-                        oninput="window.sfDirty()"></textarea>
-                </div>
-            </div>
-        </div>
-
-        <!-- NOTES & CONTEXT -->
-        <div class="sf-section">
-            <div class="sf-section-header"><i class="fas fa-sticky-note"></i> NOTES & CONTEXT</div>
-            <div class="sf-controls-row">
-                <div class="sf-control-group">
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                        <input type="checkbox" id="sf-send-notes-ai" onchange="window.sfDirty()">
-                        Send notes to AI as context
-                    </label>
-                </div>
-            </div>
-            <div class="sf-controls-row" style="margin-top: 10px;">
-                <div class="sf-control-group" style="flex:1;">
-                    <textarea id="sf-user-notes" class="form-control"
-                        style="width: 100%; min-height: 80px; resize: vertical;"
-                        placeholder="Type notes, links, or context here..." oninput="window.sfDirty()"></textarea>
-                </div>
-            </div>
-        </div>
-
-        <!-- MODEL -->
-        <div class="sf-section">
-            <div class="sf-section-header"><i class="fas fa-robot"></i> MODEL</div>
-            <div class="sf-controls-row">
-                <div class="sf-control-group">
+                <div class="sf-control-group" style="flex: 1;">
                     <label>Backend</label>
                     <select id="sf-backend-select" class="form-control"
-                        onchange="window.sfDirty(); window.sfUpdateModelsDropdown()">
-                        <option value="ollama">Ollama</option>
+                        onchange="window.sfUpdateModelsDropdown(); window.sfDirty()">
+                        <option value="ollama">Ollama (Local)</option>
                         <option value="cloud">Cloud API</option>
                         <option value="kobold">KoboldCPP</option>
-                        <option value="llama_cpp">Llama.cpp</option>
+                        <option value="llama_cpp">Llama.cpp (GGUF)</option>
                     </select>
                 </div>
-                <div class="sf-control-group">
+                <div class="sf-control-group" style="flex: 2;">
                     <label>Model Name</label>
                     <select id="sf-model-select" class="form-control" onchange="window.sfDirty()">
                     </select>
@@ -144,146 +100,157 @@
             </div>
         </div>
 
+        <!-- SOUL & INSTRUCTIONS -->
+        <div class="sf-section">
+            <div class="sf-section-header" style="justify-content: space-between;">
+                <span><i class="fas fa-masks-theater"></i> SOUL (PERSONALITY)</span>
+                <button type="button" class="sf-drawer-toggle" id="sf-toggle-instructions-btn"
+                    onclick="window.sfToggleDrawer('sf-instructions-drawer', this)">
+                    <i class="fas fa-chevron-right sf-drawer-chevron"></i> Instructions &amp; Notes
+                    <span id="sf-dot-instructions" class="sf-mod-dot" style="display:none;"></span>
+                </button>
+            </div>
+            <div class="sf-controls-row">
+                <div class="sf-control-group">
+                    <label>Soul File</label>
+                    <select id="sf-persona-select" class="form-control" onchange="window.sfDirty()">
+                    </select>
+                </div>
+            </div>
+
+            <div id="sf-instructions-drawer" class="sf-drawer" style="display: none;">
+                <div class="sf-controls-row" style="margin-top: 12px;">
+                    <div class="sf-control-group">
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="checkbox" id="sf-use-global-direct" checked onchange="window.sfDirty()">
+                            Include Global Direct Instructions
+                        </label>
+                    </div>
+                    <div class="sf-control-group">
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="checkbox" id="sf-use-global-safety" checked onchange="window.sfDirty()">
+                            Include Global Safety Disclaimer
+                        </label>
+                    </div>
+                </div>
+                <div class="sf-controls-row" style="margin-top: 10px;">
+                    <div class="sf-control-group" style="flex:1;">
+                        <label>Custom Direct Instructions</label>
+                        <textarea id="sf-custom-instructions" class="form-control"
+                            style="width: 100%; min-height: 68px; resize: vertical;"
+                            placeholder="Additional instructions for this session or preset..."
+                            oninput="window.sfDirty()"></textarea>
+                    </div>
+                </div>
+                <div class="sf-controls-row" style="margin-top: 10px;">
+                    <div class="sf-control-group" style="flex:1;">
+                        <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer;">
+                            <span>Notes &amp; Context</span>
+                            <span style="display:flex; align-items:center; gap:6px; font-weight:normal;">
+                                <input type="checkbox" id="sf-send-notes-ai" onchange="window.sfDirty()">
+                                Send notes to AI as context
+                            </span>
+                        </label>
+                        <textarea id="sf-user-notes" class="form-control"
+                            style="width: 100%; min-height: 60px; resize: vertical;"
+                            placeholder="Notes, links or extra context..." oninput="window.sfDirty()"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- INFERENCE -->
         <div class="sf-section">
-            <div class="sf-section-header"><i class="fas fa-brain"></i> INFERENCE</div>
+            <div class="sf-section-header" style="justify-content: space-between;">
+                <span><i class="fas fa-brain"></i> INFERENCE</span>
+                <button type="button" class="sf-drawer-toggle" id="sf-toggle-inference-btn"
+                    onclick="window.sfToggleDrawer('sf-inference-drawer', this)">
+                    <i class="fas fa-chevron-right sf-drawer-chevron"></i> Fine Tuning
+                    <span id="sf-dot-inference" class="sf-mod-dot" style="display:none;"></span>
+                </button>
+            </div>
             <div class="sf-controls-row">
                 <div class="sf-control-group">
                     <label>Inference Preset</label>
-                    <div style="display:flex; gap:10px;">
-                        <select id="sf-inference-preset-select" class="form-control"
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <select id="sf-inference-preset-select" class="form-control" style="flex:1;"
                             onchange="window.sfApplyInferencePreset(this.value)">
-                            <option value="">-- No preset selected --</option>
+                            <option value="">-- No preset (Manual values / Default) --</option>
                         </select>
+                        <span id="sf-inference-summary" class="sf-inline-summary">Temp 0.7 · TopP 0.9</span>
                     </div>
                 </div>
             </div>
 
-            <div class="sf-sliders-grid">
-                <!-- Sliders for Inference -->
-                <div class="sf-slider-item">
-                    <label>Temperature <span id="sf-val-temp">0.7</span></label>
-                    <input type="range" id="sf-temp" min="0" max="2" step="0.05" value="0.7"
-                        oninput="window.sfUpdateSliderVal(this, 'sf-val-temp'); window.sfDirty()">
+            <div id="sf-inference-drawer" class="sf-drawer" style="display: none;">
+                <div class="sf-sliders-grid">
+                    <div class="sf-slider-item">
+                        <label>Temperature <span id="sf-val-temp">0.7</span></label>
+                        <input type="range" id="sf-temp" min="0" max="2" step="0.05" value="0.7"
+                            oninput="window.sfUpdateSliderVal(this, 'sf-val-temp'); window.sfDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Top P <span id="sf-val-topp">0.9</span></label>
+                        <input type="range" id="sf-topp" min="0" max="1" step="0.01" value="0.9"
+                            oninput="window.sfUpdateSliderVal(this, 'sf-val-topp'); window.sfDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Repeat Penalty <span id="sf-val-reppen">1.1</span></label>
+                        <input type="range" id="sf-reppen" min="0.5" max="2" step="0.05" value="1.1"
+                            oninput="window.sfUpdateSliderVal(this, 'sf-val-reppen'); window.sfDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Max Tokens (Predict) <span id="sf-val-predict">1024</span></label>
+                        <input type="range" id="sf-predict" min="128" max="32768" step="128" value="1024"
+                            oninput="window.sfUpdateSliderVal(this, 'sf-val-predict'); window.sfDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Context Size <span id="sf-val-ctx">Auto</span></label>
+                        <input type="range" id="sf-ctx" min="0" max="131072" step="512" value="0" oninput="
+                            document.getElementById('sf-val-ctx').textContent = this.value == 0 ? 'Auto' : this.value;
+                            window.sfDirty();
+                        ">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>GPU Layers <span id="sf-val-gpu">Auto</span></label>
+                        <input type="range" id="sf-gpu" min="-2" max="200" step="1" value="-2" oninput="
+                            let txt = this.value;
+                            if(this.value == -2) txt = 'Auto';
+                            else if(this.value == -1) txt = 'Max (-1)';
+                            document.getElementById('sf-val-gpu').textContent = txt;
+                            window.sfDirty();
+                        ">
+                    </div>
                 </div>
-                <div class="sf-slider-item">
-                    <label>Top P <span id="sf-val-topp">0.9</span></label>
-                    <input type="range" id="sf-topp" min="0" max="1" step="0.01" value="0.9"
-                        oninput="window.sfUpdateSliderVal(this, 'sf-val-topp'); window.sfDirty()">
-                </div>
-                <div class="sf-slider-item">
-                    <label>Repeat Penalty <span id="sf-val-reppen">1.1</span></label>
-                    <input type="range" id="sf-reppen" min="0.5" max="2" step="0.05" value="1.1"
-                        oninput="window.sfUpdateSliderVal(this, 'sf-val-reppen'); window.sfDirty()">
-                </div>
-                <div class="sf-slider-item">
-                    <label>Max Tokens (Predict) <span id="sf-val-predict">1024</span></label>
-                    <input type="range" id="sf-predict" min="128" max="32768" step="128" value="1024"
-                        oninput="window.sfUpdateSliderVal(this, 'sf-val-predict'); window.sfDirty()">
-                </div>
-                <div class="sf-slider-item">
-                    <label>Context Size <span id="sf-val-ctx">Auto</span></label>
-                    <input type="range" id="sf-ctx" min="0" max="131072" step="512" value="0" oninput="
-                        document.getElementById('sf-val-ctx').textContent = this.value == 0 ? 'Auto' : this.value;
-                        window.sfDirty();
-                    ">
-                </div>
-                <div class="sf-slider-item">
-                    <label>GPU Layers <span id="sf-val-gpu">Auto</span></label>
-                    <input type="range" id="sf-gpu" min="-2" max="200" step="1" value="-2" oninput="
-                        let txt = this.value;
-                        if(this.value == -2) txt = 'Auto';
-                        else if(this.value == -1) txt = 'Max (-1)';
-                        document.getElementById('sf-val-gpu').textContent = txt;
-                        window.sfDirty();
-                    ">
-                </div>
-            </div>
-        </div>
-
-        <!-- PAYLOAD & TOOLS CONTROL -->
-        <div class="sf-section">
-            <div class="sf-section-header">
-                <i class="fas fa-sliders-h" style="color: var(--accent1);"></i> PAYLOAD &amp; TOOLS CONTROL
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <!-- Tools Toggle Row -->
-                <label class="sf-toggle-row">
-                    <div class="sf-toggle-info">
-                        <div class="sf-toggle-icon"><i class="fas fa-tools"></i></div>
-                        <div class="sf-toggle-text">
-                            <span class="sf-toggle-title">
-                                Function Calling Tools (JSON Schemas)
-                                <span class="sf-toggle-badge">~25k Tokens</span>
-                            </span>
-                            <span class="sf-toggle-desc">Send plugin functions to the LLM. Turn off to reduce prompt tokens and maximize inference speed.</span>
-                        </div>
-                    </div>
-                    <div class="sf-switch">
-                        <input type="checkbox" id="sf-payload-tools" checked onchange="window.sfDirty()">
-                        <span class="sf-slider"></span>
-                    </div>
-                </label>
-
-                <!-- Personality Toggle Row -->
-                <label class="sf-toggle-row">
-                    <div class="sf-toggle-info">
-                        <div class="sf-toggle-icon" style="color: #a78bfa; background: rgba(167, 139, 250, 0.1);"><i class="fas fa-masks-theater"></i></div>
-                        <div class="sf-toggle-text">
-                            <span class="sf-toggle-title">Soul &amp; Personality Directives</span>
-                            <span class="sf-toggle-desc">Inject active persona character, tone, and traits. Turn off for neutral Pure LLM mode.</span>
-                        </div>
-                    </div>
-                    <div class="sf-switch">
-                        <input type="checkbox" id="sf-payload-soul" checked onchange="window.sfDirty()">
-                        <span class="sf-slider"></span>
-                    </div>
-                </label>
-
-                <!-- Memory Toggle Row -->
-                <label class="sf-toggle-row">
-                    <div class="sf-toggle-info">
-                        <div class="sf-toggle-icon" style="color: #34d399; background: rgba(52, 211, 153, 0.1);"><i class="fas fa-brain"></i></div>
-                        <div class="sf-toggle-text">
-                            <span class="sf-toggle-title">Memory Vault &amp; History</span>
-                            <span class="sf-toggle-desc">Include past turns and memory recalls. Turn off for isolated single-turn queries.</span>
-                        </div>
-                    </div>
-                    <div class="sf-switch">
-                        <input type="checkbox" id="sf-payload-memory" checked onchange="window.sfDirty()">
-                        <span class="sf-slider"></span>
-                    </div>
-                </label>
-
-                <!-- History Thinking Toggle Row -->
-                <label class="sf-toggle-row">
-                    <div class="sf-toggle-info">
-                        <div class="sf-toggle-icon" style="color: #a78bfa; background: rgba(167, 139, 250, 0.1);"><i class="fas fa-lightbulb"></i></div>
-                        <div class="sf-toggle-text">
-                            <span class="sf-toggle-title">Include Thinking in History (&lt;think&gt;)</span>
-                            <span class="sf-toggle-desc">Keep past reasoning chains in recent conversation turns. Turn off to keep history clean.</span>
-                        </div>
-                    </div>
-                    <div class="sf-switch">
-                        <input type="checkbox" id="sf-payload-thinking" onchange="window.sfDirty()">
-                        <span class="sf-slider"></span>
-                    </div>
-                </label>
             </div>
         </div>
 
-        <!-- VOICE -->
+        <!-- VOICE & TTS -->
         <div class="sf-section">
-            <div class="sf-section-header"><i class="fas fa-microphone-alt"></i> VOICE & TTS</div>
+            <div class="sf-section-header" style="justify-content: space-between;">
+                <span><i class="fas fa-microphone-alt"></i> VOICE &amp; TTS</span>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button type="button" id="sf-voice-preview-btn" class="btn btn-secondary btn-sm"
+                        style="padding: 2px 10px; font-size: 11px;" onclick="window.sfPreviewVoice()"
+                        title="Listen to a voice preview with current settings">
+                        <i class="fas fa-play"></i> Preview Voice
+                    </button>
+                    <button type="button" class="sf-drawer-toggle" id="sf-toggle-voice-fine-btn"
+                        onclick="window.sfToggleDrawer('sf-voice-fine-drawer', this)">
+                        <i class="fas fa-chevron-right sf-drawer-chevron"></i> Fine Tuning
+                        <span id="sf-dot-voice" class="sf-mod-dot" style="display:none;"></span>
+                    </button>
+                </div>
+            </div>
             <div class="sf-controls-row">
                 <div class="sf-control-group">
                     <label>TTS Engine</label>
                     <select id="sf-tts-engine-select" class="form-control"
-                        onchange="window.sfDirty(); window.sfUpdateVoicesDropdown()">
-                        <option value="xtts2">XTTSv2</option>
-                        <option value="piper">Piper</option>
-                        <option value="kokoro">Kokoro</option>
-                        <option value="fish_speech">Fish Speech</option>
+                        onchange="window.sfUpdateVoicesDropdown().then(() => window.sfDirty())">
+                        <option value="piper">Piper (Fast)</option>
+                        <option value="kokoro">Kokoro (Balanced)</option>
+                        <option value="xtts2">XTTSv2 (Quality)</option>
+                        <option value="fish_speech">Fish Speech (Expressive)</option>
                     </select>
                 </div>
                 <div class="sf-control-group">
@@ -293,8 +260,9 @@
                 </div>
             </div>
 
-            <div id="sf-xtts-controls" style="display:none; margin-top:15px;">
-                <div class="sf-controls-row" style="margin-bottom:15px;">
+            <!-- XTTS Preset Row (Level 1) -->
+            <div id="sf-xtts-controls" style="display:none; margin-top:12px;">
+                <div class="sf-controls-row">
                     <div class="sf-control-group" style="flex: 1;">
                         <label>XTTS Preset</label>
                         <select id="sf-xtts-preset-select" class="form-control"
@@ -309,55 +277,11 @@
                             style="width: 100%; box-sizing: border-box;">
                     </div>
                 </div>
-                <div
-                    style="font-size:12px; color:var(--text-muted); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                    <span>XTTS Inference Parameters</span>
-                    <div style="display:flex; gap:4px; align-items:center;">
-                        <div class="sf-control-group" style="flex:unset; width:150px; margin-bottom:0;">
-                            <select id="sf-xtts-inference-preset-select" class="form-control"
-                                onchange="window.sfApplyXttsInferencePreset(this.value)"
-                                style="padding: 2px 5px; font-size:11px; width:100%;">
-                                <option value="">-- Inference Preset --</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="sf-sliders-grid">
-                    <div class="sf-slider-item">
-                        <label>Temperature <span id="sf-val-xtts-temp">0.75</span></label>
-                        <input type="range" id="sf-xtts-temp" min="0" max="2" step="0.05" value="0.75"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-temp'); window.sfDirty()">
-                    </div>
-                    <div class="sf-slider-item">
-                        <label>Speed <span id="sf-val-xtts-speed">1.0</span></label>
-                        <input type="range" id="sf-xtts-speed" min="0.5" max="2" step="0.1" value="1.0"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-speed'); window.sfDirty()">
-                    </div>
-                    <div class="sf-slider-item">
-                        <label>Top K <span id="sf-val-xtts-topk">50</span></label>
-                        <input type="range" id="sf-xtts-topk" min="1" max="100" step="1" value="50"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-topk'); window.sfDirty()">
-                    </div>
-                    <div class="sf-slider-item">
-                        <label>Repetition Pen. <span id="sf-val-xtts-reppen">5.0</span></label>
-                        <input type="range" id="sf-xtts-reppen" min="1" max="10" step="0.5" value="5.0"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-reppen'); window.sfDirty()">
-                    </div>
-                    <div class="sf-slider-item">
-                        <label>Top P <span id="sf-val-xtts-topp">0.85</span></label>
-                        <input type="range" id="sf-xtts-topp" min="0.0" max="1.0" step="0.01" value="0.85"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-topp'); window.sfDirty()">
-                    </div>
-                    <div class="sf-slider-item">
-                        <label>Length Penalty <span id="sf-val-xtts-length-penalty">1.0</span></label>
-                        <input type="range" id="sf-xtts-length-penalty" min="0.0" max="5.0" step="0.1" value="1.0"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-length-penalty'); window.sfDirty()">
-                    </div>
-                </div>
             </div>
 
-            <div id="sf-fish-controls" style="display:none; margin-top:15px;">
-                <div class="sf-controls-row" style="margin-bottom:15px;">
+            <!-- Fish Speech Preset Row (Level 1) -->
+            <div id="sf-fish-controls" style="display:none; margin-top:12px;">
+                <div class="sf-controls-row">
                     <div class="sf-control-group" style="flex: 1;">
                         <label>Fish Speech Preset</label>
                         <select id="sf-fish-preset-select" class="form-control"
@@ -372,50 +296,12 @@
                             style="width: 100%; box-sizing: border-box;">
                     </div>
                 </div>
-                <div
-                    style="font-size:12px; color:var(--text-muted); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                    <span>Fish Speech Inference Parameters</span>
-                    <div style="display:flex; gap:4px; align-items:center;">
-                        <div class="sf-control-group" style="flex:unset; width:150px; margin-bottom:0;">
-                            <select id="sf-fish-inference-preset-select" class="form-control"
-                                onchange="window.sfApplyFishInferencePreset(this.value)"
-                                style="padding: 2px 5px; font-size:11px; width:100%;">
-                                <option value="">-- Inference Preset --</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="sf-sliders-grid">
-                    <div class="sf-slider-item">
-                        <label>Temperature <span id="sf-val-fish-temp">0.7</span></label>
-                        <input type="range" id="sf-fish-temp" min="0.1" max="2.0" step="0.05" value="0.7"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-fish-temp'); window.sfDirty()">
-                    </div>
-                    <div class="sf-slider-item">
-                        <label>Top P <span id="sf-val-fish-topp">0.7</span></label>
-                        <input type="range" id="sf-fish-topp" min="0.1" max="1.0" step="0.01" value="0.7"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-fish-topp'); window.sfDirty()">
-                    </div>
-                    <div class="sf-slider-item">
-                        <label>Repetition Pen. <span id="sf-val-fish-reppen">1.2</span></label>
-                        <input type="range" id="sf-fish-reppen" min="1.0" max="3.0" step="0.05" value="1.2"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-fish-reppen'); window.sfDirty()">
-                    </div>
-                    <div class="sf-slider-item">
-                        <label>Chunk Length <span id="sf-val-fish-chunk-length">200</span></label>
-                        <input type="range" id="sf-fish-chunk-length" min="50" max="500" step="10" value="200"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-fish-chunk-length'); window.sfDirty()">
-                    </div>
-                    <div class="sf-slider-item">
-                        <label>Max Tokens <span id="sf-val-fish-max-tokens">1024</span></label>
-                        <input type="range" id="sf-fish-max-tokens" min="256" max="2048" step="64" value="1024"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-fish-max-tokens'); window.sfDirty()">
-                    </div>
-                </div>
+                <input type="hidden" id="sf-fish-ref-text" value="">
             </div>
 
-            <div id="sf-kokoro-controls" style="display:none; margin-top:15px;">
-                <div class="sf-controls-row" style="margin-bottom:15px;">
+            <!-- Kokoro Preset Row (Level 1) -->
+            <div id="sf-kokoro-controls" style="display:none; margin-top:12px;">
+                <div class="sf-controls-row">
                     <div class="sf-control-group" style="flex: 1;">
                         <label>Kokoro Preset</label>
                         <select id="sf-kokoro-preset-select" class="form-control"
@@ -423,46 +309,263 @@
                             <option value="">-- No Kokoro Preset --</option>
                         </select>
                     </div>
+                    <div class="sf-control-group" style="flex: 1;">
+                        <label>Blend Voice (Optional)</label>
+                        <select id="sf-kokoro-blend-voice" class="form-control" onchange="window.sfDirty()">
+                            <option value="">None (Pure Voice)</option>
+                        </select>
+                    </div>
                 </div>
-                <div
-                    style="font-size:12px; color:var(--text-muted); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                    <span>Kokoro Inference Parameters</span>
-                    <div style="display:flex; gap:4px; align-items:center;">
-                        <div class="sf-control-group" style="flex:unset; width:150px; margin-bottom:0;">
-                            <select id="sf-kokoro-inference-preset-select" class="form-control"
-                                onchange="window.sfApplyKokoroInferencePreset(this.value)"
-                                style="padding: 2px 5px; font-size:11px; width:100%;">
+            </div>
+
+            <!-- Voice Fine-Tuning Drawer (Level 2 Sliders for active TTS engine) -->
+            <div id="sf-voice-fine-drawer" class="sf-drawer" style="display:none; margin-top:12px;">
+                <!-- XTTS Sliders -->
+                <div id="sf-xtts-fine" style="display:none;">
+                    <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>XTTS Inference Parameters</span>
+                        <div style="display:flex; gap:4px; align-items:center;">
+                            <select id="sf-xtts-inference-preset-select" class="form-control"
+                                onchange="window.sfApplyXttsInferencePreset(this.value)"
+                                style="padding: 2px 5px; font-size:11px; width:150px;">
                                 <option value="">-- Inference Preset --</option>
                             </select>
                         </div>
                     </div>
+                    <div class="sf-sliders-grid">
+                        <div class="sf-slider-item">
+                            <label>Temperature <span id="sf-val-xtts-temp">0.75</span></label>
+                            <input type="range" id="sf-xtts-temp" min="0" max="2" step="0.05" value="0.75"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-temp'); window.sfDirty()">
+                        </div>
+                        <div class="sf-slider-item">
+                            <label>Speed <span id="sf-val-xtts-speed">1.0</span></label>
+                            <input type="range" id="sf-xtts-speed" min="0.5" max="2" step="0.1" value="1.0"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-speed'); window.sfDirty()">
+                        </div>
+                        <div class="sf-slider-item">
+                            <label>Top K <span id="sf-val-xtts-topk">50</span></label>
+                            <input type="range" id="sf-xtts-topk" min="1" max="100" step="1" value="50"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-topk'); window.sfDirty()">
+                        </div>
+                        <div class="sf-slider-item">
+                            <label>Repetition Pen. <span id="sf-val-xtts-reppen">5.0</span></label>
+                            <input type="range" id="sf-xtts-reppen" min="1" max="10" step="0.5" value="5.0"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-reppen'); window.sfDirty()">
+                        </div>
+                        <div class="sf-slider-item">
+                            <label>Top P <span id="sf-val-xtts-topp">0.85</span></label>
+                            <input type="range" id="sf-xtts-topp" min="0.0" max="1.0" step="0.01" value="0.85"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-topp'); window.sfDirty()">
+                        </div>
+                        <div class="sf-slider-item">
+                            <label>Length Penalty <span id="sf-val-xtts-length-penalty">1.0</span></label>
+                            <input type="range" id="sf-xtts-length-penalty" min="0.0" max="5.0" step="0.1" value="1.0"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-length-penalty'); window.sfDirty()">
+                        </div>
+                    </div>
                 </div>
-                <div class="sf-sliders-grid">
-                    <div class="sf-slider-item">
-                        <label>Speed <span id="sf-val-kokoro-speed">1.0</span></label>
-                        <input type="range" id="sf-kokoro-speed" min="0.5" max="2.0" step="0.05" value="1.0"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-speed'); window.sfDirty()">
+
+                <!-- Fish Speech Sliders -->
+                <div id="sf-fish-fine" style="display:none;">
+                    <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>Fish Speech Inference Parameters</span>
+                        <div style="display:flex; gap:4px; align-items:center;">
+                            <select id="sf-fish-inference-preset-select" class="form-control"
+                                onchange="window.sfApplyFishInferencePreset(this.value)"
+                                style="padding: 2px 5px; font-size:11px; width:150px;">
+                                <option value="">-- Inference Preset --</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="sf-slider-item">
-                        <label>Sentence Silence (s) <span id="sf-val-kokoro-silence">0.0</span></label>
-                        <input type="range" id="sf-kokoro-silence" min="0.0" max="2.0" step="0.05" value="0.0"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-silence'); window.sfDirty()">
+                    <div class="sf-sliders-grid">
+                        <div class="sf-slider-item">
+                            <label>Temperature <span id="sf-val-fish-temp">0.7</span></label>
+                            <input type="range" id="sf-fish-temp" min="0.1" max="2.0" step="0.05" value="0.7"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-fish-temp'); window.sfDirty()">
+                        </div>
+                        <div class="sf-slider-item">
+                            <label>Top P <span id="sf-val-fish-topp">0.7</span></label>
+                            <input type="range" id="sf-fish-topp" min="0.1" max="1.0" step="0.01" value="0.7"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-fish-topp'); window.sfDirty()">
+                        </div>
+                        <div class="sf-slider-item">
+                            <label>Repetition Pen. <span id="sf-val-fish-reppen">1.2</span></label>
+                            <input type="range" id="sf-fish-reppen" min="1.0" max="3.0" step="0.05" value="1.2"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-fish-reppen'); window.sfDirty()">
+                        </div>
+                        <div class="sf-slider-item">
+                            <label>Chunk Length <span id="sf-val-fish-chunk-length">200</span></label>
+                            <input type="range" id="sf-fish-chunk-length" min="50" max="500" step="10" value="200"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-fish-chunk-length'); window.sfDirty()">
+                        </div>
+                        <div class="sf-slider-item">
+                            <label>Max Tokens <span id="sf-val-fish-max-tokens">1024</span></label>
+                            <input type="range" id="sf-fish-max-tokens" min="256" max="2048" step="64" value="1024"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-fish-max-tokens'); window.sfDirty()">
+                        </div>
                     </div>
-                    <div class="sf-slider-item">
-                        <label>Voice Weight (Alpha) <span id="sf-val-kokoro-alpha">1.0</span></label>
-                        <input type="range" id="sf-kokoro-alpha" min="0.0" max="1.0" step="0.05" value="1.0"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-alpha'); window.sfDirty()">
+                </div>
+
+                <!-- Kokoro Sliders -->
+                <div id="sf-kokoro-fine" style="display:none;">
+                    <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>Kokoro Inference Parameters</span>
+                        <div style="display:flex; gap:4px; align-items:center;">
+                            <select id="sf-kokoro-inference-preset-select" class="form-control"
+                                onchange="window.sfApplyKokoroInferencePreset(this.value)"
+                                style="padding: 2px 5px; font-size:11px; width:150px;">
+                                <option value="">-- Inference Preset --</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="sf-slider-item">
-                        <label>Blend Weight (Beta) <span id="sf-val-kokoro-beta">1.0</span></label>
-                        <input type="range" id="sf-kokoro-beta" min="0.0" max="1.0" step="0.05" value="1.0"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-beta'); window.sfDirty()">
+                    <div class="sf-sliders-grid">
+                        <div class="sf-slider-item">
+                            <label>Speed <span id="sf-val-kokoro-speed">1.0</span></label>
+                            <input type="range" id="sf-kokoro-speed" min="0.5" max="2.0" step="0.05" value="1.0"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-speed'); window.sfDirty()">
+                        </div>
+                        <div class="sf-slider-item">
+                            <label>Sentence Silence (s) <span id="sf-val-kokoro-silence">0.0</span></label>
+                            <input type="range" id="sf-kokoro-silence" min="0.0" max="2.0" step="0.05" value="0.0"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-silence'); window.sfDirty()">
+                        </div>
+                        <div class="sf-slider-item">
+                            <label>Voice Weight (Alpha) <span id="sf-val-kokoro-alpha">1.0</span></label>
+                            <input type="range" id="sf-kokoro-alpha" min="0.0" max="1.0" step="0.05" value="1.0"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-alpha'); window.sfDirty()">
+                        </div>
+                        <div class="sf-slider-item">
+                            <label>Blend Weight (Beta) <span id="sf-val-kokoro-beta">1.0</span></label>
+                            <input type="range" id="sf-kokoro-beta" min="0.0" max="1.0" step="0.05" value="1.0"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-beta'); window.sfDirty()">
+                        </div>
+                        <div class="sf-slider-item">
+                            <label>Volume <span id="sf-val-kokoro-volume">1.0</span></label>
+                            <input type="range" id="sf-kokoro-volume" min="0.1" max="2.0" step="0.05" value="1.0"
+                                oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-volume'); window.sfDirty()">
+                        </div>
                     </div>
-                    <div class="sf-slider-item">
-                        <label>Volume <span id="sf-val-kokoro-volume">1.0</span></label>
-                        <input type="range" id="sf-kokoro-volume" min="0.1" max="2.0" step="0.05" value="1.0"
-                            oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-volume'); window.sfDirty()">
-                    </div>
+                </div>
+
+                <!-- Piper Hint -->
+                <div id="sf-piper-fine" style="display:none; font-size:12px; color:var(--text-muted);">
+                    Piper uses the selected ONNX model with default fast parameters.
+                </div>
+            </div>
+        </div>
+
+        <!-- PAYLOAD & TOOLS CONTROL -->
+        <div class="sf-section">
+            <div class="sf-section-header" style="justify-content: space-between;">
+                <span><i class="fas fa-sliders-h" style="color: var(--accent1);"></i> PAYLOAD &amp; TOOLS CONTROL</span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span id="sf-payload-summary" class="sf-inline-summary">Tools ON · Soul ON · Mem ON</span>
+                    <button type="button" class="sf-drawer-toggle" id="sf-toggle-payload-btn"
+                        onclick="window.sfToggleDrawer('sf-payload-drawer', this)">
+                        <i class="fas fa-chevron-right sf-drawer-chevron"></i> Fine Tuning
+                        <span id="sf-dot-payload" class="sf-mod-dot" style="display:none;"></span>
+                    </button>
+                </div>
+            </div>
+            <div id="sf-payload-drawer" class="sf-drawer" style="display: none;">
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label class="sf-toggle-row">
+                        <div class="sf-toggle-info">
+                            <div class="sf-toggle-icon"><i class="fas fa-tools"></i></div>
+                            <div class="sf-toggle-text">
+                                <span class="sf-toggle-title">
+                                    Function Calling Tools (JSON Schemas)
+                                    <span class="sf-toggle-badge">~25k Tokens</span>
+                                </span>
+                                <span class="sf-toggle-desc">Send plugin functions to LLM. Disable to reduce prompt tokens and maximize speed.</span>
+                            </div>
+                        </div>
+                        <div class="sf-switch">
+                            <input type="checkbox" id="sf-payload-tools" checked onchange="window.sfDirty()">
+                            <span class="sf-slider"></span>
+                        </div>
+                    </label>
+
+                    <label class="sf-toggle-row">
+                        <div class="sf-toggle-info">
+                            <div class="sf-toggle-icon" style="color: #a78bfa; background: rgba(167, 139, 250, 0.1);"><i class="fas fa-masks-theater"></i></div>
+                            <div class="sf-toggle-text">
+                                <span class="sf-toggle-title">Soul &amp; Personality Directives</span>
+                                <span class="sf-toggle-desc">Inject active personality traits and tone directives. Disable for neutral LLM mode.</span>
+                            </div>
+                        </div>
+                        <div class="sf-switch">
+                            <input type="checkbox" id="sf-payload-soul" checked onchange="window.sfDirty()">
+                            <span class="sf-slider"></span>
+                        </div>
+                    </label>
+
+                    <label class="sf-toggle-row">
+                        <div class="sf-toggle-info">
+                            <div class="sf-toggle-icon" style="color: #34d399; background: rgba(52, 211, 153, 0.1);"><i class="fas fa-brain"></i></div>
+                            <div class="sf-toggle-text">
+                                <span class="sf-toggle-title">Memory Vault &amp; History</span>
+                                <span class="sf-toggle-desc">Include conversation history and memories. Disable for isolated single-turn queries.</span>
+                            </div>
+                        </div>
+                        <div class="sf-switch">
+                            <input type="checkbox" id="sf-payload-memory" checked onchange="window.sfDirty()">
+                            <span class="sf-slider"></span>
+                        </div>
+                    </label>
+
+                    <label class="sf-toggle-row">
+                        <div class="sf-toggle-info">
+                            <div class="sf-toggle-icon" style="color: #a78bfa; background: rgba(167, 139, 250, 0.1);"><i class="fas fa-lightbulb"></i></div>
+                            <div class="sf-toggle-text">
+                                <span class="sf-toggle-title">Include Thinking in History (&lt;think&gt;)</span>
+                                <span class="sf-toggle-desc">Keep reasoning chains in recent conversation turns.</span>
+                            </div>
+                        </div>
+                        <div class="sf-switch">
+                            <input type="checkbox" id="sf-payload-thinking" onchange="window.sfDirty()">
+                            <span class="sf-slider"></span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUICK TEST LAB -->
+        <div class="sf-section sf-lab-section">
+            <div class="sf-section-header" style="justify-content: space-between;">
+                <span><i class="fas fa-flask" style="color: var(--accent1);"></i> QUICK TEST LAB</span>
+                <span style="font-size: 11px; font-weight: 400; color: var(--text-muted); text-transform: none;">
+                    Instantly test your configuration without saving to chat history
+                </span>
+            </div>
+            <div class="sf-controls-row" style="align-items: center;">
+                <input type="text" id="sf-lab-prompt" class="form-control" style="flex: 1;"
+                    value="Briefly introduce yourself in two sentences."
+                    placeholder="Type a test prompt..."
+                    onkeydown="if(event.key==='Enter'){event.preventDefault(); window.sfRunLabTest();}">
+                <label style="display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-muted); cursor:pointer; white-space:nowrap;">
+                    <input type="checkbox" id="sf-lab-tts"> 🔊 Voice
+                </label>
+                <button type="button" id="sf-lab-run-btn" class="btn btn-primary btn-sm" onclick="window.sfRunLabTest()"
+                    style="padding: 6px 14px; white-space: nowrap;">
+                    <i class="fas fa-play"></i> Test
+                </button>
+            </div>
+            <div id="sf-lab-output" class="sf-lab-output" style="display: none;">
+                <div id="sf-lab-metrics" class="sf-lab-metrics"></div>
+                <details id="sf-lab-thinking-box" class="sf-lab-thinking" style="display: none;">
+                    <summary>💭 Thinking / Reasoning</summary>
+                    <pre id="sf-lab-thinking-text"></pre>
+                </details>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                    <div id="sf-lab-response" class="sf-lab-response"></div>
+                    <button type="button" id="sf-lab-speak-btn" class="btn btn-secondary btn-sm"
+                        style="display:none; padding:3px 8px; flex-shrink:0;" onclick="window.sfSpeakLabResponse()"
+                        title="Listen to this response using the selected TTS engine">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -471,6 +574,7 @@
 
     <div class="sf-footer">
         <span id="sf-status-msg" style="color:var(--text-muted); font-size:12px;"></span>
+        <span style="font-size:11px; color:var(--text-muted);">F3 to toggle · Esc keeps modifications in current chat</span>
     </div>
 </div>
 

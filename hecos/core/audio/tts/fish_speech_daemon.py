@@ -359,7 +359,12 @@ class FishSpeechDaemon:
                 logger.info("FISH_SPEECH_DAEMON", "Stopping local Fish Speech server...")
                 try:
                     if sys.platform == "win32":
-                        subprocess.run(["taskkill", "/F", "/T", "/PID", str(self._proc.pid)], capture_output=True, timeout=5)
+                        subprocess.run(
+                            ["taskkill", "/F", "/T", "/PID", str(self._proc.pid)],
+                            capture_output=True,
+                            timeout=5,
+                            creationflags=subprocess.CREATE_NO_WINDOW
+                        )
                     else:
                         self._proc.terminate()
                         self._proc.wait(timeout=3.0)
@@ -379,10 +384,16 @@ class FishSpeechDaemon:
                             cmdline = " ".join(proc.info.get('cmdline') or [])
                             if 'fish_speech_server.py' in cmdline and proc.pid != os.getpid():
                                 logger.info("FISH_SPEECH_DAEMON", f"Terminating process {proc.pid} running fish_speech_server.py...")
-                                if sys.platform == "win32":
-                                    subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True, timeout=5)
-                                else:
+                                try:
                                     proc.kill()
+                                except Exception:
+                                    if sys.platform == "win32":
+                                        subprocess.run(
+                                            ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                                            capture_output=True,
+                                            timeout=5,
+                                            creationflags=subprocess.CREATE_NO_WINDOW
+                                        )
                         except Exception:
                             pass
                 except Exception:

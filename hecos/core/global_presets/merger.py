@@ -17,7 +17,7 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
     2. Soul Persona
     3. Inference Preset (if specified)
     4. Inference Inline (overrides preset)
-    5. Voice Preset / XTTS params
+    5. Voice Preset / XTTS / Fish / Kokoro params
     6. Model backend settings
     """
     if not soul:
@@ -84,20 +84,27 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
     # -- Inference Layer --
     # Find active backend dictionary to apply params to
     btype = merged.get('backend', {}).get('type', 'ollama')
+    if btype == 'hybrid':
+        btype = merged.get('backend', {}).get('active_model_source', 'cloud')
     backend_dict = merged.get('backend', {}).get(btype, {})
+    if not isinstance(backend_dict, dict):
+        backend_dict = {}
     
     # 1. Apply Preset
     if soul.inference.preset_name:
         preset = get_inference_preset(soul.inference.preset_name)
         if preset:
-            p_dump = preset.model_dump(exclude_unset=True)
+            p_dump = preset.model_dump(exclude_none=True)
             for k in ['temperature', 'top_p', 'repeat_penalty', 'num_predict', 'num_ctx', 'max_tokens']:
                 if k in p_dump: backend_dict[k] = p_dump[k]
             
     # 2. Apply Inline Overrides (takes precedence)
-    inf_dump = soul.inference.model_dump(exclude_unset=True)
+    inf_dump = soul.inference.model_dump(exclude_none=True)
     for k in ['temperature', 'top_p', 'repeat_penalty', 'num_predict', 'num_ctx', 'max_tokens', 'n_gpu_layers']:
-        if k in inf_dump: backend_dict[k] = inf_dump[k]
+        if k in inf_dump:
+            backend_dict[k] = inf_dump[k]
+            if k == 'n_gpu_layers':
+                backend_dict['num_gpu'] = inf_dump[k]
 
     # Write back
     if 'backend' not in merged: merged['backend'] = {}
@@ -112,9 +119,9 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
     if soul.voice.tts_voice:
         merged['ai']['tts_voice'] = soul.voice.tts_voice
         
-    # We pass these down to the XTTS engine via session_overrides if they exist
+    # We pass these down to the TTS engine via voice_overrides if they exist
     voice_overrides = {}
-    v_dump = soul.voice.model_dump(exclude_unset=True)
+    v_dump = soul.voice.model_dump(exclude_none=True)
     
     voice_keys = [
         'xtts_preset', 'xtts_inference_preset', 'xtts_temperature', 'xtts_repetition_penalty', 'xtts_top_k', 
@@ -124,7 +131,8 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
         'kokoro_alpha', 'kokoro_beta', 'kokoro_silence', 'kokoro_volume', 'kokoro_normalize',
         'fish_preset', 'fish_inference_preset', 'fish_api_url', 'fish_reference_audio', 'fish_reference_text',
         'fish_temperature', 'fish_top_p', 'fish_repetition_penalty', 'fish_max_new_tokens',
-        'fish_chunk_length', 'fish_seed', 'fish_normalize', 'fish_use_memory_cache', 'fish_reference_id'
+        'fish_chunk_length', 'fish_seed', 'fish_normalize', 'fish_use_memory_cache', 'fish_reference_id',
+        'fish_volume'
     ]
     for k in voice_keys:
         if k in v_dump:
@@ -235,6 +243,6 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
         logger.warning(f"[GlobalPresets] Error applying kokoro presets: {e}")
 
     if voice_overrides:
-        merged['ai']['voice_overrides'] = voice_overrides
+        merged['ai'].setdefault('voice_overrides', {}).update(voice_overrides)
 
     return merged

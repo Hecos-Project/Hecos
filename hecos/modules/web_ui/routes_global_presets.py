@@ -1,8 +1,10 @@
 """
 hecos/modules/web_ui/routes_global_presets.py
-REST API for Soul Forge (Global Presets) and Inference Presets.
+REST API for Soul Forge (Global Presets), Session Drafts, Quick Test Lab, and Inference Presets.
 """
 
+import re
+import time
 from flask import request, jsonify
 from hecos.core.logging import logger
 from hecos.core.global_presets import (
@@ -59,7 +61,7 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
     @app.route("/api/souls/activate", methods=["POST"])
     def api_activate_soul():
         try:
-            data = request.json
+            data = request.json or {}
             soul_id = data.get("soul_id")
             session_id = data.get("session_id")
             
@@ -84,16 +86,49 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                     if soul:
                         if soul.persona.soul_file:
                             patch["ai"]["active_personality"] = soul.persona.soul_file
+                        if soul.persona.use_global_direct_instructions is not None:
+                            patch["ai"]["use_global_direct_instructions"] = soul.persona.use_global_direct_instructions
+                        if soul.persona.use_global_safety_instructions is not None:
+                            patch["ai"]["use_global_safety_instructions"] = soul.persona.use_global_safety_instructions
+                        if soul.persona.custom_instructions is not None:
+                            patch["ai"]["custom_instructions"] = soul.persona.custom_instructions
+                        if soul.persona.user_notes is not None:
+                            patch["ai"]["user_notes"] = soul.persona.user_notes
+                        if soul.persona.send_notes_to_ai is not None:
+                            patch["ai"]["send_notes_to_ai"] = soul.persona.send_notes_to_ai
+
+                        if soul.payload:
+                            p_ctrl = patch.setdefault("payload_control", {})
+                            if soul.payload.send_tools is not None:
+                                p_ctrl["send_tools"] = soul.payload.send_tools
+                            if soul.payload.send_personality is not None:
+                                p_ctrl["send_personality"] = soul.payload.send_personality
+                            if soul.payload.send_memory is not None:
+                                p_ctrl["send_memory"] = soul.payload.send_memory
+                            if soul.payload.include_thinking_in_history is not None:
+                                p_ctrl["include_thinking_in_history"] = soul.payload.include_thinking_in_history
+
                         if soul.voice.tts_engine:
                             patch.setdefault("ai", {})["tts_engine"] = soul.voice.tts_engine
                             patch.setdefault("audio", {})["active_engine"] = soul.voice.tts_engine
                         if soul.voice.tts_voice:
                             patch.setdefault("ai", {})["tts_voice"] = soul.voice.tts_voice
+
+                        btype = soul.model.backend_type or cfg_mgr.config.get("backend", {}).get("type", "ollama")
                         if soul.model.backend_type:
-                            btype = soul.model.backend_type
                             patch.setdefault("backend", {})["type"] = btype
                             if soul.model.model_name:
                                 patch["backend"].setdefault(btype, {})["model"] = soul.model.model_name
+
+                        if soul.inference:
+                            b_patch = patch.setdefault("backend", {}).setdefault(btype, {})
+                            inf_dump = soul.inference.model_dump(exclude_none=True)
+                            for k in ("temperature", "top_p", "repeat_penalty", "num_predict", "num_ctx", "n_gpu_layers"):
+                                if k in inf_dump:
+                                    b_patch[k] = inf_dump[k]
+                                    if k == "n_gpu_layers":
+                                        b_patch["num_gpu"] = inf_dump[k]
+
                     cfg_mgr.update_from_webui(patch)
                     
                     # Update audio config if global
@@ -180,7 +215,7 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                 
                 if soul:
                     # Clear previous overrides so old values don't bleed through
-                    for k in ['ai', 'backend', 'inference', 'voice']:
+                    for k in ['ai', 'backend', 'inference', 'voice', 'persona', 'model', 'payload', 'payload_control', 'draft']:
                         if k in overrides:
                             del overrides[k]
                             
@@ -191,6 +226,9 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                     if soul.voice.tts_engine: overrides['ai']['tts_engine'] = soul.voice.tts_engine
                     if soul.voice.tts_voice: overrides['ai']['tts_voice'] = soul.voice.tts_voice
                     
+                    overrides['persona'] = soul.persona.model_dump(exclude_none=True)
+                    overrides['model'] = soul.model.model_dump(exclude_none=True)
+                    
                     if soul.model.backend_type:
                         if 'backend' not in overrides: overrides['backend'] = {}
                         btype = soul.model.backend_type
@@ -200,14 +238,16 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                             overrides['backend'][btype]['model'] = soul.model.model_name
                             
                     if soul.inference:
-                        if 'inference' not in overrides: overrides['inference'] = {}
-                        for k, v in soul.inference.model_dump(exclude_unset=True).items():
-                            overrides['inference'][k] = v
+                        overrides['inference'] = soul.inference.model_dump(exclude_none=True)
                             
                     if soul.voice:
-                        if 'voice' not in overrides: overrides['voice'] = {}
-                        for k, v in soul.voice.model_dump(exclude_unset=True).items():
-                            overrides['voice'][k] = v
+                        overrides['voice'] = soul.voice.model_dump(exclude_none=True)
+
+                    if soul.payload:
+                        p_dump = soul.payload.model_dump(exclude_none=True)
+                        overrides['payload'] = p_dump
+                        overrides['payload_control'] = dict(p_dump)
+                else:
                     # The user selected "No active global preset" or clicked Reset, so we clear all overrides
                     overrides = {}
                 
@@ -224,6 +264,106 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
             return jsonify({"ok": True, "soul": soul.model_dump() if soul else None})
         except Exception as e:
             logger.error(f"[GlobalPresets] Error activating soul: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    # ── Quick Test Lab (Ephemeral LLM Test without polluting chat history) ──
+
+    @app.route("/api/souls/test", methods=["POST"])
+    def api_test_soul_config():
+        try:
+            data = request.json or {}
+            prompt = (data.get("prompt") or "Briefly introduce yourself in two sentences.").strip()
+            session_id = data.get("session_id")
+            draft = data.get("draft")
+
+            active_cfg_mgr = cfg_mgr
+            if active_cfg_mgr is None:
+                import sys as _sys
+                active_cfg_mgr = getattr(_sys, "hecos_config_manager", None)
+
+            base_config = active_cfg_mgr.config if active_cfg_mgr else None
+            if not base_config:
+                from hecos.core.llm.brain import load_config
+                base_config = load_config() or {}
+
+            from hecos.config.session_config_manager import merge_session_config
+            merged_cfg = merge_session_config(base_config, session_id=session_id, extra_draft=draft)
+
+            from hecos.core.llm.brain import generate_response
+            from hecos.core.llm.client import LAST_PAYLOAD_INFO
+
+            t0 = time.monotonic()
+            raw_response = generate_response(
+                prompt,
+                external_config=merged_cfg,
+                save_history=False,
+                session_id=session_id
+            )
+            elapsed = round(time.monotonic() - t0, 2)
+
+            text_out = raw_response if isinstance(raw_response, str) else str(raw_response or "")
+            thinking_out = ""
+
+            # Extract <think>...</think> if present
+            think_match = re.search(r"<think>([\s\S]*?)</think>", text_out, flags=re.IGNORECASE)
+            if think_match:
+                thinking_out = think_match.group(1).strip()
+                text_out = re.sub(r"<think>[\s\S]*?</think>", "", text_out, flags=re.IGNORECASE).strip()
+            elif "</think>" in text_out:
+                parts = text_out.split("</think>", 1)
+                thinking_out = parts[0].strip()
+                text_out = parts[1].strip()
+
+            # Unwrap JSON fallback if model returned {"response": ...}
+            if text_out.startswith("{") and text_out.endswith("}"):
+                try:
+                    import json as _json
+                    parsed = _json.loads(text_out)
+                    if isinstance(parsed, dict) and "response" in parsed:
+                        r_val = parsed["response"]
+                        if isinstance(r_val, dict) and "text" in r_val:
+                            text_out = r_val["text"]
+                        elif isinstance(r_val, str):
+                            text_out = r_val
+                except Exception:
+                    pass
+
+            btype = merged_cfg.get("backend", {}).get("type", "ollama")
+            if btype == "hybrid":
+                btype = merged_cfg.get("backend", {}).get("active_model_source", "cloud")
+            b_dict = merged_cfg.get("backend", {}).get(btype, {}) or {}
+            p_ctrl = merged_cfg.get("payload_control", {}) or {}
+
+            comp_tokens = LAST_PAYLOAD_INFO.get("completion_tokens") or max(1, len(text_out) // 4)
+            prompt_tokens = LAST_PAYLOAD_INFO.get("prompt_tokens") or LAST_PAYLOAD_INFO.get("est_tokens", 0)
+            tok_per_sec = round(comp_tokens / elapsed, 1) if elapsed > 0 else 0
+            last_p_ctrl = LAST_PAYLOAD_INFO.get("payload_control") or {}
+
+            metrics = {
+                "elapsed_sec": elapsed,
+                "model": LAST_PAYLOAD_INFO.get("model") or b_dict.get("model", "unknown"),
+                "backend": btype,
+                "temperature": b_dict.get("temperature", 0.7),
+                "top_p": b_dict.get("top_p", 0.9),
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": comp_tokens,
+                "tok_per_sec": tok_per_sec,
+                "system_chars": LAST_PAYLOAD_INFO.get("system_chars", 0),
+                "tools_count": last_p_ctrl.get("tools_count", 0),
+                "send_tools": p_ctrl.get("send_tools", True),
+                "send_personality": p_ctrl.get("send_personality", True),
+                "send_memory": p_ctrl.get("send_memory", True),
+                "include_thinking": p_ctrl.get("include_thinking_in_history", False),
+            }
+
+            return jsonify({
+                "ok": True,
+                "response": text_out,
+                "thinking": thinking_out,
+                "metrics": metrics
+            })
+        except Exception as e:
+            logger.error(f"[GlobalPresets] Error in /api/souls/test: {e}", exc_info=True)
             return jsonify({"ok": False, "error": str(e)}), 500
 
     # ── Inference Presets ──

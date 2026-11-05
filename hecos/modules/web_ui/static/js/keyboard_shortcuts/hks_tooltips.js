@@ -1,5 +1,5 @@
-/**
- * hks_tooltips.js — Hecos Dynamic Shortcut Tooltips
+ï»¿/**
+ * hks_tooltips.js ï¿½ Hecos Dynamic Shortcut Tooltips
  * -----------------------------------------------------------------------------
  * Reads current keyboard bindings from HKS_BINDINGS and applies them as
  * descriptive 	itle attributes on all relevant UI buttons and links.
@@ -76,7 +76,8 @@
         _setTitle('ch-new-chat-btn',       'Start a new chat session',           'ui.new_chat');
 
         // Quick Config status pills (no stable IDs, use selector)
-        _setTitleAll('.status-pill.clickable', 'Open Global Defaults',              'ui.global_defaults');
+        _setTitleAll('.status-pill.clickable:not(:has(#sb-global-defaults))', 'Open Quick Config / Soul Forge', 'ui.global_defaults');
+        if (window.sfUpdateTooltip && window.sfState && window.sfState.globalDefaultSoul) window.sfUpdateTooltip(window.sfState.globalDefaultSoul);
 
         // -- CENTRAL HUB (config_panel & core_header) -------------------------
         _setTitle('hdr-nav-chat',      'Open Chat',             'nav.chat');

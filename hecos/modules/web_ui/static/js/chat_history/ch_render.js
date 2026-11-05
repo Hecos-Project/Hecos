@@ -21,6 +21,7 @@ window.loadChatSessions = async function () {
         // Ensure chatHistory is empty for a new session until messages are loaded
         if (isNewSession) {
             window.chatHistory = []; 
+            if (window.sfLoadActiveSessionState) window.sfLoadActiveSessionState();
         }
         if (resActive.session_id) {
             localStorage.setItem('hecos_active_session_id', resActive.session_id);

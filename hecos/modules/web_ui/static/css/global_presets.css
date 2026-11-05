@@ -1,4 +1,4 @@
-/* ⚡ SOUL FORGE: Global Presets Panel Styles */
+/* ⚡ SOUL FORGE: Unified Quick Config & Chat Draft Panel Styles */
 
 #soul-forge-overlay, #session-overrides-overlay {
     display: none;
@@ -7,7 +7,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0,0,0,0.45);
     z-index: 2000;
     backdrop-filter: blur(2px);
 }
@@ -19,13 +19,13 @@
     top: -100%;
     left: 50%;
     transform: translateX(-50%);
-    width: 90%;
-    max-width: 700px;
-    max-height: 85vh;
+    width: 92%;
+    max-width: 720px;
+    max-height: 88vh;
     background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 0 0 12px 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.55);
     z-index: 2001;
     transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     overflow: hidden;
@@ -56,40 +56,154 @@
 }
 .sf-close-btn:hover { color: var(--red); }
 
+.sf-draft-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 9px;
+    border-radius: 12px;
+    background: rgba(52, 211, 153, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    transition: all 0.2s ease;
+}
+
+.sf-draft-badge.dirty {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+    border-color: rgba(251, 191, 36, 0.45);
+}
+
 .sf-body {
-    padding: 20px;
+    padding: 16px 20px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 14px;
 }
 
 .sf-section {
     background: var(--bg1);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 15px;
+    padding: 13px 15px;
 }
 
 .sf-active-soul {
-    background: rgba(var(--accent1-rgb), 0.05);
-    border-color: rgba(var(--accent1-rgb), 0.3);
+    background: rgba(var(--accent1-rgb, 0, 210, 255), 0.05);
+    border-color: rgba(var(--accent1-rgb, 0, 210, 255), 0.3);
+}
+
+.sf-context-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.sf-context-bar strong {
+    color: var(--text);
+}
+.sf-context-sep {
+    opacity: 0.4;
+}
+
+.sf-promotion-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.sf-promo-btn {
+    flex: 1;
+    min-width: 125px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 5px 10px;
+}
+
+.sf-live-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 9px;
+    line-height: 1.35;
 }
 
 .sf-section-header {
     font-size: 12px;
     font-weight: 700;
     color: var(--text-muted);
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     text-transform: uppercase;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
+.sf-drawer-toggle {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease;
+}
+.sf-drawer-toggle:hover, .sf-drawer-toggle.open {
+    color: var(--text);
+    border-color: var(--accent1, #00d2ff);
+    background: rgba(var(--accent1-rgb, 0, 210, 255), 0.1);
+}
+.sf-drawer-chevron {
+    font-size: 9px;
+    transition: transform 0.2s ease;
+}
+.sf-drawer-toggle.open .sf-drawer-chevron {
+    transform: rotate(90deg);
+}
+
+.sf-mod-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #fbbf24;
+    box-shadow: 0 0 6px #fbbf24;
+    display: inline-block;
+}
+
+.sf-inline-summary {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 5px;
+    padding: 4px 8px;
+    white-space: nowrap;
+    text-transform: none;
+}
+
+.sf-drawer {
+    border-top: 1px dashed rgba(255,255,255,0.08);
+    padding-top: 12px;
+    margin-top: 10px;
+}
+
 .sf-controls-row {
     display: flex;
-    gap: 15px;
+    gap: 12px;
     align-items: flex-end;
 }
 
@@ -105,12 +219,11 @@
     color: var(--text-muted);
 }
 
-
 .sf-sliders-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-top: 15px;
+    gap: 14px;
+    margin-top: 10px;
 }
 
 .sf-slider-item {
@@ -134,12 +247,76 @@
 }
 
 .sf-footer {
-    padding: 12px 20px;
+    padding: 10px 20px;
     background: var(--bg3);
     border-top: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ── Quick Test Lab ── */
+.sf-lab-section {
+    background: linear-gradient(180deg, rgba(var(--accent1-rgb, 0, 210, 255), 0.04) 0%, rgba(0,0,0,0.15) 100%);
+    border-color: rgba(var(--accent1-rgb, 0, 210, 255), 0.25);
+}
+.sf-lab-output {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.sf-lab-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.sf-lab-chip {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 2px 7px;
+    border-radius: 4px;
+    color: var(--text);
+}
+.sf-lab-thinking {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: rgba(167, 139, 250, 0.06);
+    border: 1px solid rgba(167, 139, 250, 0.2);
+    border-radius: 5px;
+    padding: 5px 8px;
+}
+.sf-lab-thinking summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: #a78bfa;
+}
+.sf-lab-thinking pre {
+    white-space: pre-wrap;
+    margin: 6px 0 0 0;
+    font-family: inherit;
+    font-size: 11px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+.sf-lab-response {
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text);
+    white-space: pre-wrap;
+    max-height: 180px;
+    overflow-y: auto;
+    flex: 1;
 }
 
 /* ── Payload & Tools Control Toggles ── */

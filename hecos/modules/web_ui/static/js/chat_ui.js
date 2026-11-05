@@ -360,13 +360,11 @@ window.refreshStatus = async function() {
     if (d.persona) window._globalPersonaName = d.persona;
     if (d.avatar) window._globalAvatar = d.avatar;
 
-    const pSel = document.getElementById('chat-persona-select');
-    const sessionPersona = pSel ? pSel.value : null;
-    // Only a per-session override (Chat Overrides panel) should prevent /hecos/status
+    // Only a per-session override (Quick Config draft or session preset) should prevent /hecos/status
     // from updating the persona/avatar. The global preset IS what /hecos/status returns.
-    const sessionOverrideActive = !!(window.soState && window.soState.activeSoulId);
+    const sessionOverrideActive = !!(window.sfState && window.sfState.sessionHasDraft);
     
-    if (!sessionPersona && !sessionOverrideActive) {
+    if (!sessionOverrideActive) {
         const changed = (window.HecosAvatar !== d.avatar || window.HecosPersonaName !== d.persona);
         window.HecosPersonaName = d.persona || 'Hecos';
         if (d.avatar) window.HecosAvatar = d.avatar;

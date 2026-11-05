@@ -178,18 +178,20 @@ class OllamaLifecycleManager:
             kwargs = dict(
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                stdin=subprocess.DEVNULL,
             )
             # On Windows:
-            # - For GUI app: CREATE_NEW_PROCESS_GROUP so it stays detached
+            # - For GUI app: CREATE_NEW_PROCESS_GROUP
             # - For CLI daemon: CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW (no console flash)
+            # NOTE: Never combine DETACHED_PROCESS with CREATE_NO_WINDOW, as Windows
+            # explicitly ignores CREATE_NO_WINDOW when DETACHED_PROCESS is set.
             if os.name == "nt":
                 CREATE_NEW_PROCESS_GROUP = 0x00000200
-                DETACHED_PROCESS = 0x00000008
+                CREATE_NO_WINDOW = 0x08000000
                 if is_gui_app:
-                    kwargs["creationflags"] = CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS
+                    kwargs["creationflags"] = CREATE_NEW_PROCESS_GROUP
                 else:
-                    CREATE_NO_WINDOW = 0x08000000
-                    kwargs["creationflags"] = CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW | DETACHED_PROCESS
+                    kwargs["creationflags"] = CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW
             else:
                 kwargs["close_fds"] = True
 
@@ -314,9 +316,27 @@ class OllamaLifecycleManager:
             return
         self._server_stopped = True
         try:
+            # 1. First attempt: pure-Python psutil termination (fast, silent, zero console windows)
+            killed_psutil = 0
+            try:
+                import psutil
+                target_names = {"ollama.exe", "ollama_llama_server.exe", "ollama app.exe", "ollama"}
+                for p in psutil.process_iter(["pid", "name"]):
+                    try:
+                        pname = (p.info.get("name") or "").lower()
+                        if pname in target_names:
+                            p.kill()
+                            killed_psutil += 1
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        pass
+                if killed_psutil > 0:
+                    logger.info(f"[OllamaLifecycle] ✅ Terminated {killed_psutil} Ollama process(es) silently via psutil.")
+            except ImportError:
+                pass
+
             if os.name == "nt":
+                # Fallback on Windows if any processes remain: taskkill /F /T with CREATE_NO_WINDOW
                 creationflags = subprocess.CREATE_NO_WINDOW
-                # Kill both the main process and any child GPU runners
                 for exe_name in ("ollama.exe", "ollama_llama_server.exe", "ollama app.exe"):
                     try:
                         subprocess.run(
@@ -328,9 +348,9 @@ class OllamaLifecycleManager:
                         )
                     except Exception:
                         pass
-                logger.info("[OllamaLifecycle] ✅ taskkill sent to Ollama process tree.")
+                logger.info("[OllamaLifecycle] ✅ Ollama cleanup confirmed.")
             else:
-                # POSIX: terminate the process we spawned
+                # POSIX fallback: terminate the process we spawned
                 if self._server_proc and self._server_proc.poll() is None:
                     self._server_proc.terminate()
                     try:

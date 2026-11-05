@@ -142,7 +142,8 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
             logger.info(f"[WebUI] TTS Test — engine: {engine or 'active'}, mode: {mode}, text: {text[:60]!r}")
             
-            merged_config = merge_session_config(cfg_mgr.config, session_id) if session_id else cfg_mgr.config
+            draft_data = data.get("draft", None)
+            merged_config = merge_session_config(cfg_mgr.config, session_id, extra_draft=draft_data) if (session_id or draft_data) else cfg_mgr.config
             
             ai_cfg = merged_config.get("ai", {})
             session_overrides = {

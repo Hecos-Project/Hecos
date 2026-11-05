@@ -99,7 +99,7 @@ def kill_process_tool(name: str) -> str:
     except ImportError:
         try:
             if sys.platform == "win32":
-                subprocess.run(f"taskkill /F /IM {name}", shell=True, check=False)
+                subprocess.run(f"taskkill /F /IM {name}", shell=True, check=False, creationflags=subprocess.CREATE_NO_WINDOW)
             else:
                 subprocess.run(f"pkill -f {name}", shell=True, check=False)
             return f"Kill signal sent to '{name}'."
