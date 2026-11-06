@@ -184,9 +184,9 @@ def init_logger(config, allow_external_windows=True):
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     
-    # CRITICAL: Prevent LiteLLM from auto-adding its own stdout StreamHandler via LITELLM_LOG env var
+    # CRITICAL: Set a valid logging level (never empty string "", which crashes litellm._logging on import)
     import os as _os
-    _os.environ["LITELLM_LOG"] = ""  # Always reset to prevent LiteLLM from activating verbose mode
+    _os.environ["LITELLM_LOG"] = "DEBUG" if debug_llm else "WARNING"
     
     if debug_llm:
         litellm_log.setLevel(logging.DEBUG)

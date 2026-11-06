@@ -313,25 +313,16 @@
   <button class="toolbar-btn" title="Toggle Chat Presenter" onclick="
     if (!window.Presenter) return;
     const el = document.getElementById('hbs-presenter-embedded');
-    const isCurrentlyActive = el ? (!el.classList.contains('collapsed') && el.classList.contains('active')) : !!window._presenterEnabled;
-    const nextState = !isCurrentlyActive;
-    
-    if (typeof window.Presenter.setContextEnabled === 'function') {
+    if (el && !el.classList.contains('active')) {
+        el.classList.add('active');
+        window.Presenter.setContextEnabled(true);
+        return;
+    }
+    if (typeof window.Presenter.togglePower === 'function') {
+        window.Presenter.togglePower(event);
+    } else if (typeof window.Presenter.setContextEnabled === 'function') {
+        const nextState = el ? el.classList.contains('collapsed') : !window._presenterEnabled;
         window.Presenter.setContextEnabled(nextState);
-        if (el) {
-            el.classList.toggle('active', nextState);
-        }
-    } else {
-        window.Presenter.setEnabled(nextState);
-        if (el) {
-            el.classList.toggle('active', nextState);
-            el.classList.toggle('collapsed', !nextState);
-        }
-        fetch('/api/ext/presenter/toggle_context', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ context: 'chat', enabled: nextState })
-        }).catch(err => console.error('Failed to toggle chat presenter context', err));
     }
   ">
     <span class="tb-icon" style="color: #ff512f;"><i class="fas fa-bullhorn"></i></span> Presenter

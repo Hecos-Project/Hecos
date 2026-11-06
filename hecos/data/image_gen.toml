@@ -10,7 +10,7 @@ aspect_ratio = "16:9"
 width = 896
 height = 1152
 seed = -1
-last_seed = 983040530
+last_seed = 869509348
 sampler = "euler"
 scheduler = "simple"
 guidance_scale = 2.5
@@ -70,9 +70,13 @@ cloud_enabled = false
 
 [image_gen.local]
 enabled = true
-backend = "swarmui"
 url = "http://localhost:7801"
+host = "http://localhost:7801"
+backend = "swarmui"
 timeout = 120
 auto_discover_models = true
 default_model = ""
 auth_token = ""
+install_path = ""
+auto_start = true
+startup_timeout = 90

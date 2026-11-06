@@ -7,6 +7,15 @@ window.chatHistory = [];
 window.isStreaming = false;
 window.hecosTabId = Math.random().toString(36).substring(2, 15);
 
+function _syncPdfPreviewClasses(bubble) {
+    if (!bubble) return;
+    if (bubble.querySelector('.chat-pdf-preview, .chat-html-preview')) {
+        bubble.classList.add('has-pdf');
+        const msg = bubble.closest('.msg');
+        if (msg) msg.classList.add('has-pdf');
+    }
+}
+
 window.formatModelTooltip = function(jsonStr) {
     try {
         const p = JSON.parse(jsonStr);
@@ -118,10 +127,7 @@ window.sendMessage = async function() {
   
   const { bubble: userBubble, msg: userMsg } = window.addBubble('user', '');
   userBubble.innerHTML = renderedContent;
-  if (userBubble.querySelector('.chat-pdf-preview')) {
-    userBubble.classList.add('has-pdf');
-    if (userMsg) userMsg.classList.add('has-pdf');
-  }
+  _syncPdfPreviewClasses(userBubble);
   if (typeof window.attachActionsToBubble === 'function') window.attachActionsToBubble(userBubble);
   if (typeof window.docReaderScanCards === 'function') {
     setTimeout(window.docReaderScanCards, 50);
@@ -211,12 +217,6 @@ window.sendMessage = async function() {
         aiText += tokenText;
 
         // ── Search Card Streaming Protection ──────────────────────────────
-        // Detect [[HSEARCH:id]] or [[HMEDIA:id]] in the accumulated text.
-        // Once found, we NEVER use innerHTML= on the bubble again — that
-        // would destroy the card DOM (and its async-populated media) on
-        // every single token.  Instead we split the bubble into:
-        //   .hsearch-pre-text  (AI prose — re-rendered on each token)
-        //   .hsearch-chat-card (rendered ONCE, populated async, untouched)
         const hsearchTokenMatch = aiText.match(/\[\[H(?:SEARCH|MEDIA):([a-zA-Z0-9_-]+)\]\]/);
         if (hsearchTokenMatch) {
           const sid = hsearchTokenMatch[1];
@@ -225,13 +225,11 @@ window.sendMessage = async function() {
           const textPart = aiText.replace(/\[\[H(?:SEARCH|MEDIA):[a-zA-Z0-9_-]+\]\]/g, '');
 
           if (existingCard) {
-            // Card already in DOM — only refresh the text above it
             let textEl = aiBubble.querySelector('.hsearch-pre-text');
             if (textEl) {
               textEl.innerHTML = window.renderMarkdown(textPart);
             }
           } else {
-            // First time the token appears — build the bubble via DOM ops
             aiBubble.innerHTML = '';
 
             // 1. Text div (everything except the token)
@@ -253,17 +251,21 @@ window.sendMessage = async function() {
             // 3. Re-attach cursor
             aiBubble.appendChild(cursor);
           }
+          aiBubble.dataset.renderedText = aiText;
+          _syncPdfPreviewClasses(aiBubble);
         } else {
           // No search token — normal full re-render
           aiBubble.innerHTML = window.renderMarkdown(aiText);
+          aiBubble.dataset.renderedText = aiText;
+          _syncPdfPreviewClasses(aiBubble);
           aiBubble.appendChild(cursor);
         }
         if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
       } else if(ev.type === 'camera_request') {
         if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
       } else if(ev.type === 'trace_done') {
-        if (window.AgentUI) window.AgentUI.finalize();
-        // Prompt unlock as soon as TEXT is fully rendered (does not wait for Piper audio generation)
+        if (window.AgentUI) window.AgentUI.finalize(ev.trace_summary || null);
+        // Prompt unlock as soon as TEXT is fully rendered (does not wait for TTS audio generation)
         if (window.chatHistory.length > 0) {
           window.chatHistory[window.chatHistory.length - 1].content = aiText;
         }
@@ -331,26 +333,26 @@ window.sendMessage = async function() {
         const existingBadge = aiBubble.querySelector('.audio-badge');
         const existingSearchCard = aiBubble.querySelector('.hsearch-chat-card');
         if (existingSearchCard) {
-          // Don't wipe the populated search card — only update the text portion above it
           const finalText = (aiText || (ev.type === 'error' ? '❌ ' + ev.text : ''))
             .replace(/\[\[H(?:SEARCH|MEDIA):[a-zA-Z0-9_-]+\]\]/g, '');
           let textEl = aiBubble.querySelector('.hsearch-pre-text');
           if (textEl) {
             textEl.innerHTML = window.renderMarkdown(finalText);
           } else if (finalText.trim()) {
-            // No pre-text div yet — create one before the card
             const newTextEl = document.createElement('div');
             newTextEl.className = 'hsearch-pre-text';
             newTextEl.innerHTML = window.renderMarkdown(finalText);
             aiBubble.insertBefore(newTextEl, existingSearchCard);
           }
-        } else {
-          // No search card present — normal full re-render
-          aiBubble.innerHTML = window.renderMarkdown(aiText||(ev.type==='error'?'❌ '+ev.text:''));
+        } else if (ev.type === 'error' || aiBubble.dataset.renderedText !== aiText) {
+          // Only re-render if error or text changed (avoids reloading iframes/images after TTS finishes)
+          aiBubble.innerHTML = window.renderMarkdown(aiText || (ev.type === 'error' ? '❌ ' + ev.text : ''));
+          aiBubble.dataset.renderedText = aiText;
+          if (existingBadge) {
+            aiBubble.appendChild(existingBadge);
+          }
         }
-        if (existingBadge) {
-          aiBubble.appendChild(existingBadge);
-        }
+        _syncPdfPreviewClasses(aiBubble);
         evtSrc.close();
         
         if (window.loadChatSessions) window.loadChatSessions();
@@ -359,7 +361,6 @@ window.sendMessage = async function() {
     evtSrc.onerror = () => {
       if (window.AgentUI) window.AgentUI.finalize();
       cursor.remove();
-      // If streaming has already concluded and content exists, do not treat stream close as an error
       if (!window.isStreaming && aiText) {
         evtSrc.close();
         return;
@@ -391,7 +392,6 @@ window.sendMessage = async function() {
                     clearInterval(poller);
                     window.location.reload();
                 } else {
-                    // Server is healthy and was never down; clear poller and resume normal state
                     clearInterval(poller);
                     window.isReconnectingAuto = false;
                 }
@@ -411,7 +411,6 @@ window.sendMessage = async function() {
 window.sendInternalMessage = async function(text) {
   if(!text || window.isStreaming) return;
   
-  // Intercept voice dictation triggers for slash commands
   const triggers = ["comando ", "command ", "slash ", "barra "];
   for (const t of triggers) {
       if (text.toLowerCase().startsWith(t)) {
@@ -462,7 +461,6 @@ window.sendInternalMessage = async function(text) {
       return;
     }
 
-    // Lock privacy mode on first sent message
     if (window.chatHistoryState) {
       window.chatHistoryState.chatModeHasMessages = true;
       if (window.updateModeUI) window.updateModeUI();
@@ -479,13 +477,6 @@ window.sendInternalMessage = async function(text) {
         const tokenText = (ev.text !== undefined && ev.text !== null) ? ev.text : (ev.token || '');
         aiText += tokenText;
 
-        // ── Search Card Streaming Protection ──────────────────────────────
-        // Detect [[HSEARCH:id]] or [[HMEDIA:id]] in the accumulated text.
-        // Once found, we NEVER use innerHTML= on the bubble again — that
-        // would destroy the card DOM (and its async-populated media) on
-        // every single token.  Instead we split the bubble into:
-        //   .hsearch-pre-text  (AI prose — re-rendered on each token)
-        //   .hsearch-chat-card (rendered ONCE, populated async, untouched)
         const hsearchTokenMatch = aiText.match(/\[\[H(?:SEARCH|MEDIA):([a-zA-Z0-9_-]+)\]\]/);
         if (hsearchTokenMatch) {
           const sid = hsearchTokenMatch[1];
@@ -494,22 +485,18 @@ window.sendInternalMessage = async function(text) {
           const textPart = aiText.replace(/\[\[H(?:SEARCH|MEDIA):[a-zA-Z0-9_-]+\]\]/g, '');
 
           if (existingCard) {
-            // Card already in DOM — only refresh the text above it
             let textEl = aiBubble.querySelector('.hsearch-pre-text');
             if (textEl) {
               textEl.innerHTML = window.renderMarkdown(textPart);
             }
           } else {
-            // First time the token appears — build the bubble via DOM ops
             aiBubble.innerHTML = '';
 
-            // 1. Text div (everything except the token)
             const preDiv = document.createElement('div');
             preDiv.className = 'hsearch-pre-text';
             preDiv.innerHTML = window.renderMarkdown(textPart);
             aiBubble.appendChild(preDiv);
 
-            // 2. Search card shell (rendered via the exported helper)
             const cardHtml = (typeof window.renderHSearchCard === 'function')
               ? window.renderHSearchCard(sid, isMedia)
               : '';
@@ -519,20 +506,21 @@ window.sendInternalMessage = async function(text) {
               while (tmp.firstChild) aiBubble.appendChild(tmp.firstChild);
             }
 
-            // 3. Re-attach cursor
             aiBubble.appendChild(cursor);
           }
+          aiBubble.dataset.renderedText = aiText;
+          _syncPdfPreviewClasses(aiBubble);
         } else {
-          // No search token — normal full re-render
           aiBubble.innerHTML = window.renderMarkdown(aiText);
+          aiBubble.dataset.renderedText = aiText;
+          _syncPdfPreviewClasses(aiBubble);
           aiBubble.appendChild(cursor);
         }
         if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
       } else if(ev.type === 'camera_request') {
         if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
       } else if(ev.type === 'trace_done') {
-        if (window.AgentUI) window.AgentUI.finalize();
-        // Synchronize and unlock as soon as TEXT finishes
+        if (window.AgentUI) window.AgentUI.finalize(ev.trace_summary || null);
         if (window.chatHistory.length > 0) {
           window.chatHistory[window.chatHistory.length - 1].content = aiText;
         }
@@ -546,7 +534,6 @@ window.sendInternalMessage = async function(text) {
         if (window.sendBtn) window.sendBtn.disabled = false;
 
       } else if(ev.type === 'audio_chunk') {
-        // Ignored: single consolidated audio player used per message
       } else if(ev.type === 'audio_ready') {
         if (ev.audio_id) aiBubble.dataset.audioId = ev.audio_id;
         if (window.tryLoadAudio) window.tryLoadAudio(aiBubble, true);
@@ -558,16 +545,34 @@ window.sendInternalMessage = async function(text) {
         if (window.AgentUI) window.AgentUI.finalize();
         cursor.remove();
         const existingBadge = aiBubble.querySelector('.audio-badge');
-        aiBubble.innerHTML = window.renderMarkdown(aiText||(ev.type==='error'?'❌ '+ev.text:''));
-        if (existingBadge) {
-          aiBubble.appendChild(existingBadge);
+        const existingSearchCard = aiBubble.querySelector('.hsearch-chat-card');
+        if (existingSearchCard) {
+          const finalText = (aiText || (ev.type === 'error' ? '❌ ' + ev.text : ''))
+            .replace(/\[\[H(?:SEARCH|MEDIA):[a-zA-Z0-9_-]+\]\]/g, '');
+          let textEl = aiBubble.querySelector('.hsearch-pre-text');
+          if (textEl) {
+            textEl.innerHTML = window.renderMarkdown(finalText);
+          } else if (finalText.trim()) {
+            const newTextEl = document.createElement('div');
+            newTextEl.className = 'hsearch-pre-text';
+            newTextEl.innerHTML = window.renderMarkdown(finalText);
+            aiBubble.insertBefore(newTextEl, existingSearchCard);
+          }
+        } else if (ev.type === 'error' || aiBubble.dataset.renderedText !== aiText) {
+          aiBubble.innerHTML = window.renderMarkdown(aiText || (ev.type === 'error' ? '❌ ' + ev.text : ''));
+          aiBubble.dataset.renderedText = aiText;
+          if (existingBadge) {
+            aiBubble.appendChild(existingBadge);
+          }
         }
+        _syncPdfPreviewClasses(aiBubble);
         evtSrc.close();
 
         if (window.loadChatSessions) window.loadChatSessions();
       }
     };
     evtSrc.onerror = () => {
+      if (window.AgentUI) window.AgentUI.finalize();
       cursor.remove();
       if (!window.isStreaming && aiText) {
         evtSrc.close();

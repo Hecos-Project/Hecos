@@ -72,10 +72,17 @@ def init_chat_api_routes(app, cfg_mgr, logger):
             except Exception:
                 pass
 
+            zcfg_for_chat = dict(cfg_mgr.config)
+            try:
+                from hecos.core.agent.traces import get_agent_config
+                zcfg_for_chat["agent"] = get_agent_config()
+            except Exception:
+                pass
+
             resp = make_response(render_template(
                 "chat.html",
                 profile=profile,
-                zconfig=cfg_mgr.config,
+                zconfig=zcfg_for_chat,
                 translations=translations,
                 sidebar_widgets=get_sidebar_widgets(config=cfg_mgr.config),
                 active_persona=active_persona,

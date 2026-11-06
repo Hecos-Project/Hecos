@@ -490,7 +490,8 @@ function buildAudioPayload() {
         tts_history_max_files: parseInt(getV('v-tts-history-max', v.tts_history_max_files)) || 100,
         energy_threshold: parseInt(getV('a-threshold', v.energy_threshold)) || 450,
         silence_timeout: parseInt(getV('a-timeout', v.silence_timeout)) || 5,
-        phrase_limit: parseInt(getV('a-limit', v.phrase_limit)) || 15
+        phrase_limit: parseInt(getV('a-limit', v.phrase_limit)) || 15,
+        _allow_empty_presets: !!v._allow_empty_presets
     };
 }
 

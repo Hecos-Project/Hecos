@@ -2,47 +2,108 @@
     <div class="card">
         <div class="card-header">
             <div class="card-title-group">
-                <div class="card-title">{{ t('webui_agent_config_title') or 'Agentic Loop Settings' }}</div>
-                <div class="card-desc">{{ t('webui_agent_config_desc') or 'Configure autonomous behavior, iterations, and tool visualization.' }}</div>
+                <div class="card-title">{{ t('webui_agent_config_title') or 'Agentic Loop & Trace Settings' }}</div>
+                <div class="card-desc">{{ t('webui_agent_config_desc') or 'Configure autonomous multi-step execution, automatic tool tracing, and timeline visualization.' }}</div>
             </div>
         </div>
 
         <div class="field-group">
             <!-- ENABLE AGENT LOOP -->
             <div class="toggle-row">
-                <div class="toggle-info">{{ t('webui_agent_enabled') or 'Autonomous Agentic Loop' }}<div class="toggle-sub">{{ t('webui_agent_enabled_desc') or 'Allows the AI to use multiple steps and tools to solve complex tasks.' }}</div></div>
+                <div class="toggle-info">
+                    {{ t('webui_agent_enabled') or 'Autonomous Agentic Loop' }}
+                    <div class="toggle-sub">{{ t('webui_agent_enabled_desc') or 'Allows Hecos to chain multiple reasoning steps and tools in a single turn.' }}</div>
+                </div>
                 <label class="switch">
                     <input type="checkbox" id="agent-enabled">
                     <span class="slider"></span>
                 </label>
             </div>
 
-            <!-- MAX ITERATIONS -->
+            <!-- MAX ITERATIONS (1-50, live applied — no restart needed) -->
             <div class="field">
                 <label for="agent-max-iter">
                     {{ t('webui_agent_max_iter') or 'Maximum Thought Iterations' }}
-                    <span class="restart-badge" id="badge-agent-max-iter" style="display:none;">Restart Required</span>
                 </label>
-                <input type="number" id="agent-max-iter" min="1" max="20" step="1">
-                <div class="field-help">{{ t('webui_agent_max_iter_help') or 'How many times the AI can think and use tools in a single turn.' }}</div>
+                <input type="number" id="agent-max-iter" min="1" max="50" step="1">
+                <div class="field-help">{{ t('webui_agent_max_iter_help') or 'Maximum number of tool/reasoning iterations allowed in a single turn (1–50). Applied immediately without restart.' }}</div>
             </div>
 
             <hr style="border:0; border-top:1px solid var(--border-color); margin: 20px 0;">
 
-            <!-- VERBOSE TRACES -->
+            <!-- TRACE VISUALIZATION MODE -->
+            <div class="field">
+                <label for="agent-trace-mode">
+                    {{ t('webui_agent_trace_mode') or 'Agent Trace Visualization (Chat UI)' }}
+                </label>
+                <select id="agent-trace-mode">
+                    <option value="detailed">{{ t('webui_agent_trace_mode_detailed') or 'Detailed — Live status + expandable step timeline (Recommended)' }}</option>
+                    <option value="minimal">{{ t('webui_agent_trace_mode_minimal') or 'Minimal — Live status indicator only while working' }}</option>
+                    <option value="off">{{ t('webui_agent_trace_mode_off') or 'Off — Hide agent traces in chat' }}</option>
+                </select>
+                <div class="field-help">{{ t('webui_agent_trace_mode_help') or 'Automatically detects and displays what Hecos is doing across all active modules and packages.' }}</div>
+            </div>
+
+            <!-- BEHAVIOR AFTER COMPLETION -->
+            <div class="field">
+                <label for="agent-trace-after-done">
+                    {{ t('webui_agent_trace_after_done') or 'Trace Behavior After Response' }}
+                </label>
+                <select id="agent-trace-after-done">
+                    <option value="summary">{{ t('webui_agent_trace_after_summary') or 'Compact clickable summary (e.g. "✓ 3 steps · Web Search · 2.4s")' }}</option>
+                    <option value="expanded">{{ t('webui_agent_trace_after_expanded') or 'Keep full timeline expanded' }}</option>
+                    <option value="hide">{{ t('webui_agent_trace_after_hide') or 'Auto-hide when response finishes' }}</option>
+                </select>
+                <div class="field-help">{{ t('webui_agent_trace_after_done_help') or 'Controls how the trace card appears once the final response is ready.' }}</div>
+            </div>
+
+            <!-- SHOW TOOL ARGUMENTS -->
             <div class="toggle-row">
-                <div class="toggle-info">{{ t('webui_agent_verbose') or 'Verbose Reasoning Traces' }}<div class="toggle-sub">{{ t('webui_agent_verbose_desc') or 'Emits cyan/yellow reasoning steps during the loop.' }}</div></div>
+                <div class="toggle-info">
+                    {{ t('webui_agent_trace_show_args') or 'Show Tool Parameters in Trace' }}
+                    <div class="toggle-sub">{{ t('webui_agent_trace_show_args_desc') or 'Displays key parameters next to each step (e.g. search query, file name, list name). Sensitive keys are masked automatically.' }}</div>
+                </div>
                 <label class="switch">
-                    <input type="checkbox" id="agent-verbose">
+                    <input type="checkbox" id="agent-trace-show-args">
                     <span class="slider"></span>
                 </label>
             </div>
 
-            <!-- ACTION CONSOLE -->
+            <!-- PERSIST TRACE IN CHAT HISTORY -->
             <div class="toggle-row">
-                <div class="toggle-info"><span style="color:var(--accent);">{{ t('webui_agent_action_console') or 'Action Console Visualization' }}</span><div class="toggle-sub">{{ t('webui_agent_action_console_desc') or 'Shows real-time terminal windows for shell commands and python scripts (Action Logger).' }}</div></div>
+                <div class="toggle-info">
+                    {{ t('webui_agent_trace_persist') or 'Persist Trace Timeline in Chat History' }}
+                    <div class="toggle-sub">{{ t('webui_agent_trace_persist_desc') or 'Saves the step timeline with the message so it remains inspectable after reloading the chat.' }}</div>
+                </div>
                 <label class="switch">
-                    <input type="checkbox" id="agent-action-console">
+                    <input type="checkbox" id="agent-trace-persist">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <hr style="border:0; border-top:1px solid var(--border-color); margin: 20px 0;">
+
+            <!-- ACTION CONSOLE MODE -->
+            <div class="field">
+                <label for="agent-action-console-mode">
+                    <span style="color:var(--accent);">{{ t('webui_agent_action_console') or 'Action Console Visualization' }}</span>
+                </label>
+                <select id="agent-action-console-mode">
+                    <option value="inline">{{ t('webui_agent_action_console_inline') or 'Integrated inside the Agent Trace timeline (Recommended)' }}</option>
+                    <option value="chat">{{ t('webui_agent_action_console_chat') or 'Separate terminal block in chat' }}</option>
+                    <option value="off">{{ t('webui_agent_action_console_off') or 'Disabled' }}</option>
+                </select>
+                <div class="field-help">{{ t('webui_agent_action_console_desc') or 'Displays low-level command and script execution logs (Executor, Sandbox, SwarmUI).' }}</div>
+            </div>
+
+            <!-- TERMINAL CLI TRACES -->
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    {{ t('webui_agent_cli_traces') or 'Terminal Console Traces (CLI)' }}
+                    <div class="toggle-sub">{{ t('webui_agent_cli_traces_desc') or 'Prints colored step logs in the local Hecos system terminal window.' }}</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="agent-cli-traces">
                     <span class="slider"></span>
                 </label>
             </div>

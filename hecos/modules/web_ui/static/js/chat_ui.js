@@ -223,6 +223,7 @@ window.stopGeneration = function() {
 
   try { fetch('/api/system/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
   
+  if (window.AgentUI) window.AgentUI.finalize();
   window.isStreaming = false;
   if (sendBtn) sendBtn.disabled = false;
   if (window._liveBackendAiBubble) {
@@ -249,6 +250,7 @@ window.stopAll = function() {
   try { fetch('/api/system/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
 
   // Reset chat state unconditionally to recover from any stuck state
+  if (window.AgentUI) window.AgentUI.finalize();
   window.isStreaming = false;
   if (sendBtn) sendBtn.disabled = false;
   if (window._liveBackendAiBubble) {

@@ -1,23 +1,50 @@
-import os
+"""
+hecos/core/agent/loop.py
+Hecos Phase 2 - Agentic Loop Orchestrator.
+Orchestrates the multi-turn connection between Brain and Tools.
+"""
+
 import json
-import re
+from typing import Any, Dict, List, Optional, Tuple
+
 from hecos.core.logging import logger
 from hecos.core.llm import brain
-from hecos.core.agent.traces import AgentTracer
+from hecos.core.agent.traces import AgentTracer, get_agent_config
+from hecos.core.agent.trace_labeler import tr
 from hecos.core.processing import processore
-from hecos.core.i18n import translator
 
-# --- NEW HELPERS ---
 from hecos.core.agent.direct_commands import CommandInterceptor
 from hecos.core.agent.media_interceptor import MediaInterceptor
+from hecos.core.agent.loop_guards import (
+    LoopWatchdog,
+    is_uninstalled_image_gen_request,
+    emit_missing_image_gen_warning,
+    resolve_short_model_label,
+    process_initial_vision,
+    eval_early_termination,
+    finalize_response,
+    sync_assistant_history,
+)
+
 
 class AgentExecutor:
     """
-    Hecos Phase 2 - Agentic Loop
-    Orchestrates the repeated multi-turn connection between Brain and Plugins.
+    Hecos Phase 2 - Agentic Loop.
+    Executes autonomous multi-turn reasoning, tool calling, and response synthesis.
     """
-    
-    def __init__(self, config=None, config_manager=None, state_manager=None, max_iterations=None, trace_callback=None, current_user_id="admin", current_user_role="admin", session_id=None, sender_tab_id=None):
+
+    def __init__(
+        self,
+        config=None,
+        config_manager=None,
+        state_manager=None,
+        max_iterations=None,
+        trace_callback=None,
+        current_user_id: str = "admin",
+        current_user_role: str = "admin",
+        session_id: Optional[str] = None,
+        sender_tab_id: Optional[str] = None,
+    ):
         self.config = config
         self.config_manager = config_manager
         self.state_manager = state_manager
@@ -25,190 +52,199 @@ class AgentExecutor:
         self.current_user_role = current_user_role
         self.session_id = session_id
         self.sender_tab_id = sender_tab_id
-        # Optional direct callback for WebUI session traces.
         self.trace_callback = trace_callback
-        
-        # Load dedicated agent configuration
-        self.agent_config = {"enabled": True, "max_iterations": 5, "verbose_traces": True}
-        try:
-            from hecos.config.yaml_utils import load_yaml
-            from hecos.config.schemas.agent_schema import AgentConfig
-            _agent_cfg_path = os.path.normpath(
-                os.path.join(os.path.dirname(__file__), "..", "..", "config", "data", "agent.yaml")
-            )
-            agent_model = load_yaml(_agent_cfg_path, AgentConfig)
-            self.agent_config = agent_model.model_dump()
-        except Exception as e:
-            logger.error(f"[AGENT] Error loading agent.yaml: {e}")
+        self.last_trace_summary: Optional[dict] = None
 
-        self.max_iterations = max_iterations if max_iterations is not None else self.agent_config.get("max_iterations", 5)
+        # Load cached agent configuration
+        self.agent_config = get_agent_config()
+        self.max_iterations = (
+            max_iterations
+            if max_iterations is not None
+            else self.agent_config.get("max_iterations", 15)
+        )
         self.is_enabled = self.agent_config.get("enabled", True)
-        
-    def _emit(self, msg, level: str = "info"):
-        """Routes a trace to both the terminal tracer and the optional session callback."""
-        sm_for_trace = self.state_manager if not self.trace_callback else None
-        AgentTracer.emit(sm_for_trace, msg if isinstance(msg, str) else str(msg), level=level)
-        
-        if self.trace_callback:
-            try:
-                self.trace_callback(msg, level)
-            except Exception as e:
-                logger.debug(f"[AGENT] trace_callback error: {e}")
 
-    def run_agentic_loop(self, user_text, voice_status=False, images=None):
+    def _emit(self, msg: Any, level: str = "info") -> None:
+        """Emits a trace through the unified AgentTracer session."""
+        AgentTracer.emit(self.state_manager, msg, level=level)
+
+    def _finalize_and_store_trace(self, final_msg: Optional[str] = None, status: str = "ok") -> None:
+        """Finalizes the turn trace timeline and stores it for history and SSE clients."""
+        try:
+            self.last_trace_summary = AgentTracer.finalize_turn(final_msg, status=status)
+            from hecos.core.llm.client import LAST_PAYLOAD_INFO
+            LAST_PAYLOAD_INFO["agent_trace"] = self.last_trace_summary
+        except Exception as e:
+            logger.debug(f"[AGENT] finalize_turn error: {e}")
+
+    def _sync_assistant_history(self, video_response: str, think_block: Optional[str] = None) -> None:
+        """Persists the turn's response and trace summary to the database."""
+        sync_assistant_history(
+            config=self.config,
+            current_user_id=self.current_user_id,
+            session_id=self.session_id,
+            sender_tab_id=self.sender_tab_id,
+            agent_config=self.agent_config,
+            last_trace_summary=self.last_trace_summary,
+            video_response=video_response,
+            think_block=think_block,
+        )
+
+    def _sync_telemetry(self) -> None:
+        """Syncs token counts and active model info with StateManager."""
+        if not self.state_manager:
+            return
+        try:
+            from hecos.core.llm.client import LAST_PAYLOAD_INFO
+            self.state_manager.last_model = LAST_PAYLOAD_INFO.get("model")
+            self.state_manager.last_tokens_prompt = LAST_PAYLOAD_INFO.get("prompt_tokens", 0)
+            self.state_manager.last_tokens_completion = LAST_PAYLOAD_INFO.get("completion_tokens", 0)
+        except Exception as e:
+            logger.debug(f"[AGENT] Telemetry sync error: {e}")
+
+    def run_agentic_loop(
+        self,
+        user_text: str,
+        voice_status: bool = False,
+        images: Optional[List[Any]] = None,
+    ) -> Tuple[str, str]:
         """
-        Runs the full autonomous loop. 
-        Calls the LLM, checks if tools are requested, executes them, feeds the result back.
-        Repeats until the LLM returns plain text without tools or hits max iterations.
+        Runs the full autonomous loop:
+        1. Checks global direct commands.
+        2. Sets up image limits and checks for missing packages.
+        3. Iterates: LLM inference -> Tool extraction & execution -> Termination checks.
         """
-        self._emit(f"Analyzing incoming user request...", level="info")
-        AgentTracer.bind(self.state_manager)
-        
-        # --- GLOBAL DIRECT COMMANDS INTERCEPTOR ---
+        AgentTracer.bind(
+            state_manager=self.state_manager,
+            trace_callback=self.trace_callback,
+            session_id=self.session_id,
+        )
+
+        # 1. Global direct commands interceptor
         intercepted, response_output = CommandInterceptor.intercept(user_text, self)
         if intercepted:
+            self._finalize_and_store_trace(tr("Comando diretto completato", "Direct command completed"))
             return processore.clean_final_output(response_output, [], response_output, voice_status)
-        # ------------------------------------------
 
         if not self.is_enabled:
             logger.info("[AGENT] Agentic Loop is disabled in config. Running single iteration.")
             self.max_iterations = 1
-            
-        # Initialize image generation limit for this turn (default 1 unless user asked for more)
+
+        # 2. Turn limits & state guards
         try:
             from hecos.core.processing.tool_dispatcher import get_requested_image_limit
             if self.state_manager:
                 self.state_manager.requested_image_limit = get_requested_image_limit(user_text)
                 self.state_manager.total_images_in_turn = 0
+                self.state_manager.image_gen_failed = False
         except Exception as _e:
             logger.debug(f"[AGENT] Failed to set image limit: {_e}")
 
+        missing_igen_detected = is_uninstalled_image_gen_request(user_text)
+        if missing_igen_detected:
+            emit_missing_image_gen_warning()
+
         iteration = 0
-        agent_context = []
-        accumulated_tool_results = []
-        
-        while iteration < self.max_iterations:
-            if self.state_manager and getattr(self.state_manager, "webui_stop_requested", False):
-                self._emit("Operation aborted by user.", level="error")
-                break
-                
-            iteration += 1
-            logger.info(f"[AGENT] --- Iteration {iteration}/{self.max_iterations} ---")
-            
-            save_hist = (iteration == 1)
-            current_cfg = self.config_manager.config if getattr(self, 'config_manager', None) else processore.current_config
-            
-            import threading
-            import time
+        agent_context: List[Dict[str, Any]] = []
+        accumulated_tool_results: List[Dict[str, Any]] = []
 
-            self._emit(f"Working (Step {iteration})...", level="info")
-            stop_gen_hb = threading.Event()
-            def _gen_heartbeat():
-                start_gen = time.time()
-                while not stop_gen_hb.wait(10.0):
-                    elapsed_gen = int(time.time() - start_gen)
-                    self._emit(f"Working (Step {iteration})... [{elapsed_gen}s]", level="info")
-
-            gen_hb_thread = threading.Thread(target=_gen_heartbeat, daemon=True)
-            gen_hb_thread.start()
-            # --- UNIFIED MULTIMODAL PERCEPTION (VISION ROUTER) ---
-            if images:
-                try:
-                    from hecos.modules.web_ui.vision import VisionRouter
-                    try:
-                        from app.model_manager import ModelManager
-                    except ImportError:
-                        from hecos.app.model_manager import ModelManager
-                    _btype, _mname = ModelManager.get_effective_model_info(current_cfg)
-                    user_text, images = VisionRouter.process_incoming_turn(
-                        user_text, images, _mname, _btype, emit_callback=self._emit
+        # 3. Autonomous Loop protected by background watchdog
+        with LoopWatchdog(self.trace_callback):
+            while iteration < self.max_iterations:
+                if self.state_manager and getattr(self.state_manager, "webui_stop_requested", False):
+                    self._finalize_and_store_trace(
+                        tr("Operazione interrotta dall'utente", "Operation aborted by user"),
+                        status="error",
                     )
-                except Exception as _v_err:
-                    logger.debug(f"[AGENT] Vision routing exception: {_v_err}")
-            # -----------------------------------------------------
+                    break
 
-            try:
-                raw_response = brain.generate_response(
-                    user_text, 
-                    external_config=current_cfg, 
-                    agent_context=agent_context,
-                    save_history=save_hist,
-                    images=images,
-                    user_id=self.current_user_id,
-                    session_id=self.session_id,
-                    sender_tab_id=self.sender_tab_id
+                iteration += 1
+                logger.info(f"[AGENT] --- Iteration {iteration}/{self.max_iterations} ---")
+
+                save_hist = (iteration == 1)
+                current_cfg = (
+                    self.config_manager.config
+                    if getattr(self, "config_manager", None)
+                    else processore.current_config
                 )
-            finally:
-                stop_gen_hb.set()
-                gen_hb_thread.join(0.5)
-            
-            if self.state_manager and getattr(self.state_manager, "webui_stop_requested", False):
-                self._emit("Operation aborted by user.", level="error")
-                break
-            
-            stop_hb = threading.Event()
-            def _heartbeat():
-                start = time.time()
-                while not stop_hb.wait(10.0):
-                    elapsed = int(time.time() - start)
-                    self._emit(f"Working (Step {iteration})... [{elapsed}s]", level="tool")
-            
-            hb_thread = threading.Thread(target=_heartbeat, daemon=True)
-            hb_thread.start()
-            
-            try:
-                tools_called, tool_results, extracted_text, think_block = processore.extract_and_execute_tools(raw_response, self.config, sm=self.state_manager)
-            finally:
-                stop_hb.set()
-                hb_thread.join(0.5)
-            
-            if think_block:
-                self._emit({"type": "think", "text": think_block}, level="think")
-            
-            # Telemetry sync
-            if self.state_manager:
+
+                # Perception: Vision Routing on turn 1
+                if images and iteration == 1:
+                    user_text, images = process_initial_vision(
+                        user_text, images, current_cfg, emit_callback=self._emit
+                    )
+
+                model_short = resolve_short_model_label(current_cfg)
+                llm_label = (
+                    tr("Elaborazione richiesta", "Analyzing request & generating response")
+                    if iteration == 1
+                    else tr(f"Sintesi risultati ed elaborazione (Step {iteration})", f"Synthesizing tool results (Step {iteration})")
+                )
+
+                llm_step = AgentTracer.start_step(
+                    kind="llm",
+                    label=llm_label,
+                    detail=model_short,
+                    icon="fa-brain",
+                    level="info",
+                    module_name="AI Brain",
+                )
+
                 try:
-                    from hecos.core.llm.client import LAST_PAYLOAD_INFO
-                    self.state_manager.last_model = LAST_PAYLOAD_INFO.get("model")
-                    self.state_manager.last_tokens_prompt = LAST_PAYLOAD_INFO.get("prompt_tokens", 0)
-                    self.state_manager.last_tokens_completion = LAST_PAYLOAD_INFO.get("completion_tokens", 0)
-                except Exception as e:
-                    logger.debug(f"[AGENT] Telemetry sync error: {e}")
-            
-            if not tools_called:
-                self._emit("Response formulated.", level="success")
-                
-                if not extracted_text or not extracted_text.strip():
-                    if tool_results:
-                        extracted_text = f"I have executed the requested actions: {', '.join([r.get('tag') for r in tool_results])}."
-                    elif think_block:
-                        extracted_text = "I've analyzed your request but couldn't formulate a final response. Please try rephrasing or using a different model."
-                    else:
-                        extracted_text = "I'm thinking, but I don't have a specific text response yet. How can I help further?"
-                
-                if "!!!BLOCK_SAFETY!!!" in str(extracted_text):
-                    if translator.get_translator().language == 'it':
-                        extracted_text = "Spiacente, questa richiesta è stata bloccata dai filtri di sicurezza del provider AI (Content Filter). Prova a riformulare con termini meno sensibili."
-                    else:
-                        extracted_text = "I'm sorry, but this request was blocked by the AI provider's safety filters (Content Filter). Please try rephrasing with less sensitive terms."
+                    raw_response = brain.generate_response(
+                        user_text,
+                        external_config=current_cfg,
+                        agent_context=agent_context,
+                        save_history=save_hist,
+                        images=images,
+                        user_id=self.current_user_id,
+                        session_id=self.session_id,
+                        sender_tab_id=self.sender_tab_id,
+                    )
+                except Exception as llm_exc:
+                    AgentTracer.finish_step(llm_step, status="error", result_preview=str(llm_exc))
+                    raise
+
+                AgentTracer.finish_step(llm_step, status="ok")
+
+                if self.state_manager and getattr(self.state_manager, "webui_stop_requested", False):
+                    self._finalize_and_store_trace(
+                        tr("Operazione interrotta dall'utente", "Operation aborted by user"),
+                        status="error",
+                    )
+                    break
+
+                # Extract and dispatch tools
+                tools_called, tool_results, extracted_text, think_block = processore.extract_and_execute_tools(
+                    raw_response, self.config, sm=self.state_manager
+                )
 
                 if think_block:
-                    extracted_text = f"<think>\n{think_block}\n</think>\n\n{extracted_text}"
+                    self._emit({"type": "think", "text": think_block}, level="think")
 
-                # Append UI images and rich media using the helper
-                extracted_text = MediaInterceptor.append_ui_media_to_text(extracted_text, accumulated_tool_results)
+                self._sync_telemetry()
 
-                if iteration > 1:
-                    from hecos.memory import brain_interface
-                    _clean_for_hist = re.sub(r'<think>[\s\S]*?</think>\s*', '', extracted_text, flags=re.IGNORECASE).strip()
-                    if '</think>' in _clean_for_hist:
-                        _clean_for_hist = _clean_for_hist.split('</think>', 1)[-1].strip()
-                    brain_interface.save_message("assistant", _clean_for_hist, config=self.config, user_id=self.current_user_id, session_id=self.session_id, sender_tab_id=self.sender_tab_id)
-                
-                video_response, clean_voice = processore.clean_final_output(extracted_text, accumulated_tool_results, raw_response, voice_status)
-                return video_response, clean_voice
-                
-            else:
+                # Case A: Plain text response (no further tools called)
+                if not tools_called:
+                    llm_step["result_preview"] = tr("Risposta formulata", "Response formulated")
+                    self._finalize_and_store_trace(tr("Risposta formulata", "Response formulated"), status="ok")
+
+                    video_response, clean_voice = finalize_response(
+                        extracted_text=extracted_text,
+                        accumulated_tool_results=accumulated_tool_results,
+                        raw_response=raw_response,
+                        voice_status=voice_status,
+                        think_block=think_block,
+                        missing_igen_detected=missing_igen_detected,
+                    )
+                    self._sync_assistant_history(video_response, think_block)
+                    return video_response, clean_voice
+
+                # Case B: Tools were triggered
+                called_tags = ", ".join(sorted({str(r.get("tag", "")) for r in tool_results if r.get("tag")}))
+                if called_tags:
+                    llm_step["result_preview"] = tr(f"Attivazione: {called_tags}", f"Triggered: {called_tags}")
+
                 if hasattr(raw_response, 'role'):
                     if hasattr(raw_response, 'model_dump'):
                         agent_context.append(raw_response.model_dump())
@@ -223,77 +259,75 @@ class AgentExecutor:
                 for res in tool_results:
                     if self.state_manager:
                         self.state_manager.last_tool = res.get("tag")
-                        
-                    self._emit(f"Tool execution result: {res.get('tag')}", level="tool")
+
                     output_text = res.get("output")
-                    
+
                     if MediaInterceptor.check_webcam_short_circuit(output_text):
-                        self._emit("Client camera request intercepted — forwarding directly to browser.", level="info")
-                        final_response = f"Sure! [CAMERA_SNAPSHOT_REQUEST] Please take the photo when prompted by your browser."
-                        video_response, clean_voice = processore.clean_final_output(final_response, tool_results, final_response, voice_status)
+                        self._finalize_and_store_trace(
+                            tr("Richiesta fotocamera inviata al browser", "Camera request forwarded to browser"),
+                            status="ok",
+                        )
+                        camera_resp = "Sure! [CAMERA_SNAPSHOT_REQUEST] Please take the photo when prompted by your browser."
+                        video_response, clean_voice = processore.clean_final_output(camera_resp, tool_results, camera_resp, voice_status)
                         return video_response, clean_voice
-                    
+
                     agent_context.append({
                         "role": "tool",
                         "tool_call_id": res.get("id"),
                         "name": res.get("tag"),
-                        "content": output_text
+                        "content": output_text,
                     })
-                    
+
                     images = MediaInterceptor.load_vision_images(output_text, images, self._emit)
                     images = MediaInterceptor.load_search_vision_images(output_text, images, self._emit)
-                    
-                # Short-circuit on successful image generation ONLY if:
-                # 1. All requested images in this turn have been completed.
-                # 2. Document generation is not still pending if requested by the user.
-                has_generated_img = any("[[IMG:" in str(r.get("output", "")) for r in accumulated_tool_results)
-                image_limit = getattr(self.state_manager, "requested_image_limit", 1) if self.state_manager else 1
-                images_done = getattr(self.state_manager, "total_images_in_turn", 0) if self.state_manager else 0
-                all_images_done = (images_done >= image_limit) if image_limit > 0 else True
-                
-                wants_doc = bool(re.search(r'\b(?:documento|documenti|doc|pdf|html|scheda|file)\b', user_text, re.IGNORECASE))
-                has_doc = any(
-                    r.get("tag") in ("DOCS", "DOCUMENT_MAKER", "DOCUMENT_READER") or 
-                    "PDF:" in str(r.get("output", "")) or "HTML:" in str(r.get("output", ""))
-                    for r in accumulated_tool_results
+
+                # Check early termination (e.g., image generated or search cards completed)
+                should_short, reason = eval_early_termination(
+                    user_text=user_text,
+                    accumulated_tool_results=accumulated_tool_results,
+                    extracted_text=extracted_text,
+                    state_manager=self.state_manager,
+                    images=images,
+                    iteration=iteration,
                 )
-                doc_satisfied = (not wants_doc) or has_doc
-
-                # Short-circuit on search completion if response is already formulated
-                has_search_card = any(
-                    r.get("tag") in ("NETSEARCH", "SLASH_COMMAND") or
-                    "[[HSEARCH:" in str(r.get("output", "")) or
-                    "[[HMEDIA:" in str(r.get("output", ""))
-                    for r in accumulated_tool_results
-                )
-                
-                has_pending_vision_review = bool(images and len(images) > 0 and iteration == 1 and has_search_card)
-
-                should_short_circuit = (
-                    (has_generated_img and all_images_done and doc_satisfied and extracted_text and len(extracted_text.strip()) > 10) or
-                    (has_search_card and not has_pending_vision_review and doc_satisfied and extracted_text and len(extracted_text.strip()) > 10)
-                )
-
-                if should_short_circuit:
-                    circuit_msg = "Search completed and response formulated." if has_search_card else "Image generated and response formulated."
-                    self._emit(circuit_msg, level="success")
-
-                    if think_block:
-                        extracted_text = f"<think>\n{think_block}\n</think>\n\n{extracted_text}"
-                    extracted_text = MediaInterceptor.append_ui_media_to_text(extracted_text, accumulated_tool_results)
-                    if iteration > 1:
-                        from hecos.memory import brain_interface
-                        _clean_for_hist = re.sub(r'<think>[\s\S]*?</think>\s*', '', extracted_text, flags=re.IGNORECASE).strip()
-                        if '</think>' in _clean_for_hist:
-                            _clean_for_hist = _clean_for_hist.split('</think>', 1)[-1].strip()
-                        brain_interface.save_message("assistant", _clean_for_hist, config=self.config, user_id=self.current_user_id, session_id=self.session_id, sender_tab_id=self.sender_tab_id)
-                    video_response, clean_voice = processore.clean_final_output(extracted_text, accumulated_tool_results, raw_response, voice_status)
+                if should_short:
+                    self._finalize_and_store_trace(reason, status="ok")
+                    video_response, clean_voice = finalize_response(
+                        extracted_text=extracted_text,
+                        accumulated_tool_results=accumulated_tool_results,
+                        raw_response=raw_response,
+                        voice_status=voice_status,
+                        think_block=think_block,
+                        missing_igen_detected=missing_igen_detected,
+                    )
+                    self._sync_assistant_history(video_response, think_block)
                     return video_response, clean_voice
 
-                self._emit("Analyzing tool results...", level="info")
-                
+                # Max iterations limit safeguard
                 if iteration == self.max_iterations:
-                    logger.warning(f"[AGENT] Maximum thought iterations ({self.max_iterations}) reached — returning best available response.")
-                    self._emit("Thought limit reached — returning response.", level="info")
-                    video_response, clean_voice = processore.clean_final_output(extracted_text, tool_results, raw_response, voice_status)
+                    logger.warning(
+                        f"[AGENT] Maximum thought iterations ({self.max_iterations}) reached — returning best available response."
+                    )
+                    self._finalize_and_store_trace(
+                        tr("Limite iterazioni raggiunto — invio risposta", "Iteration limit reached — returning response"),
+                        status="ok",
+                    )
+                    video_response, clean_voice = finalize_response(
+                        extracted_text=extracted_text,
+                        accumulated_tool_results=accumulated_tool_results,
+                        raw_response=raw_response,
+                        voice_status=voice_status,
+                        think_block=think_block,
+                        missing_igen_detected=missing_igen_detected,
+                    )
+                    self._sync_assistant_history(video_response, think_block)
                     return video_response, clean_voice
+
+        # Fallback if loop was interrupted without reaching return
+        video_response, clean_voice = finalize_response(
+            extracted_text=None,
+            accumulated_tool_results=accumulated_tool_results,
+            raw_response="",
+            voice_status=voice_status,
+        )
+        return video_response, clean_voice

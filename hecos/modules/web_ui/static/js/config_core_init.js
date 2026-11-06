@@ -122,6 +122,9 @@ async function initAll(attempt = 1) {
                 if (data && data.config) {
                     audioConfig = data.config;
                     window.audioConfig = data.config;
+                    if ((_panelCache['voice'] || _panelCache['audio']) && typeof populateAudioUI === 'function') {
+                        populateAudioUI();
+                    }
                 }
             })
             .catch(() => {});

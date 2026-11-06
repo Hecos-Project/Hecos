@@ -10,15 +10,17 @@
     background: rgba(0,0,0,0.45);
     z-index: 2000;
     backdrop-filter: blur(2px);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 }
 
 #soul-forge-panel, #session-overrides-panel {
-    display: flex;
+    display: none;
     flex-direction: column;
     position: fixed;
-    top: -100%;
+    top: -150vh;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, -150%);
     width: 92%;
     max-width: 720px;
     max-height: 88vh;
@@ -27,13 +29,21 @@
     border-radius: 0 0 12px 12px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.55);
     z-index: 2001;
-    transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease;
     overflow: hidden;
     font-family: 'Inter', sans-serif;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
 #soul-forge-panel.open, #session-overrides-panel.open {
+    display: flex !important;
     top: 0;
+    transform: translateX(-50%);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 .sf-header {
@@ -45,16 +55,29 @@
     border-bottom: 1px solid var(--border);
     font-weight: 600;
     font-size: 14px;
+    flex-shrink: 0;
 }
 
 .sf-close-btn {
-    background: none;
-    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     color: var(--text-muted);
     cursor: pointer;
-    font-size: 16px;
+    font-size: 15px;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
 }
-.sf-close-btn:hover { color: var(--red); }
+.sf-close-btn:hover {
+    color: #fff;
+    background: rgba(239, 68, 68, 0.35);
+    border-color: rgba(239, 68, 68, 0.6);
+}
 
 .sf-draft-badge {
     font-size: 11px;
@@ -79,6 +102,9 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+    flex: 1 1 auto;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
 }
 
 .sf-section {
@@ -86,6 +112,7 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 13px 15px;
+    flex-shrink: 0;
 }
 
 .sf-active-soul {
@@ -144,6 +171,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
 }
 
 .sf-drawer-toggle {
@@ -255,6 +283,26 @@
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.sf-footer-close-btn {
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: var(--text);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+.sf-footer-close-btn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: var(--accent1, #00d2ff);
 }
 
 /* ── Quick Test Lab ── */
@@ -430,4 +478,100 @@
 .sf-switch input:checked + .sf-slider:before {
     transform: translateX(18px);
     background-color: #ffffff;
+}
+
+/* ── Mobile Adaptation (<= 768px) ────────────────────────────────── */
+@media (max-width: 768px) {
+    #soul-forge-panel, #session-overrides-panel {
+        left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 92vh !important;
+        max-height: 92dvh !important;
+        border-radius: 0 0 14px 14px !important;
+        border-left: none !important;
+        border-right: none !important;
+        z-index: 3000 !important;
+        transform: translateY(-150%) !important;
+    }
+
+    #soul-forge-panel.open, #session-overrides-panel.open {
+        top: 0 !important;
+        transform: translateY(0) !important;
+    }
+
+    #soul-forge-overlay, #session-overrides-overlay {
+        z-index: 2999 !important;
+    }
+
+    .sf-header {
+        padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px 14px !important;
+        font-size: 13px !important;
+    }
+
+    #sf-panel-title {
+        font-size: 13px !important;
+        max-width: 165px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .sf-close-btn {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 17px !important;
+        border-radius: 50% !important;
+        background: rgba(255, 255, 255, 0.12) !important;
+        border: 1px solid rgba(255, 255, 255, 0.22) !important;
+        color: var(--text) !important;
+    }
+
+    .sf-body {
+        padding: 12px 14px !important;
+        gap: 10px !important;
+    }
+
+    .sf-section {
+        padding: 10px 12px !important;
+    }
+
+    .sf-controls-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    .sf-promotion-bar {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+    }
+
+    .sf-promo-btn {
+        min-width: 0 !important;
+        width: 100% !important;
+        padding: 6px 8px !important;
+        font-size: 11px !important;
+    }
+
+    .sf-sliders-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+
+    .sf-footer {
+        padding: 10px 14px !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .sf-footer-close-btn {
+        padding: 6px 16px !important;
+        font-size: 12.5px !important;
+        background: rgba(239, 68, 68, 0.2) !important;
+        border-color: rgba(239, 68, 68, 0.45) !important;
+        color: #fca5a5 !important;
+        margin-left: auto !important;
+        flex-shrink: 0 !important;
+    }
 }

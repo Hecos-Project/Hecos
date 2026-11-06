@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Hecos Presenter — Full Featured Extension JS (Core Module)
  * ─────────────────────────────────────────────────────────────────────
  * Unified notification system: toast, briefing, live commentary, feed.
@@ -103,58 +103,13 @@
         if (overlay) overlay.classList.remove('active');
     }
 
-    // ── Session Feed Cache ───────────────────────────────────────────
+    // ── Session Feed Cache (Delegated to UI) ──────────────────────────
     function _saveCurrentSessionFeed(targetSid) {
-        const sid = targetSid || STATE.currentSessionId || localStorage.getItem('hecos_active_session_id') || 'global';
-        if (!sid) return;
-        const emb = UI.getEmbedded();
-        if (!emb) return;
-        const msgEl = emb.querySelector('.hbs-presenter-body');
-        if (!msgEl) return;
-        
-        STATE.sessionFeeds = STATE.sessionFeeds || {};
-        const feedData = {
-            html: msgEl.innerHTML,
-            history: [...STATE.feedHistory],
-            timestamp: Date.now()
-        };
-        STATE.sessionFeeds[sid] = feedData;
-        try {
-            sessionStorage.setItem('hecos_pfeed_' + sid, JSON.stringify(feedData));
-        } catch (e) {}
+        if (UI && UI.saveCurrentSessionFeed) UI.saveCurrentSessionFeed(targetSid);
     }
 
     function _restoreSessionFeed(sid) {
-        if (!sid) return false;
-        const emb = UI.getEmbedded();
-        if (!emb) return false;
-        const msgEl = emb.querySelector('.hbs-presenter-body');
-        if (!msgEl) return false;
-
-        let feedData = STATE.sessionFeeds && STATE.sessionFeeds[sid];
-        if (!feedData || !feedData.html) {
-            try {
-                const raw = sessionStorage.getItem('hecos_pfeed_' + sid);
-                if (raw) {
-                    feedData = JSON.parse(raw);
-                    STATE.sessionFeeds = STATE.sessionFeeds || {};
-                    STATE.sessionFeeds[sid] = feedData;
-                }
-            } catch (e) {}
-        }
-
-        if (feedData && typeof feedData.html === 'string' && feedData.html.trim().length > 0) {
-            msgEl.innerHTML = feedData.html;
-            STATE.feedHistory = Array.isArray(feedData.history) ? [...feedData.history] : [];
-            msgEl.scrollTop = msgEl.scrollHeight;
-            if (window.HBSPresenterStats && typeof window.HBSPresenterStats.syncFromDOM === 'function') {
-                window.HBSPresenterStats.syncFromDOM();
-            } else if (window.HBSPresenterStatsUI && typeof window.HBSPresenterStatsUI.render === 'function') {
-                window.HBSPresenterStatsUI.render();
-            }
-            return true;
-        }
-        return false;
+        return (UI && UI.restoreSessionFeed) ? UI.restoreSessionFeed(sid) : false;
     }
 
     // ── Feed ─────────────────────────────────────────────────────────
@@ -418,15 +373,21 @@
             STATE.displayMode = mode;
             const emb = UI.getEmbedded();
             const ov = UI.getOverlay();
+            const isNetSearch = (window.location && window.location.pathname.includes('/netsearch')) || (emb && emb.classList.contains('netsearch-presenter-embedded'));
+            const storageKey = isNetSearch ? 'hecos_netsearch_presenter_collapsed' : 'hecos_chat_presenter_collapsed';
+            const stored = localStorage.getItem(storageKey);
+            const shouldCollapse = stored !== null ? (stored === 'true') : (window.innerWidth <= 768);
 
             if (mode === 'embedded') {
-                if (emb) { emb.classList.remove('collapsed'); }
+                if (emb) {
+                    emb.classList.toggle('collapsed', shouldCollapse);
+                    if (UI && typeof UI.updatePowerUI === 'function') UI.updatePowerUI(!shouldCollapse);
+                }
                 if (ov) ov.classList.remove('active');
             } else if (mode === 'collapsed') {
                 if (emb) {
                     emb.classList.add('collapsed');
-                    const icon = emb.querySelector('#hbs-presenter-toggle i');
-                    if (icon) { icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down'); }
+                    if (UI && typeof UI.updatePowerUI === 'function') UI.updatePowerUI(false);
                 }
                 if (ov) ov.classList.remove('active');
             } else if (mode === 'overlay') {
@@ -500,87 +461,28 @@
             }
         },
 
-        toggleAdvanced: function() {
-            const panel = document.getElementById('hbs-presenter-advanced');
-            const btn = document.getElementById('hbs-presenter-advanced-toggle');
-            if (!panel) return;
-            const isOpen = panel.style.display !== 'none';
-            panel.style.display = isOpen ? 'none' : 'block';
-            if (btn) {
-                btn.style.background = isOpen ? 'rgba(255,255,255,0.07)' : 'rgba(102,252,241,0.12)';
-                btn.style.borderColor = isOpen ? 'rgba(255,255,255,0.1)' : 'rgba(102,252,241,0.3)';
-                btn.style.color = isOpen ? 'var(--muted)' : 'var(--accent, #66fcf1)';
+        toggleAdvanced: function(panel, btn) {
+            if (UI && UI.toggleAdvanced) {
+                const p = panel || document.getElementById('hbs-presenter-advanced');
+                const b = btn || document.getElementById('hbs-presenter-advanced-toggle');
+                UI.toggleAdvanced(p, b);
             }
         },
 
         toggleFilter: function(type, btn) {
-            const isHidden = STATE.presenterHiddenTypes.has(type);
-            if (isHidden) {
-                STATE.presenterHiddenTypes.delete(type);
-                if (btn) { btn.style.opacity = '1'; btn.style.textDecoration = 'none'; }
-            } else {
-                STATE.presenterHiddenTypes.add(type);
-                if (btn) { btn.style.opacity = '0.35'; btn.style.textDecoration = 'line-through'; }
-            }
-            UI.applyFilters();
+            if (UI && UI.toggleFilter) UI.toggleFilter(type, btn);
         },
 
         resetFilters: function() {
-            STATE.presenterHiddenTypes.clear();
-            STATE.presenterSearchQuery = '';
-            const searchInput = document.getElementById('hbs-presenter-search');
-            if (searchInput) searchInput.value = '';
-            document.querySelectorAll('[data-filter-type]').forEach(btn => {
-                btn.style.opacity = '1';
-                btn.style.textDecoration = 'none';
-            });
-            // Reset All button state
-            const allBtn = document.getElementById('hbs-presenter-filter-all');
-            if (allBtn) {
-                allBtn.style.background = 'rgba(255,255,255,0.12)';
-                allBtn.style.color = 'var(--text)';
-                allBtn.innerHTML = '<i class="fas fa-eye" style="font-size:9px;"></i> All';
-                allBtn._allHidden = false;
-            }
-            UI.applyFilters();
+            if (UI && UI.resetFilters) UI.resetFilters();
         },
 
         toggleAllFilters: function(btn) {
-            const allHidden = btn._allHidden;
-            const isNetSearch = (window.location && window.location.pathname.includes('/netsearch')) || (UI.getEmbedded() && UI.getEmbedded().classList.contains('netsearch-presenter-embedded'));
-            const allTypes = isNetSearch
-                ? ['search_milestone', 'search_commentary']
-                : Object.keys(STATE.TYPE_META).filter(k => k !== 'default' && !['search_milestone', 'search_commentary'].includes(k));
-            
-            if (allHidden) {
-                // Show all: clear hidden types
-                STATE.presenterHiddenTypes.clear();
-                document.querySelectorAll('[data-filter-type]').forEach(chip => {
-                    chip.style.opacity = '1';
-                    chip.style.textDecoration = 'none';
-                });
-                btn.style.background = 'rgba(255,255,255,0.12)';
-                btn.style.color = 'var(--text)';
-                btn.innerHTML = '<i class="fas fa-eye" style="font-size:9px;"></i> All';
-                btn._allHidden = false;
-            } else {
-                // Hide all: add all types to hidden
-                allTypes.forEach(t => STATE.presenterHiddenTypes.add(t));
-                document.querySelectorAll('[data-filter-type]').forEach(chip => {
-                    chip.style.opacity = '0.35';
-                    chip.style.textDecoration = 'line-through';
-                });
-                btn.style.background = 'rgba(239,68,68,0.15)';
-                btn.style.color = '#ef4444';
-                btn.innerHTML = '<i class="fas fa-eye-slash" style="font-size:9px;"></i> All';
-                btn._allHidden = true;
-            }
-            UI.applyFilters();
+            if (UI && UI.toggleAllFilters) UI.toggleAllFilters(btn);
         },
 
         setSearch: function(query) {
-            STATE.presenterSearchQuery = (query || '').trim();
-            UI.applyFilters();
+            if (UI && UI.setSearch) UI.setSearch(query);
         },
 
         briefing: _briefing,
@@ -608,155 +510,15 @@
         },
 
         loadSessionFeed: function(sessionId, isNewSession = false) {
-            if (!sessionId) return;
-
-            // 1. Save outgoing session's feed before switching
-            const prevSid = STATE.currentSessionId;
-            if (prevSid && prevSid !== sessionId) {
-                _saveCurrentSessionFeed(prevSid);
+            if (UI && UI.loadSessionFeed) {
+                UI.loadSessionFeed(sessionId, isNewSession);
             }
-            STATE.currentSessionId = sessionId;
-            localStorage.setItem('hecos_active_session_id', sessionId);
-
-            // 2. New chat session creation: boot ONCE only
-            if (isNewSession) {
-                if (STATE.sessionBooted && STATE.sessionBooted[sessionId]) {
-                    console.debug('[Presenter] Session already booted, ignoring duplicate boot:', sessionId);
-                    return;
-                }
-                STATE.sessionBooted = STATE.sessionBooted || {};
-                STATE.sessionBooted[sessionId] = true;
-                STATE.appBooted = true;
-
-                Presenter.clear();
-                _notify({
-                    type: 'system_info',
-                    text: 'Presenter core online.',
-                    duration: 4000,
-                    persist: false
-                });
-                setTimeout(() => Presenter.briefing(), 400);
-                setTimeout(() => Presenter.logShortcuts(), 3500);
-                setTimeout(() => _updatePlaybookStatus(true), 1200);
-                return;
-            }
-
-            // 3. Switching to an EXISTING session (isNewSession === false):
-            // Boot sequence is NEVER triggered on tab switch
-            STATE.sessionBooted = STATE.sessionBooted || {};
-            STATE.sessionBooted[sessionId] = true;
-
-            // Fast restore from memory / sessionStorage cache
-            const restored = _restoreSessionFeed(sessionId);
-            if (restored) {
-                UI.applyFilters();
-                _updatePlaybookStatus(false);
-                return;
-            }
-
-            // Not yet in cache: fetch from disk
-            const chatParam = `&chat_id=${encodeURIComponent(sessionId)}`;
-            fetch(`/api/ext/presenter/feed?limit=30${chatParam}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (STATE.currentSessionId !== sessionId) return;
-
-                    Presenter.clear();
-                    const isNetSearch = (window.location && window.location.pathname.includes('/netsearch')) || (UI.getEmbedded() && UI.getEmbedded().classList.contains('netsearch-presenter-embedded'));
-                    const hasEntries = data.ok && Array.isArray(data.entries) && data.entries.length > 0;
-                    let renderedCount = 0;
-                    if (hasEntries) {
-                        data.entries.forEach(entry => {
-                            const entryType = entry.event_name || 'system_info';
-                            const entryText = entry.text || '';
-                            if (isNetSearch) {
-                                const isSearch = entryType.startsWith('search_') || entryText.includes('[NetSearch]');
-                                if (!isSearch) return; // Skip non-search entries in NetSearch
-                            }
-                            if (entryText) {
-                                renderedCount++;
-                                _notify({
-                                    type: entryType === 'presenter_feed' ? 'system_info' : entryType,
-                                    text: entryText,
-                                    title: 'Presenter',
-                                    duration: 0,
-                                    persist: true,
-                                    timestamp: entry.timestamp
-                                });
-                            }
-                        });
-                    }
-                    // After feed replay, ensure the stats sub-bar reflects all accumulated counts.
-                    if (window.HBSPresenterStats && typeof window.HBSPresenterStats.syncFromDOM === 'function') {
-                        window.HBSPresenterStats.syncFromDOM();
-                    } else if (window.HBSPresenterStatsUI && typeof window.HBSPresenterStatsUI.render === 'function') {
-                        window.HBSPresenterStatsUI.render();
-                    }
-                    if (isNetSearch && renderedCount === 0) {
-                        const emb = UI.getEmbedded();
-                        const msgEl = emb ? emb.querySelector('.hbs-presenter-body') : null;
-                        if (msgEl) {
-                            msgEl.innerHTML = '<div class="hbs-presenter-empty-search" style="color:var(--muted);font-size:11px;font-style:italic;padding:14px 6px;text-align:center;opacity:0.7;"><i class="fas fa-satellite-dish" style="margin-right:6px;"></i>Waiting for search events &amp; live commentary...</div>';
-                        }
-                    } else if (!isNetSearch && !hasEntries) {
-                        _updatePlaybookStatus(true);
-                    }
-                    _saveCurrentSessionFeed(sessionId);
-                    UI.applyFilters();
-                })
-                .catch(err => {
-                    console.debug('[Presenter] loadSessionFeed error:', err);
-                    _updatePlaybookStatus(false);
-                });
         },
 
         resetFeed: function(e) {
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
+            if (UI && UI.resetFeed) {
+                UI.resetFeed(e);
             }
-            
-            // Visual feedback on the reset button icon
-            const btn = document.getElementById('hbs-presenter-reset-btn');
-            const icon = btn ? btn.querySelector('i') : null;
-            if (icon) {
-                icon.classList.add('fa-spin');
-                setTimeout(() => icon.classList.remove('fa-spin'), 1000);
-            }
-
-            const sid = STATE.currentSessionId || localStorage.getItem('hecos_active_session_id') || 'global';
-            
-            // Clear current session memory and sessionStorage cache
-            if (STATE.sessionFeeds && sid) {
-                delete STATE.sessionFeeds[sid];
-            }
-            try {
-                sessionStorage.removeItem('hecos_pfeed_' + sid);
-            } catch (err) {}
-
-            STATE.sessionBooted = STATE.sessionBooted || {};
-            STATE.sessionBooted[sid] = true;
-            STATE.appBooted = true;
-            window._briefingInProgress = false;
-
-            // Clear panel DOM
-            Presenter.clear();
-
-            if (isNetSearch) {
-                Presenter.loadSessionFeed('global', false);
-                return;
-            }
-
-            // Run fresh boot sequence and announcements in chat
-            _notify({
-                type: 'system_info',
-                text: 'Presenter core reloaded.',
-                duration: 4000,
-                persist: false
-            });
-            setTimeout(() => Presenter.briefing(), 400);
-            setTimeout(() => Presenter.logShortcuts(), 3500);
-            setTimeout(() => _updatePlaybookStatus(true), 1200);
         },
         _renderDisabledState: UI.renderDisabledState
     };
@@ -837,7 +599,8 @@
         STATE.appBooted = true;
 
         const storageKey = isNetSearch ? 'hecos_netsearch_presenter_collapsed' : 'hecos_chat_presenter_collapsed';
-        const isSavedCollapsed = localStorage.getItem(storageKey) === 'true';
+        const storedCollapsed = localStorage.getItem(storageKey);
+        const isSavedCollapsed = storedCollapsed !== null ? (storedCollapsed === 'true') : (window.innerWidth <= 768);
         const embInit = UI.getEmbedded();
         if (embInit) {
             if (isSavedCollapsed) {

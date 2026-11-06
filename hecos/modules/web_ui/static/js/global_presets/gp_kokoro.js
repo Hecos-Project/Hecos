@@ -4,6 +4,8 @@ window.sfApplyKokoroPreset = function(presetName) {
     if (!presetName || !window.sfState.kokoroPresets || !window.sfState.kokoroPresets[presetName]) {
         const infSel = document.getElementById('sf-kokoro-inference-preset-select');
         if (infSel) infSel.value = "";
+        const blendSel = document.getElementById('sf-kokoro-blend-voice');
+        if (blendSel) blendSel.value = "";
         if (window.sfUpdateCloneState) window.sfUpdateCloneState();
         window.sfDirty();
         return;
@@ -20,6 +22,23 @@ window.sfApplyKokoroPreset = function(presetName) {
             }
         }
     };
+
+    if (p.voice) {
+        const vSel = document.getElementById('sf-tts-voice-select');
+        if (vSel) {
+            vSel.dataset.prevRealVoice = p.voice;
+        }
+    }
+    const blendSel = document.getElementById('sf-kokoro-blend-voice');
+    if (blendSel) {
+        if (p.blend_voice && !Array.from(blendSel.options).some(o => o.value === p.blend_voice)) {
+            const opt = document.createElement('option');
+            opt.value = p.blend_voice;
+            opt.textContent = `🎭 ${p.blend_voice} (Custom Cloned)`;
+            blendSel.appendChild(opt);
+        }
+        blendSel.value = p.blend_voice || "";
+    }
 
     setVal('sf-kokoro-speed', p.speed ?? 0.95);
     setVal('sf-kokoro-silence', p.sentence_silence ?? 0.15);

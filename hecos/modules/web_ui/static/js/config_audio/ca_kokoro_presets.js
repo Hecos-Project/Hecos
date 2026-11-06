@@ -177,6 +177,7 @@
             const cfg = _getAudioConfig();
             if (cfg.kokoro_presets && cfg.kokoro_presets[name]) {
                 delete cfg.kokoro_presets[name];
+                cfg._allow_empty_presets = true;
                 if (!cfg.kokoro) cfg.kokoro = {};
                 cfg.kokoro.current_preset = 'default';
                 const sel = document.getElementById('v-kokoro-preset');

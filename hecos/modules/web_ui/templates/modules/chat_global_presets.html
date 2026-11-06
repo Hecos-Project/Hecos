@@ -1,6 +1,6 @@
 <!-- ⚡ SOUL FORGE: Unified Quick Config & Chat Draft Panel -->
 <div id="soul-forge-overlay" onclick="window.sfTogglePanel(false)"></div>
-<div id="soul-forge-panel">
+<div id="soul-forge-panel" style="display: none;">
     <div class="sf-header">
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <i class="fas fa-sliders-h" style="color: var(--accent1);"></i>
@@ -432,12 +432,12 @@
                         </div>
                         <div class="sf-slider-item">
                             <label>Voice Weight (Alpha) <span id="sf-val-kokoro-alpha">1.0</span></label>
-                            <input type="range" id="sf-kokoro-alpha" min="0.0" max="1.0" step="0.05" value="1.0"
+                            <input type="range" id="sf-kokoro-alpha" min="0.0" max="1.5" step="0.05" value="1.0"
                                 oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-alpha'); window.sfDirty()">
                         </div>
                         <div class="sf-slider-item">
                             <label>Blend Weight (Beta) <span id="sf-val-kokoro-beta">1.0</span></label>
-                            <input type="range" id="sf-kokoro-beta" min="0.0" max="1.0" step="0.05" value="1.0"
+                            <input type="range" id="sf-kokoro-beta" min="0.0" max="1.5" step="0.05" value="1.0"
                                 oninput="window.sfUpdateSliderVal(this, 'sf-val-kokoro-beta'); window.sfDirty()">
                         </div>
                         <div class="sf-slider-item">
@@ -573,8 +573,13 @@
     </div>
 
     <div class="sf-footer">
-        <span id="sf-status-msg" style="color:var(--text-muted); font-size:12px;"></span>
-        <span style="font-size:11px; color:var(--text-muted);">F3 to toggle · Esc keeps modifications in current chat</span>
+        <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+            <span id="sf-status-msg" style="color:var(--text-muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+            <span class="desktop-only" style="font-size:11px; color:var(--text-muted);">F3 to toggle · Esc keeps modifications in current chat</span>
+        </div>
+        <button type="button" class="sf-footer-close-btn" onclick="window.sfTogglePanel(false)" title="Close panel">
+            <i class="fas fa-times"></i> Close
+        </button>
     </div>
 </div>
 

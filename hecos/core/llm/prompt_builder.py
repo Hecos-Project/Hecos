@@ -15,6 +15,26 @@ REGISTRY_PATH = os.path.join(_HECOS_DIR, "core", "registry.json")
 PERSONAS_DIR = os.path.join(_HECOS_DIR, "personas")
 CORE_DIR = os.path.join(_HECOS_DIR, "core")
 
+
+def _is_image_gen_plugin_active() -> bool:
+    """Returns True if the IMAGE_GEN plugin is currently installed and active."""
+    try:
+        from hecos.core.system.module_loader import get_active_tags
+        active_tags = [t.upper() for t in (get_active_tags() or [])]
+        if "IMAGE_GEN" in active_tags:
+            return True
+    except Exception:
+        pass
+    try:
+        if os.path.exists(REGISTRY_PATH):
+            with open(REGISTRY_PATH, "r", encoding="utf-8") as f:
+                db = json.load(f) or {}
+            return "IMAGE_GEN" in {k.upper() for k in db.keys()}
+    except Exception:
+        pass
+    return False
+
+
 class PromptBuilder:
     """
     Handles the assembly of the monolithic system prompt, injecting memory, RAG, 
@@ -273,11 +293,17 @@ class PromptBuilder:
                         v_desc = ", ".join(parts) if parts else f"{anatomy.get('sex', 'Person')}, {anatomy.get('body_type', 'average')} body"
                     
                     if v_desc:
-                        visual_identity_block = (
-                            "\n### YOUR PHYSICAL ASPECT / VISUAL IDENTITY ###\n"
-                            f"When asked to describe yourself or when you generate an image of yourself, always use these visual traits: {v_desc}. "
-                            "If you call the image generation tool to produce a photo of you, use this detailed description as the base for the prompt.\n"
-                        )
+                        if _is_image_gen_plugin_active():
+                            visual_identity_block = (
+                                "\n### YOUR PHYSICAL ASPECT / VISUAL IDENTITY ###\n"
+                                f"When asked to describe yourself or when you generate an image of yourself, always use these visual traits: {v_desc}. "
+                                "If you call the image generation tool to produce a photo of you, use this detailed description as the base for the prompt.\n"
+                            )
+                        else:
+                            visual_identity_block = (
+                                "\n### YOUR PHYSICAL ASPECT / VISUAL IDENTITY ###\n"
+                                f"When asked to describe yourself in words, always use these visual traits: {v_desc}.\n"
+                            )
             except Exception as e:
                 logger.error(f"PromptBuilder: Personality reading error: {e}")
                 display_name = personality_name.replace(".yaml", "").replace("_", " ").title()
@@ -437,6 +463,33 @@ class PromptBuilder:
             "- Accompany the search execution with a concise, helpful response in character.\n"
         )
 
+        is_image_gen_active = _is_image_gen_plugin_active()
+        if is_image_gen_active:
+            image_gen_protocol_block = (
+                "\n### IMAGE GENERATION PROTOCOL ###\n"
+                "When the user asks you to generate, create, draw, or show an image or photo of ANYTHING:\n"
+                "CRITICAL ANTI-REFUSAL: NEVER claim you cannot generate images. You ARE equipped with a visual generator module! If asked for an image, YOU MUST generate it using the /img command.\n"
+                "CRITICAL IMAGE COUNT RULE: Generate ONLY ONE image (EXACTLY ONE /img line) per response. NEVER output multiple /img commands or generate multiple images in the same turn unless the user explicitly requested a specific number (e.g. 'fanne 2', 'crea 3 immagini'). If the user asks for 'a photo', 'foto tua', 'una foto', 'show me', etc., you MUST generate EXACTLY 1 image.\n"
+                "FORMAT: Output the command on its own separate line in this format:\n"
+                "  /img YOUR_VISUAL_DESCRIPTION_HERE_IN_ENGLISH\n"
+                "DIALOGUE & ROLEPLAY: You CAN and SHOULD include your normal conversational or roleplay dialogue and actions in the same response, placing the /img command on its own separate line.\n"
+                "DO NOT REPEAT: If an image has already been produced or if you see [[IMG:...]] in the recent conversation context, DO NOT emit /img again for the same request.\n"
+                "CRITICAL ERROR HANDLING: If the IMAGE_GEN tool returns a [SYSTEM: FATAL_BACKEND_ERROR] or [[IGEN_ALERT]], DO NOT retry /img in the same turn and DO NOT invent roleplay excuses (like 'my camera is broken'); directly explain the technical backend status (e.g. SwarmUI not running or not installed) to the user.\n"
+                "WRONG (FORBIDDEN): Emitting multiple /img commands when only one photo was asked.\n"
+                "WRONG (FORBIDDEN): /img [descrizione tra parentesi]\n"
+                "CORRECT: /img photorealistic portrait of a female cyborg with black hair and brown eyes, athletic build\n"
+                "The /img command is the ONLY way to generate images. IMAGE_GEN is active: USE IT.\n"
+            )
+        else:
+            image_gen_protocol_block = (
+                "\n### IMAGE GENERATION PROTOCOL (PLUGIN NOT INSTALLED) ###\n"
+                "CRITICAL SYSTEM STATUS: The `image_gen` (Image Generation) package is currently NOT installed or NOT active in Hecos.\n"
+                "If the user asks you to generate, create, draw, take, or show a photo/image/selfie/illustration (and they are NOT asking for a web search via NETSEARCH):\n"
+                "1. DO NOT output `/img` or `[IMAGE_GEN: ...]` because the plugin is not installed.\n"
+                "2. DO NOT beat around the bush, DO NOT pretend you sent a photo, and DO NOT invent vague excuses (like 'my camera is broken' or 'I cannot show photos').\n"
+                "3. Clearly and directly inform the user (while keeping your friendly tone) that you cannot generate images right now because the **Image Generation (`image_gen`)** plugin is not installed, and tell them they can install it from the **Hecos Package Manager (Store / HPM)**.\n"
+            )
+
         plugin_guidelines = (
             "\n### PLUGIN GUIDELINES ###\n"
             "- PRIORITY: Always respond with TEXT first. Only use a tool if the user explicitly asks for an action.\n"
@@ -448,18 +501,12 @@ class PromptBuilder:
             "- [DASHBOARD: resources] - Get hardware telemetry\n"
             "- [NETSEARCH: web_search(query=\"...\")] - Real-time web search\n"
             "- MEDIA PLAYBACK: When the user asks to 'play', 'open', 'riproduce', 'manda in play', or 'avvia' a video or audio file, ALWAYS use EXECUTOR__open_media_file(file_path) with the EXACT absolute path. NEVER use execute_shell_command for media playback.\n"
-            "\n### IMAGE GENERATION PROTOCOL ###\n"
-            "When the user asks you to generate, create, draw, or show an image or photo of ANYTHING:\n"
-            "CRITICAL ANTI-REFUSAL: NEVER claim you cannot generate images. You ARE equipped with a visual generator module! If asked for an image, YOU MUST generate it using the /img command.\n"
-            "CRITICAL IMAGE COUNT RULE: Generate ONLY ONE image (EXACTLY ONE /img line) per response. NEVER output multiple /img commands or generate multiple images in the same turn unless the user explicitly requested a specific number (e.g. 'fanne 2', 'crea 3 immagini'). If the user asks for 'a photo', 'foto tua', 'una foto', 'show me', etc., you MUST generate EXACTLY 1 image.\n"
-            "FORMAT: Output the command on its own separate line in this format:\n"
-            "  /img YOUR_VISUAL_DESCRIPTION_HERE_IN_ENGLISH\n"
-            "DIALOGUE & ROLEPLAY: You CAN and SHOULD include your normal conversational or roleplay dialogue and actions in the same response, placing the /img command on its own separate line.\n"
-            "DO NOT REPEAT: If an image has already been produced or if you see [[IMG:...]] in the recent conversation context, DO NOT emit /img again for the same request.\n"
-            "WRONG (FORBIDDEN): Emitting multiple /img commands when only one photo was asked.\n"
-            "WRONG (FORBIDDEN): /img [descrizione tra parentesi]\n"
-            "CORRECT: /img photorealistic portrait of a female cyborg with black hair and brown eyes, athletic build\n"
-            "The /img command is the ONLY way to generate images. If IMAGE_GEN is listed in ACTIVE PROTOCOLS, you HAVE this ability. USE IT.\n"
+            f"{image_gen_protocol_block}"
+            "\n### DOCUMENT GENERATION PROTOCOL (DOCS) ###\n"
+            "When the user asks you to create or generate a PDF, HTML document, report, scheda, magazine, or fotoromanzo:\n"
+            "- NEVER invent or hallucinate fake links like `/api/documents/...` in text without calling the DOCS tool!\n"
+            "- Call `DOCS__generate_pdf` (via native tool calling) OR emit `/DOCS__generate_pdf {\"html_content\": \"...\", \"filename\": \"...\"}` on its own line (when native tools are unavailable).\n"
+            "- Once DOCS executes, Hecos automatically attaches the interactive HTML & PDF preview cards with Open, Download, Zoom, and Visual Editor buttons.\n"
         )
         
         media_formatting_rules = (
@@ -488,9 +535,6 @@ class PromptBuilder:
         use_global_safe = ai_cfg.get('use_global_safety_instructions', True)
         
         global_safe = ai_cfg.get('safety_instructions', '').strip() if use_global_safe else ""
-        # For safety we might not have a 'custom_safety_instructions', the user only asked for one override box "custom_instructions".
-        # If they meant custom safety too, we could add it. But they asked for "an override personalized... and choose if we want to use the general ones".
-        # I'll just use the global safety if toggled on.
         safety_instructions_block = f"\n### SAFETY & CONTEXT DISCLAIMER ###\n{global_safe}\n" if global_safe and enable_safety else ""
         
         # Context Notes
@@ -518,14 +562,23 @@ class PromptBuilder:
         local_model_rules = ""
         effective_backend_type = backend_config.get("backend_type", "cloud") if backend_config else "cloud"
         if effective_backend_type in ("ollama", "kobold", "local", "llama_cpp"):
-            local_model_rules = (
-                "3. TOOL CALLING (CRITICAL): You have access to tools via native function calling. "
-                "When the user requests an action (generate image, take photo, play music, search web, etc.), "
-                "you MUST invoke the corresponding tool. NEVER just describe or narrate the action in text. "
-                "If you write 'here is your photo' without calling generate_image, you have FAILED.\n"
-                "4. REASONING: If you need to think or plan your actions, use <think> tags. "
-                "Do NOT output your thought process as part of the conversational response text.\n"
-            )
+            if is_image_gen_active:
+                local_model_rules = (
+                    "3. TOOL CALLING (CRITICAL): You have access to tools via native function calling. "
+                    "When the user requests an action (generate image, take photo, play music, search web, etc.), "
+                    "you MUST invoke the corresponding tool. NEVER just describe or narrate the action in text. "
+                    "If you write 'here is your photo' without calling generate_image, you have FAILED.\n"
+                    "4. REASONING: If you need to think or plan your actions, use <think> tags. "
+                    "Do NOT output your thought process as part of the conversational response text.\n"
+                )
+            else:
+                local_model_rules = (
+                    "3. TOOL CALLING (CRITICAL): You have access to active tools via native function calling. "
+                    "Note that `image_gen` is NOT installed, so if the user asks for an AI-generated image/photo, "
+                    "do NOT pretend to generate one — inform the user that the `image_gen` plugin is not installed.\n"
+                    "4. REASONING: If you need to think or plan your actions, use <think> tags. "
+                    "Do NOT output your thought process as part of the conversational response text.\n"
+                )
 
         return {
             "identity_rules": identity_rules,

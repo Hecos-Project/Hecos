@@ -24,21 +24,22 @@
 <noscript>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 </noscript>
-<link rel="stylesheet" href="/assets/css/mobile/responsive.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/mobile/responsive.css?v={{ version }}&t=20261106_mob_v1">
 <!-- WEB_UI Sidebar Widget Extensions -->
 <!-- WEB_UI Emoticons Extension -->
 <link rel="stylesheet" href="/ext/emoticons/static/css/emoticons.css?v={{ version }}">
 <!-- WEB_UI HBS & Presenter Extensions -->
 <link rel="stylesheet" href="/ext/hbs_common/static/css/hbs_base.css?v={{ version }}">
-<link rel="stylesheet" href="/ext/presenter/static/css/presenter.css?v={{ version }}&t=20261101_stats_v3">
+<link rel="stylesheet" href="/ext/presenter/static/css/presenter.css?v={{ version }}&t=20261106_mob_v1">
 <!-- WEB_UI DCC Extension -->
 <link rel="stylesheet" href="/ext/dcc/static/css/dcc.css?v={{ version }}">
 <!-- Hecos Unified Progress Component -->
 <link rel="stylesheet" href="/static/css/hecos_progress.css?v={{ version }}-purple">
 <!-- CRITICAL: inline mobile overrides - cache-proof -->
 <style>
-  /* Default: hide hamburger/mobile elements on desktop */
+  /* Default: hide hamburger/mobile elements on desktop, and ensure closed Soul Forge panel is never visible */
   .mobile-only { display: none !important; }
+  #soul-forge-panel:not(.open), #session-overrides-panel:not(.open) { display: none !important; }
   /* Mobile: show hamburger, hide desktop topbar */
   @media (max-width: 768px) {
     .mobile-only { display: flex !important; }
@@ -153,6 +154,8 @@
 <script src="/static/js/config_manifest.js?v={{ version }}"></script>
 <script src="/static/js/chat_extensions.js"></script>
 <script src="/static/vendor/marked.min.js"></script>
+<link rel="stylesheet" href="/static/css/chat_media_preview.css?v={{ version }}">
+<script src="/static/js/chat_media_zoom.js?v={{ version }}"></script>
 <script src="/static/js/chat_media_processor.js?v={{ version }}&t=20261024_en"></script>
 <script src="/netsearch_static/js/search/search_chat_card.js?v={{ version }}&t=20261031_v2"></script>
 <script>
@@ -173,6 +176,7 @@
 <script src="/static/js/chat_renderer.js?v={{ version }}&t=20261024_en"></script>
 <link rel="stylesheet" href="/static/css/doc_preview.css?v={{ version }}">
 <script src="/static/js/doc_preview.js?v={{ version }}"></script>
+<link rel="stylesheet" href="/static/css/agent_traces.css?v={{ version }}">
 <script src="/static/js/agent/agent_traces.js?v={{ version }}"></script>
 <!-- DCC — Dynamic Capability Chips (must load before welcome_screen) -->
 <script src="/ext/dcc/static/js/dcc_render.js?v={{ version }}"></script>
@@ -228,24 +232,24 @@
 <script src="/ext/emoticons/static/js/emoticons.js?v={{ version }}"></script>
 <!-- WEB_UI HBS & Presenter Extensions -->
 <script src="/ext/hbs_common/static/js/hbs_utils.js?v={{ version }}"></script>
-<script src="/ext/presenter/static/js/presenter_state.js?v={{ version }}&t=20261101_stats_v3"></script>
-<script src="/ext/presenter/static/js/presenter_stats.js?v={{ version }}&t=20261101_stats_v3"></script>
-<script src="/ext/presenter/static/js/presenter_stats_ui.js?v={{ version }}&t=20261101_stats_v3"></script>
-<script src="/ext/presenter/static/js/presenter_ui.js?v={{ version }}&t=20261101_stats_v3"></script>
-<script src="/ext/presenter/static/js/presenter.js?v={{ version }}&t=20261101_stats_v3"></script>
+<script src="/ext/presenter/static/js/presenter_state.js?v={{ version }}&t=20261106_mob_v1"></script>
+<script src="/ext/presenter/static/js/presenter_stats.js?v={{ version }}&t=20261106_mob_v1"></script>
+<script src="/ext/presenter/static/js/presenter_stats_ui.js?v={{ version }}&t=20261106_mob_v1"></script>
+<script src="/ext/presenter/static/js/presenter_ui.js?v={{ version }}&t=20261106_mob_v1"></script>
+<script src="/ext/presenter/static/js/presenter.js?v={{ version }}&t=20261106_mob_v1"></script>
 <!-- HDCS Command Palette (self-contained, no ES modules) -->
 <link rel="stylesheet" href="/assets/css/cmd_palette.css?v={{ version }}">
 <script src="/static/js/commands/hecos_cmd_palette.js?v={{ version }}"></script>
 
 <!-- ⚡ Quick Config / Soul Forge (Unified) -->
-<link rel="stylesheet" href="/static/css/global_presets.css?v={{ version }}">
+<link rel="stylesheet" href="/static/css/global_presets.css?v={{ version }}&t=20261106_mob_sf1">
 {% include 'modules/chat_global_presets.html' %}
-<script src="/static/js/global_presets/gp_state.js?v={{ version }}"></script>
-<script src="/static/js/global_presets/gp_ui.js?v={{ version }}"></script>
-<script src="/static/js/global_presets/gp_actions.js?v={{ version }}"></script>
-<script src="/static/js/global_presets/gp_xtts.js?v={{ version }}"></script>
-<script src="/static/js/global_presets/gp_fish.js?v={{ version }}"></script>
-<script src="/static/js/global_presets/gp_kokoro.js?v={{ version }}"></script>
+<script src="/static/js/global_presets/gp_state.js?v={{ version }}&t=20261106_mob_sf1"></script>
+<script src="/static/js/global_presets/gp_ui.js?v={{ version }}&t=20261106_mob_sf1"></script>
+<script src="/static/js/global_presets/gp_actions.js?v={{ version }}&t=20261106_mob_sf1"></script>
+<script src="/static/js/global_presets/gp_xtts.js?v={{ version }}&t=20261106_mob_sf1"></script>
+<script src="/static/js/global_presets/gp_fish.js?v={{ version }}&t=20261106_mob_sf1"></script>
+<script src="/static/js/global_presets/gp_kokoro.js?v={{ version }}&t=20261106_mob_sf1"></script>
 
 <!-- HKS — Hecos Keyboard Shortcuts System -->
 <link rel="stylesheet" href="/static/css/keyboard_shortcuts.css?v={{ version }}">

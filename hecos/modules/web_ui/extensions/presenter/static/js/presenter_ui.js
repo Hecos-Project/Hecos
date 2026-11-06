@@ -52,8 +52,10 @@
 
         // Subbar is hidden in NetSearch context (no playbook or event stats needed there)
         const subbarHidden = isNetSearch ? 'display:none;' : '';
-        // Restore subbar open/closed state from localStorage
-        const subbarOpen = localStorage.getItem('hecos_presenter_subbar_open') !== 'false';
+        // Restore subbar open/closed state from localStorage (default closed on mobile <=768px)
+        const isMobileView = window.innerWidth <= 768;
+        const subbarStored = localStorage.getItem('hecos_presenter_subbar_open');
+        const subbarOpen = subbarStored !== null ? subbarStored !== 'false' : !isMobileView;
 
         container.innerHTML = `
             <div class="hbs-presenter-header" style="cursor: pointer;">
@@ -99,7 +101,7 @@
                     </button>` : ''}
                 </div>
 
-                <button id="hbs-presenter-toggle" class="hbs-presenter-toggle-btn" title="Collapse/Expand">
+                <button id="hbs-presenter-toggle" class="hbs-presenter-toggle-btn" onclick="window.Presenter.togglePower(event)" title="Collapse/Expand">
                     <i class="fas fa-chevron-up"></i>
                 </button>
             </div>
@@ -138,7 +140,7 @@
                 </div>
             </div>
 
-            <div class="hbs-presenter-body" style="overflow-y: auto; resize: vertical; min-height: 40px; max-height: 50vh; display: flex; flex-direction: column; gap: 4px; padding-bottom: 4px; ${uiState.save && uiState.height ? 'height:'+uiState.height+'px;' : 'height: auto;'}"></div>
+            <div class="hbs-presenter-body" style="${(!isMobileView && uiState.save && uiState.height) ? 'height:'+uiState.height+'px;' : 'height: auto;'}"></div>
             <div class="hbs-presenter-footer" style="display:none;"></div>
         `;
         // Listen for resize events using ResizeObserver
@@ -415,7 +417,8 @@
 
     // ── Sub-bar toggle ────────────────────────────────────────────────
     function isSubbarOpen() {
-        return localStorage.getItem('hecos_presenter_subbar_open') !== 'false';
+        const stored = localStorage.getItem('hecos_presenter_subbar_open');
+        return stored !== null ? stored !== 'false' : (window.innerWidth > 768);
     }
 
     function toggleSubbar(e) {
@@ -438,26 +441,24 @@
 
     // Toggle Collapse & Power Events
     document.addEventListener('click', (e) => {
+        if (!e.target || typeof e.target.closest !== 'function') return;
         const header = e.target.closest('.hbs-presenter-header');
         if (!header) return;
 
-        // Sub-bar toggle button — handled by its own onclick, do not collapse
-        if (e.target.closest('#hbs-presenter-subbar-btn')) return;
+        // Sub-bar toggle, power, or chevron button — handled by their own onclick
+        if (e.target.closest('#hbs-presenter-subbar-btn') ||
+            e.target.closest('#hbs-presenter-power-btn') ||
+            e.target.closest('#hbs-presenter-toggle')) {
+            return;
+        }
 
         // Prevent collapse if clicking on controls, inputs, links, or playbook pill
         if (e.target.closest('.hbs-presenter-controls') || e.target.closest('input') || e.target.closest('a') || e.target.closest('.hbs-presenter-playbook-pill')) {
-            if (!e.target.closest('#hbs-presenter-toggle') && !e.target.closest('#hbs-presenter-power-btn')) {
-                return;
-            }
+            return;
         }
 
         const container = document.getElementById('hbs-presenter-embedded');
         if (!container) return;
-
-        // If power button clicked, let button onclick handle it
-        if (e.target.closest('#hbs-presenter-power-btn')) {
-            return;
-        }
 
         if (window.Presenter && typeof window.Presenter.togglePower === 'function') {
             window.Presenter.togglePower(e);
@@ -465,6 +466,306 @@
             container.classList.toggle('collapsed');
         }
     });
+
+    // ── Session Feed Cache ───────────────────────────────────────────
+    function saveCurrentSessionFeed(targetSid) {
+        const state = window.HBSPresenterState;
+        const sid = targetSid || state.currentSessionId || localStorage.getItem('hecos_active_session_id') || 'global';
+        if (!sid) return;
+        const emb = getEmbedded();
+        if (!emb) return;
+        const msgEl = emb.querySelector('.hbs-presenter-body');
+        if (!msgEl) return;
+        
+        state.sessionFeeds = state.sessionFeeds || {};
+        const feedData = {
+            html: msgEl.innerHTML,
+            history: [...state.feedHistory],
+            timestamp: Date.now()
+        };
+        state.sessionFeeds[sid] = feedData;
+        try {
+            sessionStorage.setItem('hecos_pfeed_' + sid, JSON.stringify(feedData));
+        } catch (e) {}
+    }
+
+    function restoreSessionFeed(sid) {
+        if (!sid) return false;
+        const emb = getEmbedded();
+        if (!emb) return false;
+        const msgEl = emb.querySelector('.hbs-presenter-body');
+        if (!msgEl) return false;
+        const state = window.HBSPresenterState;
+
+        let feedData = state.sessionFeeds && state.sessionFeeds[sid];
+        if (!feedData || !feedData.html) {
+            try {
+                const raw = sessionStorage.getItem('hecos_pfeed_' + sid);
+                if (raw) {
+                    feedData = JSON.parse(raw);
+                    state.sessionFeeds = state.sessionFeeds || {};
+                    state.sessionFeeds[sid] = feedData;
+                }
+            } catch (e) {}
+        }
+
+        if (feedData && typeof feedData.html === 'string' && feedData.html.trim().length > 0) {
+            msgEl.innerHTML = feedData.html;
+            state.feedHistory = Array.isArray(feedData.history) ? [...feedData.history] : [];
+            msgEl.scrollTop = msgEl.scrollHeight;
+            if (window.HBSPresenterStats && typeof window.HBSPresenterStats.syncFromDOM === 'function') {
+                window.HBSPresenterStats.syncFromDOM();
+            } else if (window.HBSPresenterStatsUI && typeof window.HBSPresenterStatsUI.render === 'function') {
+                window.HBSPresenterStatsUI.render();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    function loadSessionFeed(sessionId, isNewSession = false) {
+        if (!sessionId) return;
+        const state = window.HBSPresenterState;
+
+        // 1. Save outgoing session's feed before switching
+        const prevSid = state.currentSessionId;
+        if (prevSid && prevSid !== sessionId) {
+            saveCurrentSessionFeed(prevSid);
+        }
+        state.currentSessionId = sessionId;
+        localStorage.setItem('hecos_active_session_id', sessionId);
+
+        const notifyFn = (opts) => {
+            if (window.Presenter && typeof window.Presenter.notify === 'function') {
+                window.Presenter.notify(opts);
+            }
+        };
+
+        // 2. New chat session creation: boot ONCE only
+        if (isNewSession) {
+            if (state.sessionBooted && state.sessionBooted[sessionId]) {
+                console.debug('[Presenter] Session already booted, ignoring duplicate boot:', sessionId);
+                return;
+            }
+            state.sessionBooted = state.sessionBooted || {};
+            state.sessionBooted[sessionId] = true;
+            state.appBooted = true;
+
+            if (window.Presenter && window.Presenter.clear) window.Presenter.clear();
+            notifyFn({
+                type: 'system_info',
+                text: 'Presenter core online.',
+                duration: 4000,
+                persist: false
+            });
+            setTimeout(() => { if (window.Presenter && window.Presenter.briefing) window.Presenter.briefing(); }, 400);
+            setTimeout(() => { if (window.Presenter && window.Presenter.logShortcuts) window.Presenter.logShortcuts(); }, 3500);
+            setTimeout(() => { if (window.Presenter && window.Presenter.updatePlaybookStatus) window.Presenter.updatePlaybookStatus(true); }, 1200);
+            return;
+        }
+
+        // 3. Switching to an EXISTING session (isNewSession === false)
+        state.sessionBooted = state.sessionBooted || {};
+        state.sessionBooted[sessionId] = true;
+
+        // Fast restore from memory / sessionStorage cache
+        const restored = restoreSessionFeed(sessionId);
+        if (restored) {
+            applyFilters();
+            if (window.Presenter && window.Presenter.updatePlaybookStatus) window.Presenter.updatePlaybookStatus(false);
+            return;
+        }
+
+        // Not yet in cache: fetch from disk
+        const chatParam = `&chat_id=${encodeURIComponent(sessionId)}`;
+        fetch(`/api/ext/presenter/feed?limit=30${chatParam}`)
+            .then(res => res.json())
+            .then(data => {
+                if (state.currentSessionId !== sessionId) return;
+
+                if (window.Presenter && window.Presenter.clear) window.Presenter.clear();
+                const isNetSearch = (window.location && window.location.pathname.includes('/netsearch')) || (getEmbedded() && getEmbedded().classList.contains('netsearch-presenter-embedded'));
+                const hasEntries = data.ok && Array.isArray(data.entries) && data.entries.length > 0;
+                let renderedCount = 0;
+                if (hasEntries) {
+                    data.entries.forEach(entry => {
+                        const entryType = entry.event_name || 'system_info';
+                        const entryText = entry.text || '';
+                        if (isNetSearch) {
+                            const isSearch = entryType.startsWith('search_') || entryText.includes('[NetSearch]');
+                            if (!isSearch) return;
+                        }
+                        if (entryText) {
+                            renderedCount++;
+                            notifyFn({
+                                type: entryType === 'presenter_feed' ? 'system_info' : entryType,
+                                text: entryText,
+                                title: 'Presenter',
+                                duration: 0,
+                                persist: true,
+                                timestamp: entry.timestamp
+                            });
+                        }
+                    });
+                }
+                if (window.HBSPresenterStats && typeof window.HBSPresenterStats.syncFromDOM === 'function') {
+                    window.HBSPresenterStats.syncFromDOM();
+                } else if (window.HBSPresenterStatsUI && typeof window.HBSPresenterStatsUI.render === 'function') {
+                    window.HBSPresenterStatsUI.render();
+                }
+                if (isNetSearch && renderedCount === 0) {
+                    const emb = getEmbedded();
+                    const msgEl = emb ? emb.querySelector('.hbs-presenter-body') : null;
+                    if (msgEl) {
+                        msgEl.innerHTML = '<div class="hbs-presenter-empty-search" style="color:var(--muted);font-size:11px;font-style:italic;padding:14px 6px;text-align:center;opacity:0.7;"><i class="fas fa-satellite-dish" style="margin-right:6px;"></i>Waiting for search events &amp; live commentary...</div>';
+                    }
+                } else if (!isNetSearch && !hasEntries) {
+                    if (window.Presenter && window.Presenter.updatePlaybookStatus) window.Presenter.updatePlaybookStatus(true);
+                }
+                saveCurrentSessionFeed(sessionId);
+                applyFilters();
+            })
+            .catch(err => {
+                console.debug('[Presenter] loadSessionFeed error:', err);
+                if (window.Presenter && window.Presenter.updatePlaybookStatus) window.Presenter.updatePlaybookStatus(false);
+            });
+    }
+
+    function resetFeed(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        const btn = document.getElementById('hbs-presenter-reset-btn');
+        const icon = btn ? btn.querySelector('i') : null;
+        if (icon) {
+            icon.classList.add('fa-spin');
+            setTimeout(() => icon.classList.remove('fa-spin'), 1000);
+        }
+
+        const state = window.HBSPresenterState;
+        const sid = state.currentSessionId || localStorage.getItem('hecos_active_session_id') || 'global';
+        
+        if (state.sessionFeeds && sid) {
+            delete state.sessionFeeds[sid];
+        }
+        try {
+            sessionStorage.removeItem('hecos_pfeed_' + sid);
+        } catch (err) {}
+
+        state.sessionBooted = state.sessionBooted || {};
+        state.sessionBooted[sid] = true;
+        state.appBooted = true;
+        window._briefingInProgress = false;
+
+        if (window.Presenter && window.Presenter.clear) window.Presenter.clear();
+
+        const isNetSearch = (window.location && window.location.pathname.includes('/netsearch')) || (getEmbedded() && getEmbedded().classList.contains('netsearch-presenter-embedded'));
+        if (isNetSearch) {
+            loadSessionFeed('global', false);
+            return;
+        }
+
+        const notifyFn = (opts) => {
+            if (window.Presenter && typeof window.Presenter.notify === 'function') {
+                window.Presenter.notify(opts);
+            }
+        };
+
+        notifyFn({
+            type: 'system_info',
+            text: 'Presenter core reloaded.',
+            duration: 4000,
+            persist: false
+        });
+        setTimeout(() => { if (window.Presenter && window.Presenter.briefing) window.Presenter.briefing(); }, 400);
+        setTimeout(() => { if (window.Presenter && window.Presenter.logShortcuts) window.Presenter.logShortcuts(); }, 3500);
+        setTimeout(() => { if (window.Presenter && window.Presenter.updatePlaybookStatus) window.Presenter.updatePlaybookStatus(true); }, 1200);
+    }
+
+    // ── Filter & Search Controls ──────────────────────────────────────
+    function toggleFilter(type, btn) {
+        const state = window.HBSPresenterState;
+        const isHidden = state.presenterHiddenTypes.has(type);
+        if (isHidden) {
+            state.presenterHiddenTypes.delete(type);
+            if (btn) { btn.style.opacity = '1'; btn.style.textDecoration = 'none'; }
+        } else {
+            state.presenterHiddenTypes.add(type);
+            if (btn) { btn.style.opacity = '0.35'; btn.style.textDecoration = 'line-through'; }
+        }
+        applyFilters();
+    }
+
+    function resetFilters() {
+        const state = window.HBSPresenterState;
+        state.presenterHiddenTypes.clear();
+        state.presenterSearchQuery = '';
+        const searchInput = document.getElementById('hbs-presenter-search');
+        if (searchInput) searchInput.value = '';
+        document.querySelectorAll('[data-filter-type]').forEach(btn => {
+            btn.style.opacity = '1';
+            btn.style.textDecoration = 'none';
+        });
+        const allBtn = document.getElementById('hbs-presenter-filter-all');
+        if (allBtn) {
+            allBtn.style.background = 'rgba(255,255,255,0.12)';
+            allBtn.style.color = 'var(--text)';
+            allBtn.innerHTML = '<i class="fas fa-eye" style="font-size:9px;"></i> All';
+            allBtn._allHidden = false;
+        }
+        applyFilters();
+    }
+
+    function toggleAllFilters(btn) {
+        const state = window.HBSPresenterState;
+        const allHidden = btn._allHidden;
+        const isNetSearch = (window.location && window.location.pathname.includes('/netsearch')) || (getEmbedded() && getEmbedded().classList.contains('netsearch-presenter-embedded'));
+        const allTypes = isNetSearch
+            ? ['search_milestone', 'search_commentary']
+            : Object.keys(state.TYPE_META).filter(k => k !== 'default' && !['search_milestone', 'search_commentary'].includes(k));
+        
+        if (allHidden) {
+            state.presenterHiddenTypes.clear();
+            document.querySelectorAll('[data-filter-type]').forEach(chip => {
+                chip.style.opacity = '1';
+                chip.style.textDecoration = 'none';
+            });
+            btn.style.background = 'rgba(255,255,255,0.12)';
+            btn.style.color = 'var(--text)';
+            btn.innerHTML = '<i class="fas fa-eye" style="font-size:9px;"></i> All';
+            btn._allHidden = false;
+        } else {
+            allTypes.forEach(t => state.presenterHiddenTypes.add(t));
+            document.querySelectorAll('[data-filter-type]').forEach(chip => {
+                chip.style.opacity = '0.35';
+                chip.style.textDecoration = 'line-through';
+            });
+            btn.style.background = 'rgba(239,68,68,0.15)';
+            btn.style.color = '#ef4444';
+            btn.innerHTML = '<i class="fas fa-eye-slash" style="font-size:9px;"></i> All';
+            btn._allHidden = true;
+        }
+        applyFilters();
+    }
+
+    function setSearch(query) {
+        const state = window.HBSPresenterState;
+        state.presenterSearchQuery = (query || '').trim();
+        applyFilters();
+    }
+
+    function toggleAdvanced(panel, btn) {
+        if (!panel) return;
+        const isOpen = panel.style.display !== 'none';
+        panel.style.display = isOpen ? 'none' : 'block';
+        if (btn) {
+            btn.style.background = isOpen ? 'rgba(255,255,255,0.07)' : 'rgba(102,252,241,0.12)';
+            btn.style.borderColor = isOpen ? 'rgba(255,255,255,0.1)' : 'rgba(102,252,241,0.3)';
+            btn.style.color = isOpen ? 'var(--muted)' : 'var(--accent, #66fcf1)';
+        }
+    }
 
     window.HBSPresenterUI = {
         getEmbedded,
@@ -479,7 +780,18 @@
         updatePowerUI,
         simAction,
         toggleSubbar,
-        isSubbarOpen
+        isSubbarOpen,
+        // Session Feed Cache
+        saveCurrentSessionFeed,
+        restoreSessionFeed,
+        loadSessionFeed,
+        resetFeed,
+        // Filter & Search Controls
+        toggleFilter,
+        resetFilters,
+        toggleAllFilters,
+        setSearch,
+        toggleAdvanced
     };
 
 })();

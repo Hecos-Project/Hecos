@@ -75,12 +75,37 @@
     }
 
     /* 5. Input Safe-Zone (keyboards & notch) */
-    .input-container {
-        padding: 10px 10px 15px 10px;
+    .input-container,
+    #input-bar {
+        padding: 8px 10px 10px 10px;
         margin: 0;
         width: 100%;
         border-radius: 0;
         box-sizing: border-box;
+        flex-shrink: 0;
+    }
+
+    #input-toolbar {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        gap: 5px;
+        margin-bottom: 6px;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+    }
+
+    #input-toolbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    #input-toolbar .toolbar-btn {
+        flex-shrink: 0;
+        padding: 4px 9px;
+        font-size: 11px;
+    }
+
+    .input-hint {
+        display: none !important;
     }
 
     /* Prevent iOS auto-zoom on input focus */
@@ -88,9 +113,12 @@
         font-size: 16px;
     }
 
-    .chat-area {
-        padding: 10px;
-        padding-bottom: 20px;
+    .chat-area,
+    #chat-area {
+        flex: 1 1 auto !important;
+        min-height: 120px !important;
+        padding: 10px 12px 16px 12px;
+        overflow-y: auto !important;
     }
 
     .msg-bubble {

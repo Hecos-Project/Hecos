@@ -208,6 +208,8 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
             if k_p:
                 if 'kokoro_voice' not in voice_overrides and k_p.get('voice'):
                     voice_overrides['kokoro_voice'] = k_p['voice']
+                    if not soul.voice.tts_voice:
+                        merged['ai']['tts_voice'] = k_p['voice']
                 if 'kokoro_blend_voice' not in voice_overrides and k_p.get('blend_voice') is not None:
                     voice_overrides['kokoro_blend_voice'] = k_p['blend_voice']
                 if not k_inf_name and k_p.get('inference_preset'):

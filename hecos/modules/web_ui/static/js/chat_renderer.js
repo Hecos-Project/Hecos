@@ -23,7 +23,7 @@ function addBubble(role, text, id, opts) {
     if (usrSrc) {
         avatar.innerHTML = `
         <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openUserGallery) window.openUserGallery('${usrSrc}'); else window.openAvatarFull('${usrSrc}', 'image', true)">
-          <img src="${usrSrc}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" onerror="this.outerHTML='<i class=\'fas fa-user\'></i>'">
+          <img src="${usrSrc}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" onerror="this.outerHTML='<i class=\\'fas fa-user\\'></i>'">
           <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
         </div>`;
     } else {
@@ -97,25 +97,36 @@ function addBubble(role, text, id, opts) {
 
   const bubble = document.createElement('div');
   bubble.className = 'msg-bubble';
-  if(text) bubble.innerHTML = renderMarkdown(text);
-  
-  if (opts && opts.model_info) {
-      let tooltipText = opts.model_info;
-      if (window.formatModelTooltip) {
-          tooltipText = window.formatModelTooltip(opts.model_info);
-      } else {
-          try {
-              const parsed = JSON.parse(opts.model_info);
-              if (parsed.model) {
-                  tooltipText = `Model: ${parsed.model}\nTemp: ${parsed.temperature} | Ctx: ${parsed.num_ctx} | GPU: ${parsed.num_gpu}\nTop P: ${parsed.top_p} | Predict: ${parsed.num_predict} | Rep Pen: ${parsed.repeat_penalty}`;
-              }
-          } catch (e) {}
+  if(text) {
+      bubble.innerHTML = renderMarkdown(text);
+      if (bubble.querySelector('.chat-pdf-preview, .chat-html-preview')) {
+          bubble.classList.add('has-pdf');
+          msg.classList.add('has-pdf');
       }
-      bubble.setAttribute('title', tooltipText);
-      bubble.style.cursor = 'help';
   }
   
   wrapper.appendChild(bubble);
+
+  if (opts && opts.model_info) {
+      let tooltipText = opts.model_info;
+      let parsedModelInfo = null;
+      try {
+          parsedModelInfo = typeof opts.model_info === 'string' ? JSON.parse(opts.model_info) : opts.model_info;
+      } catch (e) {}
+
+      if (window.formatModelTooltip) {
+          tooltipText = window.formatModelTooltip(opts.model_info);
+      } else if (parsedModelInfo && parsedModelInfo.model) {
+          tooltipText = `Model: ${parsedModelInfo.model}\nTemp: ${parsedModelInfo.temperature} | Ctx: ${parsedModelInfo.num_ctx} | GPU: ${parsedModelInfo.num_gpu}\nTop P: ${parsedModelInfo.top_p} | Predict: ${parsedModelInfo.num_predict} | Rep Pen: ${parsedModelInfo.repeat_penalty}`;
+      }
+      bubble.setAttribute('title', tooltipText);
+      bubble.style.cursor = 'help';
+
+      // Restore persisted Agent Trace timeline if present in model_info
+      if (parsedModelInfo && parsedModelInfo.agent_trace && window.AgentUI && typeof window.AgentUI.renderHistoricalTrace === 'function') {
+          window.AgentUI.renderHistoricalTrace(parsedModelInfo.agent_trace, msg);
+      }
+  }
 
   msg.appendChild(avatar);
   msg.appendChild(wrapper);
@@ -265,7 +276,7 @@ window.appendMessage = function(role, text, opts = {}) {
     }
 
     const { msg, bubble } = window.addBubble(role, displayHtml, null, opts);
-    if (bubble && bubble.querySelector('.chat-pdf-preview')) {
+    if (bubble && bubble.querySelector('.chat-pdf-preview, .chat-html-preview')) {
         bubble.classList.add('has-pdf');
         if (msg) msg.classList.add('has-pdf');
     }

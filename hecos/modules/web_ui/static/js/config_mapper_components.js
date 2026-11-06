@@ -47,20 +47,38 @@ function populateAgentUI() {
     const c = window.cfg;
     if (!c?.agent) return;
     const a = c.agent;
-    setCheck('agent-enabled',       a.enabled              ?? true);
-    setVal('agent-max-iter',        a.max_iterations       ?? 10);
-    setCheck('agent-verbose',       a.verbose_traces       ?? true);
-    setCheck('agent-action-console',a.action_console_enabled ?? true);
+    const traceMode = a.trace_mode || (a.verbose_traces === false ? 'off' : 'detailed');
+    const actionMode = a.action_console_mode || (a.action_console_enabled === false ? 'off' : 'inline');
+
+    setCheck('agent-enabled',           a.enabled                ?? true);
+    setVal('agent-max-iter',            a.max_iterations         ?? 15);
+    setVal('agent-trace-mode',          traceMode);
+    setVal('agent-trace-after-done',    a.trace_after_done       || 'summary');
+    setCheck('agent-trace-show-args',   a.trace_show_args        ?? true);
+    setCheck('agent-trace-persist',     a.trace_persist_history  ?? true);
+    setVal('agent-action-console-mode', actionMode);
+    setCheck('agent-cli-traces',        a.cli_traces_enabled     ?? true);
 }
 
 function buildAgentPayload() {
     const a = window.cfg?.agent || {};
+    const traceMode = getV('agent-trace-mode', a.trace_mode || 'detailed');
+    const actionMode = getV('agent-action-console-mode', a.action_console_mode || 'inline');
+    const maxIterRaw = parseInt(getV('agent-max-iter', a.max_iterations ?? 15), 10);
+    const maxIter = isNaN(maxIterRaw) ? 15 : Math.max(1, Math.min(50, maxIterRaw));
+
     return {
         agent: {
-            enabled:                getC('agent-enabled',        a.enabled                 ?? true),
-            max_iterations:         parseInt(getV('agent-max-iter', a.max_iterations))     || 10,
-            verbose_traces:         getC('agent-verbose',        a.verbose_traces          ?? true),
-            action_console_enabled: getC('agent-action-console', a.action_console_enabled  ?? true)
+            enabled:                getC('agent-enabled',          a.enabled                ?? true),
+            max_iterations:         maxIter,
+            verbose_traces:         traceMode !== 'off',
+            trace_mode:             traceMode,
+            trace_after_done:       getV('agent-trace-after-done', a.trace_after_done       || 'summary'),
+            trace_show_args:        getC('agent-trace-show-args',  a.trace_show_args        ?? true),
+            trace_persist_history:  getC('agent-trace-persist',    a.trace_persist_history  ?? true),
+            cli_traces_enabled:     getC('agent-cli-traces',       a.cli_traces_enabled     ?? true),
+            action_console_enabled: actionMode !== 'off',
+            action_console_mode:    actionMode
         }
     };
 }
@@ -79,10 +97,6 @@ function populateReminderUI() {
 }
 
 function buildReminderPayload() {
-    // Only include REMINDER config in the payload if the package is installed.
-    // window.cfg.plugins.REMINDER is only populated by the server when the
-    // REMINDER package is present in plugins.yaml. If absent, sending defaults
-    // would recreate the key on disk on every save → infinite loop.
     const s = window.cfg?.plugins?.REMINDER;
     if (!s) return { plugins: {} };
     return {

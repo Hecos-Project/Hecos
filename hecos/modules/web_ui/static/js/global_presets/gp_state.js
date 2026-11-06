@@ -90,7 +90,17 @@ window.sfBuildBaseVirtualSoul = function(cfg) {
     if (!ttsEngine && window.sfSystemFallbacks?.tts_engine && window.sfSystemFallbacks.tts_engine !== 'unknown') {
         ttsEngine = window.sfSystemFallbacks.tts_engine;
     }
-    
+    if (!cfg.audio && window.sfState?.audioConfig) {
+        cfg = Object.assign({}, cfg, { audio: window.sfState.audioConfig });
+    }
+    let resolvedVoice = cfg.ai?.tts_voice || "";
+    if (!resolvedVoice && ttsEngine === 'kokoro') resolvedVoice = cfg.audio?.kokoro?.voice || "";
+    if (!resolvedVoice && ttsEngine === 'xtts2') resolvedVoice = cfg.audio?.xtts?.speaker || "";
+    if (!resolvedVoice) resolvedVoice = window.sfSystemFallbacks?.tts_voice || "";
+
+    const rawKokoroPreset = cfg.ai?.kokoro_preset || (cfg.audio?.kokoro?.current_preset !== 'default' ? cfg.audio?.kokoro?.current_preset : "") || "";
+    const validKokoroPreset = (rawKokoroPreset && (!window.sfState?.kokoroPresets || window.sfState.kokoroPresets[rawKokoroPreset])) ? rawKokoroPreset : "";
+
     return {
         persona: {
             soul_file: cfg.ai?.active_personality || window.sfSystemFallbacks?.persona || "",
@@ -112,7 +122,7 @@ window.sfBuildBaseVirtualSoul = function(cfg) {
         },
         voice: {
             tts_engine: ttsEngine || "piper",
-            tts_voice: cfg.ai?.tts_voice || window.sfSystemFallbacks?.tts_voice || "",
+            tts_voice: resolvedVoice,
             xtts_preset: cfg.ai?.xtts_preset || (cfg.audio?.xtts?.current_preset !== 'default' ? cfg.audio?.xtts?.current_preset : "") || "",
             xtts_inference_preset: cfg.audio?.xtts?.current_inference_preset || "",
             xtts_speaker_wav: cfg.audio?.xtts?.speaker_wav || "",
@@ -131,7 +141,7 @@ window.sfBuildBaseVirtualSoul = function(cfg) {
             fish_repetition_penalty: cfg.audio?.fish_speech?.repetition_penalty ?? 1.2,
             fish_chunk_length: cfg.audio?.fish_speech?.chunk_length ?? 200,
             fish_max_new_tokens: cfg.audio?.fish_speech?.max_new_tokens ?? 1024,
-            kokoro_preset: cfg.ai?.kokoro_preset || (cfg.audio?.kokoro?.current_preset !== 'default' ? cfg.audio?.kokoro?.current_preset : "") || "",
+            kokoro_preset: validKokoroPreset,
             kokoro_inference_preset: cfg.audio?.kokoro?.current_inference_preset || "",
             kokoro_voice: cfg.audio?.kokoro?.voice || "",
             kokoro_blend_voice: cfg.audio?.kokoro?.blend_voice || "",
@@ -170,6 +180,7 @@ window.sfLoadData = async function() {
         if (soulsData.ok) window.sfState.souls = soulsData.souls;
         if (infData.ok) window.sfState.inferencePresets = infData.presets;
         if (audioConfData.ok) {
+            window.sfState.audioConfig = audioConfData.config || {};
             window.sfState.xttsPresets = audioConfData.config.xtts_presets || {};
             window.sfState.xttsInferencePresets = audioConfData.config.xtts_inference_presets || {};
             window.sfState.fishSpeechPresets = audioConfData.config.fish_speech_presets || {};
@@ -191,6 +202,9 @@ window.sfLoadGlobalState = async function() {
     try {
         const res = await fetch(`/hecos/config`, { cache: 'no-store' });
         const cfg = await res.json();
+        if (window.sfState.audioConfig) {
+            cfg.audio = window.sfState.audioConfig;
+        }
         window.HecosSystemConfig = cfg;
         
         let globalSoulId = null;

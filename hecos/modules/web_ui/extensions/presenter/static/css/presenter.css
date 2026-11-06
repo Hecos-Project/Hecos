@@ -12,6 +12,7 @@
     gap: 8px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
 #hbs-presenter-embedded.active {
@@ -19,7 +20,8 @@
 }
 
 #hbs-presenter-embedded.collapsed .hbs-presenter-body,
-#hbs-presenter-embedded.collapsed .hbs-presenter-footer {
+#hbs-presenter-embedded.collapsed .hbs-presenter-footer,
+#hbs-presenter-embedded.collapsed #hbs-presenter-advanced {
     display: none !important;
 }
 
@@ -173,8 +175,8 @@
     margin-left: auto;
 }
 
-/* Multiline responsiveness for medium and narrow layouts */
-@media (max-width: 960px) {
+/* Multiline responsiveness for medium layouts */
+@media (max-width: 960px) and (min-width: 769px) {
     .hbs-presenter-header {
         row-gap: 8px;
     }
@@ -217,6 +219,14 @@
     animation: presenterFadeIn 0.3s ease;
     padding-right: 12px;
     overflow-x: hidden;
+    overflow-y: auto;
+    resize: vertical;
+    min-height: 40px;
+    max-height: 50vh;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-bottom: 4px;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.15);
 }
@@ -456,4 +466,119 @@
 @keyframes pbDotPulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.55; transform: scale(0.85); }
+}
+
+/* ── Mobile Adaptation (<= 768px) ────────────────────────────────── */
+@media (max-width: 768px) {
+    #hbs-presenter-embedded {
+        margin: 4px 8px;
+        padding: 6px 10px;
+        border-radius: 10px;
+        gap: 4px;
+        max-height: 28vh;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    #hbs-presenter-embedded.collapsed {
+        padding: 5px 10px;
+        max-height: 38px;
+        gap: 0;
+    }
+
+    /* When collapsed on mobile, hide secondary controls so it's a sleek 1-line bar */
+    #hbs-presenter-embedded.collapsed .hbs-presenter-controls {
+        display: none !important;
+    }
+
+    .hbs-presenter-header {
+        flex-wrap: nowrap;
+        row-gap: 4px;
+        column-gap: 6px;
+        padding-bottom: 4px;
+    }
+
+    .hbs-presenter-brand {
+        gap: 6px;
+    }
+
+    .hbs-presenter-avatar {
+        width: 22px;
+        height: 22px;
+        font-size: 11px;
+    }
+
+    .hbs-presenter-title {
+        font-size: 12px;
+    }
+
+    /* Hide desktop-only vertical resize controls on mobile */
+    .hbs-presenter-ctrl-label,
+    .hbs-presenter-max-lines-box {
+        display: none !important;
+    }
+
+    .hbs-presenter-controls {
+        width: auto;
+        order: 2;
+        padding-top: 0;
+        gap: 4px;
+        flex-wrap: nowrap;
+        margin-left: auto;
+    }
+
+    .hbs-presenter-toggle-btn {
+        order: 3;
+        margin-left: 2px;
+        padding: 4px 6px;
+    }
+
+    /* Cap Presenter body height on mobile so chat area always remains visible and interactive */
+    #hbs-presenter-embedded .hbs-presenter-body {
+        max-height: 15vh !important;
+        height: auto !important;
+        min-height: 30px !important;
+        resize: none !important;
+        font-size: 11.5px;
+        line-height: 1.35;
+        padding-right: 4px;
+    }
+
+    /* Subbar compact single-line horizontal scroll on mobile */
+    .hbs-presenter-subbar.open {
+        padding: 3px 4px;
+        gap: 4px 6px;
+        max-height: 44px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .hbs-presenter-subbar.open::-webkit-scrollbar {
+        display: none;
+    }
+
+    .hbs-presenter-playbook-pill {
+        max-width: 240px;
+        font-size: 10px;
+        padding: 2px 6px;
+        margin-left: 0;
+        flex-shrink: 0;
+    }
+
+    /* Cap Advanced filter panel on mobile */
+    #hbs-presenter-advanced {
+        max-height: 95px;
+        overflow-y: auto;
+        padding: 4px 6px !important;
+    }
+
+    /* Toast Overlay on mobile */
+    #hbs-presenter-overlay {
+        top: 56px;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        padding: 10px 12px;
+    }
 }

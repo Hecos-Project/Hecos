@@ -10,21 +10,25 @@ class LegacyTagParser:
         """
         Extracts tags and mutates the tags_found list.
         """
-        # Match standard [TOOL:ACTION]
-        matches_standard = re.findall(r'\[(\w+):(.*?)\]', base_text)
+        # Match standard [TOOL:ACTION], ignoring double-bracket UI tokens like [[IMG:...]] or [[HSEARCH:...]]
+        matches_standard = re.findall(r'(?<!\[)\[(\w+):([^\[\]]*?)\](?!\])', base_text, flags=re.DOTALL)
         for tag, action in matches_standard:
+            if tag.upper() in ("IMG", "HSEARCH", "HMEDIA"):
+                continue
             tags_found.append((tag.lower(), action.strip(), "standard", None))
         
         # Match simple [TOOL]
         if isinstance(raw_response, str):
-            matches_simple = re.findall(r'\[(\w+)\]', raw_response)
+            matches_simple = re.findall(r'(?<!\[)\[(\w+)\](?!\])', raw_response)
             for tag in matches_simple:
                 if not any(t[0] == tag.lower() for t in tags_found):
                     tags_found.append((tag.lower(), "", "simple", None))
 
-        # Match Slash Commands (e.g., /img, /cmd) emitted by the LLM
+        # Match Slash Commands (e.g., /img, /search, /pdf) emitted by the LLM on their own line.
+        # Note: require whitespace or end-of-line after the command token so URL paths like
+        # /api/images/... or /snapshots/... are never mistaken for slash commands.
         if isinstance(base_text, str):
-            slash_matches = re.findall(r'^\s*(/[a-zA-Z0-9_]+.*?)(?:\n|$)', base_text, flags=re.MULTILINE)
+            slash_matches = re.findall(r'^\s*(/[a-zA-Z0-9_]+(?:\s+[^\r\n]*)?)(?:\r?\n|$)', base_text, flags=re.MULTILINE)
             seen_cmds = set()
             img_cmd_count = 0
             for cmd in slash_matches:

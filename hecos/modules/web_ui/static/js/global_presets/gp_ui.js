@@ -16,11 +16,13 @@ window.sfTogglePanel = function(force) {
         } catch(e) {}
 
         window.sfUpdateFallbackLabels();
+        panel.style.display = 'flex';
         panel.classList.add('open');
         overlay.style.display = 'block';
         window.sfLoadData();
     } else {
         panel.classList.remove('open');
+        panel.style.display = 'none';
         overlay.style.display = 'none';
         if (window.sfStopVoicePreview) window.sfStopVoicePreview();
     }
@@ -564,7 +566,10 @@ window.sfApplySoulToUI = async function(soul) {
     setVal('sf-fish-max-tokens', soul.voice?.fish_max_new_tokens ?? 1024);
 
     const sfKokoroPresetSel = document.getElementById('sf-kokoro-preset-select');
-    if (sfKokoroPresetSel) sfKokoroPresetSel.value = soul.voice?.kokoro_preset || "";
+    if (sfKokoroPresetSel) {
+        const kp = soul.voice?.kokoro_preset || "";
+        sfKokoroPresetSel.value = (kp && Array.from(sfKokoroPresetSel.options).some(o => o.value === kp)) ? kp : "";
+    }
     const sfKokoroInfSel = document.getElementById('sf-kokoro-inference-preset-select');
     if (sfKokoroInfSel) sfKokoroInfSel.value = soul.voice?.kokoro_inference_preset || "";
     const sfKokoroBlendSel = document.getElementById('sf-kokoro-blend-voice');
@@ -774,7 +779,7 @@ window.sfCollectUIState = function() {
     const resolvedVoice = (() => {
         const eng = getVal('sf-tts-engine-select');
         const rawVoice = getVal('sf-tts-voice-select');
-        const cleanVoice = (rawVoice === 'CLONE' || rawVoice === 'MIXED') ? '' : rawVoice;
+        const cleanVoice = (rawVoice === 'CLONE' || rawVoice === 'MIXED' || rawVoice === 'KOKORO_PRESET') ? '' : rawVoice;
         if (eng === 'fish_speech' || eng === 'fish') {
             return getVal('sf-fish-speaker-wav') || cleanVoice || 'default';
         }
@@ -1073,15 +1078,18 @@ window.sfUpdateCloneState = function() {
                 const vName = (p && p.voice) ? p.voice : 'Preset Voice';
                 titleDesc = `Kokoro Preset '${presetName}' (Voice: ${vName})`;
                 customOptionLabel = `-- Preset Voice (${vName}) --`;
-                customOptionValue = vName;
+                customOptionValue = "KOKORO_PRESET";
             }
         }
     }
 
     if (isCloneOrPreset) {
+        if (voiceSelect.value && !['CLONE', 'MIXED', 'KOKORO_PRESET'].includes(voiceSelect.value)) {
+            voiceSelect.dataset.prevRealVoice = voiceSelect.value;
+        }
         voiceSelect.disabled = true;
         voiceSelect.title = titleDesc;
-        let opt = Array.from(voiceSelect.options).find(o => o.value === customOptionValue || o.dataset?.virtual === "true");
+        let opt = Array.from(voiceSelect.options).find(o => o.dataset?.virtual === "true" || ['CLONE', 'MIXED', 'KOKORO_PRESET'].includes(o.value));
         if (!opt) {
             opt = document.createElement('option');
             opt.dataset.virtual = "true";
@@ -1091,12 +1099,21 @@ window.sfUpdateCloneState = function() {
         opt.textContent = customOptionLabel;
         voiceSelect.value = customOptionValue;
     } else {
+        const wasVirtual = ['CLONE', 'MIXED', 'KOKORO_PRESET'].includes(voiceSelect.value);
         voiceSelect.disabled = false;
         voiceSelect.title = "";
         Array.from(voiceSelect.options).forEach(o => {
-            if (o.dataset?.virtual === "true" || o.value === "CLONE" || o.value === "MIXED") {
+            if (o.dataset?.virtual === "true" || o.value === "CLONE" || o.value === "MIXED" || o.value === "KOKORO_PRESET") {
                 o.remove();
             }
         });
+        if (wasVirtual) {
+            const fallbackVoice = voiceSelect.dataset.prevRealVoice || window.sfSystemFallbacks?.tts_voice || "";
+            if (fallbackVoice && Array.from(voiceSelect.options).some(o => o.value === fallbackVoice)) {
+                voiceSelect.value = fallbackVoice;
+            } else if (voiceSelect.options.length > 0) {
+                voiceSelect.selectedIndex = 0;
+            }
+        }
     }
 };

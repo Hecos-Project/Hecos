@@ -63,10 +63,10 @@ backend:
       '11': srchmnmichael/qwen3.5-9B-uncensored:latest
     num_ctx: 4096
     num_gpu: 99
-    num_predict: 17280
-    temperature: 0.3
-    top_p: 0.95
-    repeat_penalty: 1.1
+    num_predict: 4096
+    temperature: 0.85
+    top_p: 0.92
+    repeat_penalty: 1.05
     keep_alive: 120m
     probe_timeout_sec: 3
     binary_path: C:\Users\melon\AppData\Local\Programs\Ollama\ollama.exe

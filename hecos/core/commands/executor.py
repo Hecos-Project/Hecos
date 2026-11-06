@@ -16,11 +16,20 @@ Standardized output:
 }
 """
 
+import json
 import logging
 import inspect
 from typing import Optional
 
 _log = logging.getLogger("HecosCommandExecutor")
+
+# Known slash commands belonging to optional HPM packages (used for helpful missing-plugin notices)
+_KNOWN_HPM_COMMAND_PLUGINS = {
+    "/img": ("Image Generation", "image_gen"),
+    "/image": ("Image Generation", "image_gen"),
+    "/photo": ("Image Generation", "image_gen"),
+    "/foto": ("Image Generation", "image_gen"),
+}
 
 
 class CommandExecutor:
@@ -79,11 +88,27 @@ class CommandExecutor:
 
         if cmd is None:
             parts = raw_input.strip().split(" ", 1)
-            slash = parts[0]
+            slash = parts[0].lower()
+            if slash in _KNOWN_HPM_COMMAND_PLUGINS:
+                pkg_title, pkg_id = _KNOWN_HPM_COMMAND_PLUGINS[slash]
+                msg = (
+                    f"⚠️ **Plugin {pkg_title} (`{pkg_id}`) is not installed or active.**\n\n"
+                    f"The command `{slash}` requires package **{pkg_title}** (`{pkg_id}`). "
+                    f"You can install or enable it from the **Packages / Store (HPM)** section."
+                )
+                result["error"] = (
+                    f"[[IGEN_ALERT]]\n{msg}\n[[/IGEN_ALERT]]\n"
+                    f"[SYSTEM: FATAL_BACKEND_ERROR — Plugin '{pkg_id}' is NOT installed. "
+                    f"DO NOT call {slash} again in this turn! Inform the user that '{pkg_id}' is not installed.]"
+                )
+                result["output"] = msg
+                result["save_to_memory"] = False
+                return result
+
             result["error"] = f"Unknown command: {slash}"
             result["output"] = (
-                f"❌ Comando sconosciuto: `{slash}`\n\n"
-                f"Digita `/help` per vedere tutti i comandi disponibili."
+                f"❌ Unknown command: `{slash}`\n\n"
+                f"Type `/help` to see all available commands."
             )
             result["save_to_memory"] = False
             return result
@@ -92,7 +117,7 @@ class CommandExecutor:
         required_role = cmd.get("requires_auth", "any")
         if required_role == "admin" and current_user_role != "admin":
             result["error"] = "Permission denied."
-            result["output"] = f"❌ Questo comando richiede i permessi **admin**."
+            result["output"] = f"❌ This command requires **admin** permissions."
             result["save_to_memory"] = False
             return result
 
@@ -124,15 +149,15 @@ class CommandExecutor:
             # Likely missing required argument
             result["error"] = str(e)
             result["output"] = (
-                f"❌ Argomenti errati per `{cmd['aliases'][0]}`\n\n"
-                f"**Uso corretto:** `{cmd['usage']}`\n"
-                f"**Esempio:** `{cmd['example']}`"
+                f"❌ Invalid arguments for `{cmd['aliases'][0]}`\n\n"
+                f"**Usage:** `{cmd['usage']}`\n"
+                f"**Example:** `{cmd['example']}`"
             )
             result["save_to_memory"] = False
         except Exception as e:
             _log.error(f"[HDCS Executor] Error executing {cmd['id']}: {e}", exc_info=True)
             result["error"] = str(e)
-            result["output"] = f"❌ Errore durante l'esecuzione di `{cmd['aliases'][0]}`: {e}"
+            result["output"] = f"❌ Error executing `{cmd['aliases'][0]}`: {e}"
 
         # ── Save to memory ────────────────────────────────────────────────────
         if result["ok"] and result.get("save_to_memory", True) and page_context == "chat":
@@ -216,6 +241,7 @@ class CommandExecutor:
         Build a kwargs dict for a plugin method given the raw args string.
 
         Strategy:
+        - If raw_args_str is a JSON object matching method parameters → unpack matching keys
         - If args_schema has exactly one required param → pass raw_args_str as that param
         - If args_schema is empty but method takes a param → try passing raw_args_str
         - Otherwise, pass as positional first param or skip
@@ -230,10 +256,22 @@ class CommandExecutor:
         if not params:
             return {}
 
+        param_names = {name for name, _ in params}
+
+        # Support JSON object payload (e.g. /DOCS__generate_pdf {"html_content": "...", "filename": "..."})
+        if raw_args_str and raw_args_str.strip().startswith("{") and raw_args_str.strip().endswith("}"):
+            try:
+                parsed = json.loads(raw_args_str.strip())
+                if isinstance(parsed, dict):
+                    valid_json_kwargs = {k: v for k, v in parsed.items() if k in param_names}
+                    if valid_json_kwargs:
+                        return valid_json_kwargs
+            except Exception:
+                pass
+
         # Single string param (most common): pass the entire raw_args_str
         if len(params) == 1:
             pname, param = params[0]
-            # Only pass if the schema allows or there's a string value available
             if raw_args_str:
                 return {pname: raw_args_str}
             elif param.default is not inspect.Parameter.empty:
@@ -243,7 +281,6 @@ class CommandExecutor:
 
         # Multi-param: use schema to map
         kwargs = {}
-        # Simple case: first required param gets the raw args string
         for pname, param in params:
             schema_type = args_schema.get(pname, "str?")
             is_optional = schema_type.endswith("?")

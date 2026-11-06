@@ -36,9 +36,9 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
 
     try:
         from hecos.core.llm import brain  # noqa: F401 – ensure core is importable
-    except ImportError as e:
-        _chat_log.error(f"[INFERENCE] Core import failed: {e}")
-        sess["queue"].put({"type": "error", "text": f"Core non importabile: {e}"})
+    except Exception as e:
+        _chat_log.error(f"[INFERENCE] Core import failed: {e}", exc_info=True)
+        sess["queue"].put({"type": "error", "text": f"Core import failed: {e}"})
         sess["done"] = True
         return
 
@@ -118,6 +118,8 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         def _session_trace(msg, level: str = "info"):
             _last_activity[0] = time.monotonic()  # Reset watchdog on activity
             if isinstance(msg, dict):
+                if msg.get("type") == "heartbeat":
+                    return
                 sess["queue"].put(msg)
             else:
                 sess["queue"].put({"type": "agent_trace", "level": level, "message": str(msg)})
@@ -180,11 +182,6 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         # ────────────────────────────────────────────────────────────────────
 
         # ── Extract Thinking Block for dedicated SSE event ────────────────
-        # Reasoning models (like Qwen3.5) often output thinking WITHOUT the opening
-        # <think> tag — they write: "[reasoning...]\n</think>\n\n[visible response]"
-        # We need to handle ALL these patterns:
-        #   1. <think>...</think>  (properly tagged, e.g. from loop.py re-injection)
-        #   2. [reasoning...]</think>  (model forgot opening tag — MOST COMMON CASE)
         import re as _re
         _think_text = None
         
@@ -208,8 +205,22 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         # ────────────────────────────────────────────────────────────────────
 
         _chat_log.info(f"[INFERENCE] Streaming {len(full_text)} chars to client...")
-        for i in range(0, len(full_text), 40):
-            sess["queue"].put({"type": "token", "text": full_text[i:i+40]})
+        _media_tail_m = _re.search(
+            r'((?:\r?\n\s*(?:\[\[(?:IMG|HSEARCH|HMEDIA):[^\]]+\]\]|(?:HTML|PDF):\s*[^\r\n]+))+\s*)$',
+            full_text or ''
+        )
+        if _media_tail_m:
+            _prose_part = full_text[:_media_tail_m.start(1)]
+            _media_tail = _media_tail_m.group(1)
+        else:
+            _prose_part = full_text or ''
+            _media_tail = ''
+
+        for i in range(0, len(_prose_part), 40):
+            sess["queue"].put({"type": "token", "text": _prose_part[i:i+40]})
+            time.sleep(0.02)
+        if _media_tail:
+            sess["queue"].put({"type": "token", "text": _media_tail})
             time.sleep(0.02)
 
         # Signal the frontend to stop the ⚙️ spinner (before blocking TTS)
@@ -326,8 +337,36 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         except Exception as e:
             _chat_log.error(f"Error enriching model_info: {e}")
             _m_info = None
-            
-        sess["queue"].put({"type": "trace_done", "persona_name": current_persona, "model_info": _m_info})
+
+        _trace_summary = getattr(agent, "last_trace_summary", None)
+        if _trace_summary:
+            try:
+                import json as _json
+                _mi_d = _json.loads(_m_info) if _m_info else {}
+                if getattr(agent, "agent_config", {}).get("trace_persist_history", True):
+                    _mi_d["agent_trace"] = _trace_summary
+                    _m_info = _json.dumps(_mi_d)
+                    # Also persist updated model_info (with agent_trace + TTS + preset) into DB for 1-turn responses
+                    from hecos.memory.brain_interface import _db_path
+                    import sqlite3
+                    _db = _db_path(user_id)
+                    with sqlite3.connect(_db, timeout=10) as _conn:
+                        _conn.execute(
+                            "UPDATE history SET model_info = ? WHERE id = ("
+                            "  SELECT MAX(id) FROM history WHERE session_id = ? AND role = 'assistant'"
+                            ")",
+                            (_m_info, session_id),
+                        )
+                        _conn.commit()
+            except Exception as _tr_db_err:
+                _chat_log.debug(f"[INFERENCE] Could not persist agent_trace in model_info: {_tr_db_err}")
+
+        sess["queue"].put({
+            "type": "trace_done",
+            "persona_name": current_persona,
+            "model_info": _m_info,
+            "trace_summary": _trace_summary,
+        })
 
         if camera_request_pending:
             sess["queue"].put({"type": "camera_request"})
