@@ -185,7 +185,7 @@ kokoro_inference_presets:
 xtts:
   speed: 1.0
   language: it
-  speaker: Claribel Dervla
+  speaker: if_cine_witch
   gpu_acceleration: auto
   chunk_sentences: true
   speaker_wav: ''

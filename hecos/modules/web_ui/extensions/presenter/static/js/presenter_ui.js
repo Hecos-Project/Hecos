@@ -1,7 +1,7 @@
 /**
  * Hecos Presenter — UI & Rendering Logic
  */
-(function() {
+(function () {
     'use strict';
 
     function getEmbedded() {
@@ -21,7 +21,7 @@
         const m = resolveMeta(type);
         const sizeAttr = m.iconSize ? ` style="font-size:${m.iconSize}"` : '';
         const tooltipStr = m.tooltip ? ` title="${m.tooltip}"` : ` title="${type}"`;
-        
+
         let html = '';
         if (thinkText) {
             html += `
@@ -33,16 +33,16 @@
                 </div>
             `;
         }
-        
+
         html += `<span style="color:${m.color}; margin-right:6px;"${tooltipStr}><i class="${m.icon}"${sizeAttr}></i></span>${text}`;
-        
+
         return html;
     }
 
     function ensureBuilt(container) {
         if (!container || container.dataset.presenterBuilt) return;
         container.dataset.presenterBuilt = '1';
-        
+
         const uiState = JSON.parse(localStorage.getItem('hecos_presenter_ui_state') || '{"save":false, "lines":4, "height":""}');
         const state = window.HBSPresenterState;
         const isNetSearch = container.classList.contains('netsearch-presenter-embedded') || container.closest('.search-copilot') || (window.location && window.location.pathname.includes('/netsearch'));
@@ -82,10 +82,10 @@
                         <button onclick="window.Presenter.adaptHeight()" title="Adatta altezza alle righe visibili">Adapt</button>
                     </div>
                     <button id="hbs-presenter-reset-btn" onclick="window.Presenter.resetFeed(event)" title="Reset &amp; reload Presenter feed" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer; display:flex; align-items:center; gap:4px; transition: all 0.2s; white-space:nowrap; flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,0.15)'; this.style.color='var(--text)';" onmouseout="this.style.background='rgba(255,255,255,0.07)'; this.style.color='var(--muted)';">
-                        <i class="fas fa-sync-alt"></i> Reset
+                        <i class="fas fa-sync-alt"></i> <span class="presenter-btn-text">Reset</span>
                     </button>
                     <button id="hbs-presenter-advanced-toggle" onclick="window.Presenter.toggleAdvanced()" title="Advanced filters &amp; search" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer; display:flex; align-items:center; gap:4px; transition: background 0.2s; white-space:nowrap; flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">
-                        <i class="fas fa-sliders-h"></i> Advanced
+                        <i class="fas fa-sliders-h"></i> <span class="presenter-btn-text">Advanced</span>
                     </button>
                     <a href="/hecos/config/ui#presenter" target="_blank" title="Open Presenter Settings" style="display:flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-size: 11px; cursor: pointer; transition: all 0.2s; text-decoration:none; flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,0.18)'; this.style.color='var(--text)';" onmouseout="this.style.background='rgba(255,255,255,0.07)'; this.style.color='var(--muted)';">
                         <i class="fas fa-cog"></i>
@@ -140,7 +140,7 @@
                 </div>
             </div>
 
-            <div class="hbs-presenter-body" style="${(!isMobileView && uiState.save && uiState.height) ? 'height:'+uiState.height+'px;' : 'height: auto;'}"></div>
+            <div class="hbs-presenter-body" style="${(!isMobileView && uiState.save && uiState.height) ? 'height:' + uiState.height + 'px;' : 'height: auto;'}"></div>
             <div class="hbs-presenter-footer" style="display:none;"></div>
         `;
         // Listen for resize events using ResizeObserver
@@ -222,11 +222,11 @@
         }
         try {
             let chatId = (window.chatHistoryState && window.chatHistoryState.activeSessionId) ||
-                         localStorage.getItem('hecos_active_session_id') ||
-                         window.currentSessionId ||
-                         window.selectedSessionId ||
-                         (window.privacy_manager && typeof window.privacy_manager.get_session_id === 'function' ? window.privacy_manager.get_session_id() : 'default') ||
-                         'default';
+                localStorage.getItem('hecos_active_session_id') ||
+                window.currentSessionId ||
+                window.selectedSessionId ||
+                (window.privacy_manager && typeof window.privacy_manager.get_session_id === 'function' ? window.privacy_manager.get_session_id() : 'default') ||
+                'default';
 
             const res = await fetch(`/api/ext/presenter/simulation/${action}`, {
                 method: 'POST',
@@ -350,12 +350,12 @@
 
             pill.classList.remove('inactive');
             pill.title = `Active Playbook: ${pb.name} (${modeLabel} Mode)\n` +
-                         `Simulation: ${simStatus.toUpperCase()}` + (isSwapped ? ' [Roles Swapped]' : '') + `\n` +
-                         `Assigned Roles:\n  • You (User): ${effUser}\n  • Chat (AI): ${effChat}\n` +
-                         `Active Tabs: ${pb.enabled_tabs}/${pb.total_tabs} injected into prompts\n\n` +
-                         `Tabs & Target Breakdown:\n${tabLines}\n\n` +
-                         `Click name to open Playbooks Hub`;
-                         
+                `Simulation: ${simStatus.toUpperCase()}` + (isSwapped ? ' [Roles Swapped]' : '') + `\n` +
+                `Assigned Roles:\n  • You (User): ${effUser}\n  • Chat (AI): ${effChat}\n` +
+                `Active Tabs: ${pb.enabled_tabs}/${pb.total_tabs} injected into prompts\n\n` +
+                `Tabs & Target Breakdown:\n${tabLines}\n\n` +
+                `Click name to open Playbooks Hub`;
+
             pill.innerHTML = `
                 <div class="${dotClass}" style="${dotStyle}" title="Simulation ${simStatus}"></div>
                 <i class="fas ${escapeHtml(iconClass)}" style="color:#60a5fa; font-size:10px;"></i>
@@ -424,7 +424,7 @@
     function toggleSubbar(e) {
         if (e) e.stopPropagation();
         const subbar = document.getElementById('hbs-presenter-subbar');
-        const btn    = document.getElementById('hbs-presenter-subbar-btn');
+        const btn = document.getElementById('hbs-presenter-subbar-btn');
         if (!subbar) return;
 
         const willOpen = !subbar.classList.contains('open');
@@ -433,9 +433,9 @@
 
         if (btn) {
             btn.title = willOpen ? 'Hide info bar (Playbook & Stats)' : 'Show info bar (Playbook & Stats)';
-            btn.style.background     = willOpen ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.07)';
-            btn.style.borderColor    = willOpen ? 'rgba(99,102,241,0.4)'  : 'rgba(255,255,255,0.1)';
-            btn.style.color          = willOpen ? '#a5b4fc'               : 'var(--muted)';
+            btn.style.background = willOpen ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.07)';
+            btn.style.borderColor = willOpen ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.1)';
+            btn.style.color = willOpen ? '#a5b4fc' : 'var(--muted)';
         }
     }
 
@@ -476,7 +476,7 @@
         if (!emb) return;
         const msgEl = emb.querySelector('.hbs-presenter-body');
         if (!msgEl) return;
-        
+
         state.sessionFeeds = state.sessionFeeds || {};
         const feedData = {
             html: msgEl.innerHTML,
@@ -486,7 +486,7 @@
         state.sessionFeeds[sid] = feedData;
         try {
             sessionStorage.setItem('hecos_pfeed_' + sid, JSON.stringify(feedData));
-        } catch (e) {}
+        } catch (e) { }
     }
 
     function restoreSessionFeed(sid) {
@@ -506,7 +506,7 @@
                     state.sessionFeeds = state.sessionFeeds || {};
                     state.sessionFeeds[sid] = feedData;
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
 
         if (feedData && typeof feedData.html === 'string' && feedData.html.trim().length > 0) {
@@ -636,7 +636,7 @@
             e.preventDefault();
             e.stopPropagation();
         }
-        
+
         const btn = document.getElementById('hbs-presenter-reset-btn');
         const icon = btn ? btn.querySelector('i') : null;
         if (icon) {
@@ -646,13 +646,13 @@
 
         const state = window.HBSPresenterState;
         const sid = state.currentSessionId || localStorage.getItem('hecos_active_session_id') || 'global';
-        
+
         if (state.sessionFeeds && sid) {
             delete state.sessionFeeds[sid];
         }
         try {
             sessionStorage.removeItem('hecos_pfeed_' + sid);
-        } catch (err) {}
+        } catch (err) { }
 
         state.sessionBooted = state.sessionBooted || {};
         state.sessionBooted[sid] = true;
@@ -725,7 +725,7 @@
         const allTypes = isNetSearch
             ? ['search_milestone', 'search_commentary']
             : Object.keys(state.TYPE_META).filter(k => k !== 'default' && !['search_milestone', 'search_commentary'].includes(k));
-        
+
         if (allHidden) {
             state.presenterHiddenTypes.clear();
             document.querySelectorAll('[data-filter-type]').forEach(chip => {

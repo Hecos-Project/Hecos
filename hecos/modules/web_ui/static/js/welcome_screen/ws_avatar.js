@@ -17,8 +17,11 @@
             align-items: center;
             justify-content: center;
             width: 100%;
+            flex: 1 1 0%;
             height: 100%;
-            min-height: 400px;
+            min-height: 0;
+            padding: 0 12px 36px 12px;
+            box-sizing: border-box;
             color: var(--text);
             font-family: inherit;
             animation: wsAvatarFadeIn 0.5s ease-out;
@@ -30,7 +33,8 @@
         }
         .hecos-welcome-card-scene {
             width: 120px; height: 120px;
-            perspective: 600px; margin-bottom: 24px;
+            perspective: 600px; margin-bottom: 18px;
+            flex-shrink: 0;
         }
         .hecos-welcome-card {
             width: 100%; height: 100%;
@@ -76,7 +80,7 @@
             font-size: 24px; font-weight: 700;
             background: var(--accent-g);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .hecos-welcome-preset {
             font-size: 0.85rem; color: var(--accent, #6c8cff);
@@ -84,6 +88,25 @@
             padding: 4px 12px; border-radius: 12px;
             display: inline-block; border: 1px solid rgba(108, 140, 255, 0.2);
             pointer-events: auto;
+        }
+        @media (max-width: 768px) {
+            .hecos-welcome-container {
+                padding: 0 12px 48px 12px !important;
+                min-height: 0 !important;
+            }
+            .hecos-welcome-card-scene {
+                width: 104px !important;
+                height: 104px !important;
+                margin-bottom: 14px !important;
+            }
+            .hecos-welcome-name {
+                font-size: 21px !important;
+                margin-bottom: 8px !important;
+            }
+            .hecos-welcome-preset {
+                font-size: 0.8rem !important;
+                padding: 4px 12px !important;
+            }
         }
     `;
     document.head.appendChild(style);

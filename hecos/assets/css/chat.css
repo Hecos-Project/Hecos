@@ -9,7 +9,8 @@
 }
 
 * { box-sizing:border-box; margin:0; padding:0; }
-body { font-family:var(--font-sans); background:var(--bg); color:var(--text); min-height:100vh; display:flex; overflow:hidden; height:100vh; height:100dvh; }
+html { width:100%; height:100%; margin:0; padding:0; overflow:hidden; }
+body { font-family:var(--font-sans); background:var(--bg); color:var(--text); width:100%; min-height:100vh; display:flex; overflow:hidden; height:100vh; height:100dvh; }
 
 body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px; height:600px; background:radial-gradient(circle, rgba(var(--accent-rgb),0.05) 0%, transparent 70%); pointer-events:none; z-index:0; }
 
@@ -476,46 +477,46 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
   pointer-events: none; /* Block interactions with the widget's own inputs */
 }
 
- . c h a t - f i l e - c a r d   { 
-         d i s p l a y :   f l e x ; 
-         a l i g n - i t e m s :   c e n t e r ; 
-         b a c k g r o u n d :   v a r ( - - b g 2 ) ; 
-         b o r d e r :   1 p x   s o l i d   v a r ( - - b o r d e r ) ; 
-         b o r d e r - r a d i u s :   8 p x ; 
-         p a d d i n g :   1 0 p x   1 5 p x ; 
-         m a r g i n - t o p :   1 0 p x ; 
-         m a x - w i d t h :   3 0 0 p x ; 
- } 
- . c h a t - f i l e - i c o n   { 
-         f o n t - s i z e :   2 4 p x ; 
-         c o l o r :   v a r ( - - a c c e n t ) ; 
-         m a r g i n - r i g h t :   1 5 p x ; 
- } 
- . c h a t - f i l e - d e t a i l s   { 
-         d i s p l a y :   f l e x ; 
-         f l e x - d i r e c t i o n :   c o l u m n ; 
- } 
- . c h a t - f i l e - n a m e   { 
-         f o n t - w e i g h t :   6 0 0 ; 
-         f o n t - s i z e :   1 4 p x ; 
-         m a r g i n - b o t t o m :   4 p x ; 
-         w h i t e - s p a c e :   n o w r a p ; 
-         o v e r f l o w :   h i d d e n ; 
-         t e x t - o v e r f l o w :   e l l i p s i s ; 
-         m a x - w i d t h :   2 2 0 p x ; 
- } 
- . c h a t - f i l e - a c t i o n   a   { 
-         f o n t - s i z e :   1 2 p x ; 
-         c o l o r :   v a r ( - - t e x t - m u t e d ) ; 
-         t e x t - d e c o r a t i o n :   n o n e ; 
- } 
- . c h a t - f i l e - a c t i o n   a : h o v e r   { 
-         t e x t - d e c o r a t i o n :   u n d e r l i n e ; 
-         c o l o r :   v a r ( - - a c c e n t ) ; 
- } 
- 
- 
- 
+.chat-file-card {
+    display: flex;
+    align-items: center;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-top: 10px;
+    max-width: 300px;
+}
+.chat-file-icon {
+    font-size: 24px;
+    color: var(--accent);
+    margin-right: 15px;
+}
+.chat-file-details {
+    display: flex;
+    flex-direction: column;
+}
+.chat-file-name {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+.chat-file-action a {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+}
+.chat-file-action a:hover {
+    text-decoration: underline;
+    color: var(--accent);
+}
+
+
+
 /* ── Reasoning / Think Block ─────────────────────────────────────── */
 .think-block {
   margin-bottom: 6px;
@@ -744,7 +745,10 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
 #sidebar.collapsed ~ #main .chat-pdf-preview.expanded,
 #sidebar.collapsed ~ #main .chat-html-preview.expanded,
 body.sidebar-collapsed .chat-pdf-preview.expanded,
-body.sidebar-collapsed .chat-html-preview.expanded,
+body.sidebar-collapsed .chat-html-preview.expanded {
+    left: 0 !important;
+}
+
 @media (max-width: 768px) {
     .chat-pdf-preview.expanded,
     .chat-html-preview.expanded {

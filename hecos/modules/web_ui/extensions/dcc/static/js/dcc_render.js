@@ -92,7 +92,7 @@
             const otherChips = _shuffle(_data.featured.filter(m => !m.is_new));
             const ordered = [...newChips, ...otherChips];
 
-            const PAGE_SIZE = 5;
+            const PAGE_SIZE = 3;
             const totalPages = Math.ceil(ordered.length / PAGE_SIZE);
             let currentPage = 0;
 

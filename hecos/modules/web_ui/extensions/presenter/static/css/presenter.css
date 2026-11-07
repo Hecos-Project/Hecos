@@ -3,7 +3,7 @@
 /* Embedded Mode */
 #hbs-presenter-embedded {
     margin: 10px 16px;
-    background: linear-gradient(135deg, rgba(var(--accent-rgb),0.04), var(--bg2));
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.04), var(--bg2));
     border: 1px solid rgba(255, 81, 47, 0.15);
     border-radius: 12px;
     padding: 12px 16px;
@@ -93,7 +93,7 @@
     font-size: 11px;
 }
 
-.hbs-presenter-controls > * {
+.hbs-presenter-controls>* {
     flex-shrink: 0;
     white-space: nowrap;
 }
@@ -180,12 +180,14 @@
     .hbs-presenter-header {
         row-gap: 8px;
     }
+
     .hbs-presenter-controls {
         width: 100%;
         order: 3;
         padding-top: 4px;
         justify-content: flex-start;
     }
+
     .hbs-presenter-toggle-btn {
         order: 2;
     }
@@ -234,14 +236,17 @@
 .hbs-presenter-body::-webkit-scrollbar {
     width: 6px;
 }
+
 .hbs-presenter-body::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.15);
     border-radius: 4px;
 }
+
 .hbs-presenter-body::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
 }
+
 .hbs-presenter-body::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.35);
 }
@@ -266,8 +271,15 @@
 }
 
 @keyframes presenterFadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ── Presenter Sub-bar (Playbook + Stats) ────────────────────────── */
@@ -331,7 +343,8 @@
 
 /* Presenter Custom UI Controls */
 #hbs-presenter-remember-size {
-    accent-color: #ff512f; /* Match Presenter accent */
+    accent-color: #ff512f;
+    /* Match Presenter accent */
     cursor: pointer;
     background-color: var(--bg3);
 }
@@ -341,13 +354,14 @@
 }
 
 /* Fallback for webkit spinners in dark mode */
-.presenter-dark-input::-webkit-inner-spin-button, 
+.presenter-dark-input::-webkit-inner-spin-button,
 .presenter-dark-input::-webkit-outer-spin-button {
     filter: invert(0.8);
     opacity: 0.5;
     cursor: pointer;
 }
-.presenter-dark-input::-webkit-inner-spin-button:hover, 
+
+.presenter-dark-input::-webkit-inner-spin-button:hover,
 .presenter-dark-input::-webkit-outer-spin-button:hover {
     opacity: 1;
 }
@@ -374,6 +388,7 @@
     text-overflow: ellipsis;
     vertical-align: middle;
 }
+
 .hbs-presenter-playbook-pill:hover {
     background: rgba(59, 130, 246, 0.22);
     border-color: rgba(59, 130, 246, 0.55);
@@ -381,6 +396,7 @@
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
 }
+
 .pb-sim-btn {
     display: inline-flex;
     align-items: center;
@@ -397,56 +413,68 @@
     transition: all 0.15s ease;
     line-height: 1.4;
 }
+
 .pb-sim-btn:hover {
     background: rgba(255, 255, 255, 0.22);
     transform: scale(1.05);
 }
+
 .pb-sim-btn-play {
     background: rgba(16, 185, 129, 0.22);
     border-color: rgba(16, 185, 129, 0.45);
     color: #34d399;
 }
+
 .pb-sim-btn-play:hover {
     background: rgba(16, 185, 129, 0.38);
     color: #6ee7b7;
 }
+
 .pb-sim-btn-stop {
     background: rgba(239, 68, 68, 0.2);
     border-color: rgba(239, 68, 68, 0.4);
     color: #f87171;
 }
+
 .pb-sim-btn-stop:hover {
     background: rgba(239, 68, 68, 0.35);
     color: #fca5a5;
 }
+
 .pb-sim-btn-pause {
     background: rgba(245, 158, 11, 0.2);
     border-color: rgba(245, 158, 11, 0.4);
     color: #fbbf24;
 }
+
 .pb-sim-btn-pause:hover {
     background: rgba(245, 158, 11, 0.35);
     color: #fde68a;
 }
+
 .pb-sim-btn-swap {
     background: rgba(192, 132, 252, 0.2);
     border-color: rgba(192, 132, 252, 0.4);
     color: #c084fc;
 }
+
 .pb-sim-btn-swap:hover {
     background: rgba(192, 132, 252, 0.35);
     color: #e9d5ff;
 }
+
 .hbs-presenter-playbook-pill.inactive {
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(255, 255, 255, 0.1);
     color: var(--muted);
 }
+
 .hbs-presenter-playbook-pill.inactive:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.18);
     color: var(--text);
 }
+
 .hbs-presenter-playbook-pill .dot-active {
     width: 6px;
     height: 6px;
@@ -456,6 +484,7 @@
     flex-shrink: 0;
     animation: pbDotPulse 2.2s infinite ease-in-out;
 }
+
 .hbs-presenter-playbook-pill .dot-inactive {
     width: 6px;
     height: 6px;
@@ -463,27 +492,40 @@
     background: #64748b;
     flex-shrink: 0;
 }
+
 @keyframes pbDotPulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.55; transform: scale(0.85); }
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.55;
+        transform: scale(0.85);
+    }
 }
 
 /* ── Mobile Adaptation (<= 768px) ────────────────────────────────── */
 @media (max-width: 768px) {
     #hbs-presenter-embedded {
-        margin: 4px 8px;
-        padding: 6px 10px;
-        border-radius: 10px;
-        gap: 4px;
-        max-height: 28vh;
-        overflow: hidden;
-        flex-shrink: 0;
+        box-sizing: border-box !important;
+        width: calc(100% - 16px) !important;
+        max-width: calc(100% - 16px) !important;
+        margin: 4px 8px !important;
+        padding: 6px 10px !important;
+        border-radius: 10px !important;
+        gap: 4px !important;
+        max-height: 28vh !important;
+        overflow: hidden !important;
+        flex-shrink: 0 !important;
     }
 
     #hbs-presenter-embedded.collapsed {
-        padding: 5px 10px;
-        max-height: 38px;
-        gap: 0;
+        padding: 5px 10px !important;
+        max-height: 38px !important;
+        gap: 0 !important;
     }
 
     /* When collapsed on mobile, hide secondary controls so it's a sleek 1-line bar */
@@ -492,24 +534,47 @@
     }
 
     .hbs-presenter-header {
-        flex-wrap: nowrap;
-        row-gap: 4px;
-        column-gap: 6px;
-        padding-bottom: 4px;
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        row-gap: 0 !important;
+        column-gap: 4px !important;
+        padding-bottom: 4px !important;
     }
 
     .hbs-presenter-brand {
-        gap: 6px;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        flex-shrink: 0 !important;
+        min-width: 0 !important;
     }
 
     .hbs-presenter-avatar {
-        width: 22px;
-        height: 22px;
-        font-size: 11px;
+        width: 22px !important;
+        height: 22px !important;
+        font-size: 11px !important;
+        flex-shrink: 0 !important;
     }
 
     .hbs-presenter-title {
-        font-size: 12px;
+        font-size: 12px !important;
+        white-space: nowrap !important;
+    }
+
+    #hbs-presenter-power-btn {
+        padding: 1.5px 5px !important;
+        font-size: 9px !important;
+        margin-left: 2px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .hbs-presenter-spacer {
+        display: none !important;
     }
 
     /* Hide desktop-only vertical resize controls on mobile */
@@ -518,59 +583,136 @@
         display: none !important;
     }
 
+    /* Controls container on mobile: compact right-aligned icons */
     .hbs-presenter-controls {
-        width: auto;
-        order: 2;
-        padding-top: 0;
-        gap: 4px;
-        flex-wrap: nowrap;
-        margin-left: auto;
+        display: inline-flex !important;
+        align-items: center !important;
+        width: auto !important;
+        order: 2 !important;
+        padding-top: 0 !important;
+        gap: 4px !important;
+        flex-wrap: nowrap !important;
+        margin-left: auto !important;
+        flex-shrink: 0 !important;
+        min-width: 0 !important;
+    }
+
+    /* Hide text on mobile for Reset & Advanced buttons so they become sleek icons */
+    .hbs-presenter-controls .presenter-btn-text {
+        display: none !important;
+    }
+
+    #hbs-presenter-reset-btn,
+    #hbs-presenter-advanced-toggle {
+        width: 24px !important;
+        min-width: 24px !important;
+        height: 24px !important;
+        padding: 0 !important;
+        gap: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 11px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .hbs-presenter-controls a[href*="presenter"] {
+        width: 24px !important;
+        min-width: 24px !important;
+        height: 24px !important;
+        font-size: 11px !important;
+        flex-shrink: 0 !important;
+    }
+
+    #hbs-presenter-subbar-btn {
+        width: 24px !important;
+        min-width: 24px !important;
+        height: 24px !important;
+        font-size: 11px !important;
+        flex-shrink: 0 !important;
     }
 
     .hbs-presenter-toggle-btn {
-        order: 3;
-        margin-left: 2px;
-        padding: 4px 6px;
+        order: 3 !important;
+        margin-left: 2px !important;
+        width: 22px !important;
+        min-width: 22px !important;
+        height: 24px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
     }
 
     /* Cap Presenter body height on mobile so chat area always remains visible and interactive */
     #hbs-presenter-embedded .hbs-presenter-body {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
         max-height: 15vh !important;
         height: auto !important;
-        min-height: 30px !important;
+        min-height: 28px !important;
         resize: none !important;
-        font-size: 11.5px;
-        line-height: 1.35;
-        padding-right: 4px;
+        font-size: 11.5px !important;
+        line-height: 1.35 !important;
+        padding-right: 4px !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
     }
 
     /* Subbar compact single-line horizontal scroll on mobile */
+    .hbs-presenter-subbar {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+    }
+
     .hbs-presenter-subbar.open {
-        padding: 3px 4px;
-        gap: 4px 6px;
-        max-height: 44px;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scrollbar-width: none;
+        padding: 3px 4px !important;
+        gap: 4px 6px !important;
+        max-height: 44px !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none !important;
     }
 
     .hbs-presenter-subbar.open::-webkit-scrollbar {
-        display: none;
+        display: none !important;
     }
 
     .hbs-presenter-playbook-pill {
-        max-width: 240px;
-        font-size: 10px;
-        padding: 2px 6px;
-        margin-left: 0;
-        flex-shrink: 0;
+        max-width: 200px !important;
+        font-size: 10px !important;
+        padding: 2px 6px !important;
+        margin-left: 0 !important;
+        flex-shrink: 0 !important;
+    }
+
+    .hbs-presenter-stats-container {
+        font-size: 9.5px !important;
+        padding: 2px 5px !important;
+        flex-shrink: 0 !important;
     }
 
     /* Cap Advanced filter panel on mobile */
     #hbs-presenter-advanced {
-        max-height: 95px;
-        overflow-y: auto;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+        max-height: 95px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
         padding: 4px 6px !important;
+    }
+
+    #hbs-presenter-search {
+        font-size: 11px !important;
+        padding: 3px 6px !important;
     }
 
     /* Toast Overlay on mobile */
@@ -580,5 +722,6 @@
         right: 10px;
         width: auto;
         padding: 10px 12px;
+        box-sizing: border-box;
     }
 }

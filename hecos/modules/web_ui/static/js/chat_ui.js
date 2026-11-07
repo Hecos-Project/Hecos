@@ -175,7 +175,9 @@ window.clearInput = function() {
   if (window.userInput) {
     window.userInput.value = '';
     window.autoResize(window.userInput);
-    window.userInput.focus();
+    if (!window.isMobile && window.innerWidth > 768) {
+      window.userInput.focus();
+    }
   }
 };
 
@@ -457,7 +459,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadPlugins();
     setInterval(window.refreshStatus, 4000);
     
-    if (window.userInput) window.userInput.focus();
+    if (window.userInput && !window.isMobile && window.innerWidth > 768) {
+      window.userInput.focus();
+    }
     
     // Heartbeat
     setInterval(() => {

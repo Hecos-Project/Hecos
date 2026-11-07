@@ -223,25 +223,51 @@ function renderFilterTabs() {
 // Per-category page size (max cards shown when paginated)
 // ── Hub Pagination Architecture: Default (Top Bar) & Per-Category Override ──
 // Global default cards per page (controlled via the top search-bar dropdown)
-const _savedDefPageSize = localStorage.getItem('hub_default_page_size') || localStorage.getItem('hub_cat_page_size');
-window.HUB_DEFAULT_PAGE_SIZE = parseInt(_savedDefPageSize, 10) || 6;
+const _rawDefSize = localStorage.getItem('hub_default_page_size') || localStorage.getItem('hub_cat_page_size');
+let _savedDefPageSize = parseInt(_rawDefSize, 10);
+const _allowedPageSizes = [5, 10, 15, 20, 25];
+if (!_savedDefPageSize || !_allowedPageSizes.includes(_savedDefPageSize)) {
+    if (!_savedDefPageSize || _savedDefPageSize <= 5) _savedDefPageSize = 5;
+    else if (_savedDefPageSize <= 10) _savedDefPageSize = 10;
+    else if (_savedDefPageSize <= 15) _savedDefPageSize = 15;
+    else if (_savedDefPageSize <= 20) _savedDefPageSize = 20;
+    else _savedDefPageSize = 25;
+    try { localStorage.setItem('hub_default_page_size', _savedDefPageSize); } catch(e) {}
+}
+window.HUB_DEFAULT_PAGE_SIZE = _savedDefPageSize;
 window.HUB_CAT_PAGE_SIZE = window.HUB_DEFAULT_PAGE_SIZE; // backward-compat
 
 // Per-category custom overrides: { [catId]: number }
 let _savedCatPerPage = {};
-try { _savedCatPerPage = JSON.parse(localStorage.getItem('hub_cat_per_page') || '{}'); } catch(e) {}
+try {
+    _savedCatPerPage = JSON.parse(localStorage.getItem('hub_cat_per_page') || '{}');
+    let dirty = false;
+    for (const [k, v] of Object.entries(_savedCatPerPage)) {
+        if (!_allowedPageSizes.includes(v)) {
+            if (v <= 5) _savedCatPerPage[k] = 5;
+            else if (v <= 10) _savedCatPerPage[k] = 10;
+            else if (v <= 15) _savedCatPerPage[k] = 15;
+            else if (v <= 20) _savedCatPerPage[k] = 20;
+            else _savedCatPerPage[k] = 25;
+            dirty = true;
+        }
+    }
+    if (dirty) {
+        localStorage.setItem('hub_cat_per_page', JSON.stringify(_savedCatPerPage));
+    }
+} catch(e) {}
 window.HUB_CAT_PER_PAGE = _savedCatPerPage;
 
 window.hubGetCatPageSize = function(catId) {
     if (window.HUB_CAT_PER_PAGE && window.HUB_CAT_PER_PAGE[catId]) {
         return window.HUB_CAT_PER_PAGE[catId];
     }
-    return window.HUB_DEFAULT_PAGE_SIZE || 6;
+    return window.HUB_DEFAULT_PAGE_SIZE || 5;
 };
 
 window.hubSetDefaultPageSize = function(size) {
     size = parseInt(size, 10);
-    if (isNaN(size) || size < 4) size = 4;
+    if (isNaN(size) || size < 5) size = 5;
     if (size > 100) size = 100;
     window.HUB_DEFAULT_PAGE_SIZE = size;
     window.HUB_CAT_PAGE_SIZE = size;
@@ -256,7 +282,7 @@ window.hubSetCatPageSize = function(catId, size) {
         delete window.HUB_CAT_PER_PAGE[catId];
     } else {
         size = parseInt(size, 10);
-        if (!isNaN(size) && size >= 4) {
+        if (!isNaN(size) && size >= 5) {
             window.HUB_CAT_PER_PAGE[catId] = size;
         }
     }
@@ -510,7 +536,7 @@ window.hubCatSetPage = function(catId, page) {
 })();
 
 window.renderHubCatPagination = function(catId, page, totalPages, isPaginated) {
-    const defaultSize = window.HUB_DEFAULT_PAGE_SIZE || 6;
+    const defaultSize = window.HUB_DEFAULT_PAGE_SIZE || 5;
     const hasOverride = !!(window.HUB_CAT_PER_PAGE && window.HUB_CAT_PER_PAGE[catId]);
     const catPageSize = window.hubGetCatPageSize(catId);
     const pageLabel   = _hubT('hub_page', 'page');
@@ -575,12 +601,11 @@ window.renderHubCatPagination = function(catId, page, totalPages, isPaginated) {
             </button>
             <select class="cat-page-size-select" onchange="event.stopPropagation(); hubSetCatPageSize('${catId}', this.value);" title="${_hubT('hub_cards_per_page', 'Cards per page')}">
                 <option value="default" ${!hasOverride ? 'selected' : ''}>Default (${defaultSize})</option>
-                <option value="4" ${hasOverride && catPageSize === 4 ? 'selected' : ''}>4 / ${pageLabel}</option>
-                <option value="6" ${hasOverride && catPageSize === 6 ? 'selected' : ''}>6 / ${pageLabel}</option>
-                <option value="8" ${hasOverride && catPageSize === 8 ? 'selected' : ''}>8 / ${pageLabel}</option>
-                <option value="12" ${hasOverride && catPageSize === 12 ? 'selected' : ''}>12 / ${pageLabel}</option>
-                <option value="18" ${hasOverride && catPageSize === 18 ? 'selected' : ''}>18 / ${pageLabel}</option>
-                <option value="24" ${hasOverride && catPageSize === 24 ? 'selected' : ''}>24 / ${pageLabel}</option>
+                <option value="5" ${hasOverride && catPageSize === 5 ? 'selected' : ''}>5 / ${pageLabel}</option>
+                <option value="10" ${hasOverride && catPageSize === 10 ? 'selected' : ''}>10 / ${pageLabel}</option>
+                <option value="15" ${hasOverride && catPageSize === 15 ? 'selected' : ''}>15 / ${pageLabel}</option>
+                <option value="20" ${hasOverride && catPageSize === 20 ? 'selected' : ''}>20 / ${pageLabel}</option>
+                <option value="25" ${hasOverride && catPageSize === 25 ? 'selected' : ''}>25 / ${pageLabel}</option>
             </select>
         </div>
     `;
@@ -760,7 +785,7 @@ function renderConfigHub(mode = 'tabs') {
             const _catTotalPages  = Math.ceil(_catTotal / _catPageSize);
             const _catPage        = Math.max(1, Math.min(window.HUB_CAT_PAGES[currentTabCat] || 1, _catTotalPages || 1));
             const _isPaginated    = window.HUB_PAGINATED_CATS.has(currentTabCat);
-            const _needsPag       = _isPaginated || _catTotal > 4;
+            const _needsPag       = _isPaginated || _catTotal > 5;
             const _pagHtml        = _needsPag ? window.renderHubCatPagination(currentTabCat, _catPage, _catTotalPages, _isPaginated) : '';
             tabsHtml += `
                 <div class="category-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${currentTabCat}">
@@ -811,7 +836,7 @@ function renderConfigHub(mode = 'tabs') {
             const _catTotalPagesWall  = Math.ceil(_catTotalWall / _catPageSizeWall);
             const _catPageWall        = Math.max(1, Math.min(window.HUB_CAT_PAGES[currentCat] || 1, _catTotalPagesWall || 1));
             const _isPaginatedWall    = window.HUB_PAGINATED_CATS.has(currentCat);
-            const _needsPagWall       = _isPaginatedWall || _catTotalWall > 4;
+            const _needsPagWall       = _isPaginatedWall || _catTotalWall > 5;
             const _pagHtmlWall        = _needsPagWall ? window.renderHubCatPagination(currentCat, _catPageWall, _catTotalPagesWall, _isPaginatedWall) : '';
             wallHtml += `
                 <div class="category-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${currentCat}">

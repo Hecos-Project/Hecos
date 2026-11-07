@@ -6,7 +6,8 @@
 .dcc-nav-container {
     position: relative;
     width: 100%;
-    min-height: 40px; /* Base height for chips */
+    min-height: 56px; /* Base height for chips */
+    flex-shrink: 0;
     overflow: hidden; /* For slide animations */
     display: flex;
     flex-direction: column;
@@ -126,13 +127,13 @@
     width: 100%;
     overflow: hidden;
     position: relative;
-    height: 46px; /* Increased height to allow top hover transform without cutting off */
+    height: 54px; /* Increased height to allow top hover transform without cutting off */
 }
 
 .dcc-carousel-arrow {
     flex-shrink: 0;
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     border: none;
     border-radius: 50%;
     background: rgba(255,255,255,0.06);
@@ -160,8 +161,8 @@
 .dcc-featured-track {
     display: flex;
     flex-wrap: nowrap;
-    justify-content: center; /* Centers chips if there are fewer than 5 */
-    gap: 8px;
+    justify-content: center; /* Centers chips if there are fewer than 3 */
+    gap: 10px;
     width: 100%;
     position: absolute;
     top: 5px; /* Push down to leave room at the top for hover effect */
@@ -169,21 +170,117 @@
     transition: transform 0.25s ease-out;
 }
 
-/* 5 chips per page: (100% - 4 gaps of 8px) / 5 */
+/* 3 chips per page: (100% - 2 gaps of 10px) / 3 */
 .dcc-featured-chip {
-    flex: 0 0 calc((100% - 32px) / 5);
+    flex: 0 0 calc((100% - 20px) / 3);
+    max-width: calc((100% - 20px) / 3);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 8px;
     white-space: nowrap;
     overflow: hidden;
-    padding: 8px 12px !important;
+    padding: 10px 14px !important;
+    font-size: 13.5px;
+    font-weight: 500;
+    position: relative;
 }
 
 .dcc-featured-chip span {
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+    .dcc-nav-container {
+        min-height: 72px !important;
+        flex-shrink: 0 !important;
+        overflow: visible !important;
+    }
+
+    .dcc-l1-view {
+        flex-shrink: 0 !important;
+        width: 100% !important;
+    }
+
+    .dcc-featured-carousel {
+        gap: 6px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 4px !important;
+        box-sizing: border-box !important;
+        flex-shrink: 0 !important;
+    }
+
+    .dcc-carousel-arrow {
+        flex: 0 0 28px !important;
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 12px !important;
+    }
+
+    .dcc-featured-viewport {
+        flex: 1 1 0% !important;
+        width: auto !important;
+        min-width: 0 !important;
+        height: 72px !important;
+        min-height: 72px !important;
+        overflow-x: hidden !important;
+        overflow-y: visible !important;
+    }
+
+    .dcc-featured-track {
+        gap: 6px !important;
+        top: 5px !important;
+        height: 60px !important;
+        padding: 0 2px !important;
+        box-sizing: border-box !important;
+        align-items: stretch !important;
+    }
+
+    .dcc-featured-chip {
+        flex: 0 0 calc((100% - 16px) / 3) !important;
+        max-width: calc((100% - 16px) / 3) !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        padding: 8px 4px !important;
+        height: 58px !important;
+        min-height: 58px !important;
+        max-height: 58px !important;
+        box-sizing: border-box !important;
+        border-radius: 12px !important;
+        font-size: 12px !important;
+        overflow: visible !important;
+    }
+
+    .dcc-featured-chip i {
+        font-size: 15px !important;
+        margin: 0 !important;
+    }
+
+    .dcc-featured-chip span:not(.dcc-new-badge) {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        font-size: 11.5px !important;
+        font-weight: 600 !important;
+        line-height: 1.2 !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .dcc-featured-chip .dcc-new-badge {
+        position: absolute !important;
+        top: -4px !important;
+        right: -2px !important;
+        font-size: 8px !important;
+        padding: 1px 4px !important;
+        margin: 0 !important;
+    }
 }
 
 /* Page Transition Animations */

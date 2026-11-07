@@ -76,6 +76,46 @@
     font-size: 11px;
     color: #facc15;
   }
+
+  /* ── Mobile Footer (Save Bar) Optimization ─────────────────────────────── */
+  @media (max-width: 768px) {
+    .save-bar {
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px !important;
+      gap: 8px !important;
+      height: auto !important;
+      justify-content: flex-end !important;
+      flex-wrap: nowrap !important;
+      box-sizing: border-box !important;
+    }
+    #save-msg {
+      flex: 1 1 auto !important;
+      width: auto !important;
+      min-width: 0 !important;
+      margin: 0 auto 0 0 !important;
+      font-size: 11px !important;
+      text-align: left !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+    .save-bar .btn {
+      flex: 0 0 auto !important;
+      height: 34px !important;
+      padding: 0 12px !important;
+      font-size: 12px !important;
+    }
+    .save-bar .save-bar-btn-text {
+      display: none !important;
+    }
+    #btn-reload-ui,
+    #btn-save-config {
+      width: 36px !important;
+      min-width: 36px !important;
+      padding: 0 !important;
+      gap: 0 !important;
+      font-size: 13px !important;
+    }
+  }
 </style>
 
 <div class="save-bar">
@@ -89,6 +129,6 @@
             <i class="fas fa-power-off hc-pwr"></i>
         </span>
     </button>
-    <button type="button" class="btn btn-secondary" onclick="window.location.reload()"><i class="fas fa-sync-alt"></i> {{ t("webui_conf_btn_reload") }}</button>
-    <button type="button" class="btn btn-primary" onclick="saveConfig()"><i class="fas fa-save"></i> {{ t("webui_conf_btn_save") }}</button>
+    <button type="button" id="btn-reload-ui" class="btn btn-secondary" onclick="window.location.reload()" title="{{ t('webui_conf_btn_reload') }}" aria-label="{{ t('webui_conf_btn_reload') }}"><i class="fas fa-sync-alt"></i> <span class="save-bar-btn-text">{{ t("webui_conf_btn_reload") }}</span></button>
+    <button type="button" id="btn-save-config" class="btn btn-primary" onclick="saveConfig()" title="{{ t('webui_conf_btn_save') }}" aria-label="{{ t('webui_conf_btn_save') }}"><i class="fas fa-save"></i> <span class="save-bar-btn-text">{{ t("webui_conf_btn_save") }}</span></button>
 </div>

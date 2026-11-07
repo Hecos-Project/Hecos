@@ -35,11 +35,11 @@
 <link rel="preload" as="script" href="/static/js/config_manifest.js?v={{ version }}-persistence-v3">
 <link rel="preload" as="script" href="/static/js/packages_panel_render_meta.js?v={{ version }}">
 <link rel="preload" as="script" href="/static/js/config_core_utils.js?v={{ version }}">
-<link rel="preload" as="script" href="/static/js/config_core_hub.js?v={{ version }}-v7">
-<link rel="preload" as="script" href="/static/js/config_core_navigation.js?v={{ version }}-v7">
+<link rel="preload" as="script" href="/static/js/config_core_hub.js?v={{ version }}-v8">
+<link rel="preload" as="script" href="/static/js/config_core_navigation.js?v={{ version }}-v8">
 <link rel="preload" as="script" href="/static/js/config_core_init.js?v={{ version }}">
 <link rel="preload" as="script" href="/static/js/config_core.js?v={{ version }}">
-<link rel="preload" as="script" href="/static/js/config_search.js?v={{ version }}-v3">
+<link rel="preload" as="script" href="/static/js/config_search.js?v={{ version }}-v4">
 <style>
 :root { color-scheme: dark; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -83,17 +83,39 @@
 
     /* Fix Save Bar (Footer) */
     .save-bar {
-    padding: 8px 12px !important;
-    gap: 6px !important;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px !important;
+    gap: 8px !important;
     height: auto !important;
+    justify-content: flex-end !important;
+    flex-wrap: nowrap !important;
+    box-sizing: border-box !important;
     }
     .save-bar .btn {
-    padding: 6px 10px !important;
-    font-size: 11px !important;
-    flex: 1;
+    padding: 0 12px !important;
+    font-size: 12px !important;
+    flex: 0 0 auto !important;
+    height: 34px !important;
     white-space: nowrap;
     }
-    #save-msg { font-size: 10px; margin-bottom: 4px; width: 100%; text-align: center; }
+    .save-bar .save-bar-btn-text { display: none !important; }
+    #btn-reload-ui, #btn-save-config {
+    width: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    font-size: 13px !important;
+    }
+    #save-msg {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 auto 0 0 !important;
+    font-size: 11px !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    }
 
     .tabs {
     display: flex;

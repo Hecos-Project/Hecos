@@ -1,280 +1,528 @@
 <!DOCTYPE html>
 <html lang="{{ zconfig.language or 'en' }}">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-<title>Hecos — {{ t('webui_chat_title') }}</title>
-<link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
-<link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}&t=20260922">
-<link rel="stylesheet" href="/assets/css/chat.css?v={{ version }}&t=20261024_zoom2">
-<link rel="stylesheet" href="/static/css/welcome_screen.css?v={{ version }}">
-<link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}">
-<!-- GridStack.js — Widget Grid Library -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack.min.css">
-<!-- Control Room Module A -->
-<link rel="stylesheet" href="/assets/css/control_room_panel.css?v={{ version }}&t=20260921d">
-<link rel="stylesheet" href="/static/css/hecos_file_picker.css?v={{ version }}">
-<link rel="stylesheet" href="/static/css/hecos_wheel_picker.css?v={{ version }}">
-<script>console.log("HECOS_ROOM_CHAT_V2_ACTIVE");</script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'" onerror="this.onerror=null;this.removeAttribute('media');">
-<noscript>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
-</noscript>
-<link rel="stylesheet" href="/assets/css/mobile/responsive.css?v={{ version }}&t=20261106_mob_v1">
-<!-- WEB_UI Sidebar Widget Extensions -->
-<!-- WEB_UI Emoticons Extension -->
-<link rel="stylesheet" href="/ext/emoticons/static/css/emoticons.css?v={{ version }}">
-<!-- WEB_UI HBS & Presenter Extensions -->
-<link rel="stylesheet" href="/ext/hbs_common/static/css/hbs_base.css?v={{ version }}">
-<link rel="stylesheet" href="/ext/presenter/static/css/presenter.css?v={{ version }}&t=20261106_mob_v1">
-<!-- WEB_UI DCC Extension -->
-<link rel="stylesheet" href="/ext/dcc/static/css/dcc.css?v={{ version }}">
-<!-- Hecos Unified Progress Component -->
-<link rel="stylesheet" href="/static/css/hecos_progress.css?v={{ version }}-purple">
-<!-- CRITICAL: inline mobile overrides - cache-proof -->
-<style>
-  /* Default: hide hamburger/mobile elements on desktop, and ensure closed Soul Forge panel is never visible */
-  .mobile-only { display: none !important; }
-  #soul-forge-panel:not(.open), #session-overrides-panel:not(.open) { display: none !important; }
-  /* Mobile: show hamburger, hide desktop topbar */
-  @media (max-width: 768px) {
-    .mobile-only { display: flex !important; }
-    #topbar { display: none !important; }
-    #main { margin-left: 0 !important; width: 100%; }
-    /* CRITICAL FIX: override chat.css that sets display:none on #sidebar at 700px */
-    /* Use off-canvas (left:-100%) instead so it can slide in */
-    #sidebar {
-      display: block !important;
-      position: fixed !important;
-      left: -110% !important;
-      top: 0 !important;
-      height: 100% !important;
-      width: 260px !important;
-      z-index: 1000 !important;
-      transition: left 0.3s ease !important;
-      overflow-y: auto !important;
-      background: var(--bg2) !important;
-      box-shadow: 4px 0 20px var(--shadow) !important;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>Hecos — {{ t('webui_chat_title') }}</title>
+  <link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
+  <link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}&t=20260922">
+  <link rel="stylesheet" href="/assets/css/chat.css?v={{ version }}&t=20261106_mob_v2">
+  <link rel="stylesheet" href="/static/css/welcome_screen.css?v={{ version }}&t=20261106_mob_ws2">
+  <link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}">
+  <!-- GridStack.js — Widget Grid Library -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack.min.css">
+  <!-- Control Room Module A -->
+  <link rel="stylesheet" href="/assets/css/control_room_panel.css?v={{ version }}&t=20260921d">
+  <link rel="stylesheet" href="/static/css/hecos_file_picker.css?v={{ version }}">
+  <link rel="stylesheet" href="/static/css/hecos_wheel_picker.css?v={{ version }}">
+  <script>console.log("HECOS_ROOM_CHAT_V2_ACTIVE");</script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    media="print" onload="this.media='all'" onerror="this.onerror=null;this.removeAttribute('media');">
+  <noscript>
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  </noscript>
+  <link rel="stylesheet" href="/assets/css/mobile/responsive.css?v={{ version }}&t=20261106_mob_v2">
+  <!-- WEB_UI Sidebar Widget Extensions -->
+  <!-- WEB_UI Emoticons Extension -->
+  <link rel="stylesheet" href="/ext/emoticons/static/css/emoticons.css?v={{ version }}">
+  <!-- WEB_UI HBS & Presenter Extensions -->
+  <link rel="stylesheet" href="/ext/hbs_common/static/css/hbs_base.css?v={{ version }}">
+  <link rel="stylesheet" href="/ext/presenter/static/css/presenter.css?v={{ version }}&t=20261107_mob_v2">
+  <!-- WEB_UI DCC Extension -->
+  <link rel="stylesheet" href="/ext/dcc/static/css/dcc.css?v={{ version }}&t=20261106_mob_ws3">
+  <!-- Hecos Unified Progress Component -->
+  <link rel="stylesheet" href="/static/css/hecos_progress.css?v={{ version }}-purple">
+  <!-- CRITICAL: inline mobile overrides - cache-proof -->
+  <style>
+    /* Default: hide hamburger/mobile elements on desktop, and ensure closed Soul Forge panel is never visible */
+    .mobile-only {
+      display: none !important;
     }
-    #sidebar.open { left: 0 !important; }
-    #mobile-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:999; }
-    #mobile-overlay.active { display: block !important; }
-  }
-</style>
-{% include 'modules/chat_message_actions.html' %}
-{% include 'modules/chat_image_viewer.html' %}
+
+    #soul-forge-panel:not(.open),
+    #session-overrides-panel:not(.open) {
+      display: none !important;
+    }
+
+    /* Mobile: full-viewport flex layout, cache-proof */
+    @media (max-width: 768px) {
+
+      html,
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 100% !important;
+        overflow: hidden !important;
+        position: fixed !important;
+        inset: 0 !important;
+      }
+
+      .mobile-only {
+        display: flex !important;
+      }
+
+      .desktop-only {
+        display: none !important;
+      }
+
+      #topbar {
+        display: none !important;
+      }
+
+      #control-room-panel:not(.open),
+      #hbs-presenter-overlay:not(.active) {
+        display: none !important;
+      }
+
+      #main {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        overflow: hidden !important;
+        z-index: 1 !important;
+      }
+
+      .mobile-navbar {
+        flex: 0 0 auto !important;
+        width: 100% !important;
+      }
+
+      #chat-area,
+      .chat-area {
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        width: 100% !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+
+      #input-bar,
+      .input-container {
+        flex: 0 0 auto !important;
+        margin: 0 !important;
+        margin-top: auto !important;
+        width: 100% !important;
+        position: relative !important;
+        bottom: 0 !important;
+        padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px !important;
+        box-sizing: border-box !important;
+      }
+
+      /* CRITICAL FIX: override chat.css that sets display:none on #sidebar at 700px */
+      /* Use off-canvas (left:-100%) instead so it can slide in */
+      #sidebar {
+        display: block !important;
+        position: fixed !important;
+        left: -110% !important;
+        top: 0 !important;
+        height: 100% !important;
+        width: 260px !important;
+        z-index: 1000 !important;
+        transition: left 0.3s ease !important;
+        overflow-y: auto !important;
+        background: var(--bg2) !important;
+        box-shadow: 4px 0 20px var(--shadow) !important;
+      }
+
+      #sidebar.open {
+        left: 0 !important;
+      }
+
+      #mobile-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 999;
+      }
+
+      #mobile-overlay.active {
+        display: block !important;
+      }
+
+      /* Welcome Side 1 (Logo + 3 Dynamic Chips) & Side 2 (Avatar + Preset Pill) mobile adjustments */
+      #welcome {
+        padding: 4px 4px 14px 4px !important;
+        gap: 6px !important;
+        width: 100% !important;
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        justify-content: center !important;
+      }
+
+      .welcome-logo {
+        height: 64px !important;
+        max-height: 16vh !important;
+        min-height: 36px !important;
+        flex-shrink: 1 !important;
+        margin-bottom: 0 !important;
+      }
+
+      .welcome-title {
+        font-size: 20px !important;
+        line-height: 1.2 !important;
+        flex-shrink: 0 !important;
+      }
+
+      .welcome-sub {
+        font-size: 12.5px !important;
+        line-height: 1.35 !important;
+        max-width: 92% !important;
+        margin-bottom: 2px !important;
+        flex-shrink: 0 !important;
+      }
+
+      .dcc-nav-container {
+        min-height: 72px !important;
+        flex-shrink: 0 !important;
+        overflow: visible !important;
+      }
+
+      .dcc-l1-view {
+        flex-shrink: 0 !important;
+        width: 100% !important;
+      }
+
+      .dcc-featured-carousel {
+        gap: 6px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 4px !important;
+        box-sizing: border-box !important;
+        flex-shrink: 0 !important;
+      }
+
+      .dcc-carousel-arrow {
+        flex: 0 0 28px !important;
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 12px !important;
+      }
+
+      .dcc-featured-viewport {
+        flex: 1 1 0% !important;
+        width: auto !important;
+        min-width: 0 !important;
+        height: 72px !important;
+        min-height: 72px !important;
+        overflow-x: hidden !important;
+        overflow-y: visible !important;
+      }
+
+      .dcc-featured-track {
+        gap: 6px !important;
+        top: 5px !important;
+        height: 60px !important;
+        padding: 0 2px !important;
+        box-sizing: border-box !important;
+        align-items: stretch !important;
+      }
+
+      .dcc-featured-chip {
+        flex: 0 0 calc((100% - 16px) / 3) !important;
+        max-width: calc((100% - 16px) / 3) !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        padding: 8px 4px !important;
+        height: 58px !important;
+        min-height: 58px !important;
+        max-height: 58px !important;
+        box-sizing: border-box !important;
+        border-radius: 12px !important;
+        font-size: 12px !important;
+        position: relative !important;
+        overflow: visible !important;
+      }
+
+      .dcc-featured-chip i {
+        font-size: 15px !important;
+        margin: 0 !important;
+      }
+
+      .dcc-featured-chip span:not(.dcc-new-badge) {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        font-size: 11.5px !important;
+        font-weight: 600 !important;
+        line-height: 1.2 !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+
+      .dcc-featured-chip .dcc-new-badge {
+        position: absolute !important;
+        top: -4px !important;
+        right: -2px !important;
+        font-size: 8px !important;
+        padding: 1px 4px !important;
+        margin: 0 !important;
+      }
+
+      .hecos-welcome-container {
+        flex: 1 1 0% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        padding: 0 12px 48px 12px !important;
+        box-sizing: border-box !important;
+      }
+
+      .hecos-welcome-card-scene {
+        width: 104px !important;
+        height: 104px !important;
+        margin-bottom: 14px !important;
+        flex-shrink: 0 !important;
+      }
+
+      .hecos-welcome-name {
+        font-size: 21px !important;
+        margin-bottom: 8px !important;
+      }
+
+      .hecos-welcome-preset {
+        font-size: 0.8rem !important;
+        padding: 4px 12px !important;
+      }
+    }
+  </style>
+  {% include 'modules/chat_message_actions.html' %}
+  {% include 'modules/chat_image_viewer.html' %}
 </head>
+
 <body>
 
-<script>
-  (function() {
-    window.setTheme = function(theme, manual) {
-      document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate', 'theme-native');
-      if (theme && theme !== 'default') {
-        document.body.classList.add('theme-' + theme);
+  <script>
+    (function () {
+      window.setTheme = function (theme, manual) {
+        document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate', 'theme-native');
+        if (theme && theme !== 'default') {
+          document.body.classList.add('theme-' + theme);
+        }
+        if (manual) localStorage.setItem('hecos-ui-theme', theme);
+      };
+
+      var autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
+      var savedTheme = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
+
+      function applyAutoTheme() {
+        window.setTheme('native', false);
       }
-      if (manual) localStorage.setItem('hecos-ui-theme', theme);
+
+      if (autoTheme) {
+        applyAutoTheme();
+      } else {
+        window.setTheme(savedTheme, false);
+      }
+
+      // Explicit listener in case we want to support non-CSS themes for Auto in the future,
+      // though currently 'native' handles transitions purely in CSS.
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+        if (localStorage.getItem('hecos-ui-auto-theme') === 'true') {
+          applyAutoTheme();
+        }
+      });
+
+    })();
+  </script>
+
+  {% include 'modules/chat_sidebar.html' %}
+  <!-- Control Room Panel — Module A -->
+  {% include 'modules/control_room_panel.html' %}
+  {% include 'modules/neural_link.html' %}
+
+  <div id="main">
+    {% include 'modules/mobile/mobile_navbar.html' %}
+    {% include 'modules/chat_topbar.html' %}
+    <!-- Hecos Presenter Embedded Container — lives outside chat-area to survive SPA navigation -->
+    <div id="hbs-presenter-embedded"></div>
+    {% include 'modules/chat_area.html' %}
+    {% include 'modules/chat_input.html' %}
+  </div>
+
+  <script src="/static/js/neural_link/neural_link_logic.js"></script>
+
+  <script>
+    // I18N Strings for external JS
+    window.I18N = {{ translations | tojson | safe }};
+
+
+    /**
+     * Global translation function for Frontend JS
+     */
+    window.t = function (key, params = {}) {
+      let text = window.I18N[key] || key;
+      if (params) {
+        for (const [pKey, pVal] of Object.entries(params)) {
+          text = text.replace(new RegExp(`\\{${pKey}\\}`, 'g'), pVal);
+        }
+      }
+      return text;
     };
 
-    var autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
-    var savedTheme = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
-    
-    function applyAutoTheme() {
-      window.setTheme('native', false);
-    }
+    /**
+     * Global helper for opening the configuration panel from widgets.
+     * Handles responsive behavior: new tab on PC (>768px), same tab on mobile.
+     */
+    window.hecosOpenConfig = function (hash) {
+      const url = '/hecos/config/ui' + (hash || '');
+      if (window.innerWidth > 768) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        window.location.href = url;
+      }
+    };
+  </script>
+  <script src="/static/js/config_manifest.js?v={{ version }}"></script>
+  <script src="/static/js/chat_extensions.js"></script>
+  <script src="/static/vendor/marked.min.js"></script>
+  <link rel="stylesheet" href="/static/css/chat_media_preview.css?v={{ version }}">
+  <script src="/static/js/chat_media_zoom.js?v={{ version }}"></script>
+  <script src="/static/js/chat_media_processor.js?v={{ version }}&t=20261024_en"></script>
+  <script src="/netsearch_static/js/search/search_chat_card.js?v={{ version }}&t=20261031_v2"></script>
+  <script>
+    // Expose the global history to window so the renderer can read it
+    window.chatHistory = [];
+    window.HecosUserAvatar = "{{ profile.avatar_path if (profile and profile.avatar_path) else '' }}";
+    window.HecosUserName = "{{ current_user.username if current_user.is_authenticated else t('webui_user_label') }}";
+    window.HecosPersonaName = "{{ active_persona if active_persona else 'Hecos System Soul' }}";
+    window.HecosAvatar = "{{ active_avatar_url if active_avatar_url else '/assets/Hecos_Logo_NBG.png' }}";
+    window.HecosAvatarType = "{{ active_avatar_type if active_avatar_type else 'image' }}";
+    window._globalPersonaName = window.HecosPersonaName;
+    window._globalAvatar = window.HecosAvatar;
+    window.cfg = {{ zconfig | tojson }};
+    window.HECOS_VERSION = "{{ version }}";
+  </script>
 
-    if (autoTheme) {
-      applyAutoTheme();
-    } else {
-      window.setTheme(savedTheme, false);
-    }
+  <script src="/static/js/chat_audio_player.js?v={{ version }}"></script>
+  <script src="/static/js/chat_renderer.js?v={{ version }}&t=20261024_en"></script>
+  <link rel="stylesheet" href="/static/css/doc_preview.css?v={{ version }}">
+  <script src="/static/js/doc_preview.js?v={{ version }}"></script>
+  <link rel="stylesheet" href="/static/css/agent_traces.css?v={{ version }}">
+  <script src="/static/js/agent/agent_traces.js?v={{ version }}"></script>
+  <!-- DCC — Dynamic Capability Chips (must load before welcome_screen) -->
+  <script src="/ext/dcc/static/js/dcc_render.js?v={{ version }}&t=20261106_mob_ws1"></script>
+  <script src="/ext/dcc/static/js/dcc_core.js?v={{ version }}&t=20261106_mob_ws1"></script>
+  <!-- Welcome Screen Module (modular replacement for chat_welcome.js) -->
+  <script src="/static/js/welcome_screen/ws_chips.js?v={{ version }}&t=20261106_mob_ws1"></script>
+  <script src="/static/js/welcome_screen/ws_main.js?v={{ version }}&t=20261106_mob_ws1"></script>
+  <script src="/static/js/welcome_screen/ws_avatar.js?v={{ version }}&t=20261106_mob_ws1"></script>
+  <script src="/static/js/welcome_screen/ws_hybrid.js?v={{ version }}&t=20261106_mob_ws1"></script>
+  <script src="/static/js/welcome_screen/ws_core.js?v={{ version }}&t=20261106_mob_ws1"></script>
+  <script src="/static/js/chat_ui.js?v={{ version }}&t=20261106_mob_v2"></script>
+  <script src="/static/js/chat_api.js?v={{ version }}&t=20261024_en"></script>
+  <script src="/static/js/hecos_progress.js?v={{ version }}-purple"></script>
+  <script src="/static/js/chat_events.js?v={{ version }}&t=20261027_nopttdup"></script>
+  <script src="/static/js/hecos_wheel_picker.js?v={{ version }}"></script>
+  <script src="/static/js/audio_controls.js?v={{ version }}"></script>
+  <script src="/static/js/chat_message_actions.js?v={{ version }}"></script>
+  <script src="/static/js/chat_input_toolbar.js?v={{ version }}&t=20261107_media1"></script>
+  <script src="/static/js/modules/hecos_gallery.js?v={{ version }}"></script>
+  <script src="/static/js/chat_image_viewer.js?v={{ version }}"></script>
+  <script src="/static/js/client_camera.js?v={{ version }}"></script>
+  <!-- Refactored Audio UI Modules -->
+  <script src="/static/js/audio_encoder.js?v={{ version }}"></script>
+  <script src="/static/js/audio_recorder.js?v={{ version }}&t=20261031_pttfix"></script>
+  <script src="/static/js/audio_ui.js?v={{ version }}&t=20261031_pttfix"></script>
+  <script src="/static/js/mobile/mobile_logic.js?v={{ version }}"></script>
+  <script src="/static/js/pull_to_refresh.js?v={{ version }}"></script>
+  <script src="/static/js/chat_history/ch_state.js?v={{ version }}"></script>
+  <script src="/static/js/chat_history/ch_modes.js?v={{ version }}"></script>
+  <script src="/static/js/chat_history/ch_render.js?v={{ version }}"></script>
+  <script src="/static/js/chat_history/ch_restore.js?v={{ version }}"></script>
+  <script src="/static/js/chat_history/ch_actions.js?v={{ version }}"></script>
+  <!-- WEB_UI Sidebar Widget Extensions -->
+  <script src="/static/js/sidebar_widgets.js?v={{ version }}"></script>
+  <!-- Core Components -->
+  <script src="/static/js/hecos_file_picker.js?v={{ version }}"></script>
+  <script src="/static/js/aesthetic_picker/palettes.js?v={{ version }}"></script>
+  <script src="/static/js/aesthetic_picker/color_ui.js?v={{ version }}"></script>
+  <script src="/static/js/aesthetic_picker/image_ui.js?v={{ version }}"></script>
+  <script src="/static/js/aesthetic_picker/style_ui.js?v={{ version }}"></script>
+  <script src="/static/js/aesthetic_picker/core.js?v={{ version }}"></script>
 
-    // Explicit listener in case we want to support non-CSS themes for Auto in the future,
-    // though currently 'native' handles transitions purely in CSS.
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
-      if (localStorage.getItem('hecos-ui-auto-theme') === 'true') {
-        applyAutoTheme();
+  <!-- Control Room Module A -->
+  <script src="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack-all.js"></script>
+  <script src="/static/js/control_room_grid_sync.js?v={{ version }}"></script>
+  <script src="/static/js/control_room_grid_render.js?v={{ version }}"></script>
+  <script src="/static/js/control_room_grid_drag.js?v={{ version }}"></script>
+  <script src="/static/js/control_room_grid_actions.js?v={{ version }}"></script>
+  <script src="/static/js/control_room_grid_aes.js?v={{ version }}"></script>
+  <script src="/static/js/control_room_grid.js?v={{ version }}&t=20260921d"></script>
+  <script src="/static/js/control_room.js?v={{ version }}&t=20260921d"></script>
+  <!-- WEB_UI Emoticons Extension -->
+  <script src="/ext/emoticons/static/js/emoticons.js?v={{ version }}"></script>
+  <!-- WEB_UI HBS & Presenter Extensions -->
+  <script src="/ext/hbs_common/static/js/hbs_utils.js?v={{ version }}"></script>
+  <script src="/ext/presenter/static/js/presenter_state.js?v={{ version }}&t=20261107_mob_v2"></script>
+  <script src="/ext/presenter/static/js/presenter_stats.js?v={{ version }}&t=20261107_mob_v2"></script>
+  <script src="/ext/presenter/static/js/presenter_stats_ui.js?v={{ version }}&t=20261107_mob_v2"></script>
+  <script src="/ext/presenter/static/js/presenter_ui.js?v={{ version }}&t=20261107_mob_v2"></script>
+  <script src="/ext/presenter/static/js/presenter.js?v={{ version }}&t=20261107_mob_v2"></script>
+  <!-- HDCS Command Palette (self-contained, no ES modules) -->
+  <link rel="stylesheet" href="/assets/css/cmd_palette.css?v={{ version }}">
+  <script src="/static/js/commands/hecos_cmd_palette.js?v={{ version }}"></script>
+
+  <!-- ⚡ Quick Config / Soul Forge (Unified) -->
+  <link rel="stylesheet" href="/static/css/global_presets.css?v={{ version }}&t=20261106_mob_sf1">
+  {% include 'modules/chat_global_presets.html' %}
+  <script src="/static/js/global_presets/gp_state.js?v={{ version }}&t=20261106_mob_sf1"></script>
+  <script src="/static/js/global_presets/gp_ui.js?v={{ version }}&t=20261106_mob_sf1"></script>
+  <script src="/static/js/global_presets/gp_actions.js?v={{ version }}&t=20261106_mob_sf1"></script>
+  <script src="/static/js/global_presets/gp_xtts.js?v={{ version }}&t=20261106_mob_sf1"></script>
+  <script src="/static/js/global_presets/gp_fish.js?v={{ version }}&t=20261106_mob_sf1"></script>
+  <script src="/static/js/global_presets/gp_kokoro.js?v={{ version }}&t=20261106_mob_sf1"></script>
+
+  <!-- HKS — Hecos Keyboard Shortcuts System -->
+  <link rel="stylesheet" href="/static/css/keyboard_shortcuts.css?v={{ version }}">
+  <script src="/static/js/keyboard_shortcuts/hks_core.js?v={{ version }}"></script>
+  <script src="/static/js/keyboard_shortcuts/hks_bindings.js?v={{ version }}"></script>
+  <script src="/static/js/keyboard_shortcuts/hks_actions.js?v={{ version }}"></script>
+  <script src="/static/js/keyboard_shortcuts/hks_overlay.js?v={{ version }}"></script>
+  <script src="/static/js/keyboard_shortcuts/hks_recorder.js?v={{ version }}"></script>
+  <script src="/static/js/chat_toast_unified/chat_toast_unified.js?v={{ version }}"></script>
+  <script src="/static/js/keyboard_shortcuts/hks_tooltips.js?v={{ version }}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      if (window.HKS) {
+        window.HKS.setContext('chat');
+        // Register Tab cycling zones for the Chat page
+        window.HKS.registerFocusZones([
+          '#sidebar',
+          '#main',
+          '#user-input',
+          '#topbar'
+        ]);
       }
     });
-
-  })();
-</script>
-
-{% include 'modules/chat_sidebar.html' %}
-<!-- Control Room Panel — Module A -->
-{% include 'modules/control_room_panel.html' %}
-{% include 'modules/neural_link.html' %}
-
-<div id="main">
-  {% include 'modules/mobile/mobile_navbar.html' %}
-  {% include 'modules/chat_topbar.html' %}
-  <!-- Hecos Presenter Embedded Container — lives outside chat-area to survive SPA navigation -->
-  <div id="hbs-presenter-embedded"></div>
-  {% include 'modules/chat_area.html' %}
-  {% include 'modules/chat_input.html' %}
-</div>
-
-<script src="/static/js/neural_link/neural_link_logic.js"></script>
-
-<script>
-  // I18N Strings for external JS
-  window.I18N = {{ translations | tojson | safe }};
-
-
-  /**
-   * Global translation function for Frontend JS
-   */
-  window.t = function(key, params = {}) {
-    let text = window.I18N[key] || key;
-    if (params) {
-      for (const [pKey, pVal] of Object.entries(params)) {
-        text = text.replace(new RegExp(`\\{${pKey}\\}`, 'g'), pVal);
-      }
-    }
-    return text;
-  };
-
-  /**
-   * Global helper for opening the configuration panel from widgets.
-   * Handles responsive behavior: new tab on PC (>768px), same tab on mobile.
-   */
-  window.hecosOpenConfig = function(hash) {
-    const url = '/hecos/config/ui' + (hash || '');
-    if (window.innerWidth > 768) {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } else {
-      window.location.href = url;
-    }
-  };
-</script>
-<script src="/static/js/config_manifest.js?v={{ version }}"></script>
-<script src="/static/js/chat_extensions.js"></script>
-<script src="/static/vendor/marked.min.js"></script>
-<link rel="stylesheet" href="/static/css/chat_media_preview.css?v={{ version }}">
-<script src="/static/js/chat_media_zoom.js?v={{ version }}"></script>
-<script src="/static/js/chat_media_processor.js?v={{ version }}&t=20261024_en"></script>
-<script src="/netsearch_static/js/search/search_chat_card.js?v={{ version }}&t=20261031_v2"></script>
-<script>
-  // Expose the global history to window so the renderer can read it
-  window.chatHistory = [];
-  window.HecosUserAvatar = "{{ profile.avatar_path if (profile and profile.avatar_path) else '' }}";
-  window.HecosUserName = "{{ current_user.username if current_user.is_authenticated else t('webui_user_label') }}";
-  window.HecosPersonaName = "{{ active_persona if active_persona else 'Hecos System Soul' }}";
-  window.HecosAvatar = "{{ active_avatar_url if active_avatar_url else '/assets/Hecos_Logo_NBG.png' }}";
-  window.HecosAvatarType = "{{ active_avatar_type if active_avatar_type else 'image' }}";
-  window._globalPersonaName = window.HecosPersonaName;
-  window._globalAvatar = window.HecosAvatar;
-  window.cfg = {{ zconfig | tojson }};
-  window.HECOS_VERSION = "{{ version }}";
-</script>
-
-<script src="/static/js/chat_audio_player.js?v={{ version }}"></script>
-<script src="/static/js/chat_renderer.js?v={{ version }}&t=20261024_en"></script>
-<link rel="stylesheet" href="/static/css/doc_preview.css?v={{ version }}">
-<script src="/static/js/doc_preview.js?v={{ version }}"></script>
-<link rel="stylesheet" href="/static/css/agent_traces.css?v={{ version }}">
-<script src="/static/js/agent/agent_traces.js?v={{ version }}"></script>
-<!-- DCC — Dynamic Capability Chips (must load before welcome_screen) -->
-<script src="/ext/dcc/static/js/dcc_render.js?v={{ version }}"></script>
-<script src="/ext/dcc/static/js/dcc_core.js?v={{ version }}"></script>
-<!-- Welcome Screen Module (modular replacement for chat_welcome.js) -->
-<script src="/static/js/welcome_screen/ws_chips.js?v={{ version }}"></script>
-<script src="/static/js/welcome_screen/ws_main.js?v={{ version }}"></script>
-<script src="/static/js/welcome_screen/ws_avatar.js?v={{ version }}"></script>
-<script src="/static/js/welcome_screen/ws_hybrid.js?v={{ version }}"></script>
-<script src="/static/js/welcome_screen/ws_core.js?v={{ version }}"></script>
-<script src="/static/js/chat_ui.js?v={{ version }}"></script>
-<script src="/static/js/chat_api.js?v={{ version }}&t=20261024_en"></script>
-<script src="/static/js/hecos_progress.js?v={{ version }}-purple"></script>
-<script src="/static/js/chat_events.js?v={{ version }}&t=20261027_nopttdup"></script>
-<script src="/static/js/hecos_wheel_picker.js?v={{ version }}"></script>
-<script src="/static/js/audio_controls.js?v={{ version }}"></script>
-<script src="/static/js/chat_message_actions.js?v={{ version }}"></script>
-<script src="/static/js/chat_input_toolbar.js?v={{ version }}&t=20261025_media3"></script>
-<script src="/static/js/modules/hecos_gallery.js?v={{ version }}"></script>
-<script src="/static/js/chat_image_viewer.js?v={{ version }}"></script>
-<script src="/static/js/client_camera.js?v={{ version }}"></script>
-<!-- Refactored Audio UI Modules -->
-<script src="/static/js/audio_encoder.js?v={{ version }}"></script>
-<script src="/static/js/audio_recorder.js?v={{ version }}&t=20261031_pttfix"></script>
-<script src="/static/js/audio_ui.js?v={{ version }}&t=20261031_pttfix"></script>
-<script src="/static/js/mobile/mobile_logic.js?v={{ version }}"></script>
-<script src="/static/js/pull_to_refresh.js?v={{ version }}"></script>
-<script src="/static/js/chat_history/ch_state.js?v={{ version }}"></script>
-<script src="/static/js/chat_history/ch_modes.js?v={{ version }}"></script>
-<script src="/static/js/chat_history/ch_render.js?v={{ version }}"></script>
-<script src="/static/js/chat_history/ch_restore.js?v={{ version }}"></script>
-<script src="/static/js/chat_history/ch_actions.js?v={{ version }}"></script>
-<!-- WEB_UI Sidebar Widget Extensions -->
-<script src="/static/js/sidebar_widgets.js?v={{ version }}"></script>
-<!-- Core Components -->
-<script src="/static/js/hecos_file_picker.js?v={{ version }}"></script>
-<script src="/static/js/aesthetic_picker/palettes.js?v={{ version }}"></script>
-<script src="/static/js/aesthetic_picker/color_ui.js?v={{ version }}"></script>
-<script src="/static/js/aesthetic_picker/image_ui.js?v={{ version }}"></script>
-<script src="/static/js/aesthetic_picker/style_ui.js?v={{ version }}"></script>
-<script src="/static/js/aesthetic_picker/core.js?v={{ version }}"></script>
-
-<!-- Control Room Module A -->
-<script src="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack-all.js"></script>
-<script src="/static/js/control_room_grid_sync.js?v={{ version }}"></script>
-<script src="/static/js/control_room_grid_render.js?v={{ version }}"></script>
-<script src="/static/js/control_room_grid_drag.js?v={{ version }}"></script>
-<script src="/static/js/control_room_grid_actions.js?v={{ version }}"></script>
-<script src="/static/js/control_room_grid_aes.js?v={{ version }}"></script>
-<script src="/static/js/control_room_grid.js?v={{ version }}&t=20260921d"></script>
-<script src="/static/js/control_room.js?v={{ version }}&t=20260921d"></script>
-<!-- WEB_UI Emoticons Extension -->
-<script src="/ext/emoticons/static/js/emoticons.js?v={{ version }}"></script>
-<!-- WEB_UI HBS & Presenter Extensions -->
-<script src="/ext/hbs_common/static/js/hbs_utils.js?v={{ version }}"></script>
-<script src="/ext/presenter/static/js/presenter_state.js?v={{ version }}&t=20261106_mob_v1"></script>
-<script src="/ext/presenter/static/js/presenter_stats.js?v={{ version }}&t=20261106_mob_v1"></script>
-<script src="/ext/presenter/static/js/presenter_stats_ui.js?v={{ version }}&t=20261106_mob_v1"></script>
-<script src="/ext/presenter/static/js/presenter_ui.js?v={{ version }}&t=20261106_mob_v1"></script>
-<script src="/ext/presenter/static/js/presenter.js?v={{ version }}&t=20261106_mob_v1"></script>
-<!-- HDCS Command Palette (self-contained, no ES modules) -->
-<link rel="stylesheet" href="/assets/css/cmd_palette.css?v={{ version }}">
-<script src="/static/js/commands/hecos_cmd_palette.js?v={{ version }}"></script>
-
-<!-- ⚡ Quick Config / Soul Forge (Unified) -->
-<link rel="stylesheet" href="/static/css/global_presets.css?v={{ version }}&t=20261106_mob_sf1">
-{% include 'modules/chat_global_presets.html' %}
-<script src="/static/js/global_presets/gp_state.js?v={{ version }}&t=20261106_mob_sf1"></script>
-<script src="/static/js/global_presets/gp_ui.js?v={{ version }}&t=20261106_mob_sf1"></script>
-<script src="/static/js/global_presets/gp_actions.js?v={{ version }}&t=20261106_mob_sf1"></script>
-<script src="/static/js/global_presets/gp_xtts.js?v={{ version }}&t=20261106_mob_sf1"></script>
-<script src="/static/js/global_presets/gp_fish.js?v={{ version }}&t=20261106_mob_sf1"></script>
-<script src="/static/js/global_presets/gp_kokoro.js?v={{ version }}&t=20261106_mob_sf1"></script>
-
-<!-- HKS — Hecos Keyboard Shortcuts System -->
-<link rel="stylesheet" href="/static/css/keyboard_shortcuts.css?v={{ version }}">
-<script src="/static/js/keyboard_shortcuts/hks_core.js?v={{ version }}"></script>
-<script src="/static/js/keyboard_shortcuts/hks_bindings.js?v={{ version }}"></script>
-<script src="/static/js/keyboard_shortcuts/hks_actions.js?v={{ version }}"></script>
-<script src="/static/js/keyboard_shortcuts/hks_overlay.js?v={{ version }}"></script>
-<script src="/static/js/keyboard_shortcuts/hks_recorder.js?v={{ version }}"></script>
-<script src="/static/js/chat_toast_unified/chat_toast_unified.js?v={{ version }}"></script>
-<script src="/static/js/keyboard_shortcuts/hks_tooltips.js?v={{ version }}"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  if (window.HKS) {
-    window.HKS.setContext('chat');
-    // Register Tab cycling zones for the Chat page
-    window.HKS.registerFocusZones([
-      '#sidebar',
-      '#main',
-      '#user-input',
-      '#topbar'
-    ]);
-  }
-});
-</script>
+  </script>
 
 </body>
-</html>
 
+</html>
