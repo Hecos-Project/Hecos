@@ -323,7 +323,12 @@ function setCategoryFilter(cat) {
         activeTab = '';
         uiState.collapsedCategories = [];
         const mainWrapper = document.getElementById('config-main-ui-wrapper');
-        if (mainWrapper) mainWrapper.style.display = 'block';
+        if (mainWrapper) {
+            mainWrapper.style.removeProperty('display');
+            mainWrapper.style.setProperty('display', 'block', 'important');
+        }
+        const tBar = document.getElementById('tabs-bar-container');
+        if (tBar && viewMode === 'tabs') tBar.style.display = 'block';
         const wall = document.getElementById('config-wall');
         if (wall && viewMode === 'wall') wall.style.display = 'flex';
     }
