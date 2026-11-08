@@ -3,13 +3,43 @@
     <div><i class="fas fa-wave-square"></i> Kokoro Engine</div>
     <span class="badge-pill badge-accent">Balanced</span>
   </div>
-  <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 16px; font-family: monospace; font-size: 11px; color: var(--muted);">
-    <div style="margin-bottom: 8px;">
-      Kokoro TTS is a lightweight neural speech synthesizer running locally on CPU or GPU with studio-quality audio.
+  <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+      <div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span style="font-weight:600; font-size:13px; color:var(--text);"><i class="fas fa-memory"></i> Kokoro-82M In-Memory Runtime</span>
+          <span id="kokoro-runtime-pill" class="badge-pill badge-neutral">⚪ Checking...</span>
+          <span id="kokoro-status-badge" class="badge-pill badge-ok" style="font-size:10px;">✅ Installed</span>
+        </div>
+        <div id="kokoro-runtime-desc" style="font-size: 11px; color: var(--muted); margin-top: 3px; font-family: monospace;">
+          Neural StyleTTS2 pipeline running locally on GPU / CPU
+        </div>
+      </div>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-kokoro-runtime-start" onclick="ttsEngineRuntimeAction('kokoro', 'start')" style="display:none;" title="Preload Kokoro pipeline and voice weights into RAM/VRAM">
+          <i class="fas fa-play"></i> Load Model
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-kokoro-runtime-restart" onclick="ttsEngineRuntimeAction('kokoro', 'restart')" title="Reload Kokoro pipeline in memory">
+          <i class="fas fa-sync-alt"></i> Reload
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-kokoro-runtime-stop" onclick="ttsEngineRuntimeAction('kokoro', 'stop')" title="Unload Kokoro model from RAM/VRAM">
+          <i class="fas fa-power-off"></i> Unload (Free RAM)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="refreshTTSEnginesRuntime(true)" title="Refresh runtime status">
+          <i class="fas fa-heartbeat"></i>
+        </button>
+        <span id="v-kokoro-timer" style="color: var(--accent); display: none; font-family: monospace; font-size: 11px;">0.0s</span>
+      </div>
     </div>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span id="kokoro-status-badge" class="badge-pill badge-ok">✅ Installed</span>
-      <span id="v-kokoro-timer" style="color: var(--accent); display: none;">0.0s</span>
+    <div class="toggle-row" style="margin:0; padding-top:8px; border-top:1px dashed var(--border);">
+      <div class="toggle-info">
+        <strong style="font-size:12px;">Auto-load at Hecos Boot (when Active)</strong>
+        <div style="font-size:11px; color:var(--muted);">Automatically warms up Kokoro in RAM/VRAM at Hecos startup when selected as the active TTS engine</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="v-kokoro-autostart" checked onchange="if(window.saveAudioConfig) window.saveAudioConfig();">
+        <span class="slider"></span>
+      </label>
     </div>
     <div id="v-kokoro-progress-container" class="hp-track" style="display: none; margin-top: 8px;">
       <div id="v-kokoro-progress-bar" class="hp-fill" style="width: 0%;"></div>

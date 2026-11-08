@@ -725,6 +725,7 @@ hecos/data/store_cache*.json
 hecos/data/hpm_auth.json
 hecos/data/*_auth.json
 hecos/data/*_token*
+hecos/data/run/
 *.env
 .env.*
 

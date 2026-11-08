@@ -132,12 +132,13 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
             zconfig_data  = cfg_mgr.config
             from flask import make_response
             from hecos.core.system.version import _get_version
+            ver_tag = app.jinja_env.globals.get("version") or _get_version()
             rendered = render_template(
                 "index.html",
                 zconfig=zconfig_data,
                 zoptions={},
                 translations=translations,
-                version=_get_version(),
+                version=ver_tag,
             )
             _ui_cache[cache_key] = (now_ts, rendered)
             if len(_ui_cache) > 10:

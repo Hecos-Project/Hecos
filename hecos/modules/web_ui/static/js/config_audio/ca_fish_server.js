@@ -84,7 +84,7 @@
 
         const actionLabels = {
             restart: "Restarting Fish Speech server (reloading PyTorch model into VRAM)...",
-            start: "Starting Fish Speech server on port 8080...",
+            start: "Starting local Fish Speech server (default port 18480)...",
             stop: "Stopping Fish Speech server and freeing GPU VRAM..."
         };
 

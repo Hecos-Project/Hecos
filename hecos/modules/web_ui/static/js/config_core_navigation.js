@@ -159,6 +159,9 @@ async function showTab(name, skipScroll = false) {
   if (name === 'packages' && typeof window.hpmLoadRepositories === 'function') window.hpmLoadRepositories();
   if ((name === 'netsearch' || targetId === 'netsearch') && typeof window.loadNetSearchPanelConfig === 'function') window.loadNetSearchPanelConfig();
   if ((name === 'presenter' || targetId === 'presenter') && typeof window.loadPresenterConfig === 'function') window.loadPresenterConfig();
+  if (name === 'voice' || targetId === 'voice' || name === 'audio' || targetId === 'audio') {
+      if (typeof window.refreshTTSEnginesRuntime === 'function') window.refreshTTSEnginesRuntime(false);
+  }
   
   // Scroll panel container to top
   if (!skipScroll) {

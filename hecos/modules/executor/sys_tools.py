@@ -114,6 +114,11 @@ def reboot_system_tool() -> str:
     if _HAS_WINSOUND:
         winsound.Beep(600, 150)
         winsound.Beep(400, 150)
+    try:
+        from hecos.core.audio.tts_manager import shutdown_all_tts
+        shutdown_all_tts()
+    except Exception:
+        pass
     os._exit(42)
     return "Rebooting..."
 

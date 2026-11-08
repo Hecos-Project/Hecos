@@ -75,7 +75,6 @@ class AgentTraceUI {
         </div>
         <div class="agent-trace-right">
           <span class="agent-trace-count-badge" style="display:none;"></span>
-          <span class="agent-trace-timer">0.0s</span>
           <i class="fas fa-chevron-down agent-trace-chevron"></i>
         </div>
       </div>
@@ -87,6 +86,13 @@ class AgentTraceUI {
       e.stopPropagation();
       if (card.classList.contains('minimal-mode')) return;
       card.classList.toggle('expanded');
+      if (card === this.activeCard && card.classList.contains('expanded')) {
+        const timerEl = card.querySelector('.agent-trace-timeline .agent-trace-timer');
+        if (timerEl) {
+          const elapsed = Math.max(0, performance.now() - this.turnStartMs);
+          timerEl.textContent = `${(elapsed / 1000).toFixed(1)}s`;
+        }
+      }
     };
 
     // Place INSIDE .msg.ai .msg-content-wrapper right before .msg-bubble
@@ -134,14 +140,16 @@ class AgentTraceUI {
 
   _startLiveTimer() {
     this._stopLiveTimer();
+    if (this.turnMeta && this.turnMeta.trace_mode === 'minimal') return;
     this.timerInterval = setInterval(() => {
       if (!this.activeCard || !document.body.contains(this.activeCard)) {
         this._stopLiveTimer();
         return;
       }
-      const timerEl = this.activeCard.querySelector('.agent-trace-timer');
+      if (!this.activeCard.classList.contains('expanded')) return;
+      const timerEl = this.activeCard.querySelector('.agent-trace-timeline .agent-trace-timer');
       if (timerEl) {
-        const elapsed = performance.now() - this.turnStartMs;
+        const elapsed = Math.max(0, performance.now() - this.turnStartMs);
         timerEl.textContent = `${(elapsed / 1000).toFixed(1)}s`;
       }
     }, 100);
@@ -260,7 +268,7 @@ class AgentTraceUI {
     }
   }
 
-  _renderTimeline(card, stepsListOverride = null, showArgsOverride = null) {
+  _renderTimeline(card, stepsListOverride = null, showArgsOverride = null, totalMsOverride = null) {
     const timelineEl = card.querySelector('.agent-trace-timeline');
     if (!timelineEl) return;
 
@@ -268,6 +276,9 @@ class AgentTraceUI {
     const showArgs = showArgsOverride !== null ? showArgsOverride : (this.turnMeta.trace_show_args !== false);
 
     timelineEl.innerHTML = '';
+
+    const stepsContainer = document.createElement('div');
+    stepsContainer.className = 'agent-trace-steps';
 
     steps.forEach(s => {
       const row = document.createElement('div');
@@ -321,8 +332,30 @@ class AgentTraceUI {
         </div>
       `;
 
-      timelineEl.appendChild(row);
+      stepsContainer.appendChild(row);
     });
+
+    timelineEl.appendChild(stepsContainer);
+
+    const totalRow = document.createElement('div');
+    totalRow.className = 'agent-trace-total-row';
+    const totalLabel = this._isItalian() ? 'Tempo totale' : 'Total time';
+    let totalText = '';
+    if (totalMsOverride !== null) {
+      totalText = totalMsOverride > 0 ? this._formatMs(totalMsOverride) : '—';
+    } else {
+      const elapsed = Math.max(0, performance.now() - this.turnStartMs);
+      totalText = `${(elapsed / 1000).toFixed(1)}s`;
+    }
+
+    totalRow.innerHTML = `
+      <span class="total-row-icon"><i class="far fa-clock"></i></span>
+      <div class="total-row-main">
+        <span class="total-row-label">${totalLabel}</span>
+        <span class="agent-trace-timer">${totalText}</span>
+      </div>
+    `;
+    timelineEl.appendChild(totalRow);
   }
 
   _buildSummaryTitle(steps, toolsUsed, hasError) {
@@ -387,9 +420,10 @@ class AgentTraceUI {
             .filter(Boolean)
         ));
 
-    const totalMs = (summaryOverride && summaryOverride.duration_ms)
-      ? summaryOverride.duration_ms
-      : Math.max(0, performance.now() - this.turnStartMs);
+    const stepsSumMs = steps.reduce((acc, s) => acc + (Number(s && s.duration_ms) || 0), 0);
+    const totalMs = (summaryOverride && Number(summaryOverride.duration_ms) > 0)
+      ? Number(summaryOverride.duration_ms)
+      : Math.max(stepsSumMs, performance.now() - this.turnStartMs);
 
     card.classList.remove('level-info', 'level-tool', 'level-vision');
     card.classList.add('finished');
@@ -422,12 +456,7 @@ class AgentTraceUI {
       countBadge.style.display = 'none';
     }
 
-    const timerEl = card.querySelector('.agent-trace-timer');
-    if (timerEl) {
-      timerEl.textContent = this._formatMs(totalMs);
-    }
-
-    this._renderTimeline(card, steps, cfg.trace_show_args !== false);
+    this._renderTimeline(card, steps, cfg.trace_show_args !== false, totalMs);
 
     if (afterDone === 'expanded') {
       card.classList.add('expanded');
@@ -458,7 +487,8 @@ class AgentTraceUI {
 
     const hasError = traceSummary.status === 'error' || traceSummary.steps.some(s => s.status === 'error');
     const toolsUsed = Array.isArray(traceSummary.tools_used) ? traceSummary.tools_used : [];
-    const totalMs = traceSummary.duration_ms || 0;
+    const stepsSumMs = traceSummary.steps.reduce((acc, s) => acc + (Number(s && s.duration_ms) || 0), 0);
+    const totalMs = Number(traceSummary.duration_ms) > 0 ? Number(traceSummary.duration_ms) : stepsSumMs;
     const summaryTitle = this._buildSummaryTitle(traceSummary.steps, toolsUsed, hasError);
 
     const card = document.createElement('div');
@@ -478,7 +508,6 @@ class AgentTraceUI {
           </div>
         </div>
         <div class="agent-trace-right">
-          <span class="agent-trace-timer">${this._formatMs(totalMs)}</span>
           <i class="fas fa-chevron-down agent-trace-chevron"></i>
         </div>
       </div>
@@ -491,7 +520,7 @@ class AgentTraceUI {
       card.classList.toggle('expanded');
     };
 
-    this._renderTimeline(card, traceSummary.steps, cfg.trace_show_args !== false);
+    this._renderTimeline(card, traceSummary.steps, cfg.trace_show_args !== false, totalMs);
 
     if (bubble) {
       wrapper.insertBefore(card, bubble);

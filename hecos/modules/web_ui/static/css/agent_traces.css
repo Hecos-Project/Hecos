@@ -206,14 +206,6 @@
   color: var(--muted, #94a3b8);
 }
 
-.agent-trace-timer {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: var(--muted, #94a3b8);
-  min-width: 32px;
-  text-align: right;
-}
-
 .agent-trace-chevron {
   font-size: 10px;
   color: var(--muted, #94a3b8);
@@ -243,6 +235,12 @@
 
 .agent-trace-card.expanded .agent-trace-timeline {
   display: flex;
+}
+
+.agent-trace-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .agent-trace-step {
@@ -389,5 +387,52 @@
   white-space: pre-wrap;
   max-height: 120px;
   overflow-y: auto;
+}
+
+/* Total execution time footer inside timeline */
+.agent-trace-total-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 2px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border, rgba(255, 255, 255, 0.1));
+  font-size: 11.5px;
+  color: var(--muted, #94a3b8);
+}
+
+.total-row-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  flex-shrink: 0;
+  color: var(--muted, #94a3b8);
+  opacity: 0.85;
+}
+
+.total-row-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.total-row-label {
+  font-weight: 500;
+  color: var(--muted, #94a3b8);
+}
+
+.agent-trace-timer {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text, #e2e8f0);
+  flex-shrink: 0;
+  text-align: right;
 }
 

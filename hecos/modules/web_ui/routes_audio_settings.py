@@ -26,6 +26,8 @@ def register_audio_settings_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             try:
                 data = request.get_json(force=True) or {}
                 cfg = get_audio_config()
+                prev_active = cfg.get("active_engine", "piper")
+                prev_piper_auto = bool(cfg.get("piper_autostart", True))
                 allow_empty_presets = bool(data.get("_allow_empty_presets"))
                 preset_dict_keys = {
                     "kokoro_presets", "kokoro_inference_presets",
@@ -37,8 +39,8 @@ def register_audio_settings_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                     "active_engine", "kokoro", "kokoro_presets", "kokoro_inference_presets",
                     "xtts", "xtts_presets", "xtts_inference_presets", "fish_speech",
                     "fish_speech_presets", "fish_speech_inference_presets", "voice_status",
-                    "listening_status", "piper_path", "onnx_model", "speed", "noise_scale",
-                    "noise_w", "sentence_silence", "piper_timeout", "energy_threshold",
+                    "listening_status", "piper_autostart", "piper_path", "onnx_model", "speed", "noise_scale",
+                    "noise_w", "sentence_silence", "volume", "piper_timeout", "energy_threshold",
                     "silence_timeout", "phrase_limit", "tts_history_max_files", "push_to_talk",
                     "ptt_hotkey", "ptt_sources", "custom_ptt_key",
                     "piper_current_inference_preset", "piper_inference_presets"
@@ -52,16 +54,16 @@ def register_audio_settings_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
                 _save_audio_config(cfg)
 
-                # Auto-start Fish Speech server if active_engine changed to fish_speech
-                if data.get("active_engine") in ("fish_speech", "fish"):
-                    try:
-                        from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
-                        daemon = FishSpeechDaemon.get_instance()
-                        if daemon.is_local_target() and not daemon.is_healthy():
-                            daemon.preload(delay=0.2)
-                            logger.info("[WebUI] Active engine switched to fish_speech: triggered background auto-startup.")
-                    except Exception as _fe:
-                        logger.warning(f"[WebUI] Fish Speech auto-startup on switch failed: {_fe}")
+                # Coordinate TTS runtime lifecycle on engine switch or autostart toggle
+                try:
+                    from hecos.core.audio.tts_manager import handle_active_engine_switch, get_piper
+                    new_active = cfg.get("active_engine", "piper")
+                    if new_active != prev_active:
+                        handle_active_engine_switch(prev_active, new_active, cfg)
+                    if not prev_piper_auto and bool(cfg.get("piper_autostart", True)):
+                        get_piper().preload(delay=0.1, blocking=False)
+                except Exception as _tle:
+                    logger.warning(f"[WebUI] TTS lifecycle sync on config save notice: {_tle}")
 
                 # Sync with running StateManager
                 sm = _sm()

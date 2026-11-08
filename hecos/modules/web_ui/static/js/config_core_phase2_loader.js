@@ -17,7 +17,7 @@
     'use strict';
 
     const V = window.VERSION || window.HECOS_VERSION || Date.now();
-    const VER = V ? `?v=${V}` : '';
+    const VER = `?v=${V}-tts-v2`;
 
     // ── Phase 2 script list — loaded AFTER hub menu is visible ────────────────
     // Order matters within each batch (dependency chain).
@@ -49,6 +49,7 @@
             `/static/js/config_audio/ca_fish_presets.js${VER}`,
             `/static/js/config_audio/ca_fish_recorder.js${VER}`,
             `/static/js/config_audio/ca_fish_server.js${VER}`,
+            `/static/js/config_audio/ca_engine_runtime.js${VER}`,
             `/static/js/config_audio/ca_history.js${VER}`,
             `/static/js/config_media_logic.js${VER}`,
             `/static/js/config_system_logic.js${VER}`,

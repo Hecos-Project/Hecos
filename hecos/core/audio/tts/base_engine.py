@@ -1,9 +1,11 @@
 """
 MODULE: Base TTS Engine
-DESCRIPTION: Abstract base class defining the interface for all Hecos TTS engines.
+DESCRIPTION: Abstract base class defining the interface for all Hecos TTS engines,
+             including optional lifecycle hooks (preload, unload, runtime status).
 """
 
 from abc import ABC, abstractmethod
+
 
 class BaseTTSEngine(ABC):
     @abstractmethod
@@ -45,3 +47,27 @@ class BaseTTSEngine(ABC):
         Format: {"voice_id": "Friendly Name", ...}
         """
         pass
+
+    # ── Optional Lifecycle Hooks (Overridden by stateful/daemon engines) ──────
+
+    def preload(self, delay: float = 0.0):
+        """Preloads model weights or starts the engine's background daemon."""
+        return None
+
+    def unload(self) -> bool:
+        """Unloads model weights or stops the engine's background daemon to free RAM/VRAM."""
+        self.stop()
+        return True
+
+    def is_loaded(self) -> bool:
+        """Returns True if the engine's model/daemon is currently loaded and hot."""
+        return False
+
+    def get_runtime_status(self) -> dict:
+        """Returns runtime diagnostics (state, PID, RAM/VRAM, model, device)."""
+        return {
+            "status": "online" if self.is_loaded() else "offline",
+            "loaded": self.is_loaded(),
+            "pid": None,
+            "mode": "in-process",
+        }

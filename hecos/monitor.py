@@ -305,6 +305,11 @@ if __name__ == "__main__":
         if _current_child_process and _current_child_process.poll() is None:
             _kill_child_tree(_current_child_process)
         try:
+            from hecos.core.audio.tts.process_registry import reap_orphan_tts_processes
+            reap_orphan_tts_processes(force_all=True)
+        except Exception:
+            pass
+        try:
             from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
             OllamaLifecycleManager.get_instance().stop_server()
         except Exception:

@@ -13,14 +13,28 @@ from hecos.config.schemas.audio_schema import AudioConfig
 _HECOS_DIR = _os.path.normpath(_os.path.join(_os.path.dirname(__file__), "..", ".."))
 CONFIG_AUDIO_PATH = _os.path.join(_HECOS_DIR, "config", "data", "audio.yaml")
 
+_LEGACY_FISH_URLS = {
+    "http://127.0.0.1:8080/v1/tts",
+    "http://localhost:8080/v1/tts",
+    "http://127.0.0.1:8080",
+    "http://localhost:8080",
+}
+_DEFAULT_FISH_URL = "http://127.0.0.1:18480/v1/tts"
+
 # ──────────────────────────────────────────────────────────────────────────────
 # CONFIG I/O
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _load_audio_config() -> dict:
-    """Loads config/audio.yaml (auto-migrating from audio.json if needed)."""
+    """Loads config/audio.yaml (auto-migrating from audio.json and legacy port 8080 if needed)."""
     model = load_yaml(CONFIG_AUDIO_PATH, AudioConfig)
-    return model.model_dump()
+    data = model.model_dump()
+    fish_cfg = data.get("fish_speech")
+    if isinstance(fish_cfg, dict):
+        cur_url = (fish_cfg.get("api_url") or "").strip().rstrip("/")
+        if cur_url in {u.rstrip("/") for u in _LEGACY_FISH_URLS}:
+            fish_cfg["api_url"] = _DEFAULT_FISH_URL
+    return data
 
 
 def _save_audio_config(cfg: dict) -> bool:
@@ -29,6 +43,11 @@ def _save_audio_config(cfg: dict) -> bool:
         from datetime import datetime
         if not cfg.get("last_scan"):
             cfg["last_scan"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        fish_cfg = cfg.get("fish_speech")
+        if isinstance(fish_cfg, dict):
+            cur_url = (fish_cfg.get("api_url") or "").strip().rstrip("/")
+            if cur_url in {u.rstrip("/") for u in _LEGACY_FISH_URLS}:
+                fish_cfg["api_url"] = _DEFAULT_FISH_URL
         model = AudioConfig.model_validate(cfg)
         return save_yaml(CONFIG_AUDIO_PATH, model)
     except Exception as e:

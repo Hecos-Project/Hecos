@@ -1,5 +1,6 @@
 active_engine: kokoro
 voice_status: true
+piper_autostart: true
 piper_path: C:\Hecos\bin\piper\piper.exe
 onnx_model: C:\Hecos\bin\piper\it_IT-serena-high.onnx
 speed: 1.0
@@ -41,6 +42,7 @@ piper_inference_presets:
     speed: 1
     volume: 1
 kokoro:
+  autostart: true
   speed: 1.0
   voice: if_cine_witch
   lang_code: auto
@@ -183,6 +185,7 @@ kokoro_inference_presets:
     speed: 1
     volume: 1
 xtts:
+  autostart: true
   speed: 1.0
   language: it
   speaker: if_cine_witch
@@ -281,7 +284,8 @@ xtts_inference_presets:
     top_k: 10
     top_p: 0.5
 fish_speech:
-  api_url: http://127.0.0.1:8080/v1/tts
+  autostart: true
+  api_url: http://127.0.0.1:18480/v1/tts
   api_key: ''
   reference_id: ''
   reference_audio: ''

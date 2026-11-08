@@ -4,13 +4,41 @@ DESCRIPTION: Orchestrates TTS requests, resolving the correct engine based on
              system config and session overrides. Handles fallback to Piper.
 """
 
+import atexit
+import gc
+import threading
+import time
+from typing import Tuple
+
 from hecos.core.logging import logger
 from hecos.core.audio.tts.base_engine import BaseTTSEngine
 from hecos.core.audio.tts.piper_engine import get_engine as get_piper
 from hecos.core.audio.tts.kokoro_engine import get_engine as get_kokoro
 from hecos.core.audio.tts.xtts_engine import get_engine as get_xtts
 from hecos.core.audio.tts.fish_speech_engine import get_engine as get_fish_speech
+from hecos.core.audio.tts.process_registry import reap_orphan_tts_processes
 from hecos.core.audio.tts_filter import sanitize_text
+
+_boot_preload_lock = threading.Lock()
+_boot_preload_started = False
+_lifecycle_op_lock = threading.Lock()
+_shutdown_lock = threading.Lock()
+
+ENGINE_LABELS = {
+    "piper": "Piper TTS",
+    "kokoro": "Kokoro-82M",
+    "xtts2": "Coqui XTTSv2",
+    "fish_speech": "Fish Speech S2",
+}
+
+
+def normalize_engine_name(name: str) -> str:
+    n = (name or "piper").strip().lower()
+    if n == "fish":
+        return "fish_speech"
+    if n == "xtts":
+        return "xtts2"
+    return n
 
 def _get_engine_instance(engine_name: str) -> BaseTTSEngine:
     if engine_name == "kokoro":
@@ -42,28 +70,291 @@ def get_engine_for_session(session_overrides: dict = None) -> BaseTTSEngine:
     return _get_engine_instance(active_engine)
 
 
+def _is_engine_autostart_enabled(engine_name: str, cfg: dict) -> bool:
+    eng = normalize_engine_name(engine_name)
+    if eng == "piper":
+        return bool(cfg.get("piper_autostart", True))
+    if eng == "kokoro":
+        return bool(cfg.get("kokoro", {}).get("autostart", True))
+    if eng == "xtts2":
+        return bool(cfg.get("xtts", {}).get("autostart", True))
+    if eng == "fish_speech":
+        return bool(cfg.get("fish_speech", {}).get("autostart", True))
+    return False
+
+
+def preload_configured_engines(delay: float = 2.0, force: bool = False):
+    """
+    Single-entry boot orchestrator for TTS daemons and in-memory models.
+    - Reaps any stale orphan TTS processes from an unclean exit.
+    - Preloads Piper if `piper_autostart` is True (lightweight fallback).
+    - Preloads ONLY the currently selected `active_engine` if it is a heavy engine
+      (Kokoro, XTTSv2, or Fish Speech) and its `autostart` flag is True.
+    - Never loads multiple heavy engines simultaneously at boot.
+    """
+    global _boot_preload_started
+    with _boot_preload_lock:
+        if _boot_preload_started and not force:
+            logger.debug("TTS_MANAGER", "Boot TTS preload already scheduled in this process — skipping duplicate call.")
+            return
+        _boot_preload_started = True
+
+    def _boot_worker():
+        try:
+            reap_orphan_tts_processes(force_all=False)
+            if delay > 0:
+                time.sleep(delay)
+
+            with _lifecycle_op_lock:
+                from hecos.core.audio.device_manager import get_audio_config
+                cfg = get_audio_config()
+                active = normalize_engine_name(cfg.get("active_engine", "piper"))
+
+                # 1. Lightweight Piper daemon (fallback / primary if active)
+                if _is_engine_autostart_enabled("piper", cfg):
+                    logger.info("TTS_MANAGER", "Boot preload: starting Piper IPC daemon (lightweight fallback)...")
+                    get_piper().preload(delay=0.0, blocking=True)
+                else:
+                    logger.info("TTS_MANAGER", "Boot preload: Piper auto-start is disabled by config.")
+
+                # 2. Active heavy engine ONLY (never load multiple heavy models together)
+                if active in ("kokoro", "xtts2", "fish_speech"):
+                    if _is_engine_autostart_enabled(active, cfg):
+                        logger.info("TTS_MANAGER", f"Boot preload: loading active TTS engine '{active}'...")
+                        if active == "kokoro":
+                            get_kokoro().preload(delay=0.0, blocking=True)
+                        elif active == "xtts2":
+                            get_xtts().preload(delay=0.0, blocking=True, force_download=False)
+                        elif active == "fish_speech":
+                            get_fish_speech().preload(delay=0.0, blocking=True)
+                    else:
+                        logger.info("TTS_MANAGER", f"Boot preload: active engine '{active}' has auto-start disabled.")
+        except Exception as e:
+            logger.warning("TTS_MANAGER", f"Error during boot TTS preload sequence: {e}")
+
+    threading.Thread(target=_boot_worker, daemon=True, name="TTSBootOrchestrator").start()
+
+
 def preload_active_engine(delay: float = 2.0):
+    """Backward-compatible alias for preload_configured_engines."""
+    preload_configured_engines(delay=delay, force=False)
+
+
+def handle_active_engine_switch(prev_engine: str, new_engine: str, cfg: dict = None):
     """
-    Preloads or starts the background server for the currently configured active TTS engine.
-    Non-blocking, safe to call during system or WebUI startup.
+    Handles runtime switching of `active_engine` from Voice Settings:
+    - Unloads the previous heavy engine (Kokoro / XTTSv2 / Fish Speech) to free RAM/VRAM.
+    - Preloads the newly selected engine if its `autostart` flag is enabled.
     """
+    prev_norm = normalize_engine_name(prev_engine)
+    new_norm = normalize_engine_name(new_engine)
+
+    def _switch_worker():
+        with _lifecycle_op_lock:
+            try:
+                local_cfg = cfg
+                if local_cfg is None:
+                    from hecos.core.audio.device_manager import get_audio_config
+                    local_cfg = get_audio_config()
+
+                if prev_norm != new_norm and prev_norm in ("kokoro", "xtts2", "fish_speech"):
+                    logger.info("TTS_MANAGER", f"Active engine switched '{prev_norm}' -> '{new_norm}': unloading '{prev_norm}'...")
+                    _get_engine_instance(prev_norm).unload()
+
+                if _is_engine_autostart_enabled(new_norm, local_cfg):
+                    eng = _get_engine_instance(new_norm)
+                    if not eng.is_loaded():
+                        logger.info("TTS_MANAGER", f"Preloading newly selected active engine '{new_norm}'...")
+                        if new_norm == "xtts2":
+                            eng.preload(delay=0.1, blocking=True, force_download=False)
+                        else:
+                            eng.preload(delay=0.1, blocking=True)
+            except Exception as e:
+                logger.warning("TTS_MANAGER", f"Engine switch lifecycle notice: {e}")
+
+    threading.Thread(target=_switch_worker, daemon=True, name="TTSEngineSwitchWorker").start()
+
+
+def shutdown_all_tts():
+    """
+    Cleanly stops all TTS playback, unloads in-memory models, terminates child daemons
+    (Piper IPC & Fish Speech FastAPI), and reaps any registered orphan processes.
+    Safe to call from atexit, console close handlers, and os._exit(42) reboot hooks.
+    """
+    if not _shutdown_lock.acquire(blocking=False):
+        return
+    try:
+        from hecos.core.audio.tts import piper_engine, kokoro_engine, xtts_engine, fish_speech_daemon
+
+        if getattr(piper_engine, "_engine_instance", None) is not None:
+            try:
+                piper_engine._engine_instance.unload()
+            except Exception:
+                pass
+
+        if getattr(kokoro_engine, "_engine_instance", None) is not None:
+            try:
+                kokoro_engine._engine_instance.unload()
+            except Exception:
+                pass
+
+        if getattr(xtts_engine, "_engine_instance", None) is not None:
+            try:
+                xtts_engine._engine_instance.unload()
+            except Exception:
+                pass
+
+        if getattr(fish_speech_daemon.FishSpeechDaemon, "_instance", None) is not None:
+            try:
+                fish_speech_daemon.FishSpeechDaemon._instance.stop(force_all=False)
+            except Exception:
+                pass
+
+        reap_orphan_tts_processes(force_all=False, include_own=True)
+    except Exception as e:
+        logger.debug("TTS_MANAGER", f"shutdown_all_tts notice: {e}")
+    finally:
+        _shutdown_lock.release()
+
+
+atexit.register(shutdown_all_tts)
+
+
+def get_all_engines_status() -> dict:
+    """Returns live runtime diagnostics and config flags for all 4 TTS engines."""
     try:
         from hecos.core.audio.device_manager import get_audio_config
         cfg = get_audio_config()
-        active = cfg.get("active_engine", "piper")
-        if active in ("fish_speech", "fish"):
-            from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
-            daemon = FishSpeechDaemon.get_instance()
-            if daemon.is_local_target():
-                logger.info("TTS_MANAGER", f"Active TTS engine is '{active}': initiating background auto-startup...")
-                daemon.preload(delay=delay)
-        elif active == "piper":
-            from hecos.core.audio.tts.piper_engine import get_engine as get_piper
-            piper = get_piper()
-            if hasattr(piper, "preload"):
-                piper.preload(delay=delay)
-    except Exception as e:
-        logger.warning("TTS_MANAGER", f"Error during TTS engine preload: {e}")
+    except Exception:
+        cfg = {}
+
+    active = normalize_engine_name(cfg.get("active_engine", "piper"))
+    engines_out = {}
+    for key in ("piper", "kokoro", "xtts2", "fish_speech"):
+        try:
+            inst = _get_engine_instance(key)
+            st = inst.get_runtime_status()
+        except Exception as e:
+            st = {
+                "status": "offline",
+                "loaded": False,
+                "installed": False,
+                "mode": "daemon" if key in ("piper", "fish_speech") else "in-process",
+                "pid": None,
+                "ram_mb": 0.0,
+                "vram_mb": 0.0,
+                "last_error": str(e),
+            }
+        st["engine"] = key
+        st["label"] = ENGINE_LABELS.get(key, key)
+        st["active"] = (active == key)
+        st["fallback"] = (key == "piper")
+        st["autostart"] = _is_engine_autostart_enabled(key, cfg)
+        engines_out[key] = st
+
+    return {
+        "ok": True,
+        "active_engine": active,
+        "engines": engines_out,
+    }
+
+
+def perform_engine_action(engine_name: str, action: str) -> Tuple[bool, str]:
+    """
+    Executes a runtime lifecycle action ('start'|'load', 'stop'|'unload', 'restart')
+    on a specific TTS engine or 'all' (for stop/unload).
+    """
+    act = (action or "").strip().lower()
+    if act == "load":
+        act = "start"
+    elif act == "unload":
+        act = "stop"
+
+    if act not in ("start", "stop", "restart"):
+        return False, f"Unsupported action '{action}'."
+
+    if (engine_name or "").strip().lower() == "all":
+        if act != "stop":
+            return False, "Action 'all' only supports 'stop' / 'unload'."
+        for key in ("piper", "kokoro", "xtts2", "fish_speech"):
+            try:
+                _get_engine_instance(key).unload()
+            except Exception as e:
+                logger.warning("TTS_MANAGER", f"Stop-all notice for {key}: {e}")
+        reap_orphan_tts_processes(force_all=True)
+        gc.collect()
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except Exception:
+            pass
+        return True, "All TTS daemons stopped and RAM/VRAM freed."
+
+    eng_key = normalize_engine_name(engine_name)
+    if eng_key not in ENGINE_LABELS:
+        return False, f"Unknown TTS engine '{engine_name}'."
+
+    label = ENGINE_LABELS[eng_key]
+    inst = _get_engine_instance(eng_key)
+
+    if act == "stop":
+        ok = inst.unload()
+        return ok, (f"{label} stopped and memory freed." if ok else f"Failed to stop {label}.")
+
+    if act == "restart":
+        inst.unload()
+        time.sleep(0.4)
+
+    # Start / Load path
+    if eng_key == "piper":
+        inst.preload(delay=0.0, blocking=True)
+        if inst.is_loaded():
+            return True, f"{label} IPC daemon is online."
+        st = inst.get_runtime_status()
+        if not st.get("installed"):
+            return False, "Piper executable or ONNX model not found at configured paths."
+        return False, f"{label} daemon failed to start."
+
+    if eng_key == "kokoro":
+        if not inst.is_available():
+            return False, "Kokoro Python package is not installed."
+        res = inst.preload(delay=0.0, blocking=False)
+        if isinstance(res, threading.Thread):
+            res.join(timeout=1.5)
+        if inst.is_loaded():
+            return True, f"{label} model loaded and ready."
+        return True, f"{label} model loading in background..."
+
+    if eng_key == "xtts2":
+        if not inst.is_available():
+            return False, "Coqui TTS (XTTSv2) package is not installed."
+        if not inst.model_ready():
+            return False, "XTTSv2 weights (~1.8 GB) are not downloaded on disk yet."
+        res = inst.preload(delay=0.0, blocking=False, force_download=False)
+        if isinstance(res, threading.Thread):
+            res.join(timeout=1.5)
+        if inst.is_loaded():
+            return True, f"{label} model loaded and ready."
+        return True, f"{label} model loading in background..."
+
+    if eng_key == "fish_speech":
+        from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
+        daemon = FishSpeechDaemon.get_instance()
+        if not daemon.is_local_target():
+            return True, "Fish Speech is configured for Cloud API (no local daemon required)."
+        ok_pre, pre_msg = daemon.check_preconditions()
+        if not ok_pre:
+            return False, pre_msg
+        t = daemon.preload(delay=0.0)
+        if isinstance(t, threading.Thread):
+            t.join(timeout=1.5)
+        st = daemon.get_runtime_status()
+        if st.get("status") == "online":
+            return True, f"{label} local server is online on port {st.get('port')}."
+        return True, f"{label} local server starting in background on port {st.get('port')}..."
+
+    return False, f"Unhandled engine '{eng_key}'." 
 
 
 class TTSManager:

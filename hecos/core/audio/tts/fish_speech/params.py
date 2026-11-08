@@ -43,10 +43,13 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
         FishSpeechParams (NamedTuple compatible with tuple unpacking)
     """
     from hecos.core.audio.device_manager import get_audio_config
+    from hecos.core.audio.tts.process_registry import DEFAULT_FISH_URL, LEGACY_FISH_URLS
     acfg = get_audio_config()
     cfg = acfg.get("fish_speech", {})
 
-    api_url = cfg.get("api_url", "http://127.0.0.1:8080/v1/tts").strip() or "http://127.0.0.1:8080/v1/tts"
+    api_url = cfg.get("api_url", DEFAULT_FISH_URL).strip() or DEFAULT_FISH_URL
+    if api_url.rstrip("/") in LEGACY_FISH_URLS:
+        api_url = DEFAULT_FISH_URL
     api_key = cfg.get("api_key", "").strip()
     reference_id = cfg.get("reference_id", "").strip()
     ref_audio = cfg.get("reference_audio", "").strip()

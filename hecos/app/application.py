@@ -36,6 +36,11 @@ def _console_ctrl_handler(ctrl_type):
     # CTRL_C=0, CTRL_BREAK=1, CTRL_CLOSE=2, CTRL_LOGOFF=5, CTRL_SHUTDOWN=6
     if ctrl_type in (0, 1, 2, 5, 6):
         logger.close_all_consoles()
+        try:
+            from hecos.core.audio.tts_manager import shutdown_all_tts
+            shutdown_all_tts()
+        except Exception:
+            pass
         # Gracefully stop Ollama on console close (X button).
         # CTRL_CLOSE_EVENT bypasses Python atexit hooks, so we handle it here explicitly.
         try:
@@ -154,11 +159,11 @@ class HecosApplication:
                 except Exception as _ws_e:
                     logger.warning(f"[APP] WebUI server startup error: {_ws_e}")
 
-        # Pre-load active TTS engine in the background (Fish Speech daemon or Piper) to eliminate latency on first speak()
+        # Pre-load configured TTS engines (Piper fallback + active engine if autostart enabled)
         try:
-            from hecos.core.audio.tts_manager import preload_active_engine
-            preload_active_engine(delay=2.0)
-            logger.info("[APP] Active TTS engine pre-loading scheduled (2s delay).")
+            from hecos.core.audio.tts_manager import preload_configured_engines
+            preload_configured_engines(delay=2.0)
+            logger.info("[APP] Configured TTS engine pre-loading scheduled (2s delay).")
         except Exception as _tts_e:
             logger.debug(f"[APP] TTS preload skipped: {_tts_e}")
 
@@ -250,6 +255,12 @@ class HecosApplication:
                     sys.stdout.flush()
 
             time.sleep(0.025) # Optimized sleep for responsiveness and stability
+
+        try:
+            from hecos.core.audio.tts_manager import shutdown_all_tts
+            shutdown_all_tts()
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     try:

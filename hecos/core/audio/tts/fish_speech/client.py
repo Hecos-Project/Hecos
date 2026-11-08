@@ -66,9 +66,12 @@ class FishSpeechClient:
         try:
             from hecos.core.audio.device_manager import get_audio_config
             from hecos.core.audio.tts.fish_speech.params import get_project_root
+            from hecos.core.audio.tts.process_registry import DEFAULT_FISH_URL, LEGACY_FISH_URLS
 
             cfg = get_audio_config().get("fish_speech", {})
-            api_url = cfg.get("api_url", "http://127.0.0.1:8080/v1/tts").strip()
+            api_url = cfg.get("api_url", DEFAULT_FISH_URL).strip() or DEFAULT_FISH_URL
+            if api_url.rstrip("/") in LEGACY_FISH_URLS:
+                api_url = DEFAULT_FISH_URL
             api_key = cfg.get("api_key", "").strip()
 
             if api_key:
@@ -214,7 +217,7 @@ class FishSpeechClient:
                 logger.warning(
                     "FISH_SPEECH",
                     "💡 Target endpoint is unreachable. "
-                    "If using local server: start 'tools/api_server.py' or Docker on port 8080. "
+                    f"If using local server: verify Fish Speech daemon on port {target_port} (default 18480). "
                     "If using Cloud: set URL to 'https://api.fish.audio/v1/tts' and enter your API key in Central Hub."
                 )
             return None

@@ -15,6 +15,7 @@ class PttSources(BaseModel):
     custom_key:       bool = False   # Arbitrary key defined by custom_ptt_key
 
 class KokoroConfig(BaseModel):
+    autostart: bool = True    # Preload Kokoro pipeline at Hecos boot when active
     speed: float = 1.0
     voice: str = "af_heart"   # Default kokoro voice ID
     lang_code: str = "auto"   # Auto-detect or explicit G2P language ('i', 'a', 'b', 'e', 'f', 'j', 'z', 'p', 'h')
@@ -29,6 +30,7 @@ class KokoroConfig(BaseModel):
     current_inference_preset: str = "" # Selected inference preset
 
 class XttsConfig(BaseModel):
+    autostart: bool = True            # Preload XTTSv2 model at Hecos boot when active
     speed: float = 1.0
     language: str = "it"
     speaker: str = "Claribel Dervla"  # Default XTTS speaker name
@@ -43,7 +45,8 @@ class XttsConfig(BaseModel):
     current_preset: str = "default"
 
 class FishSpeechConfig(BaseModel):
-    api_url: str = "http://127.0.0.1:8080/v1/tts"
+    autostart: bool = True            # Auto-start local Fish Speech server at Hecos boot when active
+    api_url: str = "http://127.0.0.1:18480/v1/tts"
     api_key: str = ""
     reference_id: str = ""            # Local folder in references/ or Fish Audio cloud model ID
     reference_audio: str = ""         # Path or filename in assets/voice_clones
@@ -70,6 +73,7 @@ class AudioConfig(BaseModel):
     
     # --- TTS (Piper) ---
     voice_status: bool = True
+    piper_autostart: bool = True  # Keep lightweight Piper IPC daemon warm (active & fallback)
     piper_path: str = "C:/piper/piper.exe"
     onnx_model: str = "C:/piper/it_IT-paola-medium.onnx"
     speed: float = 1.2

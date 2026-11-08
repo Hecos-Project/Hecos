@@ -220,7 +220,7 @@
     "webui_agent_trace_mode_off": "Off — Hide agent traces in chat",
     "webui_agent_trace_mode_help": "Automatically detects and describes what Hecos is doing across all installed modules and packages.",
     "webui_agent_trace_after_done": "Trace Behavior After Response",
-    "webui_agent_trace_after_summary": "Compact clickable summary (e.g. \"✓ 3 steps · Web Search · 2.4s\")",
+    "webui_agent_trace_after_summary": "Compact clickable summary (e.g. \"✓ 3 steps · Web Search\")",
     "webui_agent_trace_after_expanded": "Keep full timeline expanded",
     "webui_agent_trace_after_hide": "Auto-hide when response finishes",
     "webui_agent_trace_after_done_help": "Controls how the trace card appears once the final response is ready.",

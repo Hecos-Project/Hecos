@@ -5,14 +5,44 @@
     <span class="badge-pill badge-neutral">Ultra Fast / Low Latency</span>
   </div>
 
-  <!-- Engine Summary & Real-time Progress Bar -->
-  <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 16px; font-family: monospace; font-size: 11px; color: var(--muted);">
-    <div style="margin-bottom: 8px;">
-      Piper is an ultra-fast, lightweight neural text-to-speech engine optimized for real-time speech generation with minimal CPU latency.
+  <!-- Engine Summary, Persistent Daemon Controls & Real-time Progress Bar -->
+  <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+      <div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span style="font-weight:600; font-size:13px; color:var(--text);"><i class="fas fa-bolt"></i> Persistent Piper IPC Daemon</span>
+          <span id="piper-runtime-pill" class="badge-pill badge-ok">🟢 Checking...</span>
+          <span id="piper-status-badge" class="badge-pill badge-neutral" style="font-size:10px;">Fallback Ready</span>
+        </div>
+        <div id="piper-runtime-desc" style="font-size: 11px; color: var(--muted); margin-top: 3px; font-family: monospace;">
+          Ultra-fast ONNX neural speech engine · Persistent JSON-IPC daemon
+        </div>
+      </div>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-piper-runtime-start" onclick="ttsEngineRuntimeAction('piper', 'start')" style="display:none;" title="Start persistent Piper IPC daemon">
+          <i class="fas fa-play"></i> Start Daemon
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-piper-runtime-restart" onclick="ttsEngineRuntimeAction('piper', 'restart')" title="Restart Piper IPC daemon">
+          <i class="fas fa-sync-alt"></i> Restart
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-piper-runtime-stop" onclick="ttsEngineRuntimeAction('piper', 'stop')" title="Stop Piper IPC daemon and free RAM">
+          <i class="fas fa-power-off"></i> Stop
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="refreshTTSEnginesRuntime(true)" title="Refresh daemon status">
+          <i class="fas fa-heartbeat"></i>
+        </button>
+        <span id="v-timer" style="color: var(--accent); display: none; font-family: monospace; font-size: 11px;">0.0s</span>
+      </div>
     </div>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span id="piper-status-badge" class="badge-pill badge-ok">✅ Default System Engine</span>
-      <span id="v-timer" style="color: var(--accent); display: none;">0.0s</span>
+    <div class="toggle-row" style="margin:0; padding-top:8px; border-top:1px dashed var(--border);">
+      <div class="toggle-info">
+        <strong style="font-size:12px;">Auto-start at Hecos Boot</strong>
+        <div style="font-size:11px; color:var(--muted);">Preloads the lightweight Piper daemon automatically on startup for zero-latency chat &amp; fallback</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="v-piper-autostart" checked onchange="if(window.saveAudioConfig) window.saveAudioConfig();">
+        <span class="slider"></span>
+      </label>
     </div>
     <div id="v-progress-container" class="hp-track" style="display: none; margin-top: 8px;">
       <div id="v-progress-bar" class="hp-fill" style="width: 0%;"></div>

@@ -101,6 +101,14 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     @app.before_request
     def require_login():
         if request.headers.get("X-Hecos-Internal") == "backup": return
+        if (request.remote_addr in ("127.0.0.1", "::1")
+                and request.path.startswith("/api/audio/engines/")):
+            try:
+                from hecos.core.audio.tts.process_registry import verify_local_control_token
+                if verify_local_control_token(request.headers.get("X-Hecos-Local-Token", "")):
+                    return
+            except Exception:
+                pass
         exempt_paths = [
             '/login', '/logout', '/static', '/assets', '/favicon.ico', '/ext', '/hpm_plugin',
             '/api/open_media_folder', '/hecos/api/media/open-folder', '/api/media/open-folder',

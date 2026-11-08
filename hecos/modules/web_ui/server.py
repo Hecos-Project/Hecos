@@ -104,6 +104,12 @@ class HecosWebUIServer:
                 use_https = webui_cfg.get("https_enabled", False)
                 scheme = "https" if use_https and ssl_context else "http"
 
+                try:
+                    from hecos.core.audio.tts.process_registry import init_local_control_token
+                    init_local_control_token(port=self.port, scheme=scheme)
+                except Exception as _tok_err:
+                    self.logger.debug(f"[WebUI] Local TTS control token init notice: {_tok_err}")
+
                 self.logger.info(
                     f"[WebUI] 🚀 Server live (debug={debug_on}) → "
                     f"{scheme}://{lan_ip}:{self.port}/chat  |  "
@@ -227,11 +233,11 @@ if __name__ == "__main__":
     sm.ptt_hotkey      = acfg.get('ptt_hotkey', 'ctrl+shift')
     set_state_manager(sm)
 
-    # Pre-load active TTS engine in background (Fish Speech daemon or Piper) to eliminate cold-start latency
+    # Pre-load configured TTS engines in background (Piper fallback + active engine if autostart enabled)
     try:
-        from hecos.core.audio.tts_manager import preload_active_engine
-        preload_active_engine(delay=2.0)
-        logger.info("[WEB] Active TTS engine pre-loading scheduled (2s delay).")
+        from hecos.core.audio.tts_manager import preload_configured_engines
+        preload_configured_engines(delay=2.0)
+        logger.info("[WEB] Configured TTS engine pre-loading scheduled (2s delay).")
     except Exception as _pe:
         logger.debug(f"[WEB] TTS preload skipped: {_pe}")
 
@@ -292,6 +298,11 @@ if __name__ == "__main__":
             def _web_ctrl_handler(ctrl_type):
                 if ctrl_type in (0, 1, 2, 5, 6):
                     try:
+                        from hecos.core.audio.tts_manager import shutdown_all_tts
+                        shutdown_all_tts()
+                    except Exception:
+                        pass
+                    try:
                         from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
                         OllamaLifecycleManager.get_instance().on_application_exit(cfg.config)
                     except Exception:
@@ -324,9 +335,9 @@ if __name__ == "__main__":
         except Exception:
             pass
         try:
-            from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
-            FishSpeechDaemon.get_instance().stop()
-        except:
+            from hecos.core.audio.tts_manager import shutdown_all_tts
+            shutdown_all_tts()
+        except Exception:
             pass
         try:
             from hecos.core.audio import ptt_bus

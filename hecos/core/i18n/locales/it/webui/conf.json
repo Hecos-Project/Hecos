@@ -221,7 +221,7 @@
     "webui_agent_trace_mode_off": "Disattivata — Nascondi sempre l'Agent Trace in chat",
     "webui_agent_trace_mode_help": "Rileva e descrive in automatico cosa sta facendo Hecos con qualsiasi modulo o pacchetto installato.",
     "webui_agent_trace_after_done": "Comportamento a Risposta Completata",
-    "webui_agent_trace_after_summary": "Riepilogo compatto cliccabile (es. \"✓ 3 passaggi · Ricerca Web · 2.4s\")",
+    "webui_agent_trace_after_summary": "Riepilogo compatto cliccabile (es. \"✓ 3 passaggi · Ricerca Web\")",
     "webui_agent_trace_after_expanded": "Mantieni la timeline completa sempre aperta",
     "webui_agent_trace_after_hide": "Nascondi automaticamente appena la risposta è pronta",
     "webui_agent_trace_after_done_help": "Scegli come mostrare il box dell'Agent Trace una volta terminata l'elaborazione.",

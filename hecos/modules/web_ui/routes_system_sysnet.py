@@ -28,6 +28,12 @@ def init_system_sysnet_routes(app, logger):
                 print(f"\n\033[91m[WEB_UI] Riavvio del sistema in corso...\033[0m")
                 winsound.Beep(600, 150)
                 winsound.Beep(400, 150)
+                # Stop TTS daemons & models before os._exit(42) (which bypasses Python atexit)
+                try:
+                    from hecos.core.audio.tts_manager import shutdown_all_tts
+                    shutdown_all_tts()
+                except Exception:
+                    pass
                 # Stop Ollama before reboot so VRAM is freed cleanly
                 try:
                     from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager

@@ -115,6 +115,40 @@ def register_audio_engines_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             pass
         return jsonify({"ok": True, **status})
 
+    @app.route('/api/audio/engines/status', methods=['GET'])
+    def tts_all_engines_runtime_status():
+        """Returns live runtime status (PID, RAM/VRAM, state, autostart) for all 4 TTS engines."""
+        try:
+            from hecos.core.audio.tts_manager import get_all_engines_status
+            return jsonify(get_all_engines_status())
+        except Exception as exc:
+            logger.error(f"[WebUI] tts_all_engines_runtime_status error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.route('/api/audio/engines/<engine>/action', methods=['POST'])
+    def tts_engine_runtime_action(engine):
+        """Controls runtime lifecycle (start/load, stop/unload, restart) of any TTS engine or 'all'."""
+        try:
+            data = request.get_json(force=True) or {}
+            action = str(data.get("action", "")).strip().lower()
+            from hecos.core.audio.tts_manager import perform_engine_action, get_all_engines_status, normalize_engine_name
+            logger.info(f"[WebUI] TTS runtime action requested: engine='{engine}', action='{action}'")
+            ok, msg = perform_engine_action(engine, action)
+            all_st = get_all_engines_status()
+            eng_st = all_st.get("engines", {}).get(normalize_engine_name(engine))
+            return jsonify({
+                "ok": ok,
+                "engine": engine,
+                "action": action,
+                "message": msg,
+                "error": None if ok else msg,
+                "status": eng_st,
+                "engines": all_st.get("engines", {}),
+            })
+        except Exception as exc:
+            logger.error(f"[WebUI] tts_engine_runtime_action error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
     @app.route('/api/audio/fish/server-status', methods=['GET'])
     def fish_server_status():
         """Returns real-time status of the local Fish Speech server."""
