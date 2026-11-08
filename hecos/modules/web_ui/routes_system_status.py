@@ -89,8 +89,13 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
                 try:
                     from hecos.core.global_presets import get_soul
                     active_soul = get_soul(active_preset_id)
-                    if active_soul and active_soul.persona.soul_file:
-                        persona = active_soul.persona.soul_file
+                    if active_soul:
+                        if active_soul.persona and active_soul.persona.soul_file:
+                            persona = active_soul.persona.soul_file
+                        if active_soul.model and active_soul.model.backend_type:
+                            backend = active_soul.model.backend_type
+                            if active_soul.model.model_name:
+                                active_model = active_soul.model.model_name
                 except Exception:
                     pass  # Fall back to system.yaml value
 

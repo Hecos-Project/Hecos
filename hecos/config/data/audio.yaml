@@ -4,7 +4,7 @@ piper_autostart: true
 piper_path: C:\Hecos\bin\piper\piper.exe
 onnx_model: C:\Hecos\bin\piper\it_IT-serena-high.onnx
 speed: 1.0
-noise_scale: 0.667
+noise_scale: 0.6
 noise_w: 0.8
 sentence_silence: 0.2
 volume: 1.0
@@ -188,7 +188,7 @@ xtts:
   autostart: true
   speed: 1.0
   language: it
-  speaker: if_cine_witch
+  speaker: Claribel Dervla
   gpu_acceleration: auto
   chunk_sentences: true
   speaker_wav: ''

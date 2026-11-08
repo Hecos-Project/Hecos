@@ -258,6 +258,18 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                 from hecos.core.events import emit
                 emit("persona_switched", {"new_persona": soul.persona.soul_file})
                 logger.info("[GlobalPresets] persona_switched emitted OK")
+
+                # Pre-warm the Soul's Ollama LLM in background if warmup_model is enabled
+                try:
+                    active_cfg_mgr = cfg_mgr or getattr(__import__("sys"), "hecos_config_manager", None)
+                    base_cfg = active_cfg_mgr.config if active_cfg_mgr else {}
+                    if base_cfg.get("backend", {}).get("ollama", {}).get("warmup_model", False):
+                        from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
+                        OllamaLifecycleManager.get_instance().maybe_warmup_model(
+                            base_cfg, delay=0.5, session_id=session_id
+                        )
+                except Exception as _we:
+                    logger.debug(f"[GlobalPresets] Soul LLM warm-up skipped: {_we}")
             else:
                 logger.info("[GlobalPresets] No soul, skipping emit")
 
