@@ -361,6 +361,10 @@ window.refreshStatus = async function() {
     }
     if (sbS) sbS.textContent = d.persona || '—';
 
+    // Only a per-session override (Quick Config draft or session preset) should prevent /hecos/status
+    // from updating the persona/avatar/tool_mode.
+    const sessionOverrideActive = !!(window.sfState && window.sfState.sessionHasDraft);
+
     // Only update tool mode badge from server poll when no session override is active.
     // When a Quick Config draft overrides send_tools, gp_ui.js calls updateToolModeBadge directly.
     if (d.tool_mode !== undefined && window.updateToolModeBadge && !sessionOverrideActive) {
@@ -369,10 +373,6 @@ window.refreshStatus = async function() {
 
     if (d.persona) window._globalPersonaName = d.persona;
     if (d.avatar) window._globalAvatar = d.avatar;
-
-    // Only a per-session override (Quick Config draft or session preset) should prevent /hecos/status
-    // from updating the persona/avatar. The global preset IS what /hecos/status returns.
-    const sessionOverrideActive = !!(window.sfState && window.sfState.sessionHasDraft);
     
     if (!sessionOverrideActive) {
         const changed = (window.HecosAvatar !== d.avatar || window.HecosPersonaName !== d.persona);
