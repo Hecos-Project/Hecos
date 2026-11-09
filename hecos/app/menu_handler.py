@@ -8,6 +8,7 @@ from hecos.core.logging import logger
 from hecos.core.system import module_loader
 from hecos.core.i18n import translator
 from hecos.ui import interface, ui_updater
+from hecos.ui.viewport import get_viewport
 from hecos.ui.config_editor.core import ConfigEditor
 from hecos.core.processing import processore
 
@@ -28,9 +29,18 @@ class MenuHandler:
         while True:
             if msvcrt.kbhit():
                 char_raw = msvcrt.getch()
+                if char_raw in (b'\x00', b'\xe0'):
+                    msvcrt.getch()
+                    continue
                 if char_raw == b'\x1b':  # Tasto ESC
                     print()
                     return "ESC"
+                if char_raw == b'\x08':  # Backspace inside numeric prompt
+                    if scelta:
+                        scelta = scelta[:-1]
+                        sys.stdout.write('\b \b')
+                        sys.stdout.flush()
+                    continue
                 char = char_raw.decode('utf-8', errors='ignore')
                 if char == '\r':
                     print()
@@ -44,21 +54,10 @@ class MenuHandler:
 
     def _handle_f1(self):
         """Help Menu (F1)."""
-        ui_updater.stop()
         interface.show_help()
-        dashboard_mod = module_loader.get_plugin_module("DASHBOARD")
-        ui_updater.start(self.config_manager, self.state_manager, dashboard_mod)
-        interface.show_complete_ui(
-            self.config_manager.config,
-            self.state_manager.voice_status,
-            self.state_manager.listening_status,
-            self.state_manager.system_status,
-            ptt_status=self.state_manager.push_to_talk
-        )
 
     def _handle_f2(self):
         """Model selection (F2)."""
-        ui_updater.stop()
         models = self.model_manager.get_available_models()
         current = self.model_manager.get_effective_model(self.config_manager.config)
         interface.show_models_menu(models, current)
@@ -66,7 +65,6 @@ class MenuHandler:
 
     def _handle_f3(self):
         """Personality selection (F3)."""
-        ui_updater.stop()
         # Use sync_available_personalities for a consistently ordered list
         # (Hecos_System_Soul first, then alphabetical).
         souls = self.config_manager.sync_available_personalities()
@@ -76,7 +74,6 @@ class MenuHandler:
 
     def _handle_f7(self):
         """Configuration Menu (F7)."""
-        ui_updater.stop()
         editor = ConfigEditor()
         editor.run()
         self.config_manager.reload()
@@ -114,18 +111,10 @@ class MenuHandler:
             processore.configure(config)
             verb = "ON" if self.state_manager.listening_status else "OFF"
             color = "\033[96m" if self.state_manager.listening_status else "\033[91m"
-            print(f"\n{color}[SYSTEM] {translator.t('header_mic')}: {verb}\033[0m")
-            time.sleep(0.5)
+            interface.print_scrolling(f"{color}[SYSTEM] {translator.t('header_mic')}: {verb}\033[0m")
             
-        elif key == "F5": # Refresh UI
-            interface.show_complete_ui(
-                config,
-                self.state_manager.voice_status,
-                self.state_manager.listening_status,
-                self.state_manager.system_status,
-                ptt_status=self.state_manager.push_to_talk
-            )
-            time.sleep(0.1)
+        elif key == "F5": # Refresh UI (handled via show_complete_ui in application loop)
+            pass
             
         elif key == "F6": # Toggle Voice
             self.state_manager.voice_status = not self.state_manager.voice_status
@@ -137,8 +126,7 @@ class MenuHandler:
             processore.configure(config)
             verb = "ON" if self.state_manager.voice_status else "OFF"
             color = "\033[96m" if self.state_manager.voice_status else "\033[91m"
-            print(f"\n{color}[SYSTEM] {translator.t('header_voice')}: {verb}\033[0m")
-            time.sleep(0.5)
+            interface.print_scrolling(f"{color}[SYSTEM] {translator.t('header_voice')}: {verb}\033[0m")
             
         elif key == "F7": # App Config
             self._handle_f7()
@@ -153,12 +141,12 @@ class MenuHandler:
             _save_audio_config(acfg)
             verb = "ON" if new_ptt else "OFF"
             color = "\033[96m" if new_ptt else "\033[91m"
-            print(f"\n{color}[SYSTEM] Push-To-Talk (PTT): {verb}\033[0m")
-            time.sleep(0.5)
+            interface.print_scrolling(f"{color}[SYSTEM] Push-To-Talk (PTT): {verb}\033[0m")
 
         elif key == "F9": # System Reboot
             logger.info("[Tray/Keyboard] User requested system reboot from tray dashboard.")
-            print(f"\n\033[91m[SYSTEM] {translator.t('rebooting_msg')}\033[0m")
+            interface.print_scrolling(f"\033[91m[SYSTEM] {translator.t('rebooting_msg')}\033[0m")
+            get_viewport().teardown()
             logger.close_all_consoles()
-            time.sleep(1)
+            time.sleep(0.8)
             sys.exit(42)

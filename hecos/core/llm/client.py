@@ -11,14 +11,17 @@ import logging
 import re
 from typing import Any, Dict, List, Optional
 
-if not os.environ.get("LITELLM_LOG", "").strip():
-    os.environ["LITELLM_LOG"] = "WARNING"
+# Force WARNING before importing litellm so its module-init AiohttpTransport logs
+# never dump raw DEBUG lines onto stderr during import. File-based DEBUG logging
+# is attached explicitly below via Hecos's logger handlers.
+os.environ["LITELLM_LOG"] = "WARNING"
 import litellm
 
 from hecos.core.logging.logger import (
     debug as zlog_debug,
     info as zlog_info,
     error as zlog_error,
+    sync_litellm_loggers,
 )
 from hecos.core.llm.payload_tracker import (
     LAST_PAYLOAD_INFO,
@@ -36,11 +39,8 @@ litellm.set_verbose = False
 os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
 os.environ["LITELLM_LOG"] = "WARNING"
 
-# Purge any StreamHandlers LiteLLM added during import
-_litellm_logger = logging.getLogger("LiteLLM")
-for _h in _litellm_logger.handlers[:]:
-    if isinstance(_h, logging.StreamHandler) and not isinstance(_h, logging.FileHandler):
-        _litellm_logger.removeHandler(_h)
+# Purge any StreamHandlers LiteLLM added during import across all LiteLLM loggers
+sync_litellm_loggers()
 
 
 def generate(

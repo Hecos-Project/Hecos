@@ -71,6 +71,11 @@ window.sendMessage = async function() {
   const hasAttachments = window.pendingAttachments && window.pendingAttachments.length > 0;
   if ((!text && !hasAttachments) || window.isStreaming) return;
 
+  if (text) {
+    window._lastVoiceCmdText = text;
+    window._lastVoiceCmdTime = Date.now();
+  }
+
   const isDepositOnly = !text && hasAttachments;
 
   // Intercept voice dictation triggers for slash commands
@@ -410,6 +415,9 @@ window.sendMessage = async function() {
 
 window.sendInternalMessage = async function(text) {
   if(!text || window.isStreaming) return;
+
+  window._lastVoiceCmdText = text;
+  window._lastVoiceCmdTime = Date.now();
   
   const triggers = ["comando ", "command ", "slash ", "barra "];
   for (const t of triggers) {

@@ -75,6 +75,8 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         from hecos.modules.web_ui.server import get_state_manager
 
         sm = get_state_manager()
+        if sm and user_message and hasattr(sm, 'record_chat_message'):
+            sm.record_chat_message(user_message)
 
         # ── Defensive cfg_mgr recovery ───────────────────────────────────────
         # If cfg_mgr is None (timing gap between boot paths), try to recover it

@@ -29,7 +29,7 @@ anatomy:
   body_type: "Athletic"   # Es. Athletic, Slim, Curvy, Muscular...
   # NOTA: Inserisci il valore solo per il parametro pertinente al genere e "N/A" per l'altro.
   chest_size: "N/A"      # Ampiezza torace (per personaggi maschili)
-  breast_size: "Quarta"    # Taglia di seno (per personaggi femminili, es. 34C, Quarta, ecc.)
+  breast_size: "34D"    # Taglia di seno (per personaggi femminili, es. 34C, Quarta, ecc.)
   hair_color: "Turquoise"      # Colore dei capelli - capelli turchesi iconici
   eye_color: "Blue"            # Colore degli occhi
   features: "None"     # Segni particolari (tatuaggi, cicatrici, ecc.)

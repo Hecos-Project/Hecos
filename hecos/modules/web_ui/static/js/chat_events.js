@@ -3,6 +3,37 @@
  * Handles backend notification streams (/api/events)
  */
 
+window.areVoicePhrasesSimilar = function(phrase1, phrase2, threshold = 0.65) {
+  if (!phrase1 || !phrase2) return false;
+  const clean = (s) => {
+    const numMap = {'zero':'0','uno':'1','una':'1','un':'1','due':'2','tre':'3','quattro':'4','cinque':'5','sei':'6','sette':'7','otto':'8','nove':'9','dieci':'10'};
+    return (s || '')
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(t => numMap[t] || t);
+  };
+  const t1 = clean(phrase1);
+  const t2 = clean(phrase2);
+  if (!t1.length || !t2.length) return false;
+  if (t1.join(' ') === t2.join(' ')) return true;
+
+  const s1 = new Set(t1);
+  const s2 = new Set(t2);
+  let intersectionCount = 0;
+  for (const item of s1) {
+    if (s2.has(item)) intersectionCount++;
+  }
+  const unionSize = new Set([...s1, ...s2]).size;
+  const jaccard = unionSize > 0 ? (intersectionCount / unionSize) : 0;
+  const minLen = Math.min(s1.size, s2.size);
+  const overlapRatio = minLen > 0 ? (intersectionCount / minLen) : 0;
+
+  return (jaccard >= threshold || overlapRatio >= 0.75);
+};
+
 window.initEvents = function() {
   const evtSrc = new EventSource('/api/events');
   evtSrc.onmessage = (e) => {
@@ -78,10 +109,17 @@ window.initEvents = function() {
       window.isBackendPTTActive = ev.active;
       
       if (ev.active) {
+          window.lastBackendPTTStartTime = Date.now();
+          // Cancel any active browser WebAudio recording immediately to prevent dual mic capture
+          if (window.isWebAudioRecording && typeof window.cancelWebAudioRecording === 'function') {
+              console.log("[WebAudio] Backend hardware PTT active. Cancelling concurrent browser WebAudio capture.");
+              window.cancelWebAudioRecording();
+          }
           if (window.UnifiedToast) {
               window.UnifiedToast.show('🎙️ Listening...', 'fas fa-microphone', 0, 'rgba(235, 75, 75, 0.9)');
           }
       } else {
+          window.lastBackendPTTEndTime = Date.now();
           if (window.UnifiedToast) window.UnifiedToast.hide();
       }
       
@@ -90,9 +128,17 @@ window.initEvents = function() {
       voiceCmd = voiceCmd.replace(/^(slash\s+|barra\s+|\/\s*)/i, '/');
       if (!voiceCmd) return;
 
-      // Deduplication safeguard: avoid processing identical voice commands within debounce window
       const now = Date.now();
-      if (window._lastVoiceCmdText === voiceCmd && (now - (window._lastVoiceCmdTime || 0)) < 3500) {
+      const timeSinceLastVoice = now - (window._lastVoiceCmdTime || 0);
+
+      // Deduplication safeguard: avoid processing duplicate/similar voice commands within debounce window
+      const isDuplicate = (
+          (timeSinceLastVoice < 8000 && window.areVoicePhrasesSimilar && window.areVoicePhrasesSimilar(window._lastVoiceCmdText, voiceCmd)) ||
+          (window.isStreaming && timeSinceLastVoice < 15000 && window.areVoicePhrasesSimilar && window.areVoicePhrasesSimilar(window._lastVoiceCmdText, voiceCmd)) ||
+          (window.isStreaming && timeSinceLastVoice < 4000)
+      );
+
+      if (isDuplicate) {
           console.warn("[Audio] Duplicate voice_detected ignored within debounce window:", voiceCmd);
           return;
       }

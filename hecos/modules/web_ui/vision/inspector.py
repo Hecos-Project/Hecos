@@ -159,7 +159,10 @@ def _inspect_via_cloud(image_dict: dict, prompt: str, bridge_cfg: dict) -> Optio
             logger.debug(f"[VisionInspector] No API key for cloud inspector '{provider}' in KeyManager.")
             return None
 
+        os.environ["LITELLM_LOG"] = "WARNING"
         import litellm
+        from hecos.core.logging.logger import sync_litellm_loggers
+        sync_litellm_loggers()
 
         b64 = image_dict["data_b64"]
         mime = image_dict.get("mime_type", "image/jpeg")

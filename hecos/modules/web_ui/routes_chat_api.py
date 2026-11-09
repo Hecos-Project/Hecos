@@ -113,6 +113,11 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         uid = current_user.username if current_user.is_authenticated else "admin"
         urole = current_user.role if current_user.is_authenticated else "admin"
         
+        # Record user message in StateManager for cross-pipeline deduplication
+        sm = get_state_manager()
+        if sm and user_msg and hasattr(sm, 'record_chat_message'):
+            sm.record_chat_message(user_msg)
+
         # Save to input history
         try:
             from hecos.modules.input_history import history_mgr

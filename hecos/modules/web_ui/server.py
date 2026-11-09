@@ -261,7 +261,15 @@ if __name__ == "__main__":
             if sm and sm.detected_voice_command:
                 cmd = sm.detected_voice_command
                 sm.detected_voice_command = None
+                
+                # Check for duplication with recently processed chat message or voice command
+                if hasattr(sm, 'is_recent_duplicate') and sm.is_recent_duplicate(cmd, window_seconds=6.0):
+                    logger.info(f"[WEB] Suppressed duplicate standalone voice command (already handled): '{cmd}'")
+                    continue
+
                 logger.info(f"[WEB] Dispatched standalone voice command: '{cmd}'")
+                if hasattr(sm, 'record_chat_message'):
+                    sm.record_chat_message(cmd)
                 sm.add_event("voice_detected", {"text": cmd, "standalone": True})
             import time
             time.sleep(0.2)

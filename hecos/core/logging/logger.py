@@ -1,4 +1,5 @@
 import logging
+from logging.handlers import RotatingFileHandler
 import os
 import sys
 import subprocess
@@ -6,18 +7,23 @@ from datetime import datetime
 from hecos.core.constants import LOGS_DIR
 from .hub import get_hub
 
-# Set verbose levels for internal libraries - default WARNING to avoid chat pollution
+# Set verbose levels for internal libraries - default WARNING/ERROR to avoid chat pollution
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+logging.getLogger("transformers").setLevel(logging.ERROR)
+logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
 # Suppress PIL/Pillow internal debug logs (PNG chunk spam: IHDR, IDAT, STREAM, orNT…)
 logging.getLogger("PIL").setLevel(logging.WARNING)
 logging.getLogger("PIL.PngImagePlugin").setLevel(logging.WARNING)
 logging.getLogger("PIL.Image").setLevel(logging.WARNING)
+_LITELLM_LOGGER_NAMES = ("LiteLLM", "LiteLLM Router", "LiteLLM Proxy")
 litellm_log = logging.getLogger("LiteLLM")
 litellm_log.setLevel(logging.WARNING)  # Default OFF; init_logger controls this
 litellm_log.propagate = False  # Never leak to root logger
+_debug_llm_enabled = False
 
 
 # Use centralized logs directory
@@ -36,8 +42,22 @@ logger.setLevel(logging.DEBUG)
 # File formatters
 file_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 
-# Handler for INFO/WARN/ERROR/DEBUG file
-info_file_handler = logging.FileHandler(info_filename, encoding='utf-8')
+
+class SafeRotatingFileHandler(RotatingFileHandler):
+    """RotatingFileHandler resilient to Windows file-sharing locks (WinError 32)."""
+    def doRollover(self):
+        try:
+            super().doRollover()
+        except OSError:
+            # Another process (e.g. external PowerShell log tailer) currently holds the file open;
+            # skip rollover on this write rather than raising PermissionError.
+            pass
+
+
+# Handler for INFO/WARN/ERROR/DEBUG file (capped at 10 MB x 3 backups)
+info_file_handler = SafeRotatingFileHandler(
+    info_filename, maxBytes=10 * 1024 * 1024, backupCount=3, encoding='utf-8'
+)
 info_file_handler.setLevel(logging.DEBUG)
 info_file_handler.setFormatter(file_formatter)
 
@@ -48,7 +68,9 @@ class LevelFilter(logging.Filter):
     def filter(self, record):
         return record.levelno == self.level
 
-debug_file_handler = logging.FileHandler(debug_filename, encoding='utf-8')
+debug_file_handler = SafeRotatingFileHandler(
+    debug_filename, maxBytes=10 * 1024 * 1024, backupCount=2, encoding='utf-8'
+)
 debug_file_handler.setLevel(logging.DEBUG)
 debug_file_handler.addFilter(LevelFilter(logging.DEBUG))
 debug_file_handler.setFormatter(file_formatter)
@@ -61,7 +83,9 @@ class BackupFilter(logging.Filter):
         except Exception:
             return False
 
-backup_file_handler = logging.FileHandler(backup_filename, encoding='utf-8')
+backup_file_handler = SafeRotatingFileHandler(
+    backup_filename, maxBytes=5 * 1024 * 1024, backupCount=2, encoding='utf-8'
+)
 backup_file_handler.setLevel(logging.DEBUG)
 backup_file_handler.addFilter(BackupFilter())
 backup_file_handler.setFormatter(file_formatter)
@@ -82,7 +106,22 @@ class ColorFormatter(logging.Formatter):
         message = super().format(record)
         return f"{color}{message}{self.RESET}"
 
-console_handler = logging.StreamHandler()
+class SafeStreamHandler(logging.StreamHandler):
+    """StreamHandler resilient to Windows console charmap encoding errors."""
+    def emit(self, record):
+        try:
+            super().emit(record)
+        except UnicodeEncodeError:
+            try:
+                msg = self.format(record)
+                enc = getattr(self.stream, 'encoding', 'utf-8') or 'utf-8'
+                safe_msg = msg.encode(enc, errors='replace').decode(enc)
+                self.stream.write(safe_msg + self.terminator)
+                self.flush()
+            except Exception:
+                self.handleError(record)
+
+console_handler = SafeStreamHandler()
 console_handler.setLevel(logging.INFO)
 console_formatter = ColorFormatter('%(asctime)s [%(levelname)s] %(message)s')
 console_handler.setFormatter(console_formatter)
@@ -160,6 +199,37 @@ if not litellm_log.hasHandlers():
 
 _console_window_started = False
 
+
+def sync_litellm_loggers(debug_llm=None):
+    """
+    Purges any stderr StreamHandlers attached by LiteLLM (`LiteLLM`, `LiteLLM Router`,
+    `LiteLLM Proxy`) and routes LiteLLM logs strictly to `debug_file_handler` + `hub_handler`.
+    """
+    global _debug_llm_enabled
+    if debug_llm is not None:
+        _debug_llm_enabled = bool(debug_llm)
+    else:
+        cfg_mgr = getattr(sys, "hecos_config_manager", None)
+        if cfg_mgr and isinstance(getattr(cfg_mgr, "config", None), dict):
+            _debug_llm_enabled = bool(cfg_mgr.config.get("llm", {}).get("debug_llm", False))
+
+    # CRITICAL: Never set LITELLM_LOG="DEBUG" in os.environ, otherwise lazy `import litellm`
+    # spawns a LevelRoutingStreamHandler writing raw DEBUG lines to stderr during import!
+    os.environ["LITELLM_LOG"] = "WARNING"
+
+    for name in _LITELLM_LOGGER_NAMES:
+        lg = logging.getLogger(name)
+        lg.propagate = False
+        for h in lg.handlers[:]:
+            lg.removeHandler(h)
+        if _debug_llm_enabled:
+            lg.setLevel(logging.DEBUG)
+            lg.addHandler(debug_file_handler)
+            lg.addHandler(hub_handler)
+        else:
+            lg.setLevel(logging.WARNING)
+
+
 def init_logger(config, allow_external_windows=True):
     """
     Initializes logging settings read from config.json.
@@ -175,26 +245,16 @@ def init_logger(config, allow_external_windows=True):
     llm_cfg = config.get('llm', {})
     debug_llm = llm_cfg.get('debug_llm', False)
     
-    # Purge ALL handlers from LiteLLM logger (prevents its built-in StreamHandler to stdout)
-    for h in litellm_log.handlers[:]:
-        litellm_log.removeHandler(h)
-    # Also silence httpcore/httpx/requests at WARNING always
+    # Also silence httpcore/httpx/requests/hf/transformers at WARNING/ERROR always
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
-    
-    # CRITICAL: Set a valid logging level (never empty string "", which crashes litellm._logging on import)
-    import os as _os
-    _os.environ["LITELLM_LOG"] = "DEBUG" if debug_llm else "WARNING"
-    
-    if debug_llm:
-        litellm_log.setLevel(logging.DEBUG)
-        # Redirect LiteLLM output to our debug file handler AND the WebUI hub
-        litellm_log.addHandler(debug_file_handler)
-        litellm_log.addHandler(hub_handler)
-    else:
-        litellm_log.setLevel(logging.WARNING)
+    logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+    logging.getLogger("transformers").setLevel(logging.ERROR)
+    logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
+
+    sync_litellm_loggers(debug_llm=debug_llm)
         
     # PULIZIA TOTALE: rimuove ogni handler precedente (anche dalle librerie esterne)
     for h in logger.handlers[:]:
@@ -355,7 +415,7 @@ def debug_ai(user_text, ai_response, tag_detected=None):
     logger.info(f"USER: {user_text} | AI: {ai_response}{info_tag}")
 
 def read_logs(n=10, errors_only=False, debug_only=False):
-    """Returns the last N lines of the specified log file."""
+    """Returns the last N lines of the specified log file (memory-safe tail read)."""
     try:
         target_file = os.path.join(LOGS_DIR, "hecos_main.log")
         if debug_only:
@@ -363,13 +423,25 @@ def read_logs(n=10, errors_only=False, debug_only=False):
             
         if not os.path.exists(target_file):
             return f"No logs found in {target_file} for today."
-            
-        with open(target_file, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-            if errors_only:
-                lines = [r for r in lines if "[ERROR]" in r]
-            
-            last_lines = lines[-n:]
-            return "".join(last_lines) if last_lines else "Log registry is empty."
+
+        # Read at most the last 256 KB so legacy oversized logs never stall RAM
+        max_bytes = 256 * 1024
+        with open(target_file, 'rb') as f:
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            offset = max(0, size - max_bytes)
+            f.seek(offset, os.SEEK_SET)
+            raw = f.read()
+
+        text = raw.decode('utf-8', errors='replace')
+        lines = text.splitlines(keepends=True)
+        if offset > 0 and lines:
+            # Drop potentially partial first line from mid-file seek
+            lines = lines[1:]
+        if errors_only:
+            lines = [r for r in lines if "[ERROR]" in r]
+
+        last_lines = lines[-n:]
+        return "".join(last_lines) if last_lines else "Log registry is empty."
     except Exception as e:
         return f"Error reading log file: {e}"

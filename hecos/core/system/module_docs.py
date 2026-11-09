@@ -1,338 +1,684 @@
 """
+
 MODULE: Plugin Docs
+
 DESCRIPTION: Generates documentation, UI schemas, and AI function calling schemas.
+
 """
 
+
+
 import os
+
 import json
+
 import importlib.util
+
 import glob
+
 from hecos.core.logging import logger
+
 from hecos.core.i18n import translator
 
+
+
 from .module_state import (
+
     REGISTRY_PATH,
+
     _loaded_plugins,
+
     _loaded_legacy_plugins,
+
     _lazy_plugins_paths,
+
     _lazy_tool_schemas
+
 )
+
 from .module_scanner import update_capability_registry
 
+
+
 def get_formatted_capabilities():
+
     """Returns a readable string for the terminal."""
+
     if not os.path.exists(REGISTRY_PATH):
+
         update_capability_registry()
 
+
+
     with open(REGISTRY_PATH, "r", encoding="utf-8") as f:
+
         data = json.load(f)
 
+
+
     result_string = f"\n=== {translator.t('help_registry_title')} ===\n"
+
     for tag, info in data.items():
+
         result_string += f"\n[MODULE: {tag}] - {translator.t('system_status', status=info['status'])}\n"
+
         result_string += f"{translator.t('help_role')} {info['description']}\n"
+
         for command, explanation in info['commands'].items():
+
             result_string += f"  • {tag}:{command} --> {explanation}\n"
+
     return result_string
 
+
+
 def generate_dynamic_guide():
+
     """
+
     Scans all plugin folders (active and disabled) to get
+
     necessary metadata to build the user guide (F1).
+
     Returns a list of dictionaries with module details.
+
     """
+
     guide = []
 
+
+
     def scan_directory(base_path, forced_status=None):
+
         if not os.path.exists(base_path):
+
             return
 
+
+
         plugin_dirs = [d for d in os.listdir(base_path)
+
                        if os.path.isdir(os.path.join(base_path, d))
+
                        and not d.startswith("__")
+
                        and d != "plugins_disabled"]
 
+
+
         for plugin_dir in plugin_dirs:
+
             main_file = os.path.join(base_path, plugin_dir, "main.py")
+
             if not os.path.exists(main_file):
+
                 continue
+
             try:
+
                 spec = importlib.util.spec_from_file_location(
+
                     f"guide_{os.path.basename(base_path)}_{plugin_dir}",
+
                     main_file
+
                 )
+
                 if spec is None:
+
                     continue
+
                 module = importlib.util.module_from_spec(spec)
+
                 spec.loader.exec_module(module)
 
+
+
                 if hasattr(module, "info"):
+
                     plugin_info = module.info()
+
                     effective_status = forced_status if forced_status else (module.status() if hasattr(module, "status") else translator.t("online"))
 
+
+
                     guide.append({
+
                         "tag": plugin_info['tag'],
+
                         "description": plugin_info.get('desc', 'No description.'),
+
                         "commands": plugin_info.get('comandi', {}),
+
                         "status": effective_status,
+
                         "example": plugin_info.get("esempio", "")
+
                     })
+
             except Exception as e:
+
                 logger.error(f"GUIDE LOADER: Failed for {plugin_dir}: {e}")
 
+
+
     import os
+
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
     plugins_dir = os.path.join(BASE_DIR, "plugins")
+
     disabled_dir = os.path.join(plugins_dir, "plugins_disabled")
 
+
+
     # 1. Scan active plugins
+
     scan_directory(plugins_dir)
 
+
+
     # 2. Scan disabled plugins (force OFFLINE status)
+
     scan_directory(disabled_dir, forced_status=translator.t("offline"))
 
+
+
     # 3. Scan old plugins in root "plugins" for compatibility
+
     old_files = glob.glob(os.path.join(plugins_dir, "*.py"))
+
     for file in old_files:
+
         module_name = os.path.basename(file)[:-3]
+
         if module_name.startswith("__") or module_name.startswith("_"):
+
             continue
+
         try:
+
             spec = importlib.util.spec_from_file_location(f"guide_{module_name}", file)
+
             module = importlib.util.module_from_spec(spec)
+
             spec.loader.exec_module(module)
+
             if hasattr(module, "tools"):
+
                 tools_instance = module.tools
+
                 effective_status = getattr(tools_instance, "status", translator.t("online"))
+
                 import inspect
+
                 commands = {}
+
                 for name, method in inspect.getmembers(tools_instance, predicate=inspect.ismethod):
+
                     if not name.startswith('_'):
+
                         doc = method.__doc__
+
                         commands[name] = doc.strip().split('\n')[0] if doc else "Method"
+
                 if not any(g['tag'] == tools_instance.tag for g in guide):
+
                     guide.append({
+
                         "tag": tools_instance.tag,
+
                         "description": getattr(tools_instance, "desc", "No description."),
+
                         "commands": commands,
+
                         "status": effective_status,
+
                         "example": getattr(tools_instance, "esempio", "")
+
                     })
+
             elif hasattr(module, "info"):
+
                 plugin_info = module.info()
+
                 effective_status = module.status() if hasattr(module, "status") else translator.t("online")
+
                 if not any(g['tag'] == plugin_info['tag'] for g in guide):
+
                     guide.append({
+
                         "tag": plugin_info['tag'],
+
                         "description": plugin_info.get('desc', 'No description.'),
+
                         "commands": plugin_info.get('comandi', {}),
+
                         "status": effective_status,
+
                         "example": plugin_info.get("esempio", "")
+
                     })
+
         except:
+
             pass
 
+
+
     # Sort by alphabetical tag
+
     guide.sort(key=lambda x: x['tag'])
+
     return guide
 
+
+
 def get_tools_schema():
+
     """
+
     Scans loaded class-based plugins and generates a list of tools
+
     in the JSON Schema format expected by LiteLLM / OpenAI for Function Calling.
+
     """
+
     import inspect
+
     import re
 
+
+
     # CRITICAL: Ensure _lazy_tool_schemas is populated if this is a fresh process
+
     if not _loaded_plugins and not _lazy_tool_schemas:
+
         logger.debug("DOCS", "Memory schemas empty, triggering capability rescan...")
+
         update_capability_registry(debug_log=False)
+
+
 
     tools_list = []
 
+
+
     def _parse_docstring(docstring):
+
         if not docstring: return "Tool function", {}
+
         lines = docstring.strip().split('\n')
+
         description = lines[0].strip()
+
         params_description = {}
+
         for line in lines[1:]:
+
             match = re.search(r':param\s+(\w+):\s+(.+)', line)
+
             if match:
+
                 params_description[match.group(1)] = match.group(2).strip()
+
         return description, params_description
 
+
+
     for tag, module in _loaded_plugins.items():
+
         if hasattr(module, "tools"):
+
             tools_instance = module.tools
+
             for name, method in inspect.getmembers(tools_instance, predicate=inspect.ismethod):
+
                 if name.startswith('_'):
+
                     continue
+
+
 
                 description, params_description = _parse_docstring(method.__doc__)
+
                 signature = inspect.signature(method)
 
+
+
                 properties = {}
+
                 required = []
 
+
+
                 for param_name, param in signature.parameters.items():
+
                     if param_name == 'self':
+
                         continue
 
+
+
                     # Set everything to string for simplicity, based on docstring
+
                     param_description = params_description.get(param_name, f"Parameter {param_name}")
+
                     properties[param_name] = {
+
                         "type": "string",
+
                         "description": param_description
+
                     }
+
                     if param.default == inspect.Parameter.empty:
+
                         required.append(param_name)
+
                         
+
                 # Ensure we don't expose internal MCP bridge handlers directly to the AI
+
                 if tag == "MCP_BRIDGE" and name in ["get_mcp_schemas", "call_tool"]:
+
                     continue
 
+
+
                 tools_list.append({
+
                     "type": "function",
+
                     "function": {
+
                         "name": f"{tag}__{name}",
+
                         "description": description,
+
                         "parameters": {
+
                             "type": "object",
+
                             "properties": properties,
+
                             "required": required
+
                         }
+
                     }
+
                 })
+
                 
+
         # --- NEW: Inject flattened dynamic MCP Schemas directly from the bridge ---
+
         if tag == "MCP_BRIDGE" and hasattr(module, "tools") and hasattr(module.tools, "get_mcp_schemas"):
+
             try:
+
                 mcp_dynamic_schemas = module.tools.get_mcp_schemas()
+
                 if mcp_dynamic_schemas:
+
                     tools_list.extend(mcp_dynamic_schemas)
+
             except Exception as e:
+
                 logger.error(f"DOCS: Failed to fetch dynamic MCP schemas: {e}")
 
+
+
     # --- ADD LAZY PLUGINS SCHEMAS ---
+
     def _sanitize_tool_schema(schema_list):
+
         """
+
         Ensures every array-type parameter has an 'items' key.
+
         Gemini rejects tool declarations that have type=array without items.
+
+        Also creates clean copies to prevent in-place cache mutation.
+
         """
+
+        import copy
+
         sanitized = []
+
         for tool in schema_list:
-            # Tools may be flat {name, description, parameters}
-            # or wrapped {type:"function", function:{...}}
-            func = tool.get("function", tool)
+
+            tool_copy = copy.deepcopy(tool)
+
+            if "type" not in tool_copy and "function" not in tool_copy:
+                tool_copy = {"type": "function", "function": tool_copy}
+            func = tool_copy.get("function", tool_copy)
+
             params = func.get("parameters", {})
+
             props = params.get("properties", {})
+
             for prop in props.values():
+
                 if prop.get("type") == "array" and "items" not in prop:
+
                     prop["items"] = {"type": "string"}
-            sanitized.append(tool)
+
+            sanitized.append(tool_copy)
+
         return sanitized
 
+
+
     for tag, schema_list in _lazy_tool_schemas.items():
+
         if tag not in _loaded_plugins: # Don't duplicate if already awakened
+
             tools_list.extend(_sanitize_tool_schema(schema_list))
 
+
+
     # --- RUNTIME AI BEHAVIOR OVERRIDES (from Document Maker config) ---
+
     # Reads override_directive and override_enabled from docs_config.json and appends
+
     # the directive to the description of targeted tools. This allows the user to
+
     # edit/toggle the directive from the Document Maker config panel without touching code.
+
     try:
+
         import json as _json
+
         _dm_cfg_path = os.path.join(
+
             os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+
             "hpm", "document_maker", "docs_config.json"
+
         )
+
         if os.path.exists(_dm_cfg_path):
+
             with open(_dm_cfg_path, "r", encoding="utf-8") as _f:
+
                 _dm_cfg = _json.load(_f)
+
             _override_enabled = _dm_cfg.get("override_enabled", True)
+
             _override_directive = _dm_cfg.get("override_directive", "").strip()
+
             if _override_enabled and _override_directive:
+
                 # Dynamically append current configured default template info
+
                 _def_tpl_id = _dm_cfg.get("default_template_id", "").strip()
+
                 _extra_tpl_info = ""
+
                 if _def_tpl_id:
+
                     try:
+
                         from hecos.hpm.libraries.templates.store import get_template
+
                         _tpl_data = get_template(_def_tpl_id)
+
                         _tpl_name = _tpl_data.get("name", _def_tpl_id) if _tpl_data else _def_tpl_id
+
                         _extra_tpl_info = f"\n\nCURRENT CONFIGURED DEFAULT TEMPLATE:\nName: '{_tpl_name}' | ID: '{_def_tpl_id}'. When the user asks for 'default template', 'modello predefinito', or 'il solito documento', use this template (pass template_id='{_def_tpl_id}')."
+
                     except Exception:
+
                         pass
+
                 _full_directive = _override_directive + _extra_tpl_info
 
+
+
                 # Tool names that receive the directive injection
+
                 _override_targets = {
+
                     "DOCS__generate_pdf",
+
                     "DOCS__modify_document",
+
                     "DOCS__list_documents",
+
                     "EXECUTOR__write_file",
+
                 }
+
                 for _tool in tools_list:
+
                     _func = _tool.get("function", _tool)
+
                     _tname = _func.get("name", "")
+
                     if _tname in _override_targets:
-                        _func["description"] = _func.get("description", "") + " " + _full_directive
+
+                        curr_desc = _func.get("description", "")
+
+                        if _full_directive and _full_directive not in curr_desc:
+
+                            _func["description"] = (curr_desc + " " + _full_directive).strip()
+
     except Exception as _e:
+
         pass  # Never crash tool assembly due to override issues
 
 
+
+
+
     # --- BUILT-IN SYSTEM TOOLS (always present) ---
+
     tools_list.append({
+
         "type": "function",
+
         "function": {
+
             "name": "SYSTEM__describe_module",
+
             "description": (
+
                 "Returns a detailed capability profile (capability card) for any installed Hecos module or package. "
+
                 "Use this when the user asks 'what can X do?', 'does the webcam plugin have a widget?', "
+
                 "'what commands does the reminder module have?', 'list all LLM tools of calendar', "
+
                 "or any question about a specific module's features, type, or capabilities."
+
             ),
+
             "parameters": {
+
                 "type": "object",
+
                 "required": ["module_id"],
+
                 "properties": {
+
                     "module_id": {
+
                         "type": "string",
+
                         "description": (
+
                             "The ID of the module to describe (e.g. 'webcam', 'calendar', 'reminder', "
+
                             "'lists', 'weather_pro', 'voice_visualizer', 'quick_links', 'map', "
+
                             "'image_gen', 'webcam_feed'). Use lowercase with underscores."
+
                         )
+
                     }
+
                 }
+
             }
+
         }
+
     })
+
+
 
     # --- BUILT-IN CORE IDENTITY TOOL (always present, cannot be removed) ---
+
     tools_list.append({
+
         "type": "function",
+
         "function": {
+
             "name": "CORE__get_author",
+
             "description": (
+
                 "Returns the verified authorship and copyright information for Hecos. "
+
                 "Use this when the user asks 'who made Hecos?', 'who is the author?', "
+
                 "'chi ha creato Hecos?', 'di chi è Hecos?', 'chi è Antonio Meloni?', "
+
                 "'show copyright', 'show author info', or any question about the creator, "
+
                 "ownership, or legal identity of the Hecos system."
+
             ),
+
             "parameters": {
+
                 "type": "object",
+
                 "properties": {
+
                     "include_address": {
+
                         "type": "boolean",
+
                         "description": "If true, includes the registered physical address of the author. Default false."
+
                     }
+
                 }
+
             }
+
         }
+
     })
 
+
+
     return tools_list if tools_list else None
+
+
 

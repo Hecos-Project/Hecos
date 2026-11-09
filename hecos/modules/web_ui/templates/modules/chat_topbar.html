@@ -1,11 +1,60 @@
 <div id="topbar" style="flex-wrap: wrap;">
-  <div style="display:flex; align-items:center; gap:15px; flex-wrap: wrap; max-width: 100%;">
+  <div style="display:flex; align-items:center; gap:12px; flex-wrap: wrap; max-width: 100%;">
     <button id="sidebar-toggle-btn" class="desktop-only" onclick="toggleSidebarDesktop()" title="Toggle Sidebar" style="background:none; border:none; color:var(--text); font-size:20px; cursor:pointer; display:flex; align-items:center; transition: color .2s;"><i class="fas fa-bars"></i></button>
     <div id="model-badge" style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
       <div id="tb-status-dot" style="width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);"></div>
       <span id="tb-model" style="font-size: 13px; font-weight: 500;">{{ t('webui_chat_loading') }}</span>
     </div>
-    <style>@keyframes pulseDot { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); box-shadow: 0 0 12px currentColor; } 100% { opacity: 1; transform: scale(1); } } #tb-status-dot.pulsing { animation: pulseDot 2s infinite; } .mode-chip-autowipe { border-color: rgba(var(--yellow-rgb),0.5) !important; color: var(--yellow) !important; background: rgba(var(--yellow-rgb),0.1) !important; } .mode-chip-incognito { border-color: rgba(var(--accent2-rgb),0.5) !important; color: var(--accent2) !important; background: rgba(var(--accent2-rgb),0.1) !important; }</style>
+
+    <!-- Active Tool Mode Chip (Native Tools vs Fast Direct vs Disabled) -->
+    <div id="tb-tool-mode-chip" class="tool-mode-chip tool-mode-native" onclick="window.openPayloadConfig()" title="Tool Mode: Click to configure Payload &amp; Tools">
+      <i id="tb-tool-mode-icon" class="fas fa-toolbox"></i>
+      <span id="tb-tool-mode-label">Tools: ON</span>
+    </div>
+
+    <style>
+      @keyframes pulseDot { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); box-shadow: 0 0 12px currentColor; } 100% { opacity: 1; transform: scale(1); } }
+      #tb-status-dot.pulsing { animation: pulseDot 2s infinite; }
+      .mode-chip-autowipe { border-color: rgba(var(--yellow-rgb),0.5) !important; color: var(--yellow) !important; background: rgba(var(--yellow-rgb),0.1) !important; }
+      .mode-chip-incognito { border-color: rgba(var(--accent2-rgb),0.5) !important; color: var(--accent2) !important; background: rgba(var(--accent2-rgb),0.1) !important; }
+
+      /* Tool Mode Chip Styles */
+      .tool-mode-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        user-select: none;
+        line-height: 1.2;
+        letter-spacing: 0.2px;
+      }
+      .tool-mode-chip:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.15);
+      }
+      .tool-mode-chip.tool-mode-native {
+        background: rgba(0, 210, 190, 0.12);
+        border: 1px solid rgba(0, 210, 190, 0.45);
+        color: #00d2be;
+        box-shadow: 0 0 8px rgba(0, 210, 190, 0.15);
+      }
+      .tool-mode-chip.tool-mode-direct {
+        background: rgba(245, 158, 11, 0.14);
+        border: 1px solid rgba(245, 158, 11, 0.55);
+        color: #fbbf24;
+        box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+      }
+      .tool-mode-chip.tool-mode-disabled {
+        background: rgba(148, 163, 184, 0.12);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        color: #94a3b8;
+      }
+    </style>
   </div>
   <div class="topbar-chips" style="flex-wrap: wrap;">
     <div id="topbar-mode-chip" style="display:none;"></div>

@@ -172,6 +172,9 @@ window.sfRefreshUIVisibilityAndSummaries = function() {
         const mOn = document.getElementById('sf-payload-memory')?.checked !== false;
         const thOn = document.getElementById('sf-payload-thinking')?.checked === true;
         paySummary.textContent = `Tools ${tOn ? 'ON' : 'OFF'} · Soul ${sOn ? 'ON' : 'OFF'} · Mem ${mOn ? 'ON' : 'OFF'}${thOn ? ' · <think>' : ''}`;
+        if (window.updateToolModeBadge) {
+            window.updateToolModeBadge(tOn ? 'native' : 'direct');
+        }
     }
 
     // 4. Compute diff & update status badges
@@ -1114,6 +1117,31 @@ window.sfUpdateCloneState = function() {
             } else if (voiceSelect.options.length > 0) {
                 voiceSelect.selectedIndex = 0;
             }
+        }
+    }
+};
+
+
+
+window.sfOnToolsToggle = function(isChecked) {
+    if (window.updateToolModeBadge) {
+        window.updateToolModeBadge(isChecked ? 'native' : 'direct');
+    }
+    if (window.Presenter && typeof window.Presenter.notify === 'function') {
+        if (isChecked) {
+            window.Presenter.notify({
+                type: 'action_confirm',
+                title: 'Payload Control',
+                text: '🛠️ Native Tool Calling Mode: Function schemas loaded into model payload.',
+                duration: 4000
+            });
+        } else {
+            window.Presenter.notify({
+                type: 'action_confirm',
+                title: 'Payload Control',
+                text: '⚡ Direct Commands Mode: Tool schemas stripped for maximum speed (~8,000 tokens saved). Direct /img and /search active.',
+                duration: 4000
+            });
         }
     }
 };

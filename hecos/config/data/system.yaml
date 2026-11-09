@@ -1,6 +1,6 @@
 ai:
   active_global_preset: urania_9800_gp
-  active_personality: sebastian_pro
+  active_personality: Urania_9800
   available_personalities:
     '1': Hecos_System_Soul
     '2': Urania_9800

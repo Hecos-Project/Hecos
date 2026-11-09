@@ -1,438 +1,443 @@
-/* ============================================================================
-   agent_traces.css
-   Hecos Agent Trace UI — Clean, gear-free live status & expandable step timeline
-   ============================================================================ */
-
-@keyframes traceDotPulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.28);
-    opacity: 0.55;
-  }
-}
-
-@keyframes traceSlideFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.agent-trace-card {
-  display: flex;
-  flex-direction: column;
-  width: fit-content;
-  min-width: 240px;
-  max-width: 100%;
-  margin: 2px 0 6px 0;
-  background: var(--bg2, rgba(20, 24, 36, 0.75));
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-  border-left: 3px solid var(--accent, #6c8cff);
-  border-radius: 10px;
-  font-family: var(--font-sans, 'Inter', sans-serif);
-  font-size: 12.5px;
-  color: var(--text, #e2e8f0);
-  backdrop-filter: blur(10px);
-  transition: border-color 0.25s ease, opacity 0.25s ease, background 0.25s ease;
-  animation: traceSlideFadeIn 0.2s ease-out;
-  overflow: hidden;
-}
-
-/* Fallback if rendered directly inside #chat-area (e.g. background PTT without anchor) */
-#chat-area > .agent-trace-card {
-  margin-left: 46px;
-  margin-bottom: 10px;
-  max-width: 760px;
-}
-
-.agent-trace-card.level-tool {
-  border-left-color: #f59e0b;
-}
-
-.agent-trace-card.level-vision {
-  border-left-color: #a855f7;
-}
-
-.agent-trace-card.level-error {
-  border-left-color: var(--red, #ef4444);
-}
-
-.agent-trace-card.finished {
-  border-left-color: var(--green, #22c55e);
-  background: var(--glass, rgba(255, 255, 255, 0.03));
-}
-
-.agent-trace-card.finished.has-error {
-  border-left-color: var(--red, #ef4444);
-}
-
-.agent-trace-card.trace-hiding {
-  opacity: 0;
-  transform: translateY(-4px);
-  pointer-events: none;
-  transition: opacity 0.35s ease, transform 0.35s ease;
-}
-
-/* ── Header Bar ──────────────────────────────────────────────────────────── */
-.agent-trace-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 7px 12px;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.15s ease;
-}
-
-.agent-trace-header:hover {
-  background: var(--glass-b, rgba(255, 255, 255, 0.05));
-}
-
-.agent-trace-card.minimal-mode .agent-trace-header {
-  cursor: default;
-}
-
-.agent-trace-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  flex: 1;
-}
-
-/* Glowing status dot (replaces the old spinning gear) */
-.agent-trace-indicator {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
-.agent-trace-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent, #6c8cff);
-  box-shadow: 0 0 8px var(--accent, #6c8cff);
-  animation: traceDotPulse 1.5s infinite ease-in-out;
-}
-
-.agent-trace-card.level-tool .agent-trace-dot {
-  background: #f59e0b;
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
-}
-
-.agent-trace-card.level-vision .agent-trace-dot {
-  background: #a855f7;
-  box-shadow: 0 0 8px rgba(168, 85, 247, 0.8);
-}
-
-.agent-trace-card.level-error .agent-trace-dot {
-  background: var(--red, #ef4444);
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
-}
-
-.agent-trace-done-icon {
-  font-size: 11px;
-  color: var(--green, #22c55e);
-}
-
-.agent-trace-card.has-error .agent-trace-done-icon {
-  color: var(--red, #ef4444);
-}
-
-.agent-trace-step-icon {
-  font-size: 11.5px;
-  color: var(--muted, #94a3b8);
-  flex-shrink: 0;
-}
-
-.agent-trace-title-wrap {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
-}
-
-.agent-trace-title {
-  font-weight: 500;
-  color: var(--text, #e2e8f0);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.agent-trace-card.finished .agent-trace-title {
-  color: var(--muted, #94a3b8);
-  font-weight: 500;
-}
-
-.agent-trace-live-sub {
-  font-size: 11.5px;
-  color: var(--muted, #94a3b8);
-  font-family: 'JetBrains Mono', monospace;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  opacity: 0.85;
-}
-
-.agent-trace-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.agent-trace-count-badge {
-  font-size: 10.5px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 10px;
-  background: var(--bg3, rgba(255, 255, 255, 0.06));
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-  color: var(--muted, #94a3b8);
-}
-
-.agent-trace-chevron {
-  font-size: 10px;
-  color: var(--muted, #94a3b8);
-  transition: transform 0.2s ease;
-}
-
-.agent-trace-card.expanded .agent-trace-chevron {
-  transform: rotate(180deg);
-}
-
-.agent-trace-card.minimal-mode .agent-trace-chevron {
-  display: none;
-}
-
-/* ── Expandable Timeline Body ────────────────────────────────────────────── */
-.agent-trace-timeline {
-  display: none;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px 12px 10px 14px;
-  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.07));
-  background: rgba(0, 0, 0, 0.14);
-  max-height: 320px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-}
-
-.agent-trace-card.expanded .agent-trace-timeline {
-  display: flex;
-}
-
-.agent-trace-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.agent-trace-step {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  position: relative;
-  padding: 3px 0;
-  font-size: 12px;
-}
-
-.agent-trace-step:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  left: 7px;
-  top: 20px;
-  bottom: -7px;
-  width: 1px;
-  background: var(--border, rgba(255, 255, 255, 0.1));
-}
-
-.step-node-icon {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  flex-shrink: 0;
-  margin-top: 1px;
-  background: var(--bg3, rgba(255, 255, 255, 0.06));
-  color: var(--accent, #6c8cff);
-  border: 1px solid rgba(var(--accent-rgb, 108, 140, 255), 0.3);
-}
-
-.agent-trace-step.status-ok .step-node-icon {
-  color: var(--green, #22c55e);
-  border-color: rgba(34, 197, 94, 0.35);
-}
-
-.agent-trace-step.status-error .step-node-icon {
-  color: var(--red, #ef4444);
-  border-color: rgba(239, 68, 68, 0.4);
-}
-
-.agent-trace-step.kind-tool.status-running .step-node-icon {
-  color: #f59e0b;
-  border-color: rgba(245, 158, 11, 0.45);
-}
-
-.step-main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  flex: 1;
-}
-
-.step-top-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.step-title-group {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 6px;
-  min-width: 0;
-}
-
-.step-label {
-  font-weight: 500;
-  color: var(--text, #e2e8f0);
-}
-
-.step-args-pill {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: var(--accent, #6c8cff);
-  background: rgba(var(--accent-rgb, 108, 140, 255), 0.1);
-  border: 1px solid rgba(var(--accent-rgb, 108, 140, 255), 0.2);
-  padding: 0 6px;
-  border-radius: 4px;
-  max-width: 320px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.step-dur {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
-  color: var(--muted, #94a3b8);
-  flex-shrink: 0;
-}
-
-.step-result {
-  font-size: 11.5px;
-  color: var(--muted, #94a3b8);
-  line-height: 1.4;
-}
-
-.agent-trace-step.status-error .step-result {
-  color: var(--red, #ef4444);
-}
-
-.step-substeps {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-top: 2px;
-  padding-left: 8px;
-  border-left: 1px dashed var(--border, rgba(255, 255, 255, 0.12));
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: var(--muted, #94a3b8);
-}
-
-/* Inline Action Console inside a step */
-.step-action-console {
-  margin-top: 4px;
-  padding: 6px 10px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-  border-radius: 6px;
-  font-family: 'JetBrains Mono', 'Consolas', monospace;
-  font-size: 11px;
-  color: var(--text, #e2e8f0);
-  overflow-x: auto;
-}
-
-.step-action-cmd {
-  color: var(--accent, #6c8cff);
-  font-weight: 600;
-  margin-bottom: 3px;
-}
-
-.step-action-out {
-  color: var(--muted, #94a3b8);
-  white-space: pre-wrap;
-  max-height: 120px;
-  overflow-y: auto;
-}
-
-/* Total execution time footer inside timeline */
-.agent-trace-total-row {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-top: 2px;
-  padding-top: 6px;
-  border-top: 1px dashed var(--border, rgba(255, 255, 255, 0.1));
-  font-size: 11.5px;
-  color: var(--muted, #94a3b8);
-}
-
-.total-row-icon {
-  width: 16px;
-  height: 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10.5px;
-  flex-shrink: 0;
-  color: var(--muted, #94a3b8);
-  opacity: 0.85;
-}
-
-.total-row-main {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  min-width: 0;
-  flex: 1;
-}
-
-.total-row-label {
-  font-weight: 500;
-  color: var(--muted, #94a3b8);
-}
-
-.agent-trace-timer {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text, #e2e8f0);
-  flex-shrink: 0;
-  text-align: right;
-}
-
+/* ============================================================================
+   agent_traces.css
+   Hecos Agent Trace UI — Clean, gear-free live status & expandable step timeline
+   ============================================================================ */
+
+@keyframes traceDotPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.28);
+    opacity: 0.55;
+  }
+}
+
+@keyframes traceSlideFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.agent-trace-card {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  min-width: 240px;
+  max-width: 100%;
+  margin: 2px 0 6px 0;
+  background: var(--bg2, rgba(20, 24, 36, 0.75));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-left: 3px solid var(--accent, #6c8cff);
+  border-radius: 10px;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 12.5px;
+  color: var(--text, #e2e8f0);
+  backdrop-filter: blur(10px);
+  transition: border-color 0.25s ease, opacity 0.25s ease, background 0.25s ease;
+  animation: traceSlideFadeIn 0.2s ease-out;
+  overflow: hidden;
+}
+
+/* Fallback if rendered directly inside #chat-area (e.g. background PTT without anchor) */
+#chat-area > .agent-trace-card {
+  margin-left: 46px;
+  margin-bottom: 10px;
+  max-width: 760px;
+}
+
+.agent-trace-card.level-tool {
+  border-left-color: #f59e0b;
+}
+
+.agent-trace-card.level-vision {
+  border-left-color: #a855f7;
+}
+
+.agent-trace-card.level-error {
+  border-left-color: var(--red, #ef4444);
+}
+
+.agent-trace-card.finished {
+  border-left-color: var(--green, #22c55e);
+  background: var(--glass, rgba(255, 255, 255, 0.03));
+}
+
+.agent-trace-card.finished.has-error {
+  border-left-color: var(--red, #ef4444);
+}
+
+.agent-trace-card.trace-hiding {
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+/* ── Header Bar ──────────────────────────────────────────────────────────── */
+.agent-trace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.agent-trace-header:hover {
+  background: var(--glass-b, rgba(255, 255, 255, 0.05));
+}
+
+.agent-trace-card.minimal-mode .agent-trace-header {
+  cursor: default;
+}
+
+.agent-trace-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+/* Glowing status dot (replaces the old spinning gear) */
+.agent-trace-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.agent-trace-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent, #6c8cff);
+  box-shadow: 0 0 8px var(--accent, #6c8cff);
+  animation: traceDotPulse 1.5s infinite ease-in-out;
+}
+
+.agent-trace-card.level-tool .agent-trace-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+}
+
+.agent-trace-card.level-vision .agent-trace-dot {
+  background: #a855f7;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.8);
+}
+
+.agent-trace-card.level-error .agent-trace-dot {
+  background: var(--red, #ef4444);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+}
+
+.agent-trace-done-icon {
+  font-size: 11px;
+  color: var(--green, #22c55e);
+}
+
+.agent-trace-card.has-error .agent-trace-done-icon {
+  color: var(--red, #ef4444);
+}
+
+.agent-trace-step-icon {
+  font-size: 11.5px;
+  color: var(--muted, #94a3b8);
+  flex-shrink: 0;
+}
+
+.agent-trace-title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.agent-trace-title {
+  font-weight: 500;
+  color: var(--text, #e2e8f0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-trace-card.finished .agent-trace-title {
+  color: var(--muted, #94a3b8);
+  font-weight: 500;
+}
+
+.agent-trace-live-sub {
+  font-size: 11.5px;
+  color: var(--muted, #94a3b8);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.85;
+}
+
+.agent-trace-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.agent-trace-count-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--bg3, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  color: var(--muted, #94a3b8);
+}
+
+.agent-trace-chevron {
+  font-size: 10px;
+  color: var(--muted, #94a3b8);
+  transition: transform 0.2s ease;
+}
+
+.agent-trace-card.expanded .agent-trace-chevron {
+  transform: rotate(180deg);
+}
+
+.agent-trace-card.minimal-mode .agent-trace-chevron {
+  display: none;
+}
+
+/* ── Expandable Timeline Body ────────────────────────────────────────────── */
+.agent-trace-timeline {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px 10px 14px;
+  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.07));
+  background: rgba(0, 0, 0, 0.14);
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.agent-trace-card.expanded .agent-trace-timeline {
+  display: flex;
+}
+
+.agent-trace-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.agent-trace-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  position: relative;
+  padding: 3px 0;
+  font-size: 12px;
+}
+
+.agent-trace-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 20px;
+  bottom: -7px;
+  width: 1px;
+  background: var(--border, rgba(255, 255, 255, 0.1));
+}
+
+.step-node-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  background: var(--bg3, rgba(255, 255, 255, 0.06));
+  color: var(--accent, #6c8cff);
+  border: 1px solid rgba(var(--accent-rgb, 108, 140, 255), 0.3);
+}
+
+.agent-trace-step.status-ok .step-node-icon {
+  color: var(--green, #22c55e);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.agent-trace-step.status-error .step-node-icon {
+  color: var(--red, #ef4444);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.agent-trace-step.kind-tool.status-running .step-node-icon {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.agent-trace-step.kind-system .step-node-icon {
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.step-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.step-top-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.step-title-group {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.step-label {
+  font-weight: 500;
+  color: var(--text, #e2e8f0);
+}
+
+.step-args-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent, #6c8cff);
+  background: rgba(var(--accent-rgb, 108, 140, 255), 0.1);
+  border: 1px solid rgba(var(--accent-rgb, 108, 140, 255), 0.2);
+  padding: 0 6px;
+  border-radius: 4px;
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.step-dur {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--muted, #94a3b8);
+  flex-shrink: 0;
+}
+
+.step-result {
+  font-size: 11.5px;
+  color: var(--muted, #94a3b8);
+  line-height: 1.4;
+}
+
+.agent-trace-step.status-error .step-result {
+  color: var(--red, #ef4444);
+}
+
+.step-substeps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+  padding-left: 8px;
+  border-left: 1px dashed var(--border, rgba(255, 255, 255, 0.12));
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted, #94a3b8);
+}
+
+/* Inline Action Console inside a step */
+.step-action-console {
+  margin-top: 4px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 11px;
+  color: var(--text, #e2e8f0);
+  overflow-x: auto;
+}
+
+.step-action-cmd {
+  color: var(--accent, #6c8cff);
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.step-action-out {
+  color: var(--muted, #94a3b8);
+  white-space: pre-wrap;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+/* Total execution time footer inside timeline */
+.agent-trace-total-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 2px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border, rgba(255, 255, 255, 0.1));
+  font-size: 11.5px;
+  color: var(--muted, #94a3b8);
+}
+
+.total-row-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  flex-shrink: 0;
+  color: var(--muted, #94a3b8);
+  opacity: 0.85;
+}
+
+.total-row-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.total-row-label {
+  font-weight: 500;
+  color: var(--muted, #94a3b8);
+}
+
+.agent-trace-timer {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text, #e2e8f0);
+  flex-shrink: 0;
+  text-align: right;
+}
+

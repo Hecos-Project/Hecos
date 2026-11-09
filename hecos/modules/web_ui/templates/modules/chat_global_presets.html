@@ -482,7 +482,7 @@
                             </div>
                         </div>
                         <div class="sf-switch">
-                            <input type="checkbox" id="sf-payload-tools" checked onchange="window.sfDirty()">
+                            <input type="checkbox" id="sf-payload-tools" checked onchange="window.sfDirty(); if(window.sfOnToolsToggle) window.sfOnToolsToggle(this.checked);">
                             <span class="sf-slider"></span>
                         </div>
                     </label>

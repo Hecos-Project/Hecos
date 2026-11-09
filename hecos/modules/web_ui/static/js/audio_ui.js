@@ -169,12 +169,12 @@ window.bindPTTKeyboard = function() {
     if (isCtrlShift && isCtrlOrShift(e)) {
       if (_isPTTKeyDown) return; // Ignore repeat events
 
-      // =========================================================================
-      // ⚠️ CRITICAL NOTICE: NEVER ADD 'window.currentSTTSource !== "web"' HERE!
-      // In the Web UI chat, keyboard PTT (Ctrl+Shift) MUST ALWAYS trigger WebAudio.
-      // Host-level deduplication is handled downstream in audio_recorder.js
-      // and chat_events.js via window._lastVoiceCmdText debounce.
-      // =========================================================================
+      // If backend hardware PTT is currently active or recently active on host, skip WebAudio
+      if (window.isBackendPTTActive || (Date.now() - (window.lastBackendPTTStartTime || 0)) < 1500) {
+        _isPTTKeyDown = true;
+        console.log("[WebAudio] Backend hardware PTT active on host; skipping browser recording.");
+        return;
+      }
 
       _isPTTKeyDown = true;
       _pttAbortDueToThirdKey = false;
@@ -195,6 +195,15 @@ window.bindPTTKeyboard = function() {
 
       if (_pttAbortDueToThirdKey) {
         _pttAbortDueToThirdKey = false;
+        return;
+      }
+
+      // If backend hardware PTT was active during this interaction, cancel browser recording instead of uploading
+      if (window.isBackendPTTActive || (Date.now() - (window.lastBackendPTTEndTime || 0)) < 2000) {
+        if (window.isWebAudioRecording && typeof window.cancelWebAudioRecording === 'function') {
+          console.log("[WebAudio] Backend PTT active or recently ended; cancelling browser recording.");
+          window.cancelWebAudioRecording();
+        }
         return;
       }
 

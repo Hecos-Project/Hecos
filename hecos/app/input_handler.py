@@ -7,6 +7,7 @@ import time
 import threading
 import msvcrt
 from hecos.ui import interface
+from hecos.ui.viewport import get_viewport
 from hecos.core.processing import processore
 from hecos.core.audio import voice
 from hecos.core.logging import logger
@@ -44,7 +45,7 @@ class InputHandler:
             tools = getattr(dashboard_mod, "tools", None)
             raw_fn = getattr(tools, "_get_raw_backend_status", None) if tools else None
             if raw_fn and raw_fn() not in ["READY", "CLOUD", "ONLINE"]:
-                print(f"\n\033[93m[SYSTEM] Backend not ready yet. Please wait...\033[0m")
+                interface.print_scrolling("\033[93m[SYSTEM] Backend not ready yet. Please wait...\033[0m")
                 self.state.detected_voice_command = None
                 return
 
@@ -72,12 +73,12 @@ class InputHandler:
                 self.config.save()
                 
             if istruzione:
-                msg = f"\n\033[92m[SYSTEM] Special Instructions activated: '{istruzione}'\033[0m"
+                msg = f"\033[92m[SYSTEM] Special Instructions activated: '{istruzione}'\033[0m"
                 if not salva_persistente:
                     msg += " (RAM only)"
             else:
-                msg = f"\n\033[93m[SYSTEM] Special Instructions cleared.\033[0m"
-            print(msg)
+                msg = "\033[93m[SYSTEM] Special Instructions cleared.\033[0m"
+            interface.print_scrolling(msg)
             return "CLEAR", ""
             
         dashboard_mod = module_loader.get_plugin_module("DASHBOARD")
@@ -87,7 +88,10 @@ class InputHandler:
             if raw_fn:
                 raw_status = raw_fn()
                 if raw_status not in ["READY", "CLOUD", "ONLINE"]:
-                    print(f"\n\033[93m[SYSTEM] Backend not ready ({raw_status}). Please wait...\033[0m")
+                    interface.print_scrolling(
+                        f"\033[93m[SYSTEM] Backend not ready ({raw_status}). Please wait...\033[0m"
+                    )
+                    interface.set_active_prompt(prefisso, "")
                     return None, ""
             
         voice.stop_voice() # Stop any ongoing old speech
@@ -96,27 +100,32 @@ class InputHandler:
         try:
             from hecos.modules.input_history import history_mgr
             history_mgr.push(testo, user="admin")
-        except Exception as e:
+        except Exception:
             pass
             
         self._execute_exchange(testo, prefisso, is_voice=False)
         return "PROCESSED", ""
 
     def _execute_exchange(self, text, prefix, is_voice=False):
-        """Executes the exchange (text -> response) with ESC support."""
-        # Disable prompt tracking so background logs don't redraw the old prompt buffer
+        """Executes the exchange (text -> response) inside Zone 2 with ESC cancellation support."""
+        # Suspend Zone 3 prompt while generating
         interface.set_active_prompt("", "")
-        interface._prompt_active = False
         
         self.state.system_processing = True
         self.state.system_status = translator.t("thinking")
+        interface.update_status_bar_in_place(
+            self.config.config,
+            self.state.voice_status,
+            self.state.listening_status,
+            self.state.system_status,
+            ptt_status=self.state.push_to_talk,
+        )
         
-        # Visual feedback
-        sys.stdout.write(f"\r{' ' * 80}\r")
+        # Visual feedback strictly inside Zone 2 (Body)
         label = "Admin (Voice)" if is_voice else "Admin"
-        print(f"{prefix}\033[92m{label}: {text}\033[0m")
-        print(f"\033[93m[{translator.t('press_esc_to_stop')}]\033[0m")
+        interface.print_scrolling(f"{prefix}\033[92m{label}: {text}\033[0m")
         
+        # Non-intrusive spinner + [Press ESC to stop] inside Zone 3 (Footer)
         interface.start_thinking()
         
         result = [None, None]
@@ -166,16 +175,21 @@ class InputHandler:
             # Clear keyboard buffer from multiple ESC presses
             while msvcrt.kbhit():
                 msvcrt.getch()
-            print(f"\n\033[93m[SYSTEM] {translator.t('request_cancelled')}\033[0m")
+            interface.print_scrolling(f"\033[93m[SYSTEM] {translator.t('request_cancelled')}\033[0m")
+            interface.print_scrolling("")
             # Notify WebUI of cancellation so it un-hangs!
             self.state.add_event("system_response", {"user": text, "ai": "❌ Operazione annullata."})
             
             self.state.system_status = translator.t("ready")
             self.state.system_processing = False
-            from hecos.ui.ui_updater import stdout_lock
-            with stdout_lock:
-                sys.stdout.write(prefix)
-                sys.stdout.flush()
+            interface.update_status_bar_in_place(
+                self.config.config,
+                self.state.voice_status,
+                self.state.listening_status,
+                self.state.system_status,
+                ptt_status=self.state.push_to_talk,
+            )
+            interface.set_active_prompt(prefix, "")
             return
         
         thread.join()
@@ -183,10 +197,12 @@ class InputHandler:
 
         if error[0]:
             logger.error(f"[INPUT] Error: {error[0]}")
+            interface.print_scrolling(f"\033[91m[ERROR] {error[0]}\033[0m")
+            interface.print_scrolling("")
             self.state.add_event("system_response", {"user": text, "ai": f"❌ Errore durante l'elaborazione: {error[0]}"})
         else:
             video_response, clean_voice_text = result
-            # Show response
+            # Show response inside Zone 2
             interface.write_hecos(video_response)
             
             # Save to memory
@@ -229,49 +245,39 @@ class InputHandler:
             self.config.config, self.state.voice_status, self.state.listening_status, self.state.system_status,
             ptt_status=self.state.push_to_talk
         )
-        from hecos.ui.ui_updater import stdout_lock
-        with stdout_lock:
-            # Re-enable prompt tracking and reset input buffer
-            interface.set_active_prompt(prefix, "")
-            sys.stdout.write(prefix)
-            sys.stdout.flush()
+        # Re-enable Zone 3 prompt and reset input buffer
+        interface.set_active_prompt(prefix, "")
 
     def _handle_esc(self, prefix):
-        """Handles ESC key: stops voice and, if necessary, asks for exit confirmation."""
-        now = time.time()
-        # If voice was stopped manually very recently, ignore this ESC (race condition buffer)
+        """Handles ESC key: stops voice and, if necessary, asks for exit confirmation in Zone 3."""
         # If Hecos was speaking, ESC should just stop the voice and return to prompt
         if self.state.system_speaking or voice.is_speaking:
             voice.stop_voice()
             self.state.system_speaking = False
             return "PROCESSED", "" # Back to prompt
             
-        # Otherwise, ask for exit confirmation
-        from hecos.ui.ui_updater import stdout_lock
-        with stdout_lock:
-            sys.stdout.write(f"\n\033[93m[SYSTEM] {translator.t('confirm_exit')} (Y/N): \033[0m")
-            sys.stdout.flush()
+        # Ask for exit confirmation cleanly on the Zone 3 Footer bar
+        vp = get_viewport()
+        vp.set_footer_override(
+            f"\033[93m [SYSTEM] {translator.t('confirm_exit')} (Y/N): \033[0m",
+            show_cursor=True,
+        )
         
         # Wait for Y or N character
         while True:
             if msvcrt.kbhit():
-                ch = msvcrt.getch().decode('utf-8', errors='ignore').upper()
-                if ch == 'Y' or ch == 'S': # Keep S for compatibility with Italian habits
-                    print("Y")
+                ch_raw = msvcrt.getch()
+                if ch_raw in (b'\x00', b'\xe0'):
+                    msvcrt.getch()
+                    continue
+                if ch_raw == b'\x1b': # ESC again to cancel
+                    interface.set_active_prompt(prefix, "")
+                    return "CANCELLED", ""
+                ch = ch_raw.decode('utf-8', errors='ignore').upper()
+                if ch in ('Y', 'S'): # Keep S for compatibility with Italian habits
+                    vp.set_footer_override(None)
                     return "EXIT", None
                 elif ch == 'N':
-                    print("N")
                     interface.set_active_prompt(prefix, "")
-                    sys.stdout.write(f"\r{' ' * 50}\r{prefix}")
-                    sys.stdout.flush()
                     return "CANCELLED", "" # Back to prompt without exiting
-                elif ch == '\x1b': # ESC again to cancel
-                    from hecos.ui.ui_updater import stdout_lock
-                    with stdout_lock:
-                        interface.set_active_prompt(prefix, "")
-                        sys.stdout.write(f"\r{' ' * 50}\r{prefix}")
-                        sys.stdout.flush()
-                    return "CANCELLED", ""
             time.sleep(0.05)
-
-

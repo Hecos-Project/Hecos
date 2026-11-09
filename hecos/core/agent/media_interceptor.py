@@ -28,7 +28,9 @@ class MediaInterceptor:
                 img_tags = re.findall(r'\[\[IMG:([^\]]+)\]\]', out)
                 for tag in img_tags:
                     if f"[[IMG:{tag}]]" not in extracted_text:
-                        extracted_text += f"\n\n[[IMG:{tag}]]"
+                        prompt_match = re.search(r'🎨 Generated image for:\s*([^\r\n]+)', out)
+                        prompt_note = f"\n*(Generated image of: {prompt_match.group(1).strip()})*" if prompt_match else ""
+                        extracted_text += f"\n\n[[IMG:{tag}]]{prompt_note}"
 
                 # 1b. Check for [[IGEN_ALERT]]...[[/IGEN_ALERT]] diagnostic notices
                 igen_alerts = re.findall(r'\[\[IGEN_ALERT\]\](.*?)\[\[/IGEN_ALERT\]\]', out, flags=re.DOTALL)

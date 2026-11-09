@@ -17,6 +17,21 @@ class SystemBootstrapper:
         self.config_manager = config_manager
         self.state_manager = state_manager
 
+    def _refresh_boot_header(self):
+        """Updates the Zone 1 status bar during boot if running in interactive console mode."""
+        if getattr(self, "_is_webui_mode", False):
+            return
+        try:
+            interface.update_status_bar_in_place(
+                self.config_manager.config,
+                self.state_manager.voice_status,
+                self.state_manager.listening_status,
+                self.state_manager.system_status,
+                ptt_status=self.state_manager.push_to_talk,
+            )
+        except Exception:
+            pass
+
     def initialize(self):
         """Inizializzazione di tutti i componenti."""
         import time as _time
@@ -49,17 +64,28 @@ class SystemBootstrapper:
         processore.configure(self.config_manager.config)
         logger.info("[APP] Hecos boot sequence initiated.")
         
-        # Skip console setup in webui-only mode
+        # Initialize 3-zone viewport & stream guards early in console mode
         if not self._is_webui_mode:
-            interface.setup_console()
-        self.state_manager.system_status = translator.t("loading_memory")
+            self.state_manager.system_status = translator.t("loading_memory")
+            interface.show_complete_ui(
+                self.config_manager.config,
+                self.state_manager.voice_status,
+                self.state_manager.listening_status,
+                self.state_manager.system_status,
+                ptt_status=self.state_manager.push_to_talk,
+            )
+        else:
+            self.state_manager.system_status = translator.t("loading_memory")
+
         brain_interface.initialize_vault()
         brain_interface.maybe_clear_on_restart(self.config_manager.config)
         
         # IMPORTANT: pass current config to plugin loader
         self.state_manager.system_status = translator.t("loading_plugins")
+        self._refresh_boot_header()
         module_loader.update_capability_registry(self.config_manager.config)
         self.state_manager.system_status = translator.t("sync_plugins")
+        self._refresh_boot_header()
         module_loader.sync_plugin_config(self.config_manager)
 
         # MCP Bridge Bootstrap
@@ -90,6 +116,7 @@ class SystemBootstrapper:
         
         config = self.config_manager.config
         self.state_manager.system_status = translator.t("diagnostics")
+        self._refresh_boot_header()
         # Silent by default; full diagnostics activate only if ESC is held at boot
         diagnostica.run_if_requested(config)
 
@@ -97,16 +124,15 @@ class SystemBootstrapper:
         try:
             from hecos.core.audio.device_manager import maybe_scan_on_startup
             self.state_manager.system_status = "Scanning audio devices..."
+            self._refresh_boot_header()
             maybe_scan_on_startup()
             logger.info("[APP] Audio device scan completed.")
         except Exception as _ae:
             logger.warning("APP", f"Audio device scan skipped: {_ae}")
 
-        # Avvia il monitoraggio backend solo se il plugin è attivo
+        # Check DASHBOARD plugin availability (updater thread is started cleanly once in application.py)
         dashboard_mod = module_loader.get_plugin_module("DASHBOARD")
-        if dashboard_mod:
-            ui_updater.start(self.config_manager, self.state_manager, dashboard_mod)
-        else:
+        if not dashboard_mod:
             logger.warning("APP", "DASHBOARD plugin disabled; hardware monitoring inactive.")
 
         # ── RAG Warm-Up — Pre-caricamento asincrono del modello embedding ─────────
@@ -146,43 +172,34 @@ class SystemBootstrapper:
         # ──────────────────────────────────────────────────────────────────────────
 
     def show_boot_animation(self):
-        """Shows boot animation inside the scrolling body area."""
-        interface.move_to_body()
-        sys.stdout.write(f"\n\033[96m[SYSTEM] {translator.t('boot_sync_msg')}\033[0m\n")
-        for progress in range(0, 101, 5):
-            bar = graphics.create_bar(progress, width=40, style="cyber")
-            sys.stdout.write(f"\r{bar}")
-            sys.stdout.flush()
-            time.sleep(0.01)
-        time.sleep(0.1)
+        """Shows boot sync message inside Zone 2 (Body)."""
+        interface.print_scrolling(f"\033[96m[SYSTEM] {translator.t('boot_sync_msg')}\033[0m")
 
     def show_welcome(self):
-        """Shows welcome message."""
-        self.state_manager.system_status = translator.t("speaking")
-        
-        # Show Web UI access links if active
-        if module_loader.get_plugin_module("WEB_UI"):
-            interface.show_web_access_info(self.config_manager.config)
-            
-        message = self.config_manager.config.get("behavior", {}).get("welcome_message", translator.t("system_ready"))
-        interface.write_hecos(message)
-        
+        """Shows welcome banner and initial greeting inside Zone 2 (Body)."""
+        if not getattr(self, "_is_webui_mode", False):
+            # Show Web UI access links if active
+            if module_loader.get_plugin_module("WEB_UI"):
+                interface.show_web_access_info(self.config_manager.config)
+
+            message = self.config_manager.config.get(
+                "behavior", {}
+            ).get("welcome_message", translator.t("system_ready"))
+            interface.write_hecos(message)
+
         self.state_manager.system_processing = False
         self.state_manager.system_status = translator.t("ready")
-        
-        # Start the background UI updater
-        dashboard_mod = module_loader.get_plugin_module("DASHBOARD")
-        ui_updater.start(self.config_manager, self.state_manager, dashboard_mod)
-        
-        # Update just the status bar in place, avoid clearing the screen
-        interface.update_status_bar_in_place(
-            self.config_manager.config, 
-            self.state_manager.voice_status, 
-            self.state_manager.listening_status, 
-            self.state_manager.system_status,
-            ptt_status=self.state_manager.push_to_talk
-        )
-        
+
+        if not getattr(self, "_is_webui_mode", False):
+            # Update just the status bar in place without clearing the screen
+            interface.update_status_bar_in_place(
+                self.config_manager.config,
+                self.state_manager.voice_status,
+                self.state_manager.listening_status,
+                self.state_manager.system_status,
+                ptt_status=self.state_manager.push_to_talk,
+            )
+
         # ── Notifications: Fire system_boot event ─────────────────────────────
         # sys.hecos_notify is registered by the Notifications plugin on_load().
         # If the plugin is not installed/active, this block is silently skipped.

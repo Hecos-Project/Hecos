@@ -23,6 +23,10 @@ class StateManager:
         self._last_tokens_prompt = 0
         self._last_tokens_completion = 0
         
+        # Cross-pipeline chat / voice deduplication state
+        self._last_chat_message = ""
+        self._last_chat_time = 0.0
+        
         self._event_queues = []
         self._lock = threading.Lock()
 
@@ -184,3 +188,52 @@ class StateManager:
     @last_tokens_completion.setter
     def last_tokens_completion(self, value):
         with self._lock: self._last_tokens_completion = value
+
+    # --- Cross-pipeline Message Deduplication ---
+    def record_chat_message(self, message: str):
+        """Records the most recent user chat message and its timestamp for deduplication."""
+        import time
+        with self._lock:
+            self._last_chat_message = (message or "").strip()
+            self._last_chat_time = time.time()
+
+    def is_recent_duplicate(self, text: str, window_seconds: float = 6.0) -> bool:
+        """Checks if a voice or chat message is a duplicate of a recently processed message."""
+        import time
+        with self._lock:
+            if not self._last_chat_message or not text:
+                return False
+            elapsed = time.time() - self._last_chat_time
+            if elapsed > window_seconds:
+                return False
+            return self._are_phrases_similar(self._last_chat_message, text)
+
+    @staticmethod
+    def _are_phrases_similar(phrase1: str, phrase2: str, threshold: float = 0.65) -> bool:
+        if not phrase1 or not phrase2:
+            return False
+        import re
+        def clean(s):
+            s = s.lower().strip()
+            s = re.sub(r'[^\w\s]', ' ', s)
+            num_map = {'zero': '0', 'uno': '1', 'una': '1', 'un': '1', 'due': '2', 'tre': '3', 
+                       'quattro': '4', 'cinque': '5', 'sei': '6', 'sette': '7', 'otto': '8', 'nove': '9', 'dieci': '10'}
+            tokens = [num_map.get(t, t) for t in s.split()]
+            return tokens
+
+        tokens1 = clean(phrase1)
+        tokens2 = clean(phrase2)
+        if not tokens1 or not tokens2:
+            return False
+        if tokens1 == tokens2:
+            return True
+
+        set1, set2 = set(tokens1), set(tokens2)
+        intersection = set1.intersection(set2)
+        union = set1.union(set2)
+        jaccard = len(intersection) / len(union) if union else 0.0
+        min_len = min(len(set1), len(set2))
+        overlap_ratio = len(intersection) / min_len if min_len > 0 else 0.0
+
+        return jaccard >= threshold or overlap_ratio >= 0.75
+
