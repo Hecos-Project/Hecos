@@ -149,6 +149,7 @@ def dump_debug_payload(params: Dict[str, Any], model_name: str) -> None:
             "model": model_name,
             "messages": params.get("messages", []),
             "tools": params.get("tools", []),
+            "ollama_options": params.get("extra_body", {}).get("options", {}),
         }
         with open(payload_log_path, "a", encoding="utf-8") as pf:
             pf.write("\n" + "=" * 80 + "\n")
