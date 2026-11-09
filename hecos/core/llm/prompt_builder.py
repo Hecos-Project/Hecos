@@ -355,6 +355,8 @@ class PromptBuilder:
 
             f"{rules['safety_instructions_block']}"
 
+            f"{closing_identity_block}"
+
             f"{rules['context_notes_block']}"
 
             f"{rules['user_profile_block']}"
@@ -364,8 +366,6 @@ class PromptBuilder:
             f"{playbook_chat_block}"
 
             f"{vision_note}"
-
-            f"{closing_identity_block}"
 
         )
 

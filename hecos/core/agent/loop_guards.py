@@ -220,7 +220,9 @@ def eval_early_termination(
 
     has_pending_vision_review = bool(images and len(images) > 0 and iteration == 1 and has_search_card)
 
-    if has_generated_img and all_images_done and doc_satisfied and has_text:
+    if has_generated_img and all_images_done and doc_satisfied:
+        # Terminate as soon as all requested images are done, regardless of whether the
+        # model emitted any text in this step (text will be synthesised in finalize_response).
         return True, tr(
             "Immagine generata e risposta formulata",
             "Image generated and response formulated",
