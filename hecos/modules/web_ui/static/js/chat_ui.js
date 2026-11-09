@@ -361,6 +361,12 @@ window.refreshStatus = async function() {
     }
     if (sbS) sbS.textContent = d.persona || '—';
 
+    // Only update tool mode badge from server poll when no session override is active.
+    // When a Quick Config draft overrides send_tools, gp_ui.js calls updateToolModeBadge directly.
+    if (d.tool_mode !== undefined && window.updateToolModeBadge && !sessionOverrideActive) {
+        window.updateToolModeBadge(d.tool_mode);
+    }
+
     if (d.persona) window._globalPersonaName = d.persona;
     if (d.avatar) window._globalAvatar = d.avatar;
 
@@ -472,3 +478,46 @@ document.addEventListener('DOMContentLoaded', () => {
       }).catch(() => {});
     }, 5000);
 });
+
+
+
+window.updateToolModeBadge = function(mode) {
+    const chip = document.getElementById('tb-tool-mode-chip');
+    const icon = document.getElementById('tb-tool-mode-icon');
+    const label = document.getElementById('tb-tool-mode-label');
+    if (!chip || !icon || !label) return;
+
+    chip.classList.remove('tool-mode-native', 'tool-mode-direct', 'tool-mode-disabled');
+    if (mode === 'direct' || mode === false) {
+        chip.classList.add('tool-mode-direct');
+        icon.className = 'fas fa-bolt';
+        label.textContent = 'Direct Commands';
+        chip.title = 'Direct Commands Mode: Tool schemas stripped for maximum speed (~8k tokens saved). Direct /img and /search commands active. Click to configure.';
+    } else if (mode === 'disabled') {
+        chip.classList.add('tool-mode-disabled');
+        icon.className = 'fas fa-comments';
+        label.textContent = 'Chat Only';
+        chip.title = 'Chat Only Mode: Tool execution disabled at system level. Click to configure.';
+    } else {
+        chip.classList.add('tool-mode-native');
+        icon.className = 'fas fa-toolbox';
+        label.textContent = 'Tools: ON';
+        chip.title = 'Native Tool Calling Mode: JSON function schemas loaded in model payload. Click to configure.';
+    }
+};
+
+window.openPayloadConfig = function() {
+    if (typeof window.sfTogglePanel === 'function') {
+        window.sfTogglePanel(true);
+        const drawer = document.getElementById('sf-payload-drawer');
+        const btn = document.getElementById('sf-toggle-payload-btn');
+        if (drawer && (drawer.style.display === 'none' || !drawer.style.display)) {
+            if (typeof window.sfToggleDrawer === 'function') {
+                window.sfToggleDrawer('sf-payload-drawer', btn);
+            }
+        }
+        setTimeout(() => {
+            if (drawer) drawer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 150);
+    }
+};

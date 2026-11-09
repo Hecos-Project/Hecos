@@ -163,10 +163,51 @@ class AgentExecutor:
 
                 save_hist = (iteration == 1)
                 current_cfg = (
-                    self.config_manager.config
-                    if getattr(self, "config_manager", None)
-                    else processore.current_config
+                    self.config
+                    if getattr(self, "config", None)
+                    else (
+                        self.config_manager.config
+                        if getattr(self, "config_manager", None)
+                        else processore.current_config
+                    )
                 )
+
+                # Turn 1: Emit Execution Mode Badge to Timeline (Native Tools vs Fast Direct Commands)
+                if iteration == 1:
+                    pctrl = current_cfg.get("payload_control", {})
+                    send_tools = pctrl.get("send_tools", True)
+                    disable_tools = current_cfg.get("disable_tools", False)
+
+                    if disable_tools:
+                        m_label = tr("Modalità: Solo Chat", "Mode: Chat Only")
+                        m_detail = tr("Esecuzione tool disabilitata a livello di sistema", "Tool execution disabled by system")
+                        m_icon = "fa-comments"
+                    elif send_tools:
+                        m_label = tr("Modalità: Tool Calling Nativo", "Mode: Native Tool Calling")
+                        try:
+                            from hecos.core.system.module_docs import get_tools_schema as _gts
+                            _schema_count = len(_gts())
+                        except Exception:
+                            _schema_count = 0
+                        m_detail = tr(f"{_schema_count} funzioni caricate nel modello", f"{_schema_count} function schemas loaded in model")
+                        m_icon = "fa-toolbox"
+                    else:
+                        m_label = tr("Modalità: Comandi Rapidi (Fast Chat)", "Mode: Direct Commands (Fast Chat)")
+                        m_detail = tr("Schemi JSON disattivati (~8k token risparmiati) · /img e /search attivi", "Tool schemas disabled (~8k tokens saved) · /img & /search active")
+                        m_icon = "fa-bolt"
+
+                    mode_step = AgentTracer.start_step(
+                        kind="system",
+                        label=m_label,
+                        detail=m_detail,
+                        icon=m_icon,
+                        level="info",
+                        module_name=tr("Configurazione Payload", "Payload Control"),
+                        close_previous=False,
+                    )
+                    AgentTracer.finish_step(mode_step, status="ok", result_preview=m_detail)
+
+
 
                 # Perception: Vision Routing on turn 1
                 if images and iteration == 1:
