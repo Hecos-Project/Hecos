@@ -629,29 +629,13 @@ class PromptBuilder:
 
                     if v_desc:
 
-                        if _is_image_gen_plugin_active():
-
-                            visual_identity_block = (
-
-                                "\n### YOUR PHYSICAL ASPECT / VISUAL IDENTITY ###\n"
-
-                                f"When asked to describe yourself in words, always use these visual traits: {v_desc}. "
-
-                                "IMPORTANT: Generate an image of yourself ONLY if the user explicitly asks for it. "
-
-                                "Never auto-generate a self-portrait unprompted. If you do call the image tool for yourself, use this description as the prompt base.\n"
-
-                            )
-
-                        else:
-
-                            visual_identity_block = (
-
-                                "\n### YOUR PHYSICAL ASPECT / VISUAL IDENTITY ###\n"
-
-                                f"When asked to describe yourself in words, always use these visual traits: {v_desc}.\n"
-
-                            )
+                        # Visual description is text-only - no mention of image generation.
+                        # Mentioning /img or 'image tool' here causes models like Gemma 4
+                        # to auto-generate self-portraits on every response.
+                        visual_identity_block = (
+                            "\n### YOUR PHYSICAL APPEARANCE ###\n"
+                            f"When describing yourself physically, use these traits: {v_desc}.\n"
+                        )
 
             except Exception as e:
 
