@@ -136,6 +136,30 @@ def execute_ollama_direct(params: Dict[str, Any], stream: bool = False) -> Any:
     if reasoning:
         zlog_info("LiteLLM", f"[REASONING] Captured {len(reasoning)} chars of thinking from Ollama reasoning field")
         content = re.sub(r'^(HECOS|Hecos|hecos)\s*:\s*', '', content, flags=re.IGNORECASE)
+
+        # If content is empty (all tokens consumed by thinking), retry once without thinking enabled
+        if not content.strip():
+            zlog_info("LiteLLM", "[REASONING] content=0 after thinking — retrying without thinking for actual response")
+            try:
+                retry_body = dict(ollama_body)
+                # Inject thinking=False in options to suppress thinking on retry
+                retry_opts = dict(retry_body.get("options", {}))
+                retry_opts["think"] = False
+                retry_body["options"] = retry_opts
+                # Inject the reasoning as assistant context note in the last user message
+                r2 = requests.post(ollama_url, json=retry_body, timeout=params.get("timeout", 300))
+                r2.raise_for_status()
+                d2 = r2.json()
+                c2 = (d2.get("choices", [{}])[0].get("message", {}).get("content") or "").strip()
+                if c2:
+                    zlog_info("LiteLLM", f"[REASONING] Retry succeeded — got {len(c2)} chars")
+                    c2 = re.sub(r'^(HECOS|Hecos|hecos)\s*:\s*', '', c2, flags=re.IGNORECASE)
+                    return f"<think>\n{reasoning}\n</think>\n\n{c2}"
+                else:
+                    zlog_info("LiteLLM", "[REASONING] Retry also empty — returning thinking-only block")
+            except Exception as _retry_err:
+                zlog_error(f"LiteLLM: [REASONING] Retry failed: {_retry_err}")
+
         return f"<think>\n{reasoning}\n</think>\n\n{content}"
 
     if not content:

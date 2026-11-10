@@ -745,6 +745,14 @@ class PromptBuilder:
 
                         msg = re.sub(r'<think>.*?</think>', '', msg, flags=re.DOTALL).strip()
 
+                    # Strip executed slash commands from assistant history (e.g. /img ..., /search ...)
+                    # so the model does not learn to repeat them unprompted.
+                    if role != 'user' and msg:
+                        # Remove lines starting with /img, /search, /images, /videos, /fetch, /dark, /files
+                        msg = re.sub(r'(?m)^\s*/(?:img|image|photo|foto|search|images|videos|media|files|dark|fetch|hpm)\s+.*$', '', msg).strip()
+                        # Remove [[IMG:...]] embed tags that were injected by previous turns
+                        msg = re.sub(r'\[\[IMG:[^\]]+\]\]', '', msg).strip()
+
                     if msg:
 
                         norm_role = "user" if role == "user" else "assistant"
