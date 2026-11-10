@@ -80,6 +80,10 @@ class OllamaBackendConfig(BaseModel):
     auto_stop_server: bool = True    # Stop Ollama and release VRAM/RAM when Hecos exits
     warmup_model: bool = False       # Pre-load the default model into GPU VRAM at boot
     warmup_keep_alive: str = "120m"  # keep_alive duration used during warm-up
+    # ── VRAM Adaptive Engine ──────────────────────────────────────────────────
+    adaptive_ctx: bool = False                       # Enable VRAM-based dynamic num_ctx selection
+    adaptive_ctx_auto: bool = True                   # True = auto-select profile; False = use manual profile
+    adaptive_ctx_manual_profile: str = "BALANCED"    # Manual profile: HIGH_POWER | BALANCED | ECONOMY | MINIMAL
 
 class LlamaCPPBackendConfig(BaseModel):
     model: str = ""
