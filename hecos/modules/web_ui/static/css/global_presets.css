@@ -113,11 +113,114 @@
     border-radius: 8px;
     padding: 13px 15px;
     flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ── Quick Config Thematic Areas ── */
+
+/* 0. ACTIVE SOUL CONTEXT BAR */
 .sf-active-soul {
-    background: rgba(var(--accent1-rgb, 0, 210, 255), 0.05);
-    border-color: rgba(var(--accent1-rgb, 0, 210, 255), 0.3);
+    background: linear-gradient(180deg, rgba(var(--accent1-rgb, 0, 210, 255), 0.06) 0%, rgba(13, 15, 24, 0.35) 100%);
+    border-color: rgba(var(--accent1-rgb, 0, 210, 255), 0.28);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 0 14px rgba(var(--accent1-rgb, 0, 210, 255), 0.02);
+}
+.sf-active-soul:hover {
+    border-color: rgba(var(--accent1-rgb, 0, 210, 255), 0.42);
+}
+
+/* 1. MODEL & BACKEND (Cyber Blue / Tech) */
+.sf-model-section {
+    background: linear-gradient(180deg, rgba(56, 189, 248, 0.05) 0%, rgba(13, 15, 24, 0.35) 100%);
+    border-color: rgba(56, 189, 248, 0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 0 14px rgba(56, 189, 248, 0.02);
+}
+.sf-model-section:hover {
+    border-color: rgba(56, 189, 248, 0.45);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3), inset 0 0 16px rgba(56, 189, 248, 0.04);
+}
+.sf-model-section .sf-section-header > span:first-child {
+    color: #38bdf8;
+    text-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+.sf-model-section .sf-section-header span i {
+    color: #38bdf8;
+    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.65));
+}
+
+/* 2. SOUL & PERSONALITY (Mystic Violet / Character) */
+.sf-soul-section {
+    background: linear-gradient(180deg, rgba(192, 132, 252, 0.05) 0%, rgba(13, 15, 24, 0.35) 100%);
+    border-color: rgba(192, 132, 252, 0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 0 14px rgba(192, 132, 252, 0.02);
+}
+.sf-soul-section:hover {
+    border-color: rgba(192, 132, 252, 0.45);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3), inset 0 0 16px rgba(192, 132, 252, 0.04);
+}
+.sf-soul-section .sf-section-header > span:first-child {
+    color: #c084fc;
+    text-shadow: 0 0 12px rgba(192, 132, 252, 0.35);
+}
+.sf-soul-section .sf-section-header span i {
+    color: #c084fc;
+    filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.65));
+}
+
+/* 3. INFERENCE (Warm Amber / Neural Engine) */
+.sf-inference-section {
+    background: linear-gradient(180deg, rgba(251, 146, 60, 0.05) 0%, rgba(13, 15, 24, 0.35) 100%);
+    border-color: rgba(251, 146, 60, 0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 0 14px rgba(251, 146, 60, 0.02);
+}
+.sf-inference-section:hover {
+    border-color: rgba(251, 146, 60, 0.45);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3), inset 0 0 16px rgba(251, 146, 60, 0.04);
+}
+.sf-inference-section .sf-section-header > span:first-child {
+    color: #fb923c;
+    text-shadow: 0 0 12px rgba(251, 146, 60, 0.35);
+}
+.sf-inference-section .sf-section-header span i {
+    color: #fb923c;
+    filter: drop-shadow(0 0 6px rgba(251, 146, 60, 0.65));
+}
+
+/* 4. VOICE & TTS (Emerald / Acoustic Wave) */
+.sf-voice-section {
+    background: linear-gradient(180deg, rgba(52, 211, 153, 0.05) 0%, rgba(13, 15, 24, 0.35) 100%);
+    border-color: rgba(52, 211, 153, 0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 0 14px rgba(52, 211, 153, 0.02);
+}
+.sf-voice-section:hover {
+    border-color: rgba(52, 211, 153, 0.45);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3), inset 0 0 16px rgba(52, 211, 153, 0.04);
+}
+.sf-voice-section .sf-section-header > span:first-child {
+    color: #34d399;
+    text-shadow: 0 0 12px rgba(52, 211, 153, 0.35);
+}
+.sf-voice-section .sf-section-header span i {
+    color: #34d399;
+    filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.65));
+}
+
+/* 5. PAYLOAD & TOOLS CONTROL (Golden Cyber / Controls) */
+.sf-payload-section {
+    background: linear-gradient(180deg, rgba(250, 204, 21, 0.04) 0%, rgba(13, 15, 24, 0.35) 100%);
+    border-color: rgba(250, 204, 21, 0.24);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 0 14px rgba(250, 204, 21, 0.02);
+}
+.sf-payload-section:hover {
+    border-color: rgba(250, 204, 21, 0.45);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3), inset 0 0 16px rgba(250, 204, 21, 0.04);
+}
+.sf-payload-section .sf-section-header > span:first-child {
+    color: #facc15;
+    text-shadow: 0 0 12px rgba(250, 204, 21, 0.35);
+}
+.sf-payload-section .sf-section-header span i {
+    color: #facc15 !important;
+    filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.65));
 }
 
 .sf-context-bar {
@@ -163,15 +266,21 @@
 }
 
 .sf-section-header {
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 700;
-    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    color: #cbd5e1;
     margin-bottom: 10px;
     text-transform: uppercase;
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+}
+
+.sf-section-header span i {
+    font-size: 13px;
+    transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 .sf-drawer-toggle {
@@ -333,8 +442,21 @@
 
 /* ── Quick Test Lab ── */
 .sf-lab-section {
-    background: linear-gradient(180deg, rgba(var(--accent1-rgb, 0, 210, 255), 0.04) 0%, rgba(0,0,0,0.15) 100%);
-    border-color: rgba(var(--accent1-rgb, 0, 210, 255), 0.25);
+    background: linear-gradient(180deg, rgba(var(--accent1-rgb, 0, 210, 255), 0.05) 0%, rgba(13, 15, 24, 0.35) 100%);
+    border-color: rgba(var(--accent1-rgb, 0, 210, 255), 0.28);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 0 14px rgba(var(--accent1-rgb, 0, 210, 255), 0.02);
+}
+.sf-lab-section:hover {
+    border-color: rgba(var(--accent1-rgb, 0, 210, 255), 0.45);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3), inset 0 0 16px rgba(var(--accent1-rgb, 0, 210, 255), 0.04);
+}
+.sf-lab-section .sf-section-header > span:first-child {
+    color: var(--accent1, #00d2ff);
+    text-shadow: 0 0 12px rgba(0, 210, 255, 0.35);
+}
+.sf-lab-section .sf-section-header span i {
+    color: var(--accent1, #00d2ff);
+    filter: drop-shadow(0 0 6px rgba(0, 210, 255, 0.65));
 }
 .sf-lab-output {
     margin-top: 10px;
