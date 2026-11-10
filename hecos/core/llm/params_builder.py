@@ -325,7 +325,7 @@ def build_llm_params(
 
         # --- VRAM Adaptive Engine: override num_ctx based on available VRAM ---
         try:
-            from hecos.core.llm.vram_adaptive import get_optimal_num_ctx
+            from hecos.core.llm.adaptive import get_optimal_num_ctx
             _adaptive_ctx = get_optimal_num_ctx(specific_config)
             if _adaptive_ctx is not None:
                 specific_config = dict(specific_config)  # shallow copy, don't mutate source
