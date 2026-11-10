@@ -625,9 +625,11 @@ class PromptBuilder:
 
                                 "\n### YOUR PHYSICAL ASPECT / VISUAL IDENTITY ###\n"
 
-                                f"When asked to describe yourself or when you generate an image of yourself, always use these visual traits: {v_desc}. "
+                                f"When asked to describe yourself in words, always use these visual traits: {v_desc}. "
 
-                                "If you call the image generation tool to produce a photo of you, use this detailed description as the base for the prompt.\n"
+                                "IMPORTANT: Generate an image of yourself ONLY if the user explicitly asks for it. "
+
+                                "Never auto-generate a self-portrait unprompted. If you do call the image tool for yourself, use this description as the prompt base.\n"
 
                             )
 
