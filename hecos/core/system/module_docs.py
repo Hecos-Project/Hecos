@@ -328,7 +328,20 @@ def get_tools_schema():
 
 
 
+    # Load plugins config to check llm_callable flag for eager plugins
+    _plugins_cfg = {}
+    try:
+        from hecos.app.config import ConfigManager as _CM
+        _plugins_cfg = _CM().config.get("plugins", {})
+    except Exception:
+        pass
+
     for tag, module in _loaded_plugins.items():
+
+        # Check llm_callable flag from plugins.yaml (default True if not set)
+        # Set llm_callable: false in plugins.yaml to exclude a plugin from LLM tool schemas
+        if not _plugins_cfg.get(tag, {}).get("llm_callable", True):
+            continue  # Skip: plugin schemas excluded from LLM payload
 
         if hasattr(module, "tools"):
 
