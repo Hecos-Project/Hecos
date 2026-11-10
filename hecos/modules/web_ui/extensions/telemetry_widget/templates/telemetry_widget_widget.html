@@ -1,0 +1,340 @@
+<div class="sidebar-card" id="telemetry-widget" style="padding:10px 12px;">
+    <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;" onclick="const b = document.getElementById('live-status-body'); b.style.display = b.style.display === 'none' ? 'block' : 'none';">
+        <span class="ql-icon"><i class="fas fa-tachometer-alt"></i></span>
+        <span class="ql-title">System Telemetry</span>
+        <span onclick="event.stopPropagation(); window.hecosOpenConfig('#widgets')" 
+              style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:4px;" 
+              title="Configure Telemetry"><i class="fas fa-cog"></i></span>
+        <span class="ql-chevron"><i class="fas fa-chevron-down"></i></span>
+    </div>
+    
+    <div id="live-status-body" class="ql-body" style="margin-top:12px;">
+        <div id="live-status" style="display:flex; flex-direction:column; gap:6px; font-size:12px;">
+            <div class="stat"><div class="stat-prefix"><i class="fas fa-server"></i> <span class="stat-label">System:</span></div> <span id="tel-backend" class="stat-val">—</span></div>
+            
+            <div class="stat" id="row-tel-cpu" style="display:none;"><div class="stat-prefix"><i class="fas fa-microchip"></i> <span class="stat-label">CPU:</span></div> <div style="display:flex; align-items:center; gap:6px;"><div class="progress-bar-container"><div class="progress-bar-fill" id="tel-cpu-bar"></div></div><span id="tel-cpu" class="stat-val" style="width:35px; text-align:right;">—</span></div></div>
+            <div class="stat" id="row-tel-ram" style="display:none;"><div class="stat-prefix"><i class="fas fa-memory"></i> <span class="stat-label">RAM:</span></div> <div style="display:flex; align-items:center; gap:6px;"><div class="progress-bar-container"><div class="progress-bar-fill" id="tel-ram-bar"></div></div><span id="tel-ram" class="stat-val" style="width:35px; text-align:right;">—</span></div></div>
+            <div class="stat" id="row-tel-vram" style="display:none;"><div class="stat-prefix"><i class="fas fa-video"></i> <span class="stat-label">VRAM:</span></div> <div style="display:flex; align-items:center; gap:6px;"><div class="progress-bar-container"><div class="progress-bar-fill" id="tel-vram-bar"></div></div><span id="tel-vram" class="stat-val" style="width:35px; text-align:right;">—</span></div></div>
+            
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.05); margin:4px 0;">
+            
+            <div class="stat"><div class="stat-prefix"><i class="fas fa-microphone"></i> <span class="stat-label">Mic:</span></div> <span id="tel-mic" class="stat-val">—</span></div>
+            <div class="stat"><div class="stat-prefix"><i class="fas fa-volume-up"></i> <span class="stat-label">TTS:</span></div> <span id="tel-tts" class="stat-val">—</span></div>
+            <div class="stat"><div class="stat-prefix"><i class="fas fa-hand-pointer"></i> <span class="stat-label">PTT:</span></div> <span id="tel-ptt" class="stat-val">—</span></div>
+            
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.05); margin:4px 0;">
+
+            <div class="stat"><div class="stat-prefix"><i class="fas fa-cog"></i> <span class="stat-label">Config:</span></div> <span id="tel-config" class="stat-val">—</span></div>
+            <div class="stat"><div class="stat-prefix"><i class="fas fa-brain"></i> <span class="stat-label">Model:</span></div> <span id="tel-model" class="stat-val">—</span></div>
+            <div class="stat"><div class="stat-prefix"><i class="fas fa-wrench"></i> <span class="stat-label">Tool:</span></div> <span id="tel-tool" class="stat-val">—</span></div>
+        </div>
+
+        <!-- ═══════════════════ PROCESSES SECTION ═══════════════════ -->
+        <hr style="border:none; border-top:1px solid rgba(255,255,255,0.08); margin:10px 0 8px;">
+
+        <div id="proc-section" style="font-size:12px;">
+            <!-- Section header -->
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px; cursor:pointer;" onclick="const b=document.getElementById('proc-body'); b.style.display=b.style.display==='none'?'flex':'none';">
+                <span style="font-size:10px; font-weight:700; letter-spacing:0.08em; color:var(--accent1,#00d2ff); text-transform:uppercase; opacity:0.9;">
+                    <i class="fas fa-tasks" style="margin-right:4px;"></i>Processes
+                </span>
+                <span id="proc-swarm-dot" style="width:7px;height:7px;border-radius:50%;background:#555;display:inline-block;margin-left:2px;" title="SwarmUI status"></span>
+                <i class="fas fa-chevron-down" style="margin-left:auto; opacity:0.4; font-size:9px;"></i>
+            </div>
+
+            <div id="proc-body" style="display:flex; flex-direction:column; gap:6px;">
+
+                <!-- SwarmUI row -->
+                <div class="proc-card" id="proc-swarm-card">
+                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px;">
+                        <i class="fas fa-paint-brush" style="color:var(--accent1,#00d2ff); font-size:11px;"></i>
+                        <span style="font-weight:600; color:var(--fg,#e0e0e0); font-size:11px;">SwarmUI</span>
+                        <span id="proc-swarm-status" class="proc-badge proc-badge-off">OFFLINE</span>
+                        <span id="proc-swarm-ram" style="margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted,#888);">—</span>
+                    </div>
+                    <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                        <button class="proc-btn proc-btn-stop" id="btn-swarm-stop" onclick="swarmAction('stop')" title="Stop SwarmUI and free RAM/VRAM">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                        <button class="proc-btn proc-btn-start" id="btn-swarm-start" onclick="swarmAction('start')" title="Start SwarmUI">
+                            <i class="fas fa-play"></i> Start
+                        </button>
+                        <span id="proc-swarm-msg" style="font-size:10px; color:var(--muted,#777); align-self:center; padding-left:2px;"></span>
+                    </div>
+                </div>
+
+                <!-- Free RAM button -->
+                <div style="margin-top:2px;">
+                    <button class="proc-btn proc-btn-freeram" id="btn-free-ram" onclick="freeRam()" title="Stop SwarmUI to free RAM for Fish Speech / other TTS">
+                        <i class="fas fa-broom"></i> Free RAM for TTS
+                    </button>
+                    <div id="proc-free-ram-msg" style="font-size:10px; color:var(--muted,#777); margin-top:4px; display:none;"></div>
+                </div>
+            </div>
+        </div>
+        <!-- ═══════════════════════════════════════════════════════════ -->
+
+        <style>
+            #live-status .stat { display:flex; justify-content:space-between; align-items:center; padding:2px 4px; border-radius:4px; }
+            #live-status .stat:hover { background:rgba(255,255,255,0.02); }
+            #live-status .stat-prefix { display:flex; align-items:center; gap:6px; color:var(--muted); }
+            #live-status .stat-label { margin-left:2px; }
+            #live-status .stat-val { font-weight:600; font-family:'JetBrains Mono', monospace; font-size:11px; }
+            #live-status .val-ok { color: var(--green, #2ecc71); }
+            #live-status .val-err { color: var(--red, #e74c3c); }
+            .progress-bar-container { width: 120px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+            .progress-bar-fill { height: 100%; background: var(--green, #2ecc71); transition: width 0.3s ease, background-color 0.3s ease; width: 0%; }
+            .progress-bar-fill.warn { background: var(--yellow, #f1c40f); }
+            .progress-bar-fill.err { background: var(--red, #e74c3c); }
+
+            /* ── Processes section ── */
+            .proc-card {
+                background: rgba(0,210,255,0.04);
+                border: 1px solid rgba(0,210,255,0.12);
+                border-radius: 6px;
+                padding: 7px 9px;
+            }
+            .proc-badge {
+                font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
+                padding: 1px 6px; border-radius: 10px;
+            }
+            .proc-badge-on  { background: rgba(46,204,113,0.18); color: #2ecc71; border: 1px solid rgba(46,204,113,0.3); }
+            .proc-badge-off { background: rgba(231,76,60,0.15);  color: #e74c3c; border: 1px solid rgba(231,76,60,0.25); }
+            .proc-badge-starting { background: rgba(241,196,15,0.18); color: #f1c40f; border: 1px solid rgba(241,196,15,0.3); }
+            .proc-btn {
+                font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 5px;
+                border: 1px solid; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+                transition: opacity 0.15s, transform 0.1s;
+                font-family: inherit;
+            }
+            .proc-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+            .proc-btn:active { transform: translateY(0); opacity: 1; }
+            .proc-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+            .proc-btn-stop {
+                background: rgba(231,76,60,0.15); color: #e74c3c;
+                border-color: rgba(231,76,60,0.35);
+            }
+            .proc-btn-start {
+                background: rgba(46,204,113,0.12); color: #2ecc71;
+                border-color: rgba(46,204,113,0.3);
+            }
+            .proc-btn-freeram {
+                background: rgba(241,196,15,0.12); color: #f1c40f;
+                border-color: rgba(241,196,15,0.3);
+                width: 100%;
+                justify-content: center;
+                padding: 4px 10px;
+            }
+        </style>
+
+        <script>
+        (function() {
+            function updateMetric(id, val, rowId) {
+                const el = document.getElementById(id);
+                const bar = document.getElementById(id + '-bar');
+                const row = rowId ? document.getElementById(rowId) : null;
+                if (!el) return;
+                if (val !== undefined && val !== null) {
+                    el.textContent = val + '%';
+                    el.className = 'stat-val ' + (val >= 90 ? 'val-err' : '');
+                    if (bar) {
+                        bar.style.width = val + '%';
+                        bar.className = 'progress-bar-fill ' + (val >= 90 ? 'err' : (val >= 70 ? 'warn' : ''));
+                    }
+                    if (row) row.style.display = 'flex';
+                } else {
+                    el.textContent = '—';
+                    if (bar) bar.style.width = '0%';
+                    if (row) row.style.display = 'none';
+                }
+            }
+
+            function updateStatus(id, val) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = val || '—';
+                el.className = 'stat-val ' + (val === 'ON' ? 'val-ok' : 'val-err');
+            }
+
+            function setSpan(id, val) {
+                const el = document.getElementById(id);
+                if (el) el.textContent = val;
+            }
+
+            let telConfig = { track_cpu: false, track_ram: false, track_vram: false };
+
+            async function fetchTelConfig() {
+                try {
+                    const r = await fetch('/api/telemetry_widget/config');
+                    if (r.ok) {
+                        const d = await r.json();
+                        if (d.ok) {
+                            telConfig.track_cpu = d.track_cpu;
+                            telConfig.track_ram = d.track_ram;
+                            telConfig.track_vram = d.track_vram;
+                        }
+                    }
+                } catch(e) {}
+            }
+
+            async function pollTelemetryStatus() {
+                try {
+                    const r = await fetch('/hecos/status');
+                    if (!r.ok) return;
+                    const d = await r.json();
+                    
+                    setSpan('tel-backend', d.backend || '—');
+                    updateMetric('tel-cpu', telConfig.track_cpu ? d.cpu : null, 'row-tel-cpu');
+                    updateMetric('tel-ram', telConfig.track_ram ? d.ram : null, 'row-tel-ram');
+                    updateMetric('tel-vram', telConfig.track_vram ? d.vram : null, 'row-tel-vram');
+                    
+                    updateStatus('tel-mic', d.mic);
+                    updateStatus('tel-tts', d.tts);
+                    updateStatus('tel-ptt', d.ptt);
+                    
+                    setSpan('tel-config', d.config || '—');
+                    setSpan('tel-model', d.model || '—');
+                    setSpan('tel-tool', d.last_tool || '—');
+                } catch(e) {}
+            }
+
+            // ── SwarmUI process polling ───────────────────────────────────────
+            let swarmBusy = false;
+
+            async function pollSwarmStatus() {
+                if (swarmBusy) return;
+                try {
+                    const r = await fetch('/api/process/swarmui/status');
+                    if (!r.ok) return;
+                    const d = await r.json();
+
+                    const dot    = document.getElementById('proc-swarm-dot');
+                    const badge  = document.getElementById('proc-swarm-status');
+                    const ramEl  = document.getElementById('proc-swarm-ram');
+                    const btnStop  = document.getElementById('btn-swarm-stop');
+                    const btnStart = document.getElementById('btn-swarm-start');
+
+                    if (!badge) return;
+
+                    if (d.starting) {
+                        dot.style.background = '#f1c40f';
+                        badge.className = 'proc-badge proc-badge-starting';
+                        badge.textContent = 'STARTING';
+                        btnStop.disabled = true;
+                        btnStart.disabled = true;
+                    } else if (d.running) {
+                        dot.style.background = '#2ecc71';
+                        badge.className = 'proc-badge proc-badge-on';
+                        badge.textContent = 'ONLINE';
+                        btnStop.disabled = false;
+                        btnStart.disabled = true;
+                    } else {
+                        dot.style.background = d.installed ? '#e74c3c' : '#555';
+                        badge.className = 'proc-badge proc-badge-off';
+                        badge.textContent = d.installed ? 'OFFLINE' : 'N/A';
+                        btnStop.disabled = true;
+                        btnStart.disabled = !d.installed;
+                    }
+
+                    if (d.ram_mb && d.ram_mb > 0) {
+                        ramEl.textContent = d.ram_mb + ' MB';
+                    } else {
+                        ramEl.textContent = d.running ? '' : '—';
+                    }
+                } catch(e) {}
+            }
+
+            // ── Action handlers ───────────────────────────────────────────────
+            window.swarmAction = async function(action) {
+                swarmBusy = true;
+                const msgEl = document.getElementById('proc-swarm-msg');
+                const dot   = document.getElementById('proc-swarm-dot');
+                const badge = document.getElementById('proc-swarm-status');
+                const btnStop  = document.getElementById('btn-swarm-stop');
+                const btnStart = document.getElementById('btn-swarm-start');
+
+                // Optimistic UI
+                if (action === 'stop') {
+                    dot.style.background = '#e74c3c';
+                    badge.className = 'proc-badge proc-badge-off';
+                    badge.textContent = 'STOPPING';
+                    btnStop.disabled = true;
+                    btnStart.disabled = true;
+                    if (msgEl) msgEl.textContent = 'Stopping…';
+                } else {
+                    dot.style.background = '#f1c40f';
+                    badge.className = 'proc-badge proc-badge-starting';
+                    badge.textContent = 'STARTING';
+                    btnStop.disabled = true;
+                    btnStart.disabled = true;
+                    if (msgEl) msgEl.textContent = 'Starting…';
+                }
+
+                try {
+                    const r = await fetch('/api/process/swarmui/' + action, { method: 'POST' });
+                    const d = await r.json();
+                    if (msgEl) {
+                        msgEl.textContent = d.message || (d.ok ? 'Done.' : (d.error || 'Error'));
+                        setTimeout(() => { if(msgEl) msgEl.textContent = ''; }, 4000);
+                    }
+                } catch(e) {
+                    if (msgEl) { msgEl.textContent = 'Request failed'; setTimeout(() => { if(msgEl) msgEl.textContent=''; }, 3000); }
+                }
+
+                swarmBusy = false;
+                await pollSwarmStatus();
+            };
+
+            window.freeRam = async function() {
+                const btn   = document.getElementById('btn-free-ram');
+                const msgEl = document.getElementById('proc-free-ram-msg');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Freeing…';
+                if (msgEl) { msgEl.style.display = 'block'; msgEl.textContent = 'Running cleanup…'; }
+
+                try {
+                    const r = await fetch('/api/system/free_ram', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ stop_swarmui: true, unload_ollama: false })
+                    });
+                    const d = await r.json();
+                    if (msgEl) {
+                        const lines = (d.report || []).join(' | ');
+                        const freed = d.freed_mb_estimate ? ` (~${d.freed_mb_estimate} MB freed)` : '';
+                        msgEl.textContent = lines + freed || (d.ok ? 'Done.' : (d.error || 'Error'));
+                        setTimeout(() => { if(msgEl) { msgEl.style.display='none'; msgEl.textContent=''; } }, 7000);
+                    }
+                } catch(e) {
+                    if (msgEl) { msgEl.textContent = 'Request failed'; setTimeout(() => { if(msgEl) { msgEl.style.display='none'; msgEl.textContent=''; } }, 3000); }
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-broom"></i> Free RAM for TTS';
+                await pollSwarmStatus();
+            };
+
+            // ── Init ──────────────────────────────────────────────────────────
+            if (!window.hecosOpenConfig) {
+                window.hecosOpenConfig = function(hash) {
+                    if (window.parent && window.parent.hecosOpenConfig) {
+                        window.parent.hecosOpenConfig(hash);
+                    } else {
+                        window.open('/hecos/config/ui' + (hash || ''), '_blank', 'noopener');
+                    }
+                };
+            }
+
+            fetchTelConfig().then(() => {
+                pollTelemetryStatus();
+                setInterval(pollTelemetryStatus, 3000);
+                setInterval(fetchTelConfig, 15000);
+            });
+
+            // Poll SwarmUI status at a slower cadence (every 8s to avoid hammering check_status)
+            pollSwarmStatus();
+            setInterval(pollSwarmStatus, 8000);
+        })();
+        </script>
+    </div>
+</div>
