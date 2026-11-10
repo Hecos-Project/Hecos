@@ -243,8 +243,11 @@ def update_capability_registry(config=None, debug_log=True):
                             }
                             
                             _lazy_plugins_paths[tag] = os.path.abspath(main_file)
-                            from .module_state import _lazy_tool_schemas
+                            from .module_state import _lazy_tool_schemas, _lazy_llm_callable
                             _lazy_tool_schemas[tag] = manifest_data.get("tool_schema", [])
+                            # llm_callable=true means this plugin's schemas are sent to the LLM
+                            # even while dormant (the JIT awakener will load it when called)
+                            _lazy_llm_callable[tag] = manifest_data.get("llm_callable", False)
                             
                             if debug_log: logger.debug("LOADER", f"Module {plugin_dir} registered efficiently (Lazy Load).")
                             continue

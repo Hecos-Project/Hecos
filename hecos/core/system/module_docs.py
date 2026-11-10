@@ -32,7 +32,9 @@ from .module_state import (
 
     _lazy_plugins_paths,
 
-    _lazy_tool_schemas
+    _lazy_tool_schemas,
+
+    _lazy_llm_callable
 
 )
 
@@ -338,6 +340,12 @@ def get_tools_schema():
 
                     continue
 
+                # Skip internal slash command handlers - they are for direct text parsing,
+                # not for LLM function calling schemas. Keeps the payload lean.
+                if name.startswith('slash_'):
+
+                    continue
+
 
 
                 description, params_description = _parse_docstring(method.__doc__)
@@ -430,53 +438,49 @@ def get_tools_schema():
 
 
 
-    # --- ADD LAZY PLUGINS SCHEMAS ---
+    # --- LAZY PLUGINS SCHEMAS ---
+    # DESIGN NOTE: Dormant lazy plugins are intentionally NOT included in the tool payload.
+    #
+    # Problem: sending all lazy schemas at startup (~60 tools, ~9500 tokens) causes context
+    # overflow in local models with limited num_ctx, truncating the soul/personality prompt.
+    #
+    # Solution: lazy plugins are awakened on-demand via slash commands (/py, /mem, /remind...)
+    # Once awakened, they enter _loaded_plugins and their schemas are auto-included
+    # in the loop above on the next turn.
+    #
+    # For native function-calling: LazyAwakener in tool_dispatcher handles loading the plugin
+    # module when the LLM calls a function whose tag is registered in _lazy_plugins_paths,
+    # then retries the tool execution. No schema pre-loading needed.
 
     def _sanitize_tool_schema(schema_list):
-
         """
-
         Ensures every array-type parameter has an 'items' key.
-
         Gemini rejects tool declarations that have type=array without items.
-
         Also creates clean copies to prevent in-place cache mutation.
-
         """
-
         import copy
-
         sanitized = []
-
         for tool in schema_list:
-
             tool_copy = copy.deepcopy(tool)
-
             if "type" not in tool_copy and "function" not in tool_copy:
-                tool_copy = {"type": "function", "function": tool_copy}
+                tool_copy = {"type": "function", "function": tool_copy.get("function", tool_copy)}
             func = tool_copy.get("function", tool_copy)
-
             params = func.get("parameters", {})
-
             props = params.get("properties", {})
-
             for prop in props.values():
-
                 if prop.get("type") == "array" and "items" not in prop:
-
                     prop["items"] = {"type": "string"}
-
             sanitized.append(tool_copy)
-
         return sanitized
 
-
-
+    # Include schemas for dormant lazy plugins marked as llm_callable=true.
+    # These plugins will be JIT-awakened by module_state.get_plugin_module() when called.
     for tag, schema_list in _lazy_tool_schemas.items():
-
-        if tag not in _loaded_plugins: # Don't duplicate if already awakened
-
+        if tag in _loaded_plugins:
+            continue  # Already included above (plugin was awakened this session)
+        if _lazy_llm_callable.get(tag, False) and schema_list:
             tools_list.extend(_sanitize_tool_schema(schema_list))
+
 
 
 

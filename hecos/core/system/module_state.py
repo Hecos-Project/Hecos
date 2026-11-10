@@ -17,6 +17,7 @@ _loaded_legacy_plugins = {}   # tag -> instance of LegacyPlugin class
 # Lazy Load references
 _lazy_plugins_paths = {}      # tag -> absolute path to main.py
 _lazy_tool_schemas = {}       # Caches function calling schemas for dormant plugins
+_lazy_llm_callable = {}       # tag -> bool: True if dormant plugin should expose schemas to LLM
 
 def get_active_tags():
     """Returns a list of all currently active plugin tags."""

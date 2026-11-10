@@ -27,7 +27,9 @@
                             "description": "The number of previous messages to extract (e.g. '10')."
                         }
                     },
-                    "required": ["n"]
+                    "required": [
+                        "n"
+                    ]
                 }
             }
         },
@@ -44,7 +46,9 @@
                             "description": "The detailed information to remember (e.g. 'The user likes coffee')."
                         }
                     },
-                    "required": ["text"]
+                    "required": [
+                        "text"
+                    ]
                 }
             }
         },
@@ -85,7 +89,9 @@
                             "description": "The question or topic to search for in the knowledge base."
                         }
                     },
-                    "required": ["query"]
+                    "required": [
+                        "query"
+                    ]
                 }
             }
         },
@@ -106,7 +112,9 @@
                             "description": "A short descriptive label for this memory (e.g. 'colour_preference')."
                         }
                     },
-                    "required": ["text"]
+                    "required": [
+                        "text"
+                    ]
                 }
             }
         },
@@ -123,9 +131,12 @@
                             "description": "Absolute or relative path to the file to ingest."
                         }
                     },
-                    "required": ["path"]
+                    "required": [
+                        "path"
+                    ]
                 }
             }
         }
-    ]
+    ],
+    "llm_callable": true
 }
