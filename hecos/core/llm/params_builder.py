@@ -414,11 +414,7 @@ def inject_local_tool_hints(
 
             "\n### ACTIONS & TOOL EXECUTION RULES ###\n"
 
-            "To perform actions, use native JSON function calls OR direct slash commands (e.g. `/img <description>` to generate images, `/search <query>` to search the web).\n"
-
-            "If the user explicitly asks for an image or action, execute the appropriate tool. Do NOT use image or action tools unless the user explicitly requests them.\n"
-
-            "Always stay in character with your active personality and identity.\n"
+            "Action modules can be invoked via tool calls when requested by the user.\n"
 
         )
 
@@ -430,21 +426,11 @@ def inject_local_tool_hints(
 
             "\n### DIRECT ACTIONS RULES (SLASH COMMANDS) ###\n"
 
-            "You have action modules available via slash commands. Use them ONLY when the user explicitly requests an action.\n"
-
-            "- IF the user explicitly asks you to generate or draw an image/photo: output `/img <english_prompt>` on its own line.\n"
-
-            "- IF the user explicitly asks you to search the web: output `/search <query>` on its own line.\n"
-
-            "Do NOT use slash commands unless the user has explicitly requested that specific action in their message.\n"
-
-            "Always stay in character with your active personality and identity.\n"
+            "Action modules can be invoked via slash commands (e.g. `/search <query>`, `/img <description>`) when requested by the user.\n"
 
         )
 
         messages[0]["content"] += tool_hint
-
-
 
 
 

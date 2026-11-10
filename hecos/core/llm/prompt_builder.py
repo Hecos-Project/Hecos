@@ -317,7 +317,7 @@ class PromptBuilder:
 
                 if send_tools else
 
-                "2. DIRECT SLASH COMMANDS: Native JSON function calling schemas are disabled for this session to maximize speed. To execute actions (such as generating images or searching the web), you MUST use DIRECT SLASH COMMANDS (e.g. /img <description> on its own line for photos, /search <query> for web searches). NEVER claim you cannot generate images.\n"
+                "2. DIRECT SLASH COMMANDS: Native JSON function calling schemas are disabled for this session. Action modules can be invoked via direct slash commands (e.g. /search <query>, /img <description>) only when explicitly requested by the user.\n"
 
             )
 
@@ -1049,17 +1049,7 @@ class PromptBuilder:
 
                 "\n### NET SEARCH & WEB INTELLIGENCE PROTOCOL ###\n"
 
-                "CRITICAL DISTINCTION — SEARCH vs GENERATION:\n"
-
-                "- When the user asks to 'cerca', 'trova', 'search', 'find', 'cerca in rete', 'cerca sul web', 'cerca video', 'cerca immagini online', 'cerca foto di...', 'cerca notizie', 'search google/duckduckgo':\n"
-
-                "  THEY WANT A REAL-TIME WEB SEARCH, NOT AI IMAGE GENERATION OR PDF DOCUMENT CREATION!\n"
-
-                "  NEVER call IMAGE_GEN__generate_image or /img when the user is searching for real/existing images or photos on the internet!\n"
-
-                "  NEVER call DOCS__generate_pdf or make a PDF report/magazine when the user just asks to search for videos, images, or web links!\n"
-
-                "\n"
+                "- When the user asks to search the web or find online information, execute an informational web search rather than generating new media.\n\n"
 
                 "AVAILABLE WAYS TO EXECUTE SEARCHES:\n"
 
@@ -1127,51 +1117,19 @@ class PromptBuilder:
 
             image_gen_protocol_block = (
 
-                "\n### IMAGE GENERATION PROTOCOL ###\n"
+                "\n### IMAGE GENERATION (IMAGE_GEN) ###\n"
 
-                "When the user asks you to generate, create, draw, or show an image or photo of ANYTHING:\n"
+                "When the user explicitly requests an image or photo:\n"
 
-                "CRITICAL ANTI-REFUSAL: NEVER claim you cannot generate images. You ARE equipped with a visual generator module! If asked for an image, YOU MUST generate it using the /img command.\n"
+                "- Output `/img <english_prompt>` on its own separate line.\n"
 
-                "CRITICAL IMAGE COUNT RULE: Generate ONLY ONE image (EXACTLY ONE /img line) per response. NEVER output multiple /img commands or generate multiple images in the same turn unless the user explicitly requested a specific number (e.g. 'fanne 2', 'crea 3 immagini'). If the user asks for 'a photo', 'foto tua', 'una foto', 'show me', etc., you MUST generate EXACTLY 1 image.\n"
-
-                "FORMAT: Output the command on its own separate line in this format:\n"
-
-                "  /img YOUR_VISUAL_DESCRIPTION_HERE_IN_ENGLISH\n"
-
-                "DIALOGUE & ROLEPLAY: You CAN and SHOULD include your normal conversational or roleplay dialogue and actions in the same response, placing the /img command on its own separate line.\n"
-
-                "DO NOT REPEAT: If an image has already been produced or if you see [[IMG:...]] in the recent conversation context, DO NOT emit /img again for the same request.\n"
-
-                "CRITICAL ERROR HANDLING: If the IMAGE_GEN tool returns a [SYSTEM: FATAL_BACKEND_ERROR] or [[IGEN_ALERT]], DO NOT retry /img in the same turn and DO NOT invent roleplay excuses (like 'my camera is broken'); directly explain the technical backend status (e.g. SwarmUI not running or not installed) to the user.\n"
-
-                "WRONG (FORBIDDEN): Emitting multiple /img commands when only one photo was asked.\n"
-
-                "WRONG (FORBIDDEN): /img [descrizione tra parentesi]\n"
-
-                "CORRECT: /img photorealistic portrait of a female cyborg with black hair and brown eyes, athletic build\n"
-
-                "The /img command is the ONLY way to generate images. IMAGE_GEN is active: USE IT.\n"
+                "- Emit at most 1 `/img` command per turn unless a specific quantity is requested.\n"
 
             )
 
         else:
 
-            image_gen_protocol_block = (
-
-                "\n### IMAGE GENERATION PROTOCOL (PLUGIN NOT INSTALLED) ###\n"
-
-                "CRITICAL SYSTEM STATUS: The `image_gen` (Image Generation) package is currently NOT installed or NOT active in Hecos.\n"
-
-                "If the user asks you to generate, create, draw, take, or show a photo/image/selfie/illustration (and they are NOT asking for a web search via NETSEARCH):\n"
-
-                "1. DO NOT output `/img` or `[IMAGE_GEN: ...]` because the plugin is not installed.\n"
-
-                "2. DO NOT beat around the bush, DO NOT pretend you sent a photo, and DO NOT invent vague excuses (like 'my camera is broken' or 'I cannot show photos').\n"
-
-                "3. Clearly and directly inform the user (while keeping your friendly tone) that you cannot generate images right now because the **Image Generation (`image_gen`)** plugin is not installed, and tell them they can install it from the **Hecos Package Manager (Store / HPM)**.\n"
-
-            )
+            image_gen_protocol_block = ""
 
 
 
@@ -1246,19 +1204,15 @@ class PromptBuilder:
 
             "\n### MEDIA FORMATTING RULES ###\n"
 
-            "- CRITICAL: You CAN and DO have the ability to display images, videos, and files directly in the chat UI. NEVER apologize or claim you lack a screen or visual interface.\n"
+            "When referencing local files or media in text, use Markdown link format:\n"
 
-            "- If the user asks to 'show', 'preview', or list files/images/videos, you MUST use strict Markdown.\n"
+            "- Images: `![Alt Text](file:///C:/path/to/image.png)`\n"
 
-            "- For files/videos use: `[filename.ext](absolute_path_to_file)` e.g. `[Schindler.mkv](C:\\Users\\Tony\\Downloads\\Schindler.mkv)`\n"
+            "- Videos: `[▶ Video Title](file:///C:/path/to/video.mp4)`\n"
 
-            "- For images use: `![filename.ext](absolute_path_to_image)`\n"
+            "- Audio: `[♪ Audio Title](file:///C:/path/to/audio.mp3)`\n"
 
-            "- VIDEO DISPLAY: When you find a video file, ALWAYS output a Markdown link with the EXACT full Windows path. The UI will automatically render a rich video card with playback controls. DO NOT say you cannot show videos — you CAN.\n"
-
-            "- NEVER use `!(path)` or plain text listings. The UI renders rich graphical cards ONLY if you strictly use these Markdown formats.\n"
-
-            "- For local Windows paths, use backslashes: `[video.mkv](C:\\Users\\Tony\\Downloads\\video.mkv)`\n"
+            "- Files: `[📄 Filename](file:///C:/path/to/file.ext)`\n"
 
         )
 
@@ -1350,39 +1304,17 @@ class PromptBuilder:
 
             if send_tools:
 
-                if is_image_gen_active:
+                local_model_rules = (
 
-                    local_model_rules = (
+                    "3. TOOL CALLING: You have access to tools via native function calling. "
 
-                        "3. TOOL CALLING (CRITICAL): You have access to tools via native function calling. "
+                    "When the user explicitly requests an action, invoke the appropriate tool.\n"
 
-                        "When the user requests an action (generate image, take photo, play music, search web, etc.), "
+                    "4. REASONING: If you need to think or plan your actions, use <think> tags. "
 
-                        "you MUST invoke the corresponding tool. NEVER just describe or narrate the action in text. "
+                    "Do NOT output your thought process as part of the conversational response text.\n"
 
-                        "If you write 'here is your photo' without calling generate_image, you have FAILED.\n"
-
-                        "4. REASONING: If you need to think or plan your actions, use <think> tags. "
-
-                        "Do NOT output your thought process as part of the conversational response text.\n"
-
-                    )
-
-                else:
-
-                    local_model_rules = (
-
-                        "3. TOOL CALLING (CRITICAL): You have access to active tools via native function calling. "
-
-                        "Note that `image_gen` is NOT installed, so if the user asks for an AI-generated image/photo, "
-
-                        "do NOT pretend to generate one — inform the user that the `image_gen` plugin is not installed.\n"
-
-                        "4. REASONING: If you need to think or plan your actions, use <think> tags. "
-
-                        "Do NOT output your thought process as part of the conversational response text.\n"
-
-                    )
+                )
 
             else:
 
