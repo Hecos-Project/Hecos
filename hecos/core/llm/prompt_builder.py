@@ -982,6 +982,13 @@ class PromptBuilder:
     @staticmethod
 
     def _build_rules(config, user_id, backend_config, send_tools=True):
+        def _get_active_tags_safe():
+            try:
+                from hecos.core.system.module_loader import get_active_tags
+                return get_active_tags()
+            except Exception:
+                return []
+
 
         identity_rules = f"{translator.t('identity_protocol')}\n"
 
@@ -1043,7 +1050,10 @@ class PromptBuilder:
 
         netsearch_protocol = ""
 
-        if send_tools:
+        # Only inject netsearch protocol if NETSEARCH module is actually active
+        _netsearch_active = "NETSEARCH" in [t.upper() for t in _get_active_tags_safe()]
+
+        if send_tools and _netsearch_active:
 
             netsearch_protocol = (
 
@@ -1133,70 +1143,10 @@ class PromptBuilder:
 
 
 
-        if send_tools:
-
-            plugin_guidelines = (
-
-                "\n### PLUGIN GUIDELINES ###\n"
-
-                "- PRIORITY: Always respond with TEXT first. Only use a tool if the user explicitly asks for an action.\n"
-
-                "- [SYSTEM: time] - Get current local time\n"
-
-                "- [SYSTEM: open:prog_name] - Open notepad, chrome, etc.\n"
-
-                "- [SYSTEM: terminal] - Open Windows CMD prompt window\n"
-
-                "- [SYSTEM: explore:folder] - Open folder graphically\n"
-
-                "- [DRIVE: list:folder] - List files for analysis\n"
-
-                "- [DASHBOARD: resources] - Get hardware telemetry\n"
-
-                "- [NETSEARCH: web_search(query=\"...\")] - Real-time web search\n"
-
-                "- MEDIA PLAYBACK: When the user asks to 'play', 'open', 'riproduce', 'manda in play', or 'avvia' a video or audio file, ALWAYS use EXECUTOR__open_media_file(file_path) with the EXACT absolute path. NEVER use execute_shell_command for media playback.\n"
-
-                f"{image_gen_protocol_block}"
-
-                "\n### DOCUMENT GENERATION PROTOCOL (DOCS) ###\n"
-
-                "When the user asks you to create or generate a PDF, HTML document, report, scheda, magazine, or fotoromanzo:\n"
-
-                "- NEVER invent or hallucinate fake links like `/api/documents/...` in text without calling the DOCS tool!\n"
-
-                "- Call `DOCS__generate_pdf` (via native tool calling) OR emit `/DOCS__generate_pdf {\"html_content\": \"...\", \"filename\": \"...\"}` on its own line (when native tools are unavailable).\n"
-
-                "- Once DOCS executes, Hecos automatically attaches the interactive HTML & PDF preview cards with Open, Download, Zoom, and Visual Editor buttons.\n"
-
-                "\n### HECOS PACKAGE STORE & AUTONOMOUS EXTENSION (HPM) ###\n"
-
-                "If the user asks for a capability, service, or tool that is currently NOT listed in your active protocols (e.g. weather, mail, maps, etc.):\n"
-
-                "- You have autonomous access to the official Hecos Package Store (47+ packages available).\n"
-
-                "- To search available store packages: emit `/hpm search <keyword>` on its own separate line (e.g. `/hpm search weather`, `/hpm search mail`).\n"
-
-                "- To inspect package details: emit `/hpm info <package_id>` on its own separate line.\n"
-
-                "- To autonomously install a missing package: emit `/hpm install <package_id>` on its own separate line (e.g. `/hpm install weather_pro`).\n"
-
-                "- Once installed, the new package becomes immediately active in Hecos.\n"
-
-            )
-
-        else:
-            plugin_guidelines = (
-                "\n### DIRECT COMMANDS GUIDELINES ###\n"
-                "- Native JSON tool schemas are disabled for speed. Use direct slash commands on their own separate line to execute actions:\n"
-                "  - `/search <query>` : Real-time web search\n"
-                "  - `/images <query>` : Search online images\n"
-                f"{image_gen_protocol_block}"
-                "\n### HECOS PACKAGE STORE & AUTONOMOUS EXTENSION (HPM) ###\n"
-                "If the user asks for a capability or service not currently available:\n"
-                "- To search packages: emit `/hpm search <keyword>` on its own line\n"
-                "- To install a package: emit `/hpm install <package_id>` on its own line\n"
-            )
+        # plugin_guidelines: removed — _load_capabilities() and RoutingManager
+        # already enumerate all active modules dynamically from registry.json.
+        # Hardcoding specific module names here would contradict the dynamic scanner.
+        plugin_guidelines = ""
 
         
 
