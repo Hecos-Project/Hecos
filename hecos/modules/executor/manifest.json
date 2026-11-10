@@ -4,7 +4,7 @@
     "version": "2.0",
     "description": "Safe Python execution (AST Sandbox), system control, and file management. Absorbs AutoCoder.",
     "icon": "⚙️",
-    "lazy_load": true,
+    "lazy_load": false,
     "is_class_based": true,
     "status": "ONLINE (Core Tools Active)",
     "commands": {
@@ -358,6 +358,5 @@
                 }
             }
         }
-    ],
-    "llm_callable": true
+    ]
 }

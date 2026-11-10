@@ -452,18 +452,20 @@ def get_tools_schema():
 
 
     # --- LAZY PLUGINS SCHEMAS ---
-    # DESIGN NOTE: Dormant lazy plugins are intentionally NOT included in the tool payload.
+    # DESIGN NOTE: Dormant lazy plugins are NEVER included in the LLM tool payload.
     #
-    # Problem: sending all lazy schemas at startup (~60 tools, ~9500 tokens) causes context
-    # overflow in local models with limited num_ctx, truncating the soul/personality prompt.
+    # Lazy load exists precisely to avoid bloating the context window with schemas
+    # for modules that may not be needed in a given conversation.
     #
-    # Solution: lazy plugins are awakened on-demand via slash commands (/py, /mem, /remind...)
-    # Once awakened, they enter _loaded_plugins and their schemas are auto-included
-    # in the loop above on the next turn.
+    # HOW LAZY PLUGINS ARE ACCESSED:
+    #   1. Slash commands: always work - they awaken the plugin on-demand.
+    #   2. After awakening: the plugin enters _loaded_plugins -> its schemas appear
+    #      in the eager loop above on the NEXT turn automatically.
+    #   3. Function calling at cold start: NOT supported for lazy plugins by design.
+    #      Modules that MUST be callable via function calling from turn-1 should be
+    #      set as eager (lazy_load: false in their manifest.json).
     #
-    # For native function-calling: LazyAwakener in tool_dispatcher handles loading the plugin
-    # module when the LLM calls a function whose tag is registered in _lazy_plugins_paths,
-    # then retries the tool execution. No schema pre-loading needed.
+    # NEVER add a loop here that pre-injects lazy schemas - it defeats the purpose.
 
     def _sanitize_tool_schema(schema_list):
         """
@@ -486,13 +488,7 @@ def get_tools_schema():
             sanitized.append(tool_copy)
         return sanitized
 
-    # Include schemas for dormant lazy plugins marked as llm_callable=true.
-    # These plugins will be JIT-awakened by module_state.get_plugin_module() when called.
-    for tag, schema_list in _lazy_tool_schemas.items():
-        if tag in _loaded_plugins:
-            continue  # Already included above (plugin was awakened this session)
-        if _lazy_llm_callable.get(tag, False) and schema_list:
-            tools_list.extend(_sanitize_tool_schema(schema_list))
+    # Lazy plugin schemas are intentionally NOT injected here. See DESIGN NOTE above.
 
 
 

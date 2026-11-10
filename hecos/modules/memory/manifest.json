@@ -1,7 +1,7 @@
 {
     "tag": "MEMORY",
     "description": "Access to the Vault of memories and Admin profile (Identity and History). Includes RAG vector memory for long-term semantic recall.",
-    "lazy_load": true,
+    "lazy_load": false,
     "is_class_based": true,
     "status": "ONLINE (Vault Access Granted)",
     "commands": {
@@ -137,6 +137,5 @@
                 }
             }
         }
-    ],
-    "llm_callable": true
+    ]
 }
