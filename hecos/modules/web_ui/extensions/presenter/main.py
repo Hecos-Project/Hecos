@@ -58,6 +58,8 @@ def init_routes(app, root_dir: str = None):
             from .engine import get_engine
             if cfg.enabled:
                 get_engine().start()
+            else:
+                get_engine().stop()
             
             return jsonify({"ok": True})
         except Exception as e:
@@ -91,6 +93,8 @@ def init_routes(app, root_dir: str = None):
 
             if cfg.enabled:
                 get_engine().start()
+            else:
+                get_engine().stop()
 
             return jsonify({
                 "ok": True,

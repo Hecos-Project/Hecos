@@ -44,6 +44,27 @@ class PresenterEngine:
             bus.subscribe("search_completed", self._on_search_completed)
             logger.info("[Presenter] Engine started. Subscribed to events (including search).")
 
+    def stop(self):
+        """Unsubscribes from all bus events and marks engine as not running."""
+        with self._lock:
+            if not self._running:
+                return
+            self._running = False
+
+            # Unsubscribe from event bus
+            try:
+                bus.unsubscribe("persona_switched", self._on_persona_switched)
+                bus.unsubscribe("new_chat", self._on_new_chat)
+                bus.unsubscribe("message_exchange", self._on_message_exchange)
+                bus.unsubscribe("user_message_sent", self._on_user_message_sent)
+                bus.unsubscribe("assistant_response", self._on_assistant_response)
+                bus.unsubscribe("progress", self._on_progress_event)
+                bus.unsubscribe("search_started", self._on_search_started)
+                bus.unsubscribe("search_completed", self._on_search_completed)
+            except Exception as e:
+                logger.warning(f"[Presenter] Error unsubscribing from bus: {e}")
+            logger.info("[Presenter] Engine stopped. Unsubscribed from all events.")
+
     def _generate_commentary(self, event_type: str, system_prompt: str, user_prompt: str, session_id: str = None):
         """Generates commentary using the designated Global Preset model."""
         generate_presenter_commentary(self.cfg, event_type, system_prompt, user_prompt, session_id=session_id)
