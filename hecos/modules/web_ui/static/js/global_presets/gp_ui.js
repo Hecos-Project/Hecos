@@ -172,7 +172,9 @@ window.sfRefreshUIVisibilityAndSummaries = function() {
         const mOn = document.getElementById('sf-payload-memory')?.checked !== false;
         const thOn = document.getElementById('sf-payload-thinking')?.checked === true;
         paySummary.textContent = `Tools ${tOn ? 'ON' : 'OFF'} · Soul ${sOn ? 'ON' : 'OFF'} · Mem ${mOn ? 'ON' : 'OFF'}${thOn ? ' · <think>' : ''}`;
-        if (window.updateToolModeBadge) {
+        // Only update the pill if not in the middle of a bulk soul populate,
+        // to prevent flickering when sf-payload-tools is momentarily reset.
+        if (window.updateToolModeBadge && !window._sfApplyingSoul) {
             window.updateToolModeBadge(tOn ? 'native' : 'direct');
         }
     }
@@ -449,6 +451,7 @@ window.sfUpdateVoicesDropdown = async function() {
 
 window.sfApplySoulToUI = async function(soul) {
     if (!soul) return;
+    window._sfApplyingSoul = true;  // suppress pill update during bulk-populate
     
     const fallbacks = window.sfSystemFallbacks || {};
     
@@ -583,6 +586,7 @@ window.sfApplySoulToUI = async function(soul) {
     setVal('sf-kokoro-beta', soul.voice?.kokoro_beta ?? 1.0);
     setVal('sf-kokoro-volume', soul.voice?.kokoro_volume ?? 1.0);
     
+    window._sfApplyingSoul = false;
     window.sfRefreshUIVisibilityAndSummaries();
 };
 
