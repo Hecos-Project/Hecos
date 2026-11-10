@@ -1,4 +1,4 @@
-﻿"""
+"""
 
 hecos/core/llm/params_builder.py
 
@@ -322,6 +322,16 @@ def build_llm_params(
         params["api_base"] = api_url.replace("localhost", "127.0.0.1")
 
 
+
+        # --- VRAM Adaptive Engine: override num_ctx based on available VRAM ---
+        try:
+            from hecos.core.llm.vram_adaptive import get_optimal_num_ctx
+            _adaptive_ctx = get_optimal_num_ctx(specific_config)
+            if _adaptive_ctx is not None:
+                specific_config = dict(specific_config)  # shallow copy, don't mutate source
+                specific_config["num_ctx"] = _adaptive_ctx
+        except Exception as _vae:
+            pass  # Adaptive engine is optional — never break the LLM call
 
         ollama_options = {}
 
