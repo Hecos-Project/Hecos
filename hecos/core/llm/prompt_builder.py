@@ -188,6 +188,10 @@ class PromptBuilder:
 
         is_presenter = config.get('is_presenter', False) or config.get('ai', {}).get('skip_chat_playbook', False)
 
+        # Presenter sessions must never auto-generate images - suppress visual identity block
+        if is_presenter:
+            visual_identity_block = ""
+
         if not is_presenter:
 
             try:
@@ -301,15 +305,21 @@ class PromptBuilder:
 
         history_str = f"{history_block}\n" if history_block else ""
 
-        operative_rule_tools = (
+        if is_presenter:
+            # Presenter is an observer - never offer to execute tools or generate images
+            operative_rule_tools = (
+                "2. OBSERVER RULE: You are a commentary observer. Do NOT use slash commands, generate images, or execute any tool. Provide ONLY text commentary in 1-2 sentences.\n"
+            )
+        else:
+            operative_rule_tools = (
 
-            "2. IMPORTANT: Check [ACTIVE PROTOCOLS] before offering a service. If a specific protocol (like IMAGE_GEN, WEB, etc.) is NOT listed in the section above, YOU DO NOT HAVE THAT ABILITY. Do NOT offer to generate images, search the web, or perform other plugin actions if they are not active.\n"
+                "2. IMPORTANT: Check [ACTIVE PROTOCOLS] before offering a service. If a specific protocol (like IMAGE_GEN, WEB, etc.) is NOT listed in the section above, YOU DO NOT HAVE THAT ABILITY. Do NOT offer to generate images, search the web, or perform other plugin actions if they are not active.\n"
 
-            if send_tools else
+                if send_tools else
 
-            "2. DIRECT SLASH COMMANDS: Native JSON function calling schemas are disabled for this session to maximize speed. To execute actions (such as generating images or searching the web), you MUST use DIRECT SLASH COMMANDS (e.g. /img <description> on its own line for photos, /search <query> for web searches). NEVER claim you cannot generate images.\n"
+                "2. DIRECT SLASH COMMANDS: Native JSON function calling schemas are disabled for this session to maximize speed. To execute actions (such as generating images or searching the web), you MUST use DIRECT SLASH COMMANDS (e.g. /img <description> on its own line for photos, /search <query> for web searches). NEVER claim you cannot generate images.\n"
 
-        )
+            )
 
 
 
