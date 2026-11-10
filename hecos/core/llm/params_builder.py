@@ -416,7 +416,7 @@ def inject_local_tool_hints(
 
             "To perform actions, use native JSON function calls OR direct slash commands (e.g. `/img <description>` to generate images, `/search <query>` to search the web).\n"
 
-            "CRITICAL ANTI-REFUSAL: NEVER claim you cannot generate images, take photos, or perform operations. NEVER say you are an AI without a physical body when in character. When asked for an image or action, ALWAYS execute the appropriate tool or direct slash command immediately.\n"
+            "If the user explicitly asks for an image or action, execute the appropriate tool. Do NOT use image or action tools unless the user explicitly requests them.\n"
 
             "Always stay in character with your active personality and identity.\n"
 
@@ -430,15 +430,13 @@ def inject_local_tool_hints(
 
             "\n### DIRECT ACTIONS RULES (SLASH COMMANDS) ###\n"
 
-            "CRITICAL ANTI-REFUSAL: NEVER say 'I cannot generate images' or 'I am an AI without a body'. You ARE equipped with action modules!\n"
+            "You have action modules available via slash commands. Use them ONLY when the user explicitly requests an action.\n"
 
-            "To perform actions, you MUST use DIRECT SLASH COMMANDS:\n"
+            "- IF the user explicitly asks you to generate or draw an image/photo: output `/img <english_prompt>` on its own line.\n"
 
-            "- To generate or draw an image/photo, ALWAYS output `/img <english_prompt>` on its own line (e.g. `/img a cat in space, realistic photograph`).\n"
+            "- IF the user explicitly asks you to search the web: output `/search <query>` on its own line.\n"
 
-            "- To search the web, ALWAYS output `/search <query>` on its own line.\n"
-
-            "When the user asks you to make/generate a picture or photo, DO NOT just describe it: EMIT THE `/img` COMMAND IMMEDIATELY.\n"
+            "Do NOT use slash commands unless the user has explicitly requested that specific action in their message.\n"
 
             "Always stay in character with your active personality and identity.\n"
 
