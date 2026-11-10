@@ -7,7 +7,7 @@
     </div>
 
     <!-- Active Tool Mode Chip (Native Tools vs Fast Direct vs Disabled) -->
-    <div id="tb-tool-mode-chip" class="tool-mode-chip tool-mode-native" onclick="window.openPayloadConfig()" title="Tool Mode: Click to configure Payload &amp; Tools">
+    <div id="tb-tool-mode-chip" class="tool-mode-chip tool-mode-native" title="Active tool mode — configure from Settings &gt; Backend">
       <i id="tb-tool-mode-icon" class="fas fa-toolbox"></i>
       <span id="tb-tool-mode-label">Tools: ON</span>
     </div>
@@ -27,16 +27,13 @@
         font-weight: 600;
         padding: 3px 9px;
         border-radius: 12px;
-        cursor: pointer;
+        cursor: default;
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         user-select: none;
         line-height: 1.2;
         letter-spacing: 0.2px;
       }
-      .tool-mode-chip:hover {
-        transform: translateY(-1px);
-        filter: brightness(1.15);
-      }
+      /* .tool-mode-chip:hover { } — pill is display-only, not interactive */
       .tool-mode-chip.tool-mode-native {
         background: rgba(0, 210, 190, 0.12);
         border: 1px solid rgba(0, 210, 190, 0.45);
