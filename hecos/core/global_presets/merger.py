@@ -71,6 +71,8 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
             merged['payload_control']['send_memory'] = soul.payload.send_memory
         if getattr(soul.payload, 'include_thinking_in_history', None) is not None:
             merged['payload_control']['include_thinking_in_history'] = soul.payload.include_thinking_in_history
+        if getattr(soul.payload, 'enable_thinking', None) is not None:
+            merged['payload_control']['enable_thinking'] = soul.payload.enable_thinking
 
     # -- Model Layer --
     if soul.model.backend_type:
