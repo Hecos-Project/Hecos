@@ -118,7 +118,8 @@ window.sfBuildBaseVirtualSoul = function(cfg) {
             send_tools: cfg.payload_control?.send_tools !== false,
             send_personality: cfg.payload_control?.send_personality !== false,
             send_memory: cfg.payload_control?.send_memory !== false,
-            include_thinking_in_history: cfg.payload_control?.include_thinking_in_history === true
+            include_thinking_in_history: cfg.payload_control?.include_thinking_in_history === true,
+            enable_thinking: cfg.payload_control?.enable_thinking !== false
         },
         voice: {
             tts_engine: ttsEngine || "piper",

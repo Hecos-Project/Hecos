@@ -770,6 +770,14 @@ def build_llm_params(
 
 
 
+        # Inject think=false if enable_thinking is explicitly disabled
+        # enable_thinking arrives via payload_control (injected into backend_config by brain.py)
+        _pctrl = specific_config.get("payload_control") or {}
+        _thinking_enabled = _pctrl.get("enable_thinking")  # None = not set, False = disabled
+        if _thinking_enabled is False:
+            ollama_options["think"] = False
+            zlog_info("LiteLLM", "[OLLAMA GPU] Thinking DISABLED (think=false) for this session.")
+
         for opt_key in ("num_gpu", "num_ctx", "num_predict", "repeat_penalty", "keep_alive"):
 
 

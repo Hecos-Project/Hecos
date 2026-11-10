@@ -517,6 +517,19 @@
 
                     <label class="sf-toggle-row">
                         <div class="sf-toggle-info">
+                            <div class="sf-toggle-icon" style="color: #f59e0b; background: rgba(245, 158, 11, 0.1);"><i class="fas fa-brain"></i></div>
+                            <div class="sf-toggle-text">
+                                <span class="sf-toggle-title">Enable Thinking / Reasoning</span>
+                                <span class="sf-toggle-desc">Disable to send <code>think=false</code> to Ollama — faster responses, no reasoning chain. Supported by Gemma 4, Qwen3, DeepSeek-R1.</span>
+                            </div>
+                        </div>
+                        <div class="sf-switch">
+                            <input type="checkbox" id="sf-payload-enable-thinking" checked onchange="window.sfDirty()">
+                            <span class="sf-slider"></span>
+                        </div>
+                    </label>
+                    <label class="sf-toggle-row">
+                        <div class="sf-toggle-info">
                             <div class="sf-toggle-icon" style="color: #a78bfa; background: rgba(167, 139, 250, 0.1);"><i class="fas fa-lightbulb"></i></div>
                             <div class="sf-toggle-text">
                                 <span class="sf-toggle-title">Include Thinking in History (&lt;think&gt;)</span>

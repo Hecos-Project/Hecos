@@ -484,6 +484,8 @@ window.sfApplySoulToUI = async function(soul) {
     if (payloadMem) payloadMem.checked = soul.payload?.send_memory !== false;
     const payloadThinking = document.getElementById('sf-payload-thinking');
     if (payloadThinking) payloadThinking.checked = soul.payload?.include_thinking_in_history === true;
+    const payloadEnableThinking = document.getElementById('sf-payload-enable-thinking');
+    if (payloadEnableThinking) payloadEnableThinking.checked = soul.payload?.enable_thinking !== false;
 
     // Model
     document.getElementById('sf-backend-select').value = soul.model?.backend_type || fallbacks.backend || "ollama";
@@ -809,7 +811,8 @@ window.sfCollectUIState = function() {
         send_tools: getCheck('sf-payload-tools'),
         send_personality: getCheck('sf-payload-soul'),
         send_memory: getCheck('sf-payload-memory'),
-        include_thinking_in_history: getCheck('sf-payload-thinking')
+        include_thinking_in_history: getCheck('sf-payload-thinking'),
+        enable_thinking: getCheck('sf-payload-enable-thinking')
     };
 
     const backendObj = bType ? { type: bType, [bType]: { model: mName } } : {};

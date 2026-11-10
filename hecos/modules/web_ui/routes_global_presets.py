@@ -216,6 +216,10 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
 
                                 p_ctrl["include_thinking_in_history"] = soul.payload.include_thinking_in_history
 
+                            if soul.payload.enable_thinking is not None:
+
+                                p_ctrl["enable_thinking"] = soul.payload.enable_thinking
+
 
 
                         if soul.voice.tts_engine:

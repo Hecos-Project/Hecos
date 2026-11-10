@@ -106,6 +106,7 @@ class SoulPayload(BaseModel):
     send_personality: Optional[bool] = None
     send_memory: Optional[bool] = None
     include_thinking_in_history: Optional[bool] = None
+    enable_thinking: Optional[bool] = None  # If False, sends think=false to Ollama (faster, no reasoning)
 
 class SoulProfile(BaseModel):
     model_config = ConfigDict(extra='ignore')
