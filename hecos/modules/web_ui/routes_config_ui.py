@@ -139,6 +139,7 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
                 zoptions={},
                 translations=translations,
                 version=ver_tag,
+                core_version=_get_version(),
             )
             _ui_cache[cache_key] = (now_ts, rendered)
             if len(_ui_cache) > 10:

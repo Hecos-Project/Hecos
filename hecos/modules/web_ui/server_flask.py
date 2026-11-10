@@ -70,7 +70,7 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
 
     # Inject translation system, version (with start timestamp to bust browser cache on updates), and HPM helper into Jinja2 templates
     import time
-    app.jinja_env.globals.update(t=t, version=f"{VERSION}_{int(time.time())}", is_hpm_installed=_is_hpm_installed)
+    app.jinja_env.globals.update(t=t, version=f"{VERSION}_{int(time.time())}", core_version=VERSION, is_hpm_installed=_is_hpm_installed)
 
     # ── Extend Jinja loader to include WEB_UI extension template dirs ──
     try:
