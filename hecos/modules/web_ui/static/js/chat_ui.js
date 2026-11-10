@@ -365,10 +365,27 @@ window.refreshStatus = async function() {
     // from updating the persona/avatar/tool_mode.
     const sessionOverrideActive = !!(window.sfState && window.sfState.sessionHasDraft);
 
-    // Only update tool mode badge from server poll when no session override is active.
-    // When a Quick Config draft overrides send_tools, gp_ui.js calls updateToolModeBadge directly.
-    if (d.tool_mode !== undefined && window.updateToolModeBadge && !sessionOverrideActive) {
-        window.updateToolModeBadge(d.tool_mode);
+    // Tool-mode pill: once Quick Config is initialized (baselineState set), always read the
+    // sf-payload-tools checkbox directly. sessionHasDraft only tracks *user edits* vs baseline,
+    // so a soul with send_tools:false as its own default would have diff=0 → sessionHasDraft=false,
+    // letting the server poll (system.yaml) overwrite the pill with the wrong value.
+    // Fix: trust the live UI checkbox once QC is loaded; fall back to server only as bootstrap.
+    if (d.tool_mode !== undefined && window.updateToolModeBadge) {
+        // If tools are disabled at system level, that always wins
+        if (d.disable_tools) {
+            window.updateToolModeBadge('disabled');
+        } else {
+            const sfInitialized = !!(window.sfState && window.sfState.baselineState);
+            const sfToolsEl = document.getElementById('sf-payload-tools');
+            if (sfInitialized && sfToolsEl) {
+                // QC loaded — read actual checkbox, never the stale server value
+                window.updateToolModeBadge(sfToolsEl.checked ? 'native' : 'direct');
+            } else if (!sfInitialized) {
+                // QC not yet loaded — server value is the only source of truth
+                window.updateToolModeBadge(d.tool_mode);
+            }
+            // sfInitialized but sfToolsEl not in DOM: panel not rendered yet — skip
+        }
     }
 
     if (d.persona) window._globalPersonaName = d.persona;
