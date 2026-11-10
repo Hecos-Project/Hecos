@@ -61,23 +61,9 @@ backend:
       '9': huihui_ai/qwen3.5-abliterated:9b
       '10': lukey03/qwen3.5-9b-abliterated:latest
       '11': srchmnmichael/qwen3.5-9B-uncensored:latest
-    num_ctx: 40960              # Fallback if adaptive_ctx=false or GPU probe fails
-    adaptive_ctx: true          # Dynamically select num_ctx based on free VRAM
-    adaptive_ctx_profiles:      # Optional override — omit to use built-in portable defaults
-      - label: HIGH_POWER       #   > 80% free  →  LLM alone, full power
-        min_free_pct: 80
-        num_ctx: 65536
-      - label: BALANCED         #   > 50% free  →  LLM + TTS / light workloads
-        min_free_pct: 50
-        num_ctx: 40960
-      - label: ECONOMY          #   > 25% free  →  LLM + TTS + Flux/ComfyUI
-        min_free_pct: 25
-        num_ctx: 24576
-      - label: MINIMAL          #   fallback, all services active
-        min_free_pct: 0
-        num_ctx: 16384
+    num_ctx: 40960
     num_gpu: 99
-    num_predict: 2048
+    num_predict: 4096
     temperature: 0.95
     top_p: 0.98
     repeat_penalty: 1.0
@@ -88,6 +74,9 @@ backend:
     auto_stop_server: true
     warmup_model: true
     warmup_keep_alive: 120m
+    adaptive_ctx: false
+    adaptive_ctx_auto: true
+    adaptive_ctx_manual_profile: BALANCED
   llama_cpp:
     model: ''
     n_gpu_layers: -1

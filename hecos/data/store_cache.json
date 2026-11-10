@@ -1,7 +1,7 @@
 {
   "version": "1",
   "catalog_url": "https://hecos-project.github.io/store/index.json",
-  "generated_at": "2026-11-06T05:04:37Z",
+  "generated_at": "2026-11-09T07:54:30Z",
   "packages": [
     {
       "id": "org.hecos.testbuilder",
@@ -1134,13 +1134,13 @@
       "name": "Image Generation",
       "type": "plugin",
       "level": 5,
-      "version": "2.2.6",
+      "version": "2.2.7",
       "author": "Antonio Meloni",
       "description": "AI Image Generation - Generates images from text prompts with priority support for local backends (SwarmUI/ComfyUI on port 7801). Additionally supports cloud AI providers including Pollinations, Gemini, OpenAI DALL-E, Stability AI, and HuggingFace. Fully autonomous package with its own TOML configuration.",
       "tags": [],
-      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/image_gen-2.2.6.hpkg",
-      "size_bytes": 1100504,
-      "sha256": "2b58944b2296fbd68af6bc14b0aaa9b2bc495a572d4601765d78bc144af0598a",
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/image_gen-2.2.7.hpkg",
+      "size_bytes": 1101401,
+      "sha256": "7b3b4f792f181a18ecff48445b519e1d3e5292ab9aee0f1930797c43ff13d4c7",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/sources/plugins/image_gen_src/preview_1.png"
       ],
@@ -1748,5 +1748,5 @@
       "pip_requirements": []
     }
   ],
-  "cached_at": 1794211642.7823207
+  "cached_at": 1794284850.9954672
 }
