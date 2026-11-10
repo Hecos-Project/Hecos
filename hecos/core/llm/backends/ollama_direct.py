@@ -3,6 +3,11 @@ hecos/core/llm/backends/ollama_direct.py
 Direct HTTP communication with Ollama /v1/chat/completions.
 Preserves reasoning/thinking fields, supports native & fallback tool calling,
 and monitors GPU residency.
+
+NOTE on think parameter:
+  - /v1/chat/completions does NOT honor think=false (Ollama limitation as of 2024)
+  - /api/chat DOES honor think=false at root level
+  - When think=False is requested, we use /api/chat and adapt the response format
 """
 
 import json
@@ -53,9 +58,66 @@ class SyntheticAssistantMessage:
         }
 
 
+def _call_api_chat(ollama_base: str, ollama_body_v1: Dict[str, Any], params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Calls /api/chat (Ollama native format) and normalizes response to OpenAI-like format.
+    Used when think=False is required (only /api/chat honors think at root level).
+    """
+    api_chat_url = f"{ollama_base}/api/chat"
+
+    # Convert OpenAI-compat body to native Ollama /api/chat format
+    native_body: Dict[str, Any] = {
+        "model": ollama_body_v1.get("model", ""),
+        "messages": ollama_body_v1.get("messages", []),
+        "stream": False,
+        "think": ollama_body_v1.get("think", False),
+    }
+
+    # Pass options if present
+    if "options" in ollama_body_v1:
+        native_body["options"] = ollama_body_v1["options"]
+    else:
+        native_opts = {}
+        if "temperature" in ollama_body_v1:
+            native_opts["temperature"] = ollama_body_v1["temperature"]
+        if "top_p" in ollama_body_v1:
+            native_opts["top_p"] = ollama_body_v1["top_p"]
+        if native_opts:
+            native_body["options"] = native_opts
+
+    # Tools are not passed since think=False is for fast/no-reasoning responses
+    if ollama_body_v1.get("tools"):
+        native_body["tools"] = ollama_body_v1["tools"]
+
+    zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] /api/chat with think={ollama_body_v1.get('think')} model={native_body['model']}")
+    resp = requests.post(api_chat_url, json=native_body, timeout=params.get("timeout", 300))
+    resp.raise_for_status()
+    native_data = resp.json()
+
+    # Normalize to OpenAI-compat format for uniform downstream parsing
+    native_msg = native_data.get("message", {})
+    normalized = {
+        "choices": [{
+            "message": {
+                "role": native_msg.get("role", "assistant"),
+                "content": native_msg.get("content", ""),
+                "reasoning": native_msg.get("thinking", ""),  # /api/chat uses "thinking" field
+                "tool_calls": native_msg.get("tool_calls"),
+            },
+            "finish_reason": "stop" if native_data.get("done") else None,
+        }],
+        "usage": {
+            "prompt_tokens": native_data.get("prompt_eval_count", 0),
+            "completion_tokens": native_data.get("eval_count", 0),
+            "total_tokens": native_data.get("prompt_eval_count", 0) + native_data.get("eval_count", 0),
+        },
+    }
+    return normalized
+
+
 def execute_ollama_direct(params: Dict[str, Any], stream: bool = False) -> Any:
     """
-    Directly invokes Ollama's /v1/chat/completions endpoint.
+    Directly invokes Ollama's /v1/chat/completions endpoint (or /api/chat when think=False).
     Bypasses LiteLLM to preserve reasoning fields, avoid dropped tools,
     and accurately record GPU residency metrics.
     """
@@ -78,12 +140,21 @@ def execute_ollama_direct(params: Dict[str, Any], stream: bool = False) -> Any:
     extra_body = params.get("extra_body")
     if extra_body and "options" in extra_body:
         ollama_body["options"] = extra_body["options"]
+    if extra_body and "think" in extra_body:
+        # NOTE: Gemma4 and Ollama require "think" at ROOT body level, NOT inside options{}
+        # Also: /v1/chat/completions ignores think=False; we route to /api/chat in that case
+        ollama_body["think"] = extra_body["think"]
 
-    zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] POST {ollama_url} model={ollama_body['model']}")
-
-    resp = requests.post(ollama_url, json=ollama_body, timeout=params.get("timeout", 300))
-    resp.raise_for_status()
-    data = resp.json()
+    # Route to /api/chat when think=False (only endpoint that honors this for Gemma4)
+    use_api_chat = ollama_body.get("think") is False
+    if use_api_chat:
+        zlog_info("LiteLLM", "[OLLAMA-DIRECT] think=False requested -> routing to /api/chat (OpenAI compat ignores think param)")
+        data = _call_api_chat(ollama_base, ollama_body, params)
+    else:
+        zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] POST {ollama_url} model={ollama_body['model']}")
+        resp = requests.post(ollama_url, json=ollama_body, timeout=params.get("timeout", 300))
+        resp.raise_for_status()
+        data = resp.json()
 
     msg = data.get("choices", [{}])[0].get("message", {})
     content = (msg.get("content") or "").strip()
@@ -142,15 +213,10 @@ def execute_ollama_direct(params: Dict[str, Any], stream: bool = False) -> Any:
             zlog_info("LiteLLM", "[REASONING] content=0 after thinking — retrying without thinking for actual response")
             try:
                 retry_body = dict(ollama_body)
-                # Inject thinking=False in options to suppress thinking on retry
-                retry_opts = dict(retry_body.get("options", {}))
-                retry_opts["think"] = False
-                retry_body["options"] = retry_opts
-                # Inject the reasoning as assistant context note in the last user message
-                r2 = requests.post(ollama_url, json=retry_body, timeout=params.get("timeout", 300))
-                r2.raise_for_status()
-                d2 = r2.json()
-                c2 = (d2.get("choices", [{}])[0].get("message", {}).get("content") or "").strip()
+                # Inject think=False at ROOT level and route to /api/chat
+                retry_body["think"] = False
+                retry_data = _call_api_chat(ollama_base, retry_body, params)
+                c2 = (retry_data.get("choices", [{}])[0].get("message", {}).get("content") or "").strip()
                 if c2:
                     zlog_info("LiteLLM", f"[REASONING] Retry succeeded — got {len(c2)} chars")
                     c2 = re.sub(r'^(HECOS|Hecos|hecos)\s*:\s*', '', c2, flags=re.IGNORECASE)
@@ -171,4 +237,3 @@ def execute_ollama_direct(params: Dict[str, Any], stream: bool = False) -> Any:
 
     content = re.sub(r'^(HECOS|Hecos|hecos)\s*:\s*', '', content, flags=re.IGNORECASE)
     return content
-

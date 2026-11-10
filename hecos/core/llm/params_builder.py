@@ -771,12 +771,14 @@ def build_llm_params(
 
 
         # Inject think=false if enable_thinking is explicitly disabled
-        # enable_thinking arrives via payload_control (injected into backend_config by brain.py)
-        _pctrl = specific_config.get("payload_control") or {}
+        # payload_control is at root of config_or_subconfig (set by brain.py), NOT inside specific_config (ollama sub-dict)
+        # NOTE: for Gemma4 and most Ollama models, "think" must be a ROOT-level key in the request body, NOT inside options{}
+        _pctrl = config_or_subconfig.get("payload_control") or specific_config.get("payload_control") or {}
         _thinking_enabled = _pctrl.get("enable_thinking")  # None = not set, False = disabled
+        _think_root = None  # will be injected at root level of ollama body, not inside options
         if _thinking_enabled is False:
-            ollama_options["think"] = False
-            zlog_info("LiteLLM", "[OLLAMA GPU] Thinking DISABLED (think=false) for this session.")
+            _think_root = False
+            zlog_info("LiteLLM", "[OLLAMA GPU] Thinking DISABLED (think=false at root level) for this session.")
 
         for opt_key in ("num_gpu", "num_ctx", "num_predict", "repeat_penalty", "keep_alive"):
 
@@ -794,11 +796,13 @@ def build_llm_params(
 
 
 
-        if ollama_options:
+        if ollama_options or _think_root is not None:
 
 
 
             params["extra_body"] = {"options": ollama_options}
+            if _think_root is not None:
+                params["extra_body"]["think"] = _think_root
 
 
 
