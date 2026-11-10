@@ -53,6 +53,5 @@
                 }
             }
         }
-    ],
-    "llm_callable": true
+    ]
 }
