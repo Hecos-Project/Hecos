@@ -1,3 +1,18 @@
+// __ VRAM Adaptive Engine: global visibility helper __________________________
+// Called by populateBackendUI after loading config and by the toggle events
+// in config_backend.html. Exposed globally so both can share one definition.
+window._applyAdaptiveVisibility = function() {
+    var enabled = document.getElementById('adaptive-ctx-enable');
+    var opts    = document.getElementById('adaptive-ctx-options');
+    var autoEl  = document.getElementById('adaptive-ctx-auto');
+    var manRow  = document.getElementById('adaptive-ctx-manual-row');
+    if (!enabled || !opts) return;
+    var isEnabled = enabled.checked;
+    opts.style.display = isEnabled ? '' : 'none';
+    if (isEnabled && autoEl && manRow) {
+        manRow.style.display = autoEl.checked ? 'none' : '';
+    }
+};
 /**
  * config_mapper_llm.js
  * Populates and builds payload for: Backend, LLM providers, Routing,
@@ -130,6 +145,19 @@ async function populateBackendUI() {
     setVal('ollama-warmup-keepalive', c.backend?.ollama?.warmup_keep_alive || '120m');
     setCheck('ollama-auto-stop',  c.backend?.ollama?.auto_stop_server ?? true);
 
+    // VRAM Adaptive Engine controls
+    setCheck('adaptive-ctx-enable',  c.backend?.ollama?.adaptive_ctx         ?? false);
+    setCheck('adaptive-ctx-auto',    c.backend?.ollama?.adaptive_ctx_auto     ?? true);
+    setVal('adaptive-ctx-profile',   c.backend?.ollama?.adaptive_ctx_manual_profile || 'BALANCED');
+    // Apply conditional visibility after setting values
+    if (typeof window._applyAdaptiveVisibility === 'function') {
+        window._applyAdaptiveVisibility();
+    } else {
+        // Trigger via change event in case the inline IIFE hasn't exposed it yet
+        var _ace = document.getElementById('adaptive-ctx-enable');
+        if (_ace) _ace.dispatchEvent(new Event('change'));
+    }
+
     setVal('kobold-url',   c.backend?.kobold?.url         || 'http://localhost:5001');
     setVal('kobold-model', c.backend?.kobold?.model       || '');
     setVal('kobold-temp',  c.backend?.kobold?.temperature ?? 0.8);
@@ -242,6 +270,11 @@ function buildBackendPayload(out) {
     out.backend.ollama.warmup_model      = getC('ollama-warmup',     window.cfg.backend?.ollama?.warmup_model ?? false);
     out.backend.ollama.warmup_keep_alive = getV('ollama-warmup-keepalive', window.cfg.backend?.ollama?.warmup_keep_alive || '120m');
     out.backend.ollama.auto_stop_server  = getC('ollama-auto-stop',  window.cfg.backend?.ollama?.auto_stop_server ?? true);
+
+    // VRAM Adaptive Engine
+    out.backend.ollama.adaptive_ctx                = getC('adaptive-ctx-enable',  window.cfg.backend?.ollama?.adaptive_ctx ?? false);
+    out.backend.ollama.adaptive_ctx_auto           = getC('adaptive-ctx-auto',    window.cfg.backend?.ollama?.adaptive_ctx_auto ?? true);
+    out.backend.ollama.adaptive_ctx_manual_profile = getV('adaptive-ctx-profile', window.cfg.backend?.ollama?.adaptive_ctx_manual_profile || 'BALANCED');
     out.backend.kobold.url            = getV('kobold-url',   window.cfg.backend?.kobold?.url);
     out.backend.kobold.model          = getSelectV('kobold-model', window.cfg.backend?.kobold?.model);
     out.backend.kobold.temperature    = parseFloatNum(getV('kobold-temp',  window.cfg.backend?.kobold?.temperature),    0.7);

@@ -98,12 +98,45 @@ def get_optimal_num_ctx(ollama_cfg: dict) -> Optional[int]:
 
     When None is returned, params_builder uses the static num_ctx from config.
 
+    Manual profile override:
+      If adaptive_ctx_auto is False and adaptive_ctx_manual_profile is set
+      (e.g. "BALANCED"), the matching profile's num_ctx is returned directly
+      without probing the GPU.
+
     :param ollama_cfg: The backend.ollama section of the merged config dict.
     """
     # ── 0. Feature gate ───────────────────────────────────────────────────────
     if not ollama_cfg.get("adaptive_ctx", False):
         zlog_debug(_MODULE, "[ADAPTIVE CTX] Feature disabled (adaptive_ctx=false) — using static num_ctx")
         return None
+
+    # ── 0b. Manual profile override (auto mode OFF) ───────────────────────────
+    if not ollama_cfg.get("adaptive_ctx_auto", True):
+        manual_profile = ollama_cfg.get("adaptive_ctx_manual_profile", "").strip().upper()
+        if manual_profile:
+            # Search in custom profiles first, then defaults
+            search_list = ollama_cfg.get("adaptive_ctx_profiles", DEFAULT_PROFILES)
+            for p in search_list:
+                if p.get("label", "").upper() == manual_profile:
+                    ctx = p.get("num_ctx", 40960)
+                    zlog_info(
+                        _MODULE,
+                        f"[ADAPTIVE CTX] Manual profile selected: {manual_profile} → num_ctx: {ctx:,}"
+                    )
+                    return ctx
+            # Fallback: search defaults if custom profiles didn't match
+            for p in DEFAULT_PROFILES:
+                if p.get("label", "").upper() == manual_profile:
+                    ctx = p.get("num_ctx", 40960)
+                    zlog_info(
+                        _MODULE,
+                        f"[ADAPTIVE CTX] Manual profile (from defaults): {manual_profile} → num_ctx: {ctx:,}"
+                    )
+                    return ctx
+            zlog_warning(
+                _MODULE,
+                f"[ADAPTIVE CTX] Manual profile '{manual_profile}' not found — falling back to auto mode"
+            )
 
     zlog_debug(_MODULE, "[ADAPTIVE CTX] Probing GPU memory before LLM call...")
 
@@ -184,3 +217,91 @@ def get_optimal_num_ctx(ollama_cfg: dict) -> Optional[int]:
         "Check that your profiles include a min_free_pct=0 entry."
     )
     return fallback
+
+
+def get_vram_status(ollama_cfg: dict) -> dict:
+    """
+    Returns a JSON-serialisable dict with current VRAM state and the profile
+    that would be selected.  Used by the /hecos/api/vram/status Flask endpoint.
+
+    Fields:
+        ok            (bool)   – True if GPU data was obtained
+        disabled      (bool)   – True when adaptive_ctx=false
+        gpu_name      (str)
+        total_mb      (int)
+        used_mb       (int)
+        free_mb       (int)
+        free_pct      (float)  – 0–100
+        current_profile (str)  – e.g. "ECONOMY"
+        current_ctx   (int)    – num_ctx that would be used
+        mode          (str)    – "auto" | "manual" | "disabled"
+    """
+    # Feature disabled
+    if not ollama_cfg.get("adaptive_ctx", False):
+        return {"ok": True, "disabled": True, "mode": "disabled",
+                "gpu_name": "", "total_mb": 0, "used_mb": 0,
+                "free_mb": 0, "free_pct": 0.0,
+                "current_profile": "—", "current_ctx": ollama_cfg.get("num_ctx", 4096)}
+
+    # Manual profile mode
+    if not ollama_cfg.get("adaptive_ctx_auto", True):
+        label = ollama_cfg.get("adaptive_ctx_manual_profile", "BALANCED").upper()
+        ctx = 40960
+        for p in DEFAULT_PROFILES:
+            if p.get("label", "").upper() == label:
+                ctx = p.get("num_ctx", ctx)
+                break
+        # Still try to get GPU info for display
+        gpu = probe_gpu()
+        base = {
+            "ok": True, "disabled": False, "mode": "manual",
+            "current_profile": label, "current_ctx": ctx,
+        }
+        if gpu:
+            base.update({
+                "gpu_name": gpu.name,
+                "total_mb": gpu.total_mb,
+                "used_mb":  gpu.used_mb,
+                "free_mb":  gpu.free_mb,
+                "free_pct": round(gpu.free_pct, 1),
+            })
+        else:
+            base.update({"gpu_name": "Unknown", "total_mb": 0,
+                         "used_mb": 0, "free_mb": 0, "free_pct": 0.0})
+        return base
+
+    # Auto mode — probe GPU and find best profile
+    gpu = probe_gpu()
+    if gpu is None:
+        return {"ok": False, "disabled": False, "mode": "auto",
+                "gpu_name": "", "total_mb": 0, "used_mb": 0,
+                "free_mb": 0, "free_pct": 0.0,
+                "current_profile": "?", "current_ctx": ollama_cfg.get("num_ctx", 4096)}
+
+    raw_profiles = ollama_cfg.get("adaptive_ctx_profiles", DEFAULT_PROFILES)
+    try:
+        profiles_sorted = sorted(raw_profiles, key=lambda p: _resolve_threshold(p, gpu), reverse=True)
+    except Exception:
+        profiles_sorted = sorted(DEFAULT_PROFILES, key=lambda p: _resolve_threshold(p, gpu), reverse=True)
+
+    matched_label = "MINIMAL"
+    matched_ctx   = 16384
+    for profile in profiles_sorted:
+        if gpu.free_mb >= _resolve_threshold(profile, gpu):
+            matched_label = profile.get("label", "UNKNOWN")
+            matched_ctx   = profile.get("num_ctx", 16384)
+            break
+
+    return {
+        "ok":              True,
+        "disabled":        False,
+        "mode":            "auto",
+        "gpu_name":        gpu.name,
+        "total_mb":        gpu.total_mb,
+        "used_mb":         gpu.used_mb,
+        "free_mb":         gpu.free_mb,
+        "free_pct":        round(gpu.free_pct, 1),
+        "current_profile": matched_label,
+        "current_ctx":     matched_ctx,
+    }
+

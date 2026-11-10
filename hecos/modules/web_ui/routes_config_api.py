@@ -211,6 +211,18 @@ def register_config_api_routes(app, cfg_mgr, get_sm=None):
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/hecos/api/vram/status", methods=["GET"])
+    def vram_status():
+        """Returns current VRAM state and the adaptive context profile that would be selected."""
+        try:
+            from hecos.core.llm.adaptive import get_vram_status
+            ollama_cfg = cfg_mgr.config.get("backend", {}).get("ollama", {})
+            data = get_vram_status(ollama_cfg)
+            return jsonify(data)
+        except Exception as exc:
+            logger.debug(f"[WebUI] vram_status error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
     @app.route("/hecos/backend/ollama/status", methods=["GET"])
     def ollama_server_status():
         """Returns whether Ollama is currently running and responsive, plus binary detection info."""

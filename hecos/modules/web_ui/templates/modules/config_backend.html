@@ -248,6 +248,68 @@
         </label>
       </div>
     </div>
+
+    <!-- __ VRAM Adaptive Engine ________________________________________________ -->
+    <div style="border-top: 1px solid var(--border); margin-top: 20px; padding-top: 20px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+        <span style="display:flex; align-items:center; gap:8px;">
+          <i class="fas fa-microchip" style="color:var(--accent);"></i> VRAM Adaptive Engine
+          <span id="vram-live-badge" style="font-size:10px; font-weight:600; padding:2px 10px; border-radius:12px; background:rgba(255,255,255,0.06); color:var(--text-muted); display:inline-flex; align-items:center; gap:5px; cursor:pointer;" onclick="refreshVramBadge()" title="Click to refresh VRAM info">
+            <i class="fas fa-circle" style="font-size:7px;"></i> Checking...
+          </span>
+        </span>
+      </div>
+
+      <!-- Master enable toggle -->
+      <div class="field" style="margin-bottom: 14px;">
+        <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+          <div class="toggle-wrapper">
+            <input type="checkbox" id="adaptive-ctx-enable" class="toggle-input">
+            <span class="toggle-slider"></span>
+          </div>
+          <div>
+            <span style="font-weight:600;">Enable VRAM Adaptive Engine</span>
+            <div style="font-size:var(--font-size-sm); color:var(--muted); margin-top:2px;">
+              Dynamically adjusts the context window (num_ctx) based on available GPU VRAM before each LLM call.
+              When disabled, the static <em>num_ctx</em> value above is used.
+            </div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Auto mode + manual profile (shown only when engine is enabled) -->
+      <div id="adaptive-ctx-options" style="display:none; padding-left: 4px;">
+        <div class="field" style="margin-bottom: 12px;">
+          <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+            <div class="toggle-wrapper">
+              <input type="checkbox" id="adaptive-ctx-auto" class="toggle-input">
+              <span class="toggle-slider"></span>
+            </div>
+            <div>
+              <span style="font-weight:600;">Auto Mode</span>
+              <div style="font-size:var(--font-size-sm); color:var(--muted); margin-top:2px;">
+                ON: automatically selects the best profile based on real-time VRAM. &nbsp;
+                OFF: use the fixed profile selected below.
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <!-- Manual profile selector — hidden when auto is ON -->
+        <div id="adaptive-ctx-manual-row" style="margin-bottom: 12px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border);">
+          <label style="font-size:12px; font-weight:600; margin-bottom: 6px; display:block;">
+            Fixed Profile
+            <span class="tooltip-icon" title="Select a fixed context profile. The engine will always use this profile regardless of current VRAM state.">ⓘ</span>
+          </label>
+          <select id="adaptive-ctx-profile" style="width:100%; max-width:320px;">
+            <option value="HIGH_POWER">🚀 HIGH_POWER — num_ctx 65536 (~49K words, LLM alone)</option>
+            <option value="BALANCED">⚖️ BALANCED   — num_ctx 40960 (~30K words, LLM + TTS)</option>
+            <option value="ECONOMY">💡 ECONOMY    — num_ctx 24576 (~18K words, LLM + TTS + Image Gen)</option>
+            <option value="MINIMAL">🔋 MINIMAL    — num_ctx 16384 (~12K words, all services active)</option>
+          </select>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="card" id="card-kobold" style="display:none">
@@ -633,4 +695,89 @@
       setTimeout(function() { if (status) status.textContent = ''; }, 8000);
     });
   }
+
+  // ── VRAM Adaptive Engine UI logic ─────────────────────────────────────────
+  (function() {
+    function _applyAdaptiveVisibility() {
+      var enabled = document.getElementById('adaptive-ctx-enable');
+      var opts    = document.getElementById('adaptive-ctx-options');
+      var autoEl  = document.getElementById('adaptive-ctx-auto');
+      var manRow  = document.getElementById('adaptive-ctx-manual-row');
+      if (!enabled || !opts) return;
+
+      var isEnabled = enabled.checked;
+      opts.style.display = isEnabled ? '' : 'none';
+
+      if (isEnabled && autoEl && manRow) {
+        manRow.style.display = autoEl.checked ? 'none' : '';
+      }
+    }
+
+    function _bindAdaptiveToggle(id, cb) {
+      var el = document.getElementById(id);
+      if (el && !el._adaptiveBound) {
+        el._adaptiveBound = true;
+        el.addEventListener('change', cb);
+      }
+    }
+
+    function _initAdaptiveEngine() {
+      _bindAdaptiveToggle('adaptive-ctx-enable', _applyAdaptiveVisibility);
+      _bindAdaptiveToggle('adaptive-ctx-auto',   _applyAdaptiveVisibility);
+      _applyAdaptiveVisibility();
+      refreshVramBadge();
+    }
+
+    // Run immediately if DOM ready, otherwise wait
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _initAdaptiveEngine);
+    } else {
+      _initAdaptiveEngine();
+    }
+
+    // Also re-init when the Ollama card becomes visible (lazy panel load)
+    var _ollamaCardAE = document.getElementById('card-ollama');
+    if (_ollamaCardAE && window.MutationObserver) {
+      new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+          if (m.attributeName === 'style' && _ollamaCardAE.style.display !== 'none') {
+            _initAdaptiveEngine();
+          }
+        });
+      }).observe(_ollamaCardAE, { attributes: true });
+    }
+  })();
+
+  // ── VRAM live badge refresh ───────────────────────────────────────────────
+  function refreshVramBadge() {
+    var badge = document.getElementById('vram-live-badge');
+    if (!badge) return;
+    badge.innerHTML = '<i class="fas fa-circle" style="font-size:7px; animation:spin 1s linear infinite;"></i> Fetching...';
+    fetch('/hecos/api/vram/status')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!badge) return;
+        if (d.ok && d.gpu_name) {
+          var color = d.free_pct >= 50 ? 'var(--green,#22c55e)'
+                    : d.free_pct >= 25 ? '#f59e0b'
+                    : 'var(--red,#ef4444)';
+          badge.innerHTML = '<i class="fas fa-circle" style="color:' + color + '; font-size:7px;"></i> '
+            + d.free_mb.toLocaleString() + ' MB free (' + d.free_pct.toFixed(0) + '%) — '
+            + d.current_profile + ' → ctx ' + d.current_ctx.toLocaleString();
+          badge.style.color = color;
+        } else if (d.ok && d.disabled) {
+          badge.innerHTML = '<i class="fas fa-circle" style="font-size:7px; color:var(--text-muted);"></i> Disabled';
+          badge.style.color = '';
+        } else {
+          badge.innerHTML = '<i class="fas fa-exclamation-circle" style="color:#f59e0b; font-size:9px;"></i> No GPU data';
+          badge.style.color = '';
+        }
+      })
+      .catch(function() {
+        if (badge) badge.innerHTML = '<i class="fas fa-times-circle" style="color:var(--red,#ef4444); font-size:9px;"></i> Probe error';
+      });
+  }
+  window.refreshVramBadge = refreshVramBadge;
+  // Auto-refresh badge every 15s while config panel is open
+  setInterval(refreshVramBadge, 15000);
 </script>
