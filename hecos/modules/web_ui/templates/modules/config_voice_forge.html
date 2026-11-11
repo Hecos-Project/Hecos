@@ -4,7 +4,7 @@
      ========================================================================== -->
 
 <div id="tab-voice-forge" class="panel" style="padding: 10px;">
-  <link rel="stylesheet" href="/hpm_plugin/voice_forge/web/static/css/voice_forge.css?v=1.0.3">
+  <link rel="stylesheet" href="/hpm_plugin/voice_forge/web/static/css/voice_forge.css?v=1.0.4">
   <div class="vf-container">
 
     <!-- Topbar Hero -->
@@ -19,12 +19,26 @@
         </div>
       </div>
       <div class="vf-hero-actions">
-        <button type="button" class="vf-btn vf-btn-accent" onclick="window.vfOpenPresets ? window.vfOpenPresets() : (window.VFPresets && window.VFPresets.openModal ? window.VFPresets.openModal() : null)">
+        <button type="button" class="vf-btn vf-btn-accent" onclick="window.vfOpenPresets ? window.vfOpenPresets() : (window.VFPresets && window.VFPresets.openModal ? window.VFPresets.openModal() : null)" title="Browse Base, Cinematic & Custom Presets">
           <i class="fas fa-layer-group"></i>
-          Presets: <span id="vf-current-preset-name" style="font-weight:700; margin-left:4px;">Man 1 (Deep &amp; Resonant)</span>
+          <span>Presets: <strong id="vf-current-preset-name">Custom Timbre (Neutral)</strong></span>
+          <span id="vf-preset-badge" class="vf-badge-tag">Neutral</span>
+          <span id="vf-preset-dirty-dot" style="display:none; color:#fbbf24; font-size:10px; line-height:1;" title="Unsaved changes">●</span>
         </button>
-        <button type="button" class="vf-btn" onclick="window.VFMixer && window.VFMixer.syncSlidersToRecipe ? window.VFMixer.syncSlidersToRecipe() : null" title="Reset Sliders to Current Preset">
+        <button type="button" id="vf-btn-new-preset" class="vf-btn vf-btn-cyan" onclick="window.VFMixer && window.VFMixer.newPreset()" title="Save Current Sculpting as New Custom Profile">
+          <i class="fas fa-plus"></i> New
+        </button>
+        <button type="button" id="vf-btn-update-preset" class="vf-btn" onclick="window.VFMixer && window.VFMixer.updatePreset()" title="Update Active Custom Profile (Prompts Save As on Built-in Presets)">
+          <i class="fas fa-sync-alt"></i> Update
+        </button>
+        <button type="button" id="vf-btn-rename-preset" class="vf-btn" onclick="window.VFMixer && window.VFMixer.renamePreset()" title="Rename Active Custom Profile">
+          <i class="fas fa-edit"></i> Rename
+        </button>
+        <button type="button" id="vf-btn-reset-preset" class="vf-btn" onclick="window.VFMixer && window.VFMixer.resetPreset()" title="Restore Loaded Preset or Reset Mixer to Neutral Defaults">
           <i class="fas fa-undo"></i> Reset
+        </button>
+        <button type="button" id="vf-btn-delete-preset" class="vf-btn vf-btn-danger" style="width:32px; padding:0;" onclick="window.VFMixer && window.VFMixer.deletePreset()" title="Delete Active Custom Profile">
+          <i class="fas fa-trash"></i>
         </button>
       </div>
     </div>
@@ -69,8 +83,8 @@
         <div id="vf-box-seed" class="vf-field" style="min-width: 120px;">
           <label class="vf-label"><i class="fas fa-dice"></i> Random Seed</label>
           <div style="display:flex; gap:6px;">
-            <input type="number" id="vf-inp-seed" class="vf-input" style="width:75px;" value="42" onchange="window.VFMixer.recipe.source_seed = parseInt(this.value, 10)">
-            <button type="button" class="vf-btn" style="width:32px; padding:0;" onclick="document.getElementById('vf-inp-seed').value = Math.floor(Math.random()*100000); window.VFMixer.recipe.source_seed = parseInt(document.getElementById('vf-inp-seed').value, 10);" title="Randomize Seed">
+            <input type="number" id="vf-inp-seed" class="vf-input" style="width:75px;" value="42" onchange="if(window.VFMixer){ window.VFMixer.recipe.source_seed = parseInt(this.value, 10) || 42; window.VFMixer.updatePresetHeaderUi(); }">
+            <button type="button" class="vf-btn" style="width:32px; padding:0;" onclick="var r=Math.floor(Math.random()*100000); document.getElementById('vf-inp-seed').value=r; if(window.VFMixer){ window.VFMixer.recipe.source_seed=r; window.VFMixer.updatePresetHeaderUi(); }" title="Randomize Seed">
               <i class="fas fa-random"></i>
             </button>
           </div>
@@ -333,12 +347,17 @@
         <i class="fas fa-layer-group" style="color:var(--vf-accent); font-size:1.2rem;"></i>
         <span style="font-weight:700; font-size:1rem; color:#fff;">Preset Timbre Library</span>
       </div>
-      <button type="button" class="vf-btn" style="width:32px; padding:0;" onclick="window.vfClosePresets()">
-        <i class="fas fa-times"></i>
-      </button>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button type="button" class="vf-btn vf-btn-cyan" onclick="window.VFMixer && window.VFMixer.newPreset()" title="Save Current Mixer as a New Custom Profile">
+          <i class="fas fa-plus"></i> Save Current as New
+        </button>
+        <button type="button" class="vf-btn" style="width:32px; padding:0;" onclick="window.vfClosePresets()" title="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
     </div>
 
-    <div class="vf-preset-tabs">
+    <div class="vf-preset-tabs" style="align-items:center; flex-wrap:wrap;">
       <button type="button" class="vf-preset-tab active" data-cat="base" onclick="if(window.VFPresets) window.VFPresets.setCategory('base')">
         Base Presets (24)
       </button>
@@ -348,6 +367,7 @@
       <button type="button" class="vf-preset-tab" data-cat="custom" onclick="if(window.VFPresets) window.VFPresets.setCategory('custom')">
         My Custom Profiles
       </button>
+      <input type="text" id="vf-preset-search" class="vf-input" style="margin-left:auto; width:200px; height:32px; font-size:12px; padding:4px 10px;" placeholder="Filter presets..." oninput="if(window.VFPresets) window.VFPresets.setSearchQuery(this.value)">
     </div>
 
     <div id="vf-preset-list" class="vf-preset-list">
@@ -544,13 +564,13 @@ window.vfClosePresets = function() {
 </script>
 
 <!-- Voice Forge Script Assets (Sequential Loading for Lazy Fragments) -->
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_api.js?v=1.0.2"></script>
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_presets.js?v=1.0.2"></script>
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_radar.js?v=1.0.2"></script>
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_spectro.js?v=1.0.2"></script>
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_formants.js?v=1.0.2"></script>
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_mixer.js?v=1.0.2"></script>
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_core.js?v=1.0.2"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_api.js?v=1.0.3"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_presets.js?v=1.0.3"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_radar.js?v=1.0.3"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_spectro.js?v=1.0.3"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_formants.js?v=1.0.3"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_mixer.js?v=1.0.3"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_core.js?v=1.0.3"></script>
 
 <!-- Auto-Init Trigger -->
 <script>

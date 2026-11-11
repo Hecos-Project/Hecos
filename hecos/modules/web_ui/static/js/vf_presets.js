@@ -1576,8 +1576,26 @@ window.VF_STATIC_RECIPES = {
 
 window.VFPresets = {
   currentCategory: "base",
+  searchQuery: "",
   allPresets: window.VF_STATIC_PRESETS,
   loading: false,
+
+  _escHtml: function(str) {
+    return String(str == null ? "" : str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  },
+
+  _escJs: function(str) {
+    return String(str == null ? "" : str)
+      .replace(/\\/g, "\\\\")
+      .replace(/'/g, "\\'")
+      .replace(/"/g, "&quot;")
+      .replace(/\r|\n/g, " ");
+  },
 
   init: function() {
     this.updateCounts();
@@ -1632,6 +1650,10 @@ window.VFPresets = {
     if (modal.parentElement !== document.body) {
       document.body.appendChild(modal);
     }
+    this.searchQuery = "";
+    const searchEl = document.getElementById("vf-preset-search");
+    if (searchEl) searchEl.value = "";
+
     modal.classList.add("active");
     modal.style.display = "flex";
     modal.style.opacity = "1";
@@ -1661,17 +1683,41 @@ window.VFPresets = {
     this.renderList();
   },
 
+  setSearchQuery: function(query) {
+    this.searchQuery = String(query || "").trim().toLowerCase();
+    this.renderList();
+  },
+
   renderList: function() {
     const listEl = document.getElementById("vf-preset-list");
     if (!listEl) return;
 
-    const items = (this.allPresets && this.allPresets[this.currentCategory]) ? this.allPresets[this.currentCategory] : [];
+    const allInCat = (this.allPresets && this.allPresets[this.currentCategory]) ? this.allPresets[this.currentCategory] : [];
+    const q = this.searchQuery;
+    const items = q
+      ? allInCat.filter(p => {
+          const hay = [
+            p.name || "",
+            p.id || "",
+            p.description || "",
+            p.language || "",
+            ...(p.tags || [])
+          ].join(" ").toLowerCase();
+          return hay.includes(q);
+        })
+      : allInCat;
+
     if (!items.length) {
-      if (this.currentCategory === "custom") {
+      if (q) {
+        listEl.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:35px; color:#64748b;">' +
+          '<i class="fas fa-search" style="font-size:1.6rem; margin-bottom:10px; display:block; opacity:0.5;"></i>' +
+          'No presets matching "<strong>' + this._escHtml(q) + '</strong>".' +
+        '</div>';
+      } else if (this.currentCategory === "custom") {
         listEl.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:35px; color:#64748b;">' +
           '<i class="fas fa-folder-open" style="font-size:2rem; margin-bottom:10px; display:block; opacity:0.5;"></i>' +
-          'No custom timbres saved yet.<br>' +
-          '<span style="font-size:0.8rem; color:#94a3b8;">Adjust the mixer controls and click <strong>Bake to Fish Speech</strong> to register a new timbre.</span>' +
+          'No custom profiles saved yet.<br>' +
+          '<span style="font-size:0.8rem; color:#94a3b8;">Adjust the mixer controls and click <strong>+ New</strong> or <strong>Save Current as New</strong> to create one.</span>' +
         '</div>';
       } else {
         listEl.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:30px; color:#64748b;">No presets found in this category.</div>';
@@ -1679,17 +1725,44 @@ window.VFPresets = {
       return;
     }
 
+    const activeMeta = window.VFMixer && window.VFMixer.activePresetMeta ? window.VFMixer.activePresetMeta : null;
+    const isCustomCat = this.currentCategory === "custom";
+
     listEl.innerHTML = items.map(p => {
-      const pName = p.name || p.id;
-      const pDesc = p.description || "Voice timbre profile";
-      const pLang = (p.language || "en").toUpperCase();
-      const tags = (p.tags || []).slice(0, 3).map(t => '<span style="font-size:0.65rem; background:rgba(139,92,246,0.2); border:1px solid rgba(139,92,246,0.3); padding:1px 6px; border-radius:4px; color:#c4b5fd;">' + t + '</span>').join("");
-      return '<div class="vf-preset-item" style="cursor:pointer; padding:12px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); transition:all 0.2s;" ' +
-             'onclick="window.VFPresets.selectPreset(\'' + p.id + '\')" ' +
-             'onmouseenter="this.style.borderColor=\'var(--vf-accent, #00e5ff)\'; this.style.background=\'rgba(0,229,255,0.06)\';" ' +
-             'onmouseleave="this.style.borderColor=\'rgba(255,255,255,0.08)\'; this.style.background=\'rgba(255,255,255,0.03)\';">' +
-        '<div class="vf-preset-name" style="font-weight:700; color:#fff; font-size:0.92rem;">' + pName + '</div>' +
-        '<div class="vf-preset-desc" style="font-size:0.78rem; color:#94a3b8; margin-top:4px; line-height:1.3;">' + pDesc + '</div>' +
+      const pNameRaw = p.name || p.id;
+      const pName = this._escHtml(pNameRaw);
+      const pDesc = this._escHtml(p.description || "Voice timbre profile");
+      const pLang = this._escHtml((p.language || "en").toUpperCase());
+      const jsId = this._escJs(p.id);
+      const jsName = this._escJs(pNameRaw);
+      const jsCat = this._escJs(this.currentCategory);
+
+      const isActive = Boolean(
+        activeMeta &&
+        activeMeta.id &&
+        activeMeta.id === p.id &&
+        activeMeta.sourceCategory === this.currentCategory
+      );
+
+      const tags = (p.tags || []).slice(0, 3).map(t =>
+        '<span style="font-size:0.65rem; background:rgba(139,92,246,0.2); border:1px solid rgba(139,92,246,0.3); padding:1px 6px; border-radius:4px; color:#c4b5fd;">' +
+        this._escHtml(t) +
+        '</span>'
+      ).join("");
+
+      const cardActions = isCustomCat
+        ? '<div style="display:flex; gap:4px; flex-shrink:0;" onclick="event.stopPropagation()">' +
+            '<button type="button" class="vf-preset-card-btn" title="Rename profile" onclick="event.stopPropagation(); window.VFMixer && window.VFMixer.renamePreset(\'' + jsId + '\', \'' + jsName + '\')"><i class="fas fa-pen"></i></button>' +
+            '<button type="button" class="vf-preset-card-btn danger" title="Delete profile" onclick="event.stopPropagation(); window.VFMixer && window.VFMixer.deletePreset(\'' + jsId + '\', \'' + jsName + '\')"><i class="fas fa-trash-alt"></i></button>' +
+          '</div>'
+        : '';
+
+      return '<div class="vf-preset-item' + (isActive ? ' active' : '') + '" onclick="window.VFPresets.selectPreset(\'' + jsId + '\', \'' + jsCat + '\')">' +
+        '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">' +
+          '<div class="vf-preset-name" style="font-weight:700; color:#fff; font-size:0.92rem;">' + pName + '</div>' +
+          cardActions +
+        '</div>' +
+        '<div class="vf-preset-desc" style="font-size:0.78rem; color:#94a3b8; margin-top:2px; line-height:1.3;">' + pDesc + '</div>' +
         '<div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; align-items:center;">' +
           '<span style="font-size:0.65rem; background:rgba(255,255,255,0.08); padding:2px 7px; border-radius:4px; color:#cbd5e1; font-weight:600;">' + pLang + '</span>' +
           tags +
@@ -1698,16 +1771,19 @@ window.VFPresets = {
     }).join("");
   },
 
-  selectPreset: async function(presetId) {
+  selectPreset: async function(presetId, category) {
     this.closeModal();
-    const items = [...(this.allPresets.base || []), ...(this.allPresets.cinematic || []), ...(this.allPresets.custom || [])];
-    const match = items.find(x => x.id === presetId);
+    const cat = category || this.currentCategory;
+    const pool = (this.allPresets && this.allPresets[cat])
+      ? this.allPresets[cat]
+      : [...(this.allPresets.base || []), ...(this.allPresets.cinematic || []), ...(this.allPresets.custom || [])];
+    const match = pool.find(x => x.id === presetId);
     if (match) {
       const titleEl = document.getElementById("vf-current-preset-name");
-      if (titleEl) titleEl.textContent = match.name;
+      if (titleEl) titleEl.textContent = match.name || match.id;
     }
     if (window.VFMixer && window.VFMixer.loadPreset) {
-      await window.VFMixer.loadPreset(presetId);
+      await window.VFMixer.loadPreset(presetId, cat);
     }
   }
 };

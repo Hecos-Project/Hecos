@@ -44,18 +44,30 @@ window.VFApi = {
     return await this._fetchJson(`${this.baseUrl}/presets`);
   },
 
-  async getRecipe(id) {
-    return await this._fetchJson(`${this.baseUrl}/recipe/${encodeURIComponent(id)}`);
+  async getRecipe(id, source = null) {
+    const qs = source ? `?source=${encodeURIComponent(source)}` : "";
+    return await this._fetchJson(`${this.baseUrl}/recipe/${encodeURIComponent(id)}${qs}`);
   },
 
-  async saveRecipe(recipe) {
+  async saveRecipe(recipe, saveAsNew = false) {
+    const payload = Object.assign({}, recipe, { save_as_new: Boolean(saveAsNew) });
+    console.debug("[VoiceForge:API] POST /recipe", { id: payload.id, name: payload.name, saveAsNew });
     return await this._fetchJson(`${this.baseUrl}/recipe`, {
       method: "POST",
-      body: JSON.stringify(recipe)
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async renameRecipe(id, name) {
+    console.debug("[VoiceForge:API] POST /recipe/rename", { id, name });
+    return await this._fetchJson(`${this.baseUrl}/recipe/${encodeURIComponent(id)}/rename`, {
+      method: "POST",
+      body: JSON.stringify({ name })
     });
   },
 
   async deleteRecipe(id) {
+    console.debug("[VoiceForge:API] DELETE /recipe", { id });
     return await this._fetchJson(`${this.baseUrl}/recipe/${encodeURIComponent(id)}`, {
       method: "DELETE"
     });
