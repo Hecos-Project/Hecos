@@ -36,8 +36,8 @@
         <div class="vf-field" style="min-width: 150px;">
           <label class="vf-label"><i class="fas fa-globe"></i> Language</label>
           <select id="vf-sel-lang" class="vf-select" onchange="window.vfOnLanguageChange ? window.vfOnLanguageChange(this.value) : (window.VFMixer && window.VFMixer.onLanguageSelect ? window.VFMixer.onLanguageSelect(this.value) : null)">
-            <option value="it" selected>🇮🇹 Italiano</option>
-            <option value="en">🇬🇧 English</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="en" selected>🇬🇧 English</option>
             <option value="de">🇩🇪 Deutsch</option>
             <option value="fr">🇫🇷 Français</option>
             <option value="es">🇪🇸 Español</option>
@@ -50,9 +50,7 @@
         <div class="vf-field" style="flex: 1; min-width: 260px;">
           <label class="vf-label"><i class="fas fa-quote-left"></i> Calibration Corpus Sample</label>
           <select id="vf-sel-corpus" class="vf-select" onchange="window.VFMixer.onCorpusSelect(this.value)">
-            <option value="Ma%20la%20volpe%20col%20suo%20balzo%20ha%20raggiunto%20il%20quieto%20fante%20all'ombra%20del%20tiglio%20fiorito.">Narrativo (Pangramma fonetico equilibrato)</option>
-            <option value="Buongiorno!%20Ho%20preparato%20tutto%20per%20la%20giornata%20di%20oggi.%20Possiamo%20iniziare%20subito%20con%20il%20nostro%20lavoro.">Conversazionale naturale</option>
-            <option value="Ascoltami%20bene%3A%20questo%20%C3%A8%20un%20momento%20straordinario%2C%20e%20ogni%20dettaglio%20pu%C3%B2%20fare%20davvero%20la%20differenza!">Dinamico ed espressivo</option>
+            <option value="The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog%20near%20the%20vibrant%20riverbank.">Narrative (Classic phonetic pangram)</option>
           </select>
         </div>
 
@@ -91,7 +89,7 @@
       <!-- Editable Reference Text Preview -->
       <div style="margin-top: 10px;">
         <label class="vf-label" style="font-size:0.68rem; color:#64748b;">REFERENCE PHONETIC TEXT (MUST MATCH REFERENCE AUDIO)</label>
-        <input type="text" id="vf-txt-reference" class="vf-input" style="width:100%; font-size:0.8rem; background:rgba(0,0,0,0.35);" value="Ma la volpe col suo balzo ha raggiunto il quieto fante all'ombra del tiglio fiorito." placeholder="Phonetically balanced reference text...">
+        <input type="text" id="vf-txt-reference" class="vf-input" style="width:100%; font-size:0.8rem; background:rgba(0,0,0,0.35);" value="The quick brown fox jumps over the lazy dog near the vibrant riverbank." placeholder="Phonetically balanced reference text...">
       </div>
     </div>
 
@@ -303,6 +301,9 @@
       </div>
 
     </div>
+
+    <!-- Unified Hecos Progress Bar -->
+    <div id="vf-progress-container" style="display:none; margin-bottom:12px;"></div>
 
     <!-- Master Transport Bar -->
     <div class="vf-transport-bar">
@@ -542,13 +543,13 @@ window.vfClosePresets = function() {
 </script>
 
 <!-- Voice Forge Script Assets (Sequential Loading for Lazy Fragments) -->
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_api.js?v=1.0.1"></script>
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_presets.js?v=1.0.1"></script>
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_radar.js?v=1.0.1"></script>
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_spectro.js?v=1.0.1"></script>
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_formants.js?v=1.0.1"></script>
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_mixer.js?v=1.0.1"></script>
-<script src="/hpm_plugin/voice_forge/web/static/js/vf_core.js?v=1.0.1"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_api.js?v=1.0.2"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_presets.js?v=1.0.2"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_radar.js?v=1.0.2"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_spectro.js?v=1.0.2"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_viz_formants.js?v=1.0.2"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_mixer.js?v=1.0.2"></script>
+<script src="/hpm_plugin/voice_forge/web/static/js/vf_core.js?v=1.0.2"></script>
 
 <!-- Auto-Init Trigger -->
 <script>

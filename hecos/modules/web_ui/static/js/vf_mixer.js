@@ -16,8 +16,8 @@ window.VFMixer = {
     name: "Custom Timbre",
     description: "Custom sculpted timbre",
     category: "custom",
-    language: "it",
-    reference_text: "Ma la volpe col suo balzo ha raggiunto il quieto fante all'ombra del tiglio fiorito.",
+    language: "en",
+    reference_text: "The quick brown fox jumps over the lazy dog near the vibrant riverbank.",
     source_type: "synthetic_fish",
     source_file: null,
     source_seed: 42,
@@ -44,7 +44,7 @@ window.VFMixer = {
     this.formants = new window.VFFormantVisualizer("vf-formants-container");
 
     this.bindInputs();
-    await this.loadLanguage(this.recipe.language || "it");
+    await this.loadLanguage(this.recipe.language || "en");
     this.updateReadouts();
     this.updatePredictedRadar();
     if (this.formants) this.formants.render([500, 1500, 2500, 3500], 1.0);
@@ -236,7 +236,7 @@ window.VFMixer = {
           if (titleEl) titleEl.textContent = this.recipe.name;
         }
       }
-      if (window.showToast) window.showToast(`Preset applicato: ${this.recipe.name}`, "info");
+      if (window.showToast) window.showToast(`Preset applied: ${this.recipe.name}`, "info");
     } catch (e) {
       console.error("[VoiceForge] Error loading preset:", e);
     }
@@ -261,8 +261,8 @@ window.VFMixer = {
     setSlider("vf-sl-blend", this.recipe.blend_ratio);
 
     const langSel = document.getElementById("vf-sel-lang");
-    if (langSel) langSel.value = this.recipe.language || "it";
-    this.loadLanguage(this.recipe.language || "it");
+    if (langSel) langSel.value = this.recipe.language || "en";
+    this.loadLanguage(this.recipe.language || "en");
 
     const refTxt = document.getElementById("vf-txt-reference");
     if (refTxt && this.recipe.reference_text) refTxt.value = this.recipe.reference_text;
@@ -278,7 +278,8 @@ window.VFMixer = {
   async uploadCustomSource(file) {
     try {
       const btn = document.getElementById("vf-btn-upload-label");
-      if (btn) btn.textContent = "Caricamento...";
+      if (btn) btn.textContent = "Uploading...";
+      console.debug("[VoiceForge] Uploading custom source audio:", file?.name, file?.size);
       const res = await window.VFApi.uploadSourceAudio(file);
       if (res && res.ok) {
         this.recipe.source_file = res.file_path;
@@ -286,14 +287,102 @@ window.VFMixer = {
         const srcSel = document.getElementById("vf-sel-source-type");
         if (srcSel) srcSel.value = "file";
         this.updateSourceUi();
-        if (window.showToast) window.showToast(`Audio caricato con successo (${res.duration_seconds}s)`, "success");
+        if (window.showToast) window.showToast(`Audio uploaded successfully (${res.duration_seconds}s)`, "success");
+      } else {
+        throw new Error((res && res.error) || "Upload failed");
       }
     } catch (e) {
       console.error("[VoiceForge] Upload failed:", e);
-      if (window.showToast) window.showToast("Errore caricamento: " + e.message, "error");
+      if (window.showToast) window.showToast("Upload error: " + e.message, "error");
     } finally {
       const btn = document.getElementById("vf-btn-upload-label");
       if (btn) btn.textContent = "Upload Audio";
+    }
+  },
+
+  async _runWithProgress(title, prefix, fn) {
+    const taskId = `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const progContainer = document.getElementById("vf-progress-container");
+    let widget = null;
+    let pollTimer = null;
+    let pollBusy = false;
+
+    if (progContainer && window.HecosProgress) {
+      progContainer.style.display = "block";
+      progContainer.innerHTML = "";
+      widget = window.HecosProgress.attach(progContainer, {
+        variant: "card",
+        taskId: taskId,
+        title: title,
+        showCancel: false,
+        showLog: true
+      });
+      widget.update({
+        id: taskId,
+        title: title,
+        state: "running",
+        percent: 2,
+        message: "Connecting to Voice Forge pipeline..."
+      });
+
+      const pollOnce = async () => {
+        if (pollBusy) return;
+        pollBusy = true;
+        try {
+          const pr = await fetch(`/api/progress/${encodeURIComponent(taskId)}`, {
+            credentials: "same-origin"
+          });
+          if (pr.ok) {
+            const pd = await pr.json();
+            if (pd && pd.ok && pd.task && widget) {
+              widget.update(pd.task);
+            }
+          }
+        } catch (_err) {
+          // Ignore transient poll errors while SSE is active
+        } finally {
+          pollBusy = false;
+        }
+      };
+      pollTimer = setInterval(pollOnce, 600);
+    }
+
+    try {
+      const res = await fn(taskId);
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      if (widget) {
+        if (res && res.ok) {
+          widget.update({
+            state: "done",
+            percent: 100,
+            message: `${title} complete`
+          });
+        } else {
+          const errText = (res && res.error) ? res.error : `${title} failed`;
+          widget.update({
+            state: "error",
+            message: errText,
+            error: errText
+          });
+        }
+      }
+      return res;
+    } catch (e) {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      if (widget) {
+        widget.update({
+          state: "error",
+          message: e.message || `${title} error`,
+          error: e.message || "Unexpected error"
+        });
+      }
+      throw e;
     }
   },
 
@@ -303,11 +392,13 @@ window.VFMixer = {
     if (playBtn) {
       playBtn.classList.add("vf-pulsing");
       playBtn.disabled = true;
-      playBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generazione preview...`;
+      playBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generating preview...`;
     }
 
     try {
-      const res = await window.VFApi.previewVoice(this.recipe);
+      const title = `Preview: ${this.recipe.name || "Voice"}`;
+      console.debug("[VoiceForge] Starting preview generation", { name: this.recipe.name, source: this.recipe.source_type, lang: this.recipe.language });
+      const res = await this._runWithProgress(title, "vf_prev", (taskId) => window.VFApi.previewVoice(this.recipe, taskId));
       if (res && res.ok) {
         this.currentAudioUrl = res.audio_url;
         if (audioEl) {
@@ -334,11 +425,12 @@ window.VFMixer = {
         if (res.hnr_db !== undefined) setHud("vf-hud-hnr", `${res.hnr_db} dB`);
         if (res.formants && res.formants.length >= 2) setHud("vf-hud-f1f2", `${Math.round(res.formants[0])} / ${Math.round(res.formants[1])} Hz`);
       } else {
-        if (window.showToast) window.showToast(res.error || "Preview non riuscita", "error");
+        const msg = (res && res.error) ? res.error : "Preview failed";
+        if (window.showToast) window.showToast(msg, "error");
       }
     } catch (e) {
       console.error("[VoiceForge] Preview error:", e);
-      if (window.showToast) window.showToast("Errore preview: " + e.message, "error");
+      if (window.showToast) window.showToast("Preview error: " + e.message, "error");
     } finally {
       if (playBtn) {
         playBtn.classList.remove("vf-pulsing");
@@ -352,22 +444,25 @@ window.VFMixer = {
     const bakeBtn = document.getElementById("vf-btn-bake");
     if (bakeBtn) {
       bakeBtn.disabled = true;
-      bakeBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Baking in corso...`;
+      bakeBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Baking...`;
     }
 
     try {
-      const res = await window.VFApi.bakeVoice(this.recipe, true);
+      const title = `Bake to Fish Speech: ${this.recipe.name || "Voice"}`;
+      console.debug("[VoiceForge] Starting bake", { name: this.recipe.name, id: this.recipe.id });
+      const res = await this._runWithProgress(title, "vf_bake", (taskId) => window.VFApi.bakeVoice(this.recipe, true, taskId));
       if (res && res.ok) {
         if (window.showToast) {
-          window.showToast(`Profilo "${res.meta.name}" registrato in Fish Speech!`, "success");
+          window.showToast(`Profile "${res.meta.name}" registered in Fish Speech!`, "success");
         }
         await window.VFPresets.refresh();
       } else {
-        if (window.showToast) window.showToast(res.error || "Bake fallito", "error");
+        const msg = (res && res.error) ? res.error : "Bake failed";
+        if (window.showToast) window.showToast(msg, "error");
       }
     } catch (e) {
       console.error("[VoiceForge] Bake error:", e);
-      if (window.showToast) window.showToast("Errore durante il bake: " + e.message, "error");
+      if (window.showToast) window.showToast("Bake error: " + e.message, "error");
     } finally {
       if (bakeBtn) {
         bakeBtn.disabled = false;

@@ -26,6 +26,7 @@ window.VFApi = {
         const errJson = await res.json();
         if (errJson && errJson.error) errMsg = errJson.error;
       } catch (e) {}
+      console.error("[VoiceForge:API] Request failed:", url, errMsg);
       throw new Error(errMsg);
     }
     return await res.json();
@@ -60,17 +61,23 @@ window.VFApi = {
     });
   },
 
-  async previewVoice(recipe) {
+  async previewVoice(recipe, taskId = null) {
+    const payload = Object.assign({}, recipe);
+    if (taskId) payload.task_id = taskId;
+    console.debug("[VoiceForge:API] POST /preview", { taskId, name: recipe?.name, source: recipe?.source_type, language: recipe?.language });
     return await this._fetchJson(`${this.baseUrl}/preview`, {
       method: "POST",
-      body: JSON.stringify(recipe)
+      body: JSON.stringify(payload)
     });
   },
 
-  async bakeVoice(recipe, registerInAudioYaml = true) {
+  async bakeVoice(recipe, registerInAudioYaml = true, taskId = null) {
+    const payload = { recipe, register_in_audio_yaml: registerInAudioYaml };
+    if (taskId) payload.task_id = taskId;
+    console.debug("[VoiceForge:API] POST /bake", { taskId, name: recipe?.name, registerInAudioYaml });
     return await this._fetchJson(`${this.baseUrl}/bake`, {
       method: "POST",
-      body: JSON.stringify({ recipe, register_in_audio_yaml: registerInAudioYaml })
+      body: JSON.stringify(payload)
     });
   },
 

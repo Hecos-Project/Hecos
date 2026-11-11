@@ -321,7 +321,7 @@ window.VF_STATIC_PRESETS = {
   cinematic: [
   {
     "id": "cine_alien",
-    "name": "Alien (Entità Extraterrestre)",
+    "name": "Alien (Extraterrestrial Entity)",
     "description": "Uncanny vocal tract scaling with micro-tremor and alien formant resonance.",
     "category": "cinematic",
     "language": "it",
@@ -347,7 +347,7 @@ window.VF_STATIC_PRESETS = {
   },
   {
     "id": "cine_angel",
-    "name": "Celestial (Entità Angelica)",
+    "name": "Celestial (Angelic Entity)",
     "description": "Luminous heavenly presence with pure harmonic glow and sparkling air band.",
     "category": "cinematic",
     "language": "it",
@@ -360,7 +360,7 @@ window.VF_STATIC_PRESETS = {
   },
   {
     "id": "cine_demon",
-    "name": "Demon (Entità Infernale)",
+    "name": "Demon (Infernal Entity)",
     "description": "Guttural abyss voice with massive vocal tract, sub-octave rumble, and sinister rasp.",
     "category": "cinematic",
     "language": "it",
@@ -516,7 +516,7 @@ window.VF_STATIC_PRESETS = {
   },
   {
     "id": "cine_witch",
-    "name": "Witch (Strega Arcana)",
+    "name": "Witch (Arcane Sorceress)",
     "description": "Shrieking raspy elder witch with micro-jitter, vocal fry and piercing presence.",
     "category": "cinematic",
     "language": "it",
@@ -1158,7 +1158,7 @@ window.VF_STATIC_RECIPES = {
   },
   "cine_alien": {
     "id": "cine_alien",
-    "name": "Alien (Entità Extraterrestre)",
+    "name": "Alien (Extraterrestrial Entity)",
     "description": "Uncanny vocal tract scaling with micro-tremor and alien formant resonance.",
     "category": "cinematic",
     "language": "it",
@@ -1210,7 +1210,7 @@ window.VF_STATIC_RECIPES = {
   },
   "cine_angel": {
     "id": "cine_angel",
-    "name": "Celestial (Entità Angelica)",
+    "name": "Celestial (Angelic Entity)",
     "description": "Luminous heavenly presence with pure harmonic glow and sparkling air band.",
     "category": "cinematic",
     "language": "it",
@@ -1236,7 +1236,7 @@ window.VF_STATIC_RECIPES = {
   },
   "cine_demon": {
     "id": "cine_demon",
-    "name": "Demon (Entità Infernale)",
+    "name": "Demon (Infernal Entity)",
     "description": "Guttural abyss voice with massive vocal tract, sub-octave rumble, and sinister rasp.",
     "category": "cinematic",
     "language": "it",
@@ -1548,7 +1548,7 @@ window.VF_STATIC_RECIPES = {
   },
   "cine_witch": {
     "id": "cine_witch",
-    "name": "Witch (Strega Arcana)",
+    "name": "Witch (Arcane Sorceress)",
     "description": "Shrieking raspy elder witch with micro-jitter, vocal fry and piercing presence.",
     "category": "cinematic",
     "language": "it",
@@ -1670,19 +1670,19 @@ window.VFPresets = {
       if (this.currentCategory === "custom") {
         listEl.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:35px; color:#64748b;">' +
           '<i class="fas fa-folder-open" style="font-size:2rem; margin-bottom:10px; display:block; opacity:0.5;"></i>' +
-          'Nessun timbro personalizzato salvato ancora.<br>' +
-          '<span style="font-size:0.8rem; color:#94a3b8;">Modifica i controlli del mixer e fai click su <strong>Bake to Fish Speech</strong> per registrare un nuovo timbro.</span>' +
+          'No custom timbres saved yet.<br>' +
+          '<span style="font-size:0.8rem; color:#94a3b8;">Adjust the mixer controls and click <strong>Bake to Fish Speech</strong> to register a new timbre.</span>' +
         '</div>';
       } else {
-        listEl.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:30px; color:#64748b;">Nessun preset trovato in questa categoria.</div>';
+        listEl.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:30px; color:#64748b;">No presets found in this category.</div>';
       }
       return;
     }
 
     listEl.innerHTML = items.map(p => {
       const pName = p.name || p.id;
-      const pDesc = p.description || "Profilo timbro vocale";
-      const pLang = (p.language || "it").toUpperCase();
+      const pDesc = p.description || "Voice timbre profile";
+      const pLang = (p.language || "en").toUpperCase();
       const tags = (p.tags || []).slice(0, 3).map(t => '<span style="font-size:0.65rem; background:rgba(139,92,246,0.2); border:1px solid rgba(139,92,246,0.3); padding:1px 6px; border-radius:4px; color:#c4b5fd;">' + t + '</span>').join("");
       return '<div class="vf-preset-item" style="cursor:pointer; padding:12px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); transition:all 0.2s;" ' +
              'onclick="window.VFPresets.selectPreset(\'' + p.id + '\')" ' +
