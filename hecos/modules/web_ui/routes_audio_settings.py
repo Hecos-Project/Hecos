@@ -33,7 +33,7 @@ def register_audio_settings_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                     "kokoro_presets", "kokoro_inference_presets",
                     "xtts_presets", "xtts_inference_presets",
                     "fish_speech_presets", "fish_speech_inference_presets",
-                    "piper_inference_presets"
+                    "piper_presets", "piper_inference_presets"
                 }
                 for k in [
                     "active_engine", "kokoro", "kokoro_presets", "kokoro_inference_presets",
@@ -43,7 +43,7 @@ def register_audio_settings_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                     "noise_w", "sentence_silence", "volume", "piper_timeout", "energy_threshold",
                     "silence_timeout", "phrase_limit", "tts_history_max_files", "push_to_talk",
                     "ptt_hotkey", "ptt_sources", "custom_ptt_key",
-                    "piper_current_inference_preset", "piper_inference_presets"
+                    "piper_current_preset", "piper_presets", "piper_current_inference_preset", "piper_inference_presets"
                 ]:
                     if k in data:
                         if (k in preset_dict_keys and isinstance(data[k], dict) and

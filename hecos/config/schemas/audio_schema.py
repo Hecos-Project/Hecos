@@ -82,6 +82,8 @@ class AudioConfig(BaseModel):
     sentence_silence: float = 0.1
     volume: float = 1.0
     piper_timeout: int = 180
+    piper_current_preset: str = "default"
+    piper_presets: dict = {}
     piper_current_inference_preset: str = ""
     piper_inference_presets: dict = {
         "Standard & Balanced": {"speed": 1.0, "sentence_silence": 0.2, "noise_scale": 0.67, "noise_w": 0.8, "volume": 1.0},

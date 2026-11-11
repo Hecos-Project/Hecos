@@ -232,6 +232,7 @@ function populateAudioUI() {
         }
     }
 
+    if (typeof populatePiperPresets === 'function') populatePiperPresets();
     if (typeof populatePiperInferencePresets === 'function') populatePiperInferencePresets();
 
     refreshAudioHistoryCount();
@@ -425,7 +426,23 @@ function buildAudioPayload() {
         (window.audioConfig?.fish_speech_inference_presets) ? window.audioConfig.fish_speech_inference_presets : {}
     );
 
+    const piperPresetsObj = Object.assign(
+        {},
+        (typeof audioConfig !== 'undefined' && audioConfig?.piper_presets) ? audioConfig.piper_presets : {},
+        (window.audioConfig?.piper_presets) ? window.audioConfig.piper_presets : {},
+        v.piper_presets || {}
+    );
+    const piperInfPresetsObj = Object.assign(
+        {},
+        (typeof audioConfig !== 'undefined' && audioConfig?.piper_inference_presets) ? audioConfig.piper_inference_presets : {},
+        (window.audioConfig?.piper_inference_presets) ? window.audioConfig.piper_inference_presets : {},
+        v.piper_inference_presets || {}
+    );
+
     // Sync in memory immediately
+    cfg.piper_presets = piperPresetsObj;
+    cfg.piper_inference_presets = piperInfPresetsObj;
+    cfg.piper_current_preset = getV('v-piper-preset', v.piper_current_preset || 'default');
     cfg.kokoro_presets = kokoroPresetsObj;
     cfg.kokoro_inference_presets = kokoroInfPresetsObj;
     cfg.xtts_presets = xttsPresetsObj;
@@ -502,6 +519,8 @@ function buildAudioPayload() {
         ptt_sources: v.ptt_sources || { keyboard_hotkey: true },
         custom_ptt_key: v.custom_ptt_key || '',
         piper_path: getV('v-piper', v.piper_path || ''),
+        piper_current_preset: getV('v-piper-preset', v.piper_current_preset || 'default'),
+        piper_presets: piperPresetsObj,
         onnx_model: (modelFile.includes('\\') || modelFile.includes('/')) ? modelFile : pdir + '\\' + modelFile,
         speed: (() => { const n = parseFloat(getV('v-speed', v.speed)); return isNaN(n) ? 1.0 : n; })(),
         noise_scale: (() => { const n = parseFloat(getV('v-noise', v.noise_scale)); return isNaN(n) ? 0.667 : n; })(),

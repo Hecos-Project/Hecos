@@ -50,17 +50,19 @@
     <div id="v-progress-text" style="display: none; margin-top: 4px; color: var(--accent); text-align: right; font-size:11px; font-weight:600;">0%</div>
   </div>
 
-  <!-- Piper Inference Parameters Preset -->
-  <div class="grid-2" style="margin-top:12px; margin-bottom:12px;">
+  <!-- Configuration Presets -->
+  <div class="grid-2" style="margin-bottom:12px;">
     <div class="field" style="grid-column: span 2; margin:0;">
-      <label><i class="fas fa-sliders-h"></i> Inference Parameters Preset</label>
+      <label>Configuration Preset</label>
       <div style="display:flex; gap:8px; align-items:center;">
-        <select id="v-piper-inference-preset" onchange="loadPiperInferencePreset()" style="flex:1;">
-          <option value="">-- No Preset Selected --</option>
+        <select id="v-piper-preset" onchange="loadPiperPreset()" style="flex:1;">
+          <option value="default">Default</option>
         </select>
-        <button type="button" class="btn btn-primary btn-sm" onclick="savePiperInferencePreset()" title="Save as New Inference Preset"><i class="fas fa-plus"></i> New</button>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="updatePiperInferencePreset()" title="Update Current Inference Preset"><i class="fas fa-sync-alt"></i> Update</button>
-        <button type="button" class="btn btn-danger btn-sm" onclick="deletePiperInferencePreset()" title="Delete Inference Preset"><i class="fas fa-trash"></i></button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="savePiperPreset()" title="Save as New Preset"><i class="fas fa-plus"></i> New</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="updatePiperPreset()" title="Update Current Preset"><i class="fas fa-sync-alt"></i> Update</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="renamePiperPreset()" title="Rename Preset"><i class="fas fa-edit"></i> Rename</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetPiperConfig()" title="Reset to Defaults"><i class="fas fa-undo"></i> Reset</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deletePiperPreset()" title="Delete Preset"><i class="fas fa-trash"></i></button>
       </div>
     </div>
   </div>
@@ -88,6 +90,23 @@
       </label>
       <select id="v-onnx-model" style="width:100%;"></select>
       <p style="font-size:11px; color:var(--muted); margin-top:4px; margin-bottom:0;">{{ t('webui_conf_voice_info') }}</p>
+    </div>
+  </div>
+
+  <!-- Inference Parameters Preset -->
+  <div class="grid-2" style="margin-top:12px; margin-bottom:12px;">
+    <div class="field" style="grid-column: span 2; margin:0;">
+      <label><i class="fas fa-sliders-h"></i> Inference Parameters Preset</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select id="v-piper-inference-preset" onchange="loadPiperInferencePreset()" style="flex:1;">
+          <option value="">-- No Preset Selected --</option>
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" onclick="savePiperInferencePreset()" title="Save as New Inference Preset"><i class="fas fa-plus"></i> New</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="updatePiperInferencePreset()" title="Update Current Inference Preset"><i class="fas fa-sync-alt"></i> Update</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="renamePiperInferencePreset()" title="Rename Inference Preset"><i class="fas fa-edit"></i> Rename</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetPiperInferencePreset()" title="Reset Inference Parameters"><i class="fas fa-undo"></i> Reset</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deletePiperInferencePreset()" title="Delete Inference Preset"><i class="fas fa-trash"></i></button>
+      </div>
     </div>
   </div>
 

@@ -53,10 +53,11 @@
         <select id="v-xtts-preset" onchange="loadXTTSPreset()" style="flex:1;">
           <option value="default">Default</option>
         </select>
-        <button class="btn btn-primary btn-sm" onclick="saveXTTSPreset()" title="Save as New Preset"><i class="fas fa-plus"></i> New</button>
-        <button class="btn btn-secondary btn-sm" onclick="updateXTTSPreset()" title="Update Current Preset"><i class="fas fa-sync-alt"></i> Update</button>
-        <button class="btn btn-secondary btn-sm" onclick="resetXTTSConfig()" title="Reset to Defaults"><i class="fas fa-undo"></i> Reset</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteXTTSPreset()" title="Delete Preset"><i class="fas fa-trash"></i></button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="saveXTTSPreset()" title="Save as New Preset"><i class="fas fa-plus"></i> New</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="updateXTTSPreset()" title="Update Current Preset"><i class="fas fa-sync-alt"></i> Update</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="renameXTTSPreset()" title="Rename Preset"><i class="fas fa-edit"></i> Rename</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetXTTSConfig()" title="Reset to Defaults"><i class="fas fa-undo"></i> Reset</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deleteXTTSPreset()" title="Delete Preset"><i class="fas fa-trash"></i></button>
       </div>
     </div>
   </div>
@@ -116,9 +117,11 @@
         <select id="v-xtts-inference-preset" onchange="loadXTTSInferencePreset()" style="flex:1;">
           <option value="">-- Nessun Preset Selezionato --</option>
         </select>
-        <button class="btn btn-primary btn-sm" onclick="saveXTTSInferencePreset()" title="Save as New Inference Preset"><i class="fas fa-plus"></i> New</button>
-        <button class="btn btn-secondary btn-sm" onclick="updateXTTSInferencePreset()" title="Update Current Inference Preset"><i class="fas fa-sync-alt"></i> Update</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteXTTSInferencePreset()" title="Delete Inference Preset"><i class="fas fa-trash"></i></button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="saveXTTSInferencePreset()" title="Save as New Inference Preset"><i class="fas fa-plus"></i> New</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="updateXTTSInferencePreset()" title="Update Current Inference Preset"><i class="fas fa-sync-alt"></i> Update</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="renameXTTSInferencePreset()" title="Rename Inference Preset"><i class="fas fa-edit"></i> Rename</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetXTTSInferencePreset()" title="Reset Inference Parameters"><i class="fas fa-undo"></i> Reset</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="deleteXTTSInferencePreset()" title="Delete Inference Preset"><i class="fas fa-trash"></i></button>
       </div>
     </div>
   </div>

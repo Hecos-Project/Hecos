@@ -1,4 +1,11 @@
-window.hecosPrompt = function(msg, onSave) {
+/**
+ * ca_modals.js
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Modal dialogs (prompt and confirm) for Audio Config, with preset helpers.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+window.hecosPrompt = function(msg, onSave, defaultVal) {
     var modalId = 'audio-custom-prompt-modal';
     var modal = document.getElementById(modalId);
     if (!modal) {
@@ -18,7 +25,7 @@ window.hecosPrompt = function(msg, onSave) {
     }
     document.getElementById(modalId + '-text').textContent = msg;
     var input = document.getElementById(modalId + '-input');
-    input.value = '';
+    input.value = (defaultVal !== undefined && defaultVal !== null) ? defaultVal : '';
 
     var cleanup = function() { modal.style.display = 'none'; };
 
@@ -29,8 +36,19 @@ window.hecosPrompt = function(msg, onSave) {
         if (val) onSave(val);
     };
 
+    input.onkeydown = function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById(modalId + '-save').click();
+        } else if (e.key === 'Escape') {
+            cleanup();
+        }
+    };
+
     modal.style.display = 'flex';
-    setTimeout(function() { input.focus(); }, 100);
+    setTimeout(function() {
+        input.focus();
+        if (input.select) input.select();
+    }, 100);
 };
 
 window.hecosConfirm = function(msg, onYes) {
@@ -66,5 +84,26 @@ window.hecosConfirm = function(msg, onYes) {
     }
 };
 
-// ── XTTS Presets Logic ───────────────────────────────────────────────────────
+// ── Shared Preset Helpers for all 4 TTS engines ─────────────────────────────
+window.getNextCustomPresetName = function(existingPresets, base) {
+    base = base || 'custom';
+    var index = 1;
+    var presets = existingPresets || {};
+    while (presets[base + '_' + index]) {
+        index++;
+    }
+    return base + '_' + index;
+};
 
+window.isDefaultPresetName = function(name, extraDefaults) {
+    if (!name) return false;
+    var norm = name.trim().toLowerCase();
+    if (norm === 'default' || norm === 'default (built-in)' || norm === 'default (base / zero-shot)') {
+        return true;
+    }
+    var list = extraDefaults || [];
+    for (var i = 0; i < list.length; i++) {
+        if (list[i].trim().toLowerCase() === norm) return true;
+    }
+    return false;
+};
