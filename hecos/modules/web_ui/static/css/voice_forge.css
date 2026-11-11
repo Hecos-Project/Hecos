@@ -86,15 +86,21 @@
   flex-wrap: wrap;
 }
 
-/* --- Buttons --- */
+/* --- Buttons (sized to match global Hecos .btn) --- */
 .vf-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 12px;
+  height: 32px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  box-sizing: border-box;
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid var(--vf-border);
@@ -507,10 +513,19 @@
 }
 
 .vf-preset-tab {
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 12px;
+  height: 32px;
   border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  box-sizing: border-box;
   cursor: pointer;
   background: transparent;
   border: 1px solid transparent;

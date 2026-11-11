@@ -4,6 +4,7 @@
      ========================================================================== -->
 
 <div id="tab-voice-forge" class="panel" style="padding: 10px;">
+  <link rel="stylesheet" href="/hpm_plugin/voice_forge/web/static/css/voice_forge.css?v=1.0.3">
   <div class="vf-container">
 
     <!-- Topbar Hero -->
@@ -69,7 +70,7 @@
           <label class="vf-label"><i class="fas fa-dice"></i> Random Seed</label>
           <div style="display:flex; gap:6px;">
             <input type="number" id="vf-inp-seed" class="vf-input" style="width:75px;" value="42" onchange="window.VFMixer.recipe.source_seed = parseInt(this.value, 10)">
-            <button type="button" class="vf-btn" style="padding:6px 10px;" onclick="document.getElementById('vf-inp-seed').value = Math.floor(Math.random()*100000); window.VFMixer.recipe.source_seed = parseInt(document.getElementById('vf-inp-seed').value, 10);" title="Randomize Seed">
+            <button type="button" class="vf-btn" style="width:32px; padding:0;" onclick="document.getElementById('vf-inp-seed').value = Math.floor(Math.random()*100000); window.VFMixer.recipe.source_seed = parseInt(document.getElementById('vf-inp-seed').value, 10);" title="Randomize Seed">
               <i class="fas fa-random"></i>
             </button>
           </div>
@@ -78,7 +79,7 @@
         <!-- File Upload if custom file -->
         <div id="vf-box-file" class="vf-field" style="display:none; min-width: 160px;">
           <label class="vf-label"><i class="fas fa-upload"></i> Custom Voice File</label>
-          <label class="vf-btn vf-btn-cyan" style="cursor:pointer; margin:0; padding:6px 12px; font-size:0.78rem;">
+          <label class="vf-btn vf-btn-cyan" style="cursor:pointer; margin:0;">
             <i class="fas fa-folder-open"></i> <span id="vf-btn-upload-label">Upload Audio</span>
             <input type="file" id="vf-file-upload" accept="audio/*" style="display:none;">
           </label>
@@ -308,14 +309,14 @@
     <!-- Master Transport Bar -->
     <div class="vf-transport-bar">
       <div class="vf-transport-controls">
-        <button type="button" id="vf-btn-preview" class="vf-btn vf-btn-accent" style="padding:10px 22px; font-size:0.95rem;" onclick="window.VFMixer.triggerPreview()">
+        <button type="button" id="vf-btn-preview" class="vf-btn vf-btn-accent" onclick="window.VFMixer.triggerPreview()">
           <i class="fas fa-play"></i> Listen Preview
         </button>
         <audio id="vf-audio-player" class="vf-audio-player" controls preload="none"></audio>
       </div>
 
       <div style="display:flex; gap:10px; align-items:center;">
-        <button type="button" id="vf-btn-bake" class="vf-btn vf-btn-bake" style="padding:10px 22px; font-size:0.95rem;" onclick="window.VFMixer.triggerBake()">
+        <button type="button" id="vf-btn-bake" class="vf-btn vf-btn-bake" onclick="window.VFMixer.triggerBake()">
           <i class="fas fa-fire"></i> Bake to Fish Speech
         </button>
       </div>
@@ -332,7 +333,7 @@
         <i class="fas fa-layer-group" style="color:var(--vf-accent); font-size:1.2rem;"></i>
         <span style="font-weight:700; font-size:1rem; color:#fff;">Preset Timbre Library</span>
       </div>
-      <button type="button" class="vf-btn" style="padding:4px 10px;" onclick="window.vfClosePresets()">
+      <button type="button" class="vf-btn" style="width:32px; padding:0;" onclick="window.vfClosePresets()">
         <i class="fas fa-times"></i>
       </button>
     </div>
