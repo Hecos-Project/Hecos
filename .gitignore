@@ -718,6 +718,12 @@ hecos/config/data/document_reader*.json
 hecos/data/docreader_config.json
 hecos/data/document_reader*.json
 
+# Voice Forge (HPM Package)
+hecos/hpm/voice_forge/
+hecos/modules/web_ui/templates/modules/config_voice_forge.html
+hecos/modules/web_ui/static/css/voice_forge.css
+hecos/modules/web_ui/static/js/vf_*.js
+
 # HPM Store Cache
 hecos/data/store_cache*.json
 
