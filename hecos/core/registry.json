@@ -481,6 +481,19 @@
             }
         ]
     },
+    "CONTACTS": {
+        "description": "Optimized Address Book plugin for Hecos with rich metadata, WhatsApp integration, and modular structure.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fas fa-address-book",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
     "DOCS": {
         "description": "Generates and modifies PDF/HTML documents from templates or raw HTML using Playwright.",
         "commands": {
@@ -746,6 +759,106 @@
             }
         ]
     },
+    "MAIL": {
+        "description": "Integrated mail client for Hecos. Reads SMTP/IMAP profiles, manages drafts, sending, and syncing with automatic provider support and Address Book integration.",
+        "commands": {
+            "sync_emails": "Synchronizes the mailbox by fetching new messages via IMAP.",
+            "send_email": "Sends an email using the SMTP client. Supports HTML, text, and attachments.",
+            "list_emails": "Lists emails from the inbox or a specified folder.",
+            "get_email": "Retrieves a single email by ID with full body and attachments."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-envelope",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
+    "MEDIA_PLAYER": {
+        "description": "Universal media player for Hecos. OS-level playback (VLC/mpv), gallery for Drive and Chat, AI-driven playlist management.",
+        "commands": {
+            "play": "Play a media file or URL",
+            "pause": "Pause/resume playback",
+            "stop": "Stop playback",
+            "next_track": "Skip to next track",
+            "prev_track": "Go to previous track",
+            "set_volume": "Set volume (0–100)",
+            "get_status": "Get current playback status",
+            "create_playlist": "Create a named playlist",
+            "add_to_playlist": "Add a file to a playlist",
+            "remove_from_playlist": "Remove a track from a playlist",
+            "delete_playlist": "Delete a playlist",
+            "list_playlists": "List all saved playlists",
+            "get_playlist": "Show playlist contents",
+            "play_playlist": "Load and play a saved playlist",
+            "scan_folder": "Scan a folder for media files"
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-play-circle",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "play",
+                "manifest_version": "1",
+                "aliases": [
+                    "/play"
+                ],
+                "description": "Play a media file or URL",
+                "usage": "/play <path>",
+                "example": "/play C:\\music\\song.mp3",
+                "icon": "▶️",
+                "method": "play",
+                "requires_args": true
+            },
+            {
+                "id": "stop",
+                "manifest_version": "1",
+                "aliases": [
+                    "/stop"
+                ],
+                "description": "Stop playback",
+                "usage": "/stop",
+                "example": "/stop",
+                "icon": "⏹️",
+                "method": "stop",
+                "requires_args": false
+            },
+            {
+                "id": "pause",
+                "manifest_version": "1",
+                "aliases": [
+                    "/pause"
+                ],
+                "description": "Pause or resume playback",
+                "usage": "/pause",
+                "example": "/pause",
+                "icon": "⏸️",
+                "method": "pause",
+                "requires_args": false
+            },
+            {
+                "id": "playlist",
+                "manifest_version": "1",
+                "aliases": [
+                    "/playlist"
+                ],
+                "description": "List all saved playlists",
+                "usage": "/playlist",
+                "example": "/playlist",
+                "icon": "📋",
+                "method": "list_playlists",
+                "requires_args": false
+            }
+        ]
+    },
     "MESSENGER": {
         "description": "Send messages via Telegram, WhatsApp, and Discord.",
         "commands": {
@@ -765,6 +878,57 @@
         "icon": "",
         "category": "PLUGINS",
         "slash_commands": []
+    },
+    "NOTIFICATIONS": {
+        "description": "Sistema di notifiche per eventi Hecos.",
+        "commands": {
+            "add_destination": "Adds a new notification destination.",
+            "bind_event_destination": "Binds a destination to a system event, so notifications for that event are sent there.",
+            "get_status": "Returns the current status of the Notifications Center.",
+            "list_destinations": "Lists all currently configured notification destinations.",
+            "list_rules": "Lists all system events and which destinations are bound to each.",
+            "remove_destination": "Removes a notification destination by name.",
+            "send_notification": "Sends an ad-hoc notification immediately.",
+            "set_event_template": "Configures an HTML template and its variables for a given event.",
+            "unbind_event_destination": "Removes a destination from a system event."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": [
+            {
+                "id": "notify",
+                "aliases": [
+                    "/notify"
+                ],
+                "description": "Manage notifications: list rules, add/remove destinations, bind events, or send ad-hoc alerts.",
+                "usage": "/notify [list rules | bind <event> to <dest> | add <name> <uri> | send <subject>]",
+                "example": "/notify list rules",
+                "icon": "🔔",
+                "method": "get_status",
+                "args_schema": {},
+                "requires_args": false
+            },
+            {
+                "id": "alert",
+                "aliases": [
+                    "/alert"
+                ],
+                "description": "Send an immediate notification to all configured destinations.",
+                "usage": "/alert <message>",
+                "example": "/alert System backup completed!",
+                "icon": "🔔",
+                "method": "send_notification",
+                "args_schema": {
+                    "subject": "str",
+                    "message": "str"
+                },
+                "requires_args": true
+            }
+        ]
     },
     "AUTOMATION": {
         "description": "PC Automation: control the mouse, keyboard, and application windows. Use with desktop_screenshot for a full see-and-act loop.",
@@ -844,6 +1008,19 @@
             }
         ]
     },
+    "USERS": {
+        "description": "User information and preferences management (LLM Tools)",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
     "VOICE_FORGE": {
         "description": "Vocal Timbre Sculpting & Forging Studio for Fish Speech S2-Pro. Crafts custom, original acoustic voice profiles via WORLD vocoder analysis-synthesis, pitch, formant warping, aperiodicity and spectral morphing without using existing human voices.",
         "commands": {},
@@ -854,6 +1031,52 @@
         "is_lazy": true,
         "icon": "<i class=\"fas fa-wave-square\"></i>",
         "category": "MULTIMEDIA",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
+    "WEATHER_PRO": {
+        "description": "Hybrid weather module: AI plugin (current weather + 7-day forecast via Open-Meteo) + sidebar/Control Room widget with live data and daily forecast cards. Fully autonomous package with its own TOML configuration.",
+        "commands": {
+            "get_current_weather": "Get current weather for a city or user's location.",
+            "get_weather_forecast": "Get 7-day daily weather forecast for a city."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-cloud-sun",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "command": "/weather",
+                "description": "Show current weather (optionally for a city: /weather Rome)",
+                "method": "get_current_weather",
+                "args_schema": {
+                    "city": "str?"
+                }
+            },
+            {
+                "command": "/forecast",
+                "description": "Show 7-day forecast (optionally for a city: /forecast Milan)",
+                "method": "get_weather_forecast",
+                "args_schema": {
+                    "city": "str?"
+                }
+            }
+        ]
+    },
+    "WEBCAM": {
+        "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
         "module_type": "hpm",
         "slash_commands": []
     }

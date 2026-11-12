@@ -7,7 +7,7 @@ DESCRIPTION: Pydantic v2 models for config/system.yaml (core system only).
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Literal, Union
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -248,6 +248,8 @@ class HpmConfig(BaseModel):
     ])
     # Security: token is strictly stored in local untracked hpm_auth.json, never in system.yaml
     github_token: str = Field(default="", exclude=True)
+    # Post-install restart behavior for packages requiring restart: "manual" or "auto_batch"
+    restart_mode: Literal["manual", "auto_batch"] = "manual"
 
 
 # ─── ROOT ─────────────────────────────────────────────────────────────────────

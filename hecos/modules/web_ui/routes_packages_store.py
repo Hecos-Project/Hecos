@@ -594,10 +594,11 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
                     needs_restart = pkg_type in _PENDING_RESTART_TYPES or has_api_routes
                     if needs_restart:
                         add_to_pending_restart(pkg_id)
-                        try:
-                            from hecos.modules.web_ui.routes_packages_list import invalidate_packages_cache
-                            invalidate_packages_cache()
-                        except: pass
+                    try:
+                        from hecos.modules.web_ui.routes_packages_list import invalidate_packages_cache
+                        invalidate_packages_cache()
+                    except Exception:
+                        pass
                     # ─────────────────────────────────────────────────────────────────
 
                     yield _sse("done", {

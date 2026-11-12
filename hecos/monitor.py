@@ -162,12 +162,23 @@ def start_and_monitor(script_to_run):
     env = os.environ.copy()
     env["PYTHONPATH"] = _ROOT + os.pathsep + env.get("PYTHONPATH", "")
 
-    # Monitor .py files in hecos/ folder
+    # Monitor .py files in hecos/ folder (excluding runtime virtualenvs)
     hecos_folder = os.path.join(_ROOT, "hecos")
+    hpm_run_dir = os.path.join(hecos_folder, "data", "run")
+    hpm_installing_flag = os.path.join(hpm_run_dir, ".hpm_installing")
+    hpm_code_flag = os.path.join(hpm_run_dir, ".hpm_code_updated_by_app")
+
+    # Clear any stale HPM install lock left behind by an unclean previous shutdown
+    try:
+        if os.path.exists(hpm_installing_flag):
+            os.remove(hpm_installing_flag)
+    except Exception:
+        pass
     
     def get_max_py_mtime(folder):
         max_t = 0
         for root, dirs, files in os.walk(folder):
+            dirs[:] = [d for d in dirs if d not in ("venv", ".venv", "__pycache__")]
             for f in files:
                 if f.endswith(".py"):
                     t = get_file_timestamp(os.path.join(root, f))
@@ -244,8 +255,17 @@ def start_and_monitor(script_to_run):
 
             # 2. Code files check (.py) - Every 10 seconds (5 * 2s)
             if iterations % 5 == 0:
+                installing_ts = get_file_timestamp(hpm_installing_flag)
+                if installing_ts > 0 and (time.time() - installing_ts) < 300:
+                    continue
+
                 current_code_time = get_max_py_mtime(hecos_folder)
                 if current_code_time > last_code_time + 2:
+                    hpm_flag_mtime = get_file_timestamp(hpm_code_flag)
+                    if hpm_flag_mtime > 0 and hpm_flag_mtime >= (last_code_time - 2.0) and current_code_time <= (hpm_flag_mtime + 2.0):
+                        monitor_log("HPM package operation acknowledged (ignoring watchdog restart).")
+                        last_code_time = max(current_code_time, hpm_flag_mtime)
+                        continue
                     monitor_log(f"Code change detected in hecos/ folder. Restarting...")
                     _kill_child_tree(process)
                     _current_child_process = None

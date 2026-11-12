@@ -3,9 +3,40 @@ installer_steps.py
 """
 import os
 import shutil
+import time
+from contextlib import contextmanager
 from typing import List
 from hecos.core.logging import logger
 from .package_schema import HpkgManifest
+
+
+@contextmanager
+def hpm_monitor_guard(hecos_root: str):
+    """Signal monitor.py that HPM is modifying package code so it will not auto-kill mid-operation."""
+    run_dir = os.path.join(hecos_root, "data", "run")
+    installing_flag = os.path.join(run_dir, ".hpm_installing")
+    updated_flag = os.path.join(run_dir, ".hpm_code_updated_by_app")
+    try:
+        os.makedirs(run_dir, exist_ok=True)
+        with open(installing_flag, "w", encoding="utf-8") as f:
+            f.write(str(time.time()))
+    except Exception:
+        pass
+    try:
+        yield
+    finally:
+        # Write the completion timestamp before removing the lock so monitor never sees an unguarded gap.
+        try:
+            os.makedirs(run_dir, exist_ok=True)
+            with open(updated_flag, "w", encoding="utf-8") as f:
+                f.write(str(time.time()))
+        except Exception:
+            pass
+        try:
+            if os.path.exists(installing_flag):
+                os.remove(installing_flag)
+        except Exception:
+            pass
 
 # ── Default target directory per module type ────────────────────────────────
 # Used when the manifest does not override `target_dir` explicitly.

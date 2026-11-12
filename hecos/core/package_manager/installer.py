@@ -29,7 +29,8 @@ from .installer_steps import (
     install_docs,
     install_assets,
     rollback,
-    _resolve_target_dir
+    _resolve_target_dir,
+    hpm_monitor_guard,
 )
 
 @dataclass
@@ -88,6 +89,10 @@ class PackageInstaller:
             return InstallResult(success=False, error=f"Cannot read file: {e}")
 
     def install_bytes(self, data: bytes, require_signature: bool = True, skip_dep_check: bool = False) -> InstallResult:
+        with hpm_monitor_guard(self._hecos_root):
+            return self._install_bytes_inner(data, require_signature=require_signature, skip_dep_check=skip_dep_check)
+
+    def _install_bytes_inner(self, data: bytes, require_signature: bool = True, skip_dep_check: bool = False) -> InstallResult:
         # ── Step 1: Validate ─────────────────────────────────────────────────
         self._emit("hpm:progress", {"step": "validation", "message": "Validating package schema...", "percent": 10})
         val_result = self._validator.validate_bytes(data)

@@ -8,6 +8,11 @@ async function refreshStatus() {
   try {
     const r = await fetch('/hecos/status');
     const d = await r.json();
+
+    // Sync pending-restart footer indicator across loads & restarts
+    if (typeof window.hpmSyncRestartPending === 'function') {
+        window.hpmSyncRestartPending(!!d.pending_restart);
+    }
     
     // Clear offline countdown if restored
     if (window._offlineCount !== undefined && window._offlineCount > 0) {

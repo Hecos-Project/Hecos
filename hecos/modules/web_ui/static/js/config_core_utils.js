@@ -156,6 +156,104 @@ async function rebootSystem() {
   setTimeout(poll, 2000);
 }
 
+/**
+ * Syncs or signals the footer Reboot button's 'restart-pending' state.
+ * Turns #btn-reboot-system into the animated yellow square until clean reboot.
+ */
+function hpmSyncRestartPending(hasPending) {
+  const btn = document.getElementById('btn-reboot-system');
+  if (!btn) return;
+  if (!btn.dataset.defaultTitle && btn.title) {
+    btn.dataset.defaultTitle = btn.title;
+  }
+  if (hasPending) {
+    if (!btn.classList.contains('restart-pending')) {
+      btn.classList.add('restart-pending');
+    }
+    const l = (document.documentElement.lang || 'en').toLowerCase();
+    btn.title = l.startsWith('it')
+      ? 'Riavvio necessario per attivare il pacchetto installato'
+      : (l.startsWith('es')
+        ? 'Reinicio necesario para activar el paquete instalado'
+        : 'Restart required to activate the installed package');
+  } else if (btn.classList.contains('restart-pending')) {
+    btn.classList.remove('restart-pending');
+    if (btn.dataset.defaultTitle) {
+      btn.title = btn.dataset.defaultTitle;
+    }
+  }
+}
+
+window.hpmSyncRestartPending   = hpmSyncRestartPending;
+window.hpmSignalRestartPending = function() {
+  hpmSyncRestartPending(true);
+};
+
+/**
+ * Returns the active HPM post-install restart behavior ('manual' | 'auto_batch').
+ */
+window.hpmGetRestartMode = function() {
+  const raw = window._hpmRestartMode || window.cfg?.hpm?.restart_mode || 'manual';
+  return raw === 'auto_batch' ? 'auto_batch' : 'manual';
+};
+
+/**
+ * Updates memory caches and all HPM restart-mode selectors across panels without triggering a network save.
+ */
+window.hpmSyncRestartModeUI = function(mode) {
+  const clean = (mode === 'auto_batch') ? 'auto_batch' : 'manual';
+  window._hpmRestartMode = clean;
+  if (window.cfg) {
+    window.cfg.hpm = window.cfg.hpm || {};
+    window.cfg.hpm.restart_mode = clean;
+  }
+  const setSel = document.getElementById('hpm-settings-restart-mode');
+  if (setSel) {
+    if (setSel.value !== clean) setSel.value = clean;
+    const opt = setSel.options[setSel.selectedIndex];
+    if (opt) setSel.title = opt.textContent || '';
+  }
+  return clean;
+};
+
+/**
+ * Persists HPM post-install restart behavior ('manual' | 'auto_batch') and keeps all UI controls synced.
+ */
+window.hpmSetRestartMode = async function(mode, persist = true) {
+  const clean = window.hpmSyncRestartModeUI(mode);
+  if (!persist) return clean;
+  const statusEl = document.getElementById('hpm-settings-restart-status');
+  try {
+    const resp = await fetch('/api/hpm/settings/restart_mode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restart_mode: clean }),
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      window.hpmSyncRestartModeUI(data.restart_mode);
+      if (statusEl) {
+        statusEl.style.display = 'inline-block';
+        statusEl.style.background = 'rgba(34,197,94,0.15)';
+        statusEl.style.color = '#22c55e';
+        statusEl.style.border = '1px solid rgba(34,197,94,0.3)';
+        statusEl.innerHTML = '<i class="fas fa-check-circle" style="margin-right:6px;"></i>Saved';
+        setTimeout(() => { statusEl.style.display = 'none'; }, 2500);
+      }
+      if (window.showToast) {
+        const l = (document.documentElement.lang || 'en').toLowerCase();
+        const msg = clean === 'auto_batch'
+          ? (l.startsWith('it') ? 'Riavvio automatico a fine coda attivato' : 'Auto-restart after batch enabled')
+          : (l.startsWith('it') ? 'Riavvio manuale (indicatori gialli) attivato' : 'Manual restart mode enabled');
+        window.showToast(msg, 'info');
+      }
+    }
+  } catch (e) {
+    console.warn('[HPM] Failed to persist restart_mode:', e);
+  }
+  return clean;
+};
+
 window.fetchWithTimeout = fetchWithTimeout;
 window.setSaveMsg       = setSaveMsg;
 window.setSpanText      = setSpanText;

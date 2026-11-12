@@ -134,6 +134,13 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
             ram_val = psutil.virtual_memory().percent
             vram_val = get_vram_usage()
 
+            pending_restart_list = []
+            try:
+                from hecos.modules.web_ui.routes_packages_helpers import get_pending_restart_ids
+                pending_restart_list = sorted(get_pending_restart_ids())
+            except Exception:
+                pass
+
             return jsonify({
                 "backend":    backend.upper(),
                 "model":      active_model,
@@ -156,6 +163,8 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
                 "tool_mode":           tool_mode,
                 "send_tools":          send_tools,
                 "disable_tools":       disable_tools,
+                "pending_restart":     bool(pending_restart_list),
+                "pending_restart_packages": pending_restart_list,
             })
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500

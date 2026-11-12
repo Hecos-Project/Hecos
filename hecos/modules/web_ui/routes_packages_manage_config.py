@@ -81,15 +81,15 @@ def register_manage_config_routes(app, _hecos_src: str, cfg_mgr, log):
                 except Exception as _ext_e:
                     log.warning(f"[HPM:Routes] Extension re-discovery after update failed: {_ext_e}")
 
-                _hpm_event_broadcast("hpm:package_updated", {"id": pkg_id})
-                _invalidate_all_caches()
-                
                 from hecos.modules.web_ui.routes_packages_helpers import _PENDING_RESTART_TYPES, add_to_pending_restart
                 pkg_type = mdict.get("type", "plugin")
                 has_api_routes = bool(mdict.get("api_routes_file") or (mdict.get("config_panel") or {}).get("api_routes_file"))
                 needs_restart = pkg_type in _PENDING_RESTART_TYPES or has_api_routes
                 if needs_restart:
                     add_to_pending_restart(pkg_id)
+
+                _hpm_event_broadcast("hpm:package_updated", {"id": pkg_id})
+                _invalidate_all_caches()
 
                 response = {
                     "ok": True,
@@ -240,6 +240,26 @@ def register_manage_config_routes(app, _hecos_src: str, cfg_mgr, log):
             name = _auto_repo_name(url, index)
         return {"name": name, "url": url}
 
+    def _get_hpm_restart_mode() -> str:
+        """Return persisted HPM post-install restart behavior ('manual' or 'auto_batch')."""
+        if not cfg_mgr:
+            return "manual"
+        hpm_cfg = cfg_mgr.get("hpm") or {}
+        if isinstance(hpm_cfg, dict):
+            mode = hpm_cfg.get("restart_mode", "manual")
+        else:
+            mode = getattr(hpm_cfg, "restart_mode", "manual")
+        return mode if mode in ("manual", "auto_batch") else "manual"
+
+    def _set_hpm_restart_mode(mode: str) -> str:
+        clean = mode if mode in ("manual", "auto_batch") else "manual"
+        if cfg_mgr:
+            if "hpm" not in cfg_mgr.config or not isinstance(cfg_mgr.config["hpm"], dict):
+                cfg_mgr.config["hpm"] = {}
+            cfg_mgr.config["hpm"]["restart_mode"] = clean
+            cfg_mgr.save()
+        return clean
+
     @app.route("/api/hpm/settings/repositories", methods=["GET"])
     @login_required
     def api_hpm_get_repositories():
@@ -282,12 +302,20 @@ def register_manage_config_routes(app, _hecos_src: str, cfg_mgr, log):
                 "ok": True,
                 "repositories": normalized,
                 "active_repository": active,
-                "github_token": github_token
+                "github_token": github_token,
+                "restart_mode": _get_hpm_restart_mode(),
             })
         except Exception as e:
             log.error(f"[HPM] GET /api/hpm/settings/repositories error: {e}")
             fallback = [{"name": "Hecos Official", "url": default_repo_url}]
-            return jsonify({"ok": False, "error": str(e), "repositories": fallback, "active_repository": default_repo_url, "github_token": ""}), 500
+            return jsonify({
+                "ok": False,
+                "error": str(e),
+                "repositories": fallback,
+                "active_repository": default_repo_url,
+                "github_token": "",
+                "restart_mode": _get_hpm_restart_mode(),
+            }), 500
 
     @app.route("/api/hpm/settings/repositories", methods=["POST"])
     @login_required
@@ -334,6 +362,8 @@ def register_manage_config_routes(app, _hecos_src: str, cfg_mgr, log):
                     cfg_mgr.config["hpm"] = {}
                 cfg_mgr.config["hpm"]["repositories"] = cleaned
                 cfg_mgr.config["hpm"]["store_catalog_url"] = active_repo
+                if data.get("restart_mode") in ("manual", "auto_batch"):
+                    cfg_mgr.config["hpm"]["restart_mode"] = data["restart_mode"]
                 # CRITICAL SECURITY: Never write private tokens into system.yaml (which is tracked by git)
                 cfg_mgr.config["hpm"].pop("github_token", None)
                 cfg_mgr.save()
@@ -344,7 +374,8 @@ def register_manage_config_routes(app, _hecos_src: str, cfg_mgr, log):
                 "ok": True,
                 "repositories": cleaned,
                 "active_repository": active_repo,
-                "github_token": saved_token
+                "github_token": saved_token,
+                "restart_mode": _get_hpm_restart_mode(),
             })
         except Exception as e:
             log.error(f"[HPM] POST /api/hpm/settings/repositories error: {e}")
@@ -387,5 +418,27 @@ def register_manage_config_routes(app, _hecos_src: str, cfg_mgr, log):
             })
         except Exception as e:
             log.error(f"[HPM] POST /api/hpm/settings/active_repository error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/hpm/settings/restart_mode", methods=["GET"])
+    @login_required
+    def api_hpm_get_restart_mode():
+        """Returns HPM post-install restart behavior ('manual' or 'auto_batch')."""
+        return jsonify({"ok": True, "restart_mode": _get_hpm_restart_mode()})
+
+    @app.route("/api/hpm/settings/restart_mode", methods=["POST"])
+    @login_required
+    def api_hpm_set_restart_mode():
+        """Persists HPM post-install restart behavior ('manual' or 'auto_batch')."""
+        try:
+            data = request.get_json(silent=True) or {}
+            mode = (data.get("restart_mode") or "").strip()
+            if mode not in ("manual", "auto_batch"):
+                return jsonify({"ok": False, "error": "Invalid restart_mode (must be 'manual' or 'auto_batch')"}), 400
+            saved = _set_hpm_restart_mode(mode)
+            log.info(f"[HPM] Post-install restart mode set to: {saved}")
+            return jsonify({"ok": True, "restart_mode": saved})
+        except Exception as e:
+            log.error(f"[HPM] POST /api/hpm/settings/restart_mode error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 

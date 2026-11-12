@@ -4,36 +4,55 @@
  * Data loading logic for Hecos Package Manager Frontend
  */
 
+function _hpmSyncRestartFromPackages(packages) {
+  const hasPending = Array.isArray(packages) && packages.some(p => p && p.requires_restart);
+  if (typeof window.hpmSyncRestartPending === 'function') {
+    window.hpmSyncRestartPending(hasPending);
+  } else if (hasPending && typeof window.hpmSignalRestartPending === 'function') {
+    window.hpmSignalRestartPending();
+  }
+}
+
 window.hpmLoadPackages = async function (forceRefresh = false) {
   const grid = document.getElementById('hpm-packages-grid');
   if (!grid) return;
 
   // ── Stale-while-revalidate: show cached data immediately ─────────────────
   if (window._packages && window._packages.length > 0 && !forceRefresh) {
-    // Render what we have right now — zero latency
-    if (typeof window.hpmRenderHierarchy === 'function') {
+    // Render what we have right now — preserving active filters/view mode
+    if (typeof window.hpmApplyFilters === 'function') {
+      window.hpmApplyFilters();
+    } else if (typeof window.hpmRenderHierarchy === 'function') {
       grid.innerHTML = window.hpmRenderHierarchy(window._packages);
     }
     window.hpmUpdateCount('packages', window._packages.length);
+    _hpmSyncRestartFromPackages(window._packages);
 
-    // Then silently re-fetch in background and update only if changed
+    // Then silently re-fetch in background and update if changed
     try {
       const resp  = await fetch('/api/packages/all');
       const data  = await resp.json();
       if (!data.ok) return;
-      const fresh = JSON.stringify(data.packages || []);
+      const freshPackages = data.packages || [];
+      const fresh = JSON.stringify(freshPackages);
       const stale = JSON.stringify(window._packages);
       if (fresh !== stale) {
-        window._packages = data.packages || [];
+        window._packages = freshPackages;
+        if (window.HPM_STATE) {
+          window.HPM_STATE.filteredPackages = [...window._packages];
+        }
         window.hpmUpdateCount('packages', window._packages.length);
         if (typeof window.hpmRenderFilterBars === 'function') {
           window.hpmRenderFilterBars();
         }
-        if (typeof window.hpmRenderHierarchy === 'function') {
+        if (typeof window.hpmApplyFilters === 'function') {
+          window.hpmApplyFilters();
+        } else if (typeof window.hpmRenderHierarchy === 'function') {
           grid.innerHTML = window.hpmRenderHierarchy(window._packages);
         }
         _hpmCheckUpdatesBackground(window._packages);
       }
+      _hpmSyncRestartFromPackages(freshPackages);
     } catch (_) { /* silent — keep showing stale */ }
     return;
   }
@@ -54,6 +73,7 @@ window.hpmLoadPackages = async function (forceRefresh = false) {
     window._packages = packages;
 
     window.hpmUpdateCount('packages', packages.length);
+    _hpmSyncRestartFromPackages(packages);
 
     if (packages.length === 0) {
       grid.innerHTML = `

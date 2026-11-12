@@ -25,6 +25,10 @@ async function saveConfig(silent = false) {
         window.cfg.hpm = window.cfg.hpm || {};
         window.cfg.hpm.store_catalog_url = window._hpmActiveRepoUrl;
       }
+      if (window._hpmRestartMode) {
+        window.cfg.hpm = window.cfg.hpm || {};
+        window.cfg.hpm.restart_mode = window._hpmRestartMode;
+      }
       if (window.cfg.hpm) {
         delete window.cfg.hpm.github_token;
       }

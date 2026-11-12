@@ -20,6 +20,7 @@ from typing import List, Optional, Dict, Any, Callable
 
 from hecos.core.logging import logger
 from .registry import PackageRegistry
+from .installer_steps import hpm_monitor_guard
 
 
 @dataclass
@@ -59,6 +60,10 @@ class PackageUninstaller:
         Args:
             pkg_id: The package identifier (e.g. 'mail', 'my_plugin').
         """
+        with hpm_monitor_guard(self._hecos_root):
+            return self._uninstall_inner(pkg_id)
+
+    def _uninstall_inner(self, pkg_id: str) -> UninstallResult:
         result = UninstallResult(package_id=pkg_id)
 
         # ── Step 1: Verify it's installed ────────────────────────────────────

@@ -79,19 +79,20 @@ window.hpmRenderRow = function (pkg, meta) {
           <i class="fas fa-check-double" style="font-size:10px; opacity:0.8;"></i>
         </button>`;
 
-    if (pkg.tag && !isDisabled && !isBroken) {
+    if (!isDisabled && !isBroken && (pkg.requires_restart || pkg.tag)) {
       if (pkg.requires_restart) {
         actions += `
             <button type="button"
                     class="btn btn-sm hpm-restart-required-btn"
                     style="font-size:10px;padding:4px 10px;margin-left:4px;
+                           display:inline-flex;align-items:center;gap:4px;
                            background:linear-gradient(135deg,#f59e0b,#d97706);
-                           border:none;color:#fff;font-weight:700;
+                           border:1px solid #facc15;color:#fff;font-weight:700;
                            border-radius:8px;cursor:pointer;
                            animation:hpmPulse 2s ease-in-out infinite;"
                     onclick="window._hpmDoRestart()"
                     title="${_ti('Restart required to activate this package', 'Riavvio richiesto per attivare il pacchetto', 'Reinicio requerido para activar el paquete')}">
-              <i class="fas fa-power-off" style="font-size:10px;margin-right:4px;"></i>${_ti('Restart', 'Riavvia', 'Reiniciar')}
+              <i class="fas fa-power-off" style="font-size:10px;"></i>${_ti('Restart', 'Riavvia', 'Reiniciar')}
             </button>`;
       } else {
         actions += `

@@ -336,6 +336,59 @@ fish_speech_presets:
     repetition_penalty: 1.2
     temperature: 0.7
     top_p: 0.7
+  2026-11-12 05:12:48 · FishSeed73928 · seed 73928:
+    chunk_sentences: true
+    inference_preset: Standard & Balanced
+    max_new_tokens: 512
+    reference_audio: 2026-11-12_05-12-48_FishSeed73928_seed73928.wav
+    reference_text: Welcome to Hecos—Helping Companion System for the tech-savvy,
+      or 'that thing you built because cloud AI filters wouldn't let you breathe'
+      for the rest of us.
+    repetition_penalty: 1.2
+    temperature: 0.7
+    top_p: 0.7
+  2026-11-12 05:14:21 · FishSeed76250 · seed 76250 donna sexy:
+    chunk_sentences: true
+    inference_preset: Standard & Balanced
+    max_new_tokens: 512
+    reference_audio: 2026-11-12-05-14-21-FishSeed76250-seed-76250-donna-sexy.wav
+    reference_text: Welcome to Hecos—Helping Companion System for the tech-savvy,
+      or 'that thing you built because cloud AI filters wouldn't let you breathe'
+      for the rest of us.
+    repetition_penalty: 1.2
+    temperature: 0.7
+    top_p: 0.7
+  2026-11-12 05:17:29 · FishSeed17774 · seed 17774:
+    chunk_sentences: true
+    inference_preset: Standard & Balanced
+    max_new_tokens: 512
+    reference_audio: 2026-11-12_05-17-29_FishSeed17774_seed17774.wav
+    reference_text: Welcome to Hecos—Helping Companion System for the tech-savvy,
+      or 'that thing you built because cloud AI filters wouldn't let you breathe'
+      for the rest of us.
+    repetition_penalty: 1.2
+    temperature: 0.7
+    top_p: 0.7
+  2026-11-12 05:38:03 · FishSeed51948 · seed 51948:
+    chunk_sentences: true
+    inference_preset: Standard & Balanced
+    max_new_tokens: 512
+    reference_audio: 2026-11-12_05-38-03_FishSeed51948_seed51948.wav
+    reference_text: 'Ascoltami bene: questo è un momento straordinario, e ogni dettaglio
+      può fare davvero la differenza!'
+    repetition_penalty: 1.2
+    temperature: 0.7
+    top_p: 0.7
+  2026-11-12 05:39:34 · FishSeed98059 · seed 98059 voce docu donna 1:
+    chunk_sentences: true
+    inference_preset: Expressive & Dynamic
+    max_new_tokens: 512
+    reference_audio: 2026-11-12-05-39-34-FishSeed98059-seed-98059-voce-docu-donna-1.wav
+    reference_text: 'Listen carefully: this is an incredible opportunity, and every
+      single step counts towards our goal.'
+    repetition_penalty: 1.25
+    temperature: 0.75
+    top_p: 0.8
   Boy 1 (Icelandic):
     chunk_sentences: true
     inference_preset: Fast & Direct
@@ -450,59 +503,6 @@ fish_speech_presets:
     top_p: 0.8
     use_memory_cache: true
     volume: 1
-  2026-11-12 05:12:48 · FishSeed73928 · seed 73928:
-    reference_audio: 2026-11-12_05-12-48_FishSeed73928_seed73928.wav
-    reference_text: Welcome to Hecos—Helping Companion System for the tech-savvy,
-      or 'that thing you built because cloud AI filters wouldn't let you breathe'
-      for the rest of us.
-    inference_preset: Standard & Balanced
-    temperature: 0.7
-    top_p: 0.7
-    repetition_penalty: 1.2
-    max_new_tokens: 512
-    chunk_sentences: true
-  2026-11-12 05:14:21 · FishSeed76250 · seed 76250 donna sexy:
-    reference_audio: 2026-11-12-05-14-21-FishSeed76250-seed-76250-donna-sexy.wav
-    reference_text: Welcome to Hecos—Helping Companion System for the tech-savvy,
-      or 'that thing you built because cloud AI filters wouldn't let you breathe'
-      for the rest of us.
-    inference_preset: Standard & Balanced
-    temperature: 0.7
-    top_p: 0.7
-    repetition_penalty: 1.2
-    max_new_tokens: 512
-    chunk_sentences: true
-  2026-11-12 05:17:29 · FishSeed17774 · seed 17774:
-    reference_audio: 2026-11-12_05-17-29_FishSeed17774_seed17774.wav
-    reference_text: Welcome to Hecos—Helping Companion System for the tech-savvy,
-      or 'that thing you built because cloud AI filters wouldn't let you breathe'
-      for the rest of us.
-    inference_preset: Standard & Balanced
-    temperature: 0.7
-    top_p: 0.7
-    repetition_penalty: 1.2
-    max_new_tokens: 512
-    chunk_sentences: true
-  2026-11-12 05:38:03 · FishSeed51948 · seed 51948:
-    reference_audio: 2026-11-12_05-38-03_FishSeed51948_seed51948.wav
-    reference_text: 'Ascoltami bene: questo è un momento straordinario, e ogni dettaglio
-      può fare davvero la differenza!'
-    inference_preset: Standard & Balanced
-    temperature: 0.7
-    top_p: 0.7
-    repetition_penalty: 1.2
-    max_new_tokens: 512
-    chunk_sentences: true
-  2026-11-12 05:39:34 · FishSeed98059 · seed 98059 voce docu donna 1:
-    reference_audio: 2026-11-12-05-39-34-FishSeed98059-seed-98059-voce-docu-donna-1.wav
-    reference_text: 'Listen carefully: this is an incredible opportunity, and every
-      single step counts towards our goal.'
-    inference_preset: Expressive & Dynamic
-    temperature: 0.75
-    top_p: 0.8
-    repetition_penalty: 1.25
-    max_new_tokens: 512
-    chunk_sentences: true
 fish_speech_inference_presets:
   Creative & Wild:
     chunk_length: 220

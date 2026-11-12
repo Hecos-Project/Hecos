@@ -1,7 +1,7 @@
 {
   "version": "1",
   "catalog_url": "https://hecos-project.github.io/store/index.json",
-  "generated_at": "2026-11-09T07:54:30Z",
+  "generated_at": "2026-11-11T08:29:22Z",
   "packages": [
     {
       "id": "org.hecos.testbuilder",
@@ -40,13 +40,13 @@
       "name": "Builder Studio",
       "type": "system_app",
       "level": 5,
-      "version": "1.6.2",
+      "version": "1.6.3",
       "author": "Antonio Meloni",
       "description": "Visual IDE for building, compiling, inspecting and managing Hecos packages (.hpkg).",
       "tags": [],
-      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/apps/builder_studio-1.6.2.hpkg",
-      "size_bytes": 62383,
-      "sha256": "daf3460917eb605f3f9fa51d73247e4e2f39631e6f4379a5c0f75a9ee9e18e69",
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/apps/builder_studio-1.6.3.hpkg",
+      "size_bytes": 63510,
+      "sha256": "3e61b9f554c8663da423257fb8772b09e51bb5bbad8c83e6b2178b1fefdd247e",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -1748,5 +1748,5 @@
       "pip_requirements": []
     }
   ],
-  "cached_at": 1794464757.8201165
+  "cached_at": 1794473560.9131246
 }

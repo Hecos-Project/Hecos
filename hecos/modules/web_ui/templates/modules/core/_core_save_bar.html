@@ -59,13 +59,15 @@
     to   { transform: rotate(360deg); }
   }
   #btn-reboot-system.restart-pending {
-    background: transparent !important;
+    background: rgba(250, 204, 21, 0.14) !important;
     border: 1.5px solid #facc15 !important;
     color: #facc15 !important;
     animation: hcRebootPulse 1.6s ease-in-out infinite;
     padding: 0 !important;
     width: 32px !important;
+    min-width: 32px !important;
     height: 32px !important;
+    flex: 0 0 auto !important;
     border-radius: 8px !important;
   }
   #btn-reboot-system.restart-pending .reboot-btn-label { display: none !important; }

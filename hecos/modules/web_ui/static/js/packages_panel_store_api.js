@@ -337,7 +337,7 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, logEl, title, icon, modal,
 
     // Refresh store without closing modal automatically
     window.hpmStoreLoad();
-    if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
+    if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages(true);
     if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
 
     // ── Show Restart prompt if backend routes need a fresh boot (Removed) ────

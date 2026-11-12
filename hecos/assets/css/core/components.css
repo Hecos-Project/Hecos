@@ -381,3 +381,23 @@ input:checked + .slider:before { transform: translateX(20px); background: white;
     font-size: 11px; cursor: pointer; color: var(--muted);
 }
 .drive-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* HPM Restart-Required Animations & Button */
+@keyframes hpmPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.55); }
+  50%       { box-shadow: 0 0 0 6px rgba(250, 204, 21, 0); }
+}
+@keyframes hpmSpinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.hpm-restart-required-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  border: 1px solid #facc15 !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  animation: hpmPulse 2s ease-in-out infinite !important;
+}
+.hpm-restart-required-btn:hover {
+  filter: brightness(1.1);
+}
