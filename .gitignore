@@ -723,6 +723,12 @@ hecos/hpm/voice_forge/
 hecos/modules/web_ui/templates/modules/config_voice_forge.html
 hecos/modules/web_ui/static/css/voice_forge.css
 hecos/modules/web_ui/static/js/vf_*.js
+hecos/modules/web_ui/static/sampling/
+
+# Voice Clones (Privacy - User cloned voices, companion transcripts, metadata)
+hecos/assets/voice_clones/*
+!hecos/assets/voice_clones/README.md
+!hecos/assets/voice_clones/.gitkeep
 
 # HPM Store Cache
 hecos/data/store_cache*.json

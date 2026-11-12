@@ -1,6 +1,6 @@
 ai:
-  active_global_preset: urania_9800_gp
-  active_personality: Urania_9800
+  active_global_preset: motoko_1
+  active_personality: motoko_kusanagi
   available_personalities:
     '1': Hecos_System_Soul
     '2': Urania_9800
@@ -48,7 +48,7 @@ backend:
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: masska129/gemma-4-abliterated:12b-qat
+    model: nandhank/qwen3.5-abliterated-truthful:9b
     available_models:
       '1': masska129/gemma-4-abliterated:12b-qat
       '2': sorc/qwen3.5-claude-4.6-opus:4b
@@ -63,14 +63,14 @@ backend:
       '11': srchmnmichael/qwen3.5-9B-uncensored:latest
     num_ctx: 40960
     num_gpu: 99
-    num_predict: 4096
-    temperature: 0.95
-    top_p: 0.98
-    repeat_penalty: 1.0
+    num_predict: 1024
+    temperature: 0.7
+    top_p: 0.9
+    repeat_penalty: 1.1
     keep_alive: 120m
     probe_timeout_sec: 3
     binary_path: C:\Users\melon\AppData\Local\Programs\Ollama\ollama.exe
-    auto_start_server: true
+    auto_start_server: false
     auto_stop_server: true
     warmup_model: true
     warmup_keep_alive: 120m

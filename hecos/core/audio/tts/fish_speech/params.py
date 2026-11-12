@@ -34,6 +34,17 @@ class FishSpeechParams(NamedTuple):
     volume: float = 1.0
 
 
+def _same_ref_audio(lhs: str, rhs: str) -> bool:
+    """Returns True if two Fish Speech reference audio paths refer to the same file/name."""
+    a = str(lhs or "").strip()
+    b = str(rhs or "").strip()
+    if not a or not b:
+        return a == b
+    if os.path.isabs(a) and os.path.isabs(b):
+        return os.path.normcase(os.path.normpath(a)) == os.path.normcase(os.path.normpath(b))
+    return os.path.normcase(os.path.basename(a)) == os.path.normcase(os.path.basename(b))
+
+
 def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
     """
     Resolves Fish Speech parameters merging global audio config, configuration presets,
@@ -102,10 +113,15 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
                 preset_data = f_presets[p_name]
                 if preset_data.get("reference_id"):
                     reference_id = str(preset_data["reference_id"]).strip()
-                if preset_data.get("reference_audio"):
-                    ref_audio = str(preset_data["reference_audio"]).strip()
-                if preset_data.get("reference_text"):
-                    ref_text = str(preset_data["reference_text"]).strip()
+                preset_ref_audio = str(preset_data.get("reference_audio") or "").strip()
+                audio_changed = bool(preset_ref_audio and not _same_ref_audio(ref_audio, preset_ref_audio))
+                if preset_ref_audio:
+                    ref_audio = preset_ref_audio
+                if "reference_text" in preset_data and (preset_data.get("reference_text") or audio_changed):
+                    ref_text = str(preset_data.get("reference_text") or "").strip()
+                elif audio_changed:
+                    # Do not keep global audio.yaml reference_text (e.g. Sharon's line) on another preset's WAV.
+                    ref_text = ""
                 if not inf_preset_name and preset_data.get("inference_preset"):
                     inf_preset_name = preset_data["inference_preset"]
                 if preset_data.get("temperature") is not None:
@@ -158,12 +174,21 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
             api_url = str(session["fish_api_url"]).strip()
         if session.get("fish_reference_id"):
             reference_id = str(session["fish_reference_id"]).strip()
+        prev_ref_audio = ref_audio
+        explicit_ref_audio = ""
         if session.get("fish_reference_audio"):
-            ref_audio = str(session["fish_reference_audio"]).strip()
+            explicit_ref_audio = str(session["fish_reference_audio"]).strip()
+            ref_audio = explicit_ref_audio
         elif session.get("tts_voice") and session.get("tts_voice") != "default":
-            ref_audio = str(session["tts_voice"]).strip()
-        if session.get("fish_reference_text"):
+            explicit_ref_audio = str(session["tts_voice"]).strip()
+            ref_audio = explicit_ref_audio
+
+        if "fish_reference_text" in session and session["fish_reference_text"] is not None:
             ref_text = str(session["fish_reference_text"]).strip()
+        elif explicit_ref_audio and not _same_ref_audio(prev_ref_audio, explicit_ref_audio):
+            # Switching clone WAV without an explicit transcript must clear any leftover global
+            # ref_text so companion .txt auto-loading can resolve the actual transcript cleanly.
+            ref_text = ""
         if session.get("fish_temperature") is not None:
             temperature = float(session["fish_temperature"])
         if session.get("fish_top_p") is not None:

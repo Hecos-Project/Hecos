@@ -7,7 +7,7 @@ DESCRIPTION: Handles HTTP transport, MessagePack (ormsgpack) and JSON payload se
 import os
 import time
 import base64
-from typing import Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 import socket
 import requests
@@ -114,7 +114,8 @@ class FishSpeechClient:
                          ref_text: str = "", temp: float = 0.7, top_p: float = 0.7,
                          rep_pen: float = 1.2, max_tokens: int = 1024,
                          chunk_length: int = 200, seed: int = 0, normalize: bool = True,
-                         use_memory_cache: bool = True, reference_id: str = "") -> Optional[bytes]:
+                         use_memory_cache: bool = True, reference_id: str = "",
+                         extra_references: Optional[List[Dict[str, Any]]] = None) -> Optional[bytes]:
         """
         Sends a single synthesis request to the Fish Speech API and returns WAV bytes.
         """
@@ -134,6 +135,24 @@ class FishSpeechClient:
                 "audio": audio_bytes,
                 "text": ref_text or ""
             })
+
+        if extra_references:
+            for extra in extra_references:
+                if not isinstance(extra, dict):
+                    continue
+                ext_bytes = extra.get("audio")
+                if not ext_bytes and extra.get("audio_path") and os.path.isfile(str(extra["audio_path"])):
+                    try:
+                        with open(str(extra["audio_path"]), "rb") as ef:
+                            ext_bytes = ef.read()
+                    except Exception as err:
+                        logger.error("FISH_SPEECH", f"❌ Failed to read extra reference audio '{extra.get('audio_path')}': {err}")
+                        ext_bytes = None
+                if ext_bytes:
+                    references.append({
+                        "audio": ext_bytes,
+                        "text": str(extra.get("text") or ""),
+                    })
 
         # Safeguard: Clamp temperature and max_tokens for local Fish Speech to prevent infinite generation loops.
         effective_temp = min(temp, 0.8) if (not api_key and temp > 0.8) else temp
@@ -166,16 +185,18 @@ class FishSpeechClient:
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
 
-        use_msgpack = is_ormsgpack_available() and audio_bytes
+        has_ref_audio = any(isinstance(r.get("audio"), (bytes, bytearray)) and len(r["audio"]) > 0 for r in references)
+        use_msgpack = is_ormsgpack_available() and has_ref_audio
         if use_msgpack:
             import ormsgpack
             headers["Content-Type"] = "application/msgpack"
             data = ormsgpack.packb(payload)
-            fmt_desc = "MessagePack (ormsgpack)"
+            fmt_desc = f"MessagePack (ormsgpack, {len(references)} ref)"
         else:
             headers["Content-Type"] = "application/json"
-            if audio_bytes:
-                payload["references"][0]["audio"] = base64.b64encode(audio_bytes).decode("utf-8")
+            for ref_item in payload.get("references") or []:
+                if isinstance(ref_item.get("audio"), (bytes, bytearray)):
+                    ref_item["audio"] = base64.b64encode(bytes(ref_item["audio"])).decode("utf-8")
             import json
             data = json.dumps(payload)
             fmt_desc = "JSON (base64 audio)"

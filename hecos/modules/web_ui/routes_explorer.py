@@ -143,6 +143,9 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK) {{
                     for ft in d_filetypes:
                         label = ft[0] if len(ft) > 0 else "Files"
                         pattern = ft[1] if len(ft) > 1 else "*.*"
+                        tokens = str(pattern).split()
+                        if len(tokens) > 1 and all("*" in tok for tok in tokens):
+                            pattern = ";".join(tokens)
                         filter_parts.append(f"{label} ({pattern})|{pattern}")
                     filter_str = "|".join(filter_parts) if filter_parts else "All Files (*.*)|*.*"
 

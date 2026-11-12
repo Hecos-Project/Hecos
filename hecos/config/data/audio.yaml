@@ -8,9 +8,9 @@ noise_scale: 0.6
 noise_w: 0.8
 sentence_silence: 0.2
 volume: 1.0
+piper_timeout: 180
 piper_current_preset: default
 piper_presets: {}
-piper_timeout: 180
 piper_current_inference_preset: ''
 piper_inference_presets:
   Creative & Wild:
@@ -56,7 +56,7 @@ kokoro:
   volume: 1.0
   normalize: true
   current_preset: KOKORO1
-  current_inference_preset: Dynamic Prosody
+  current_inference_preset: ''
 kokoro_presets:
   Default Heart:
     alpha: 1
@@ -96,7 +96,7 @@ kokoro_presets:
     alpha: 1
     beta: 1.25
     blend_voice: ''
-    inference_preset: Dynamic Prosody
+    inference_preset: ''
     lang_code: auto
     model_path: ''
     normalize: true
@@ -288,12 +288,13 @@ xtts_inference_presets:
 fish_speech:
   autostart: true
   api_url: http://127.0.0.1:18480/v1/tts
-  api_key: ''
+  api_key: hecos
   reference_id: ''
-  reference_audio: voce_sirena.wav
-  reference_text: ''
+  reference_audio: 2026-11-12-03-25-47-FishSeed6978-seed-6978-ragazza.wav
+  reference_text: Hello there! Everything is ready for our session today. Let's get
+    started whenever you are ready.
   temperature: 0.75
-  top_p: 0.89
+  top_p: 0.8
   repetition_penalty: 1.25
   max_new_tokens: 512
   chunk_length: 220
@@ -301,11 +302,40 @@ fish_speech:
   normalize: true
   use_memory_cache: true
   chunk_sentences: true
-  current_preset: fish speech voce donna sexy
-  current_inference_preset: Creative & Wild
+  current_preset: default
+  current_inference_preset: ''
   model_checkpoint: s2-pro
   volume: 1.0
 fish_speech_presets:
+  2026-11-12 03:22:45 · FishSeed80231 · seed 80231:
+    chunk_sentences: true
+    inference_preset: Standard & Balanced
+    max_new_tokens: 512
+    reference_audio: 2026-11-12_03-22-45_FishSeed80231_seed80231.wav
+    reference_text: The quick brown fox jumps over the lazy dog near the vibrant riverbank.
+    repetition_penalty: 1.2
+    temperature: 0.7
+    top_p: 0.7
+  2026-11-12 03:25:14 · FishSeed86578 · seed 86578:
+    chunk_sentences: true
+    inference_preset: Standard & Balanced
+    max_new_tokens: 512
+    reference_audio: 2026-11-12_03-25-14_FishSeed86578_seed86578.wav
+    reference_text: Hello there! Everything is ready for our session today. Let's
+      get started whenever you are ready.
+    repetition_penalty: 1.2
+    temperature: 0.7
+    top_p: 0.7
+  2026-11-12 03:25:47 · FishSeed6978 · seed 6978 ragazza:
+    chunk_sentences: true
+    inference_preset: Standard & Balanced
+    max_new_tokens: 512
+    reference_audio: 2026-11-12-03-25-47-FishSeed6978-seed-6978-ragazza.wav
+    reference_text: Hello there! Everything is ready for our session today. Let's
+      get started whenever you are ready.
+    repetition_penalty: 1.2
+    temperature: 0.7
+    top_p: 0.7
   Boy 1 (Icelandic):
     chunk_sentences: true
     inference_preset: Fast & Direct
@@ -389,7 +419,7 @@ fish_speech_presets:
     temperature: 0.7
     top_p: 0.7
     use_memory_cache: true
-  fish speech voce donna sexy:
+  fish speech voce donna sperim1:
     chunk_length: 220
     chunk_sentences: true
     inference_preset: Creative & Wild
@@ -404,6 +434,75 @@ fish_speech_presets:
     top_p: 0.8
     use_memory_cache: true
     volume: 1
+  sharon Audio preset fish:
+    chunk_length: 220
+    chunk_sentences: true
+    inference_preset: Expressive & Dynamic
+    max_new_tokens: 512
+    normalize: true
+    reference_audio: base_woman_sharon.wav
+    reference_id: ''
+    reference_text: 'Ascoltami bene: la calma è la mia forza, e ogni parola scelta
+      con cura lascia sempre il segno.'
+    repetition_penalty: 1.25
+    seed: 0
+    temperature: 0.75
+    top_p: 0.8
+    use_memory_cache: true
+    volume: 1
+  2026-11-12 05:12:48 · FishSeed73928 · seed 73928:
+    reference_audio: 2026-11-12_05-12-48_FishSeed73928_seed73928.wav
+    reference_text: Welcome to Hecos—Helping Companion System for the tech-savvy,
+      or 'that thing you built because cloud AI filters wouldn't let you breathe'
+      for the rest of us.
+    inference_preset: Standard & Balanced
+    temperature: 0.7
+    top_p: 0.7
+    repetition_penalty: 1.2
+    max_new_tokens: 512
+    chunk_sentences: true
+  2026-11-12 05:14:21 · FishSeed76250 · seed 76250 donna sexy:
+    reference_audio: 2026-11-12-05-14-21-FishSeed76250-seed-76250-donna-sexy.wav
+    reference_text: Welcome to Hecos—Helping Companion System for the tech-savvy,
+      or 'that thing you built because cloud AI filters wouldn't let you breathe'
+      for the rest of us.
+    inference_preset: Standard & Balanced
+    temperature: 0.7
+    top_p: 0.7
+    repetition_penalty: 1.2
+    max_new_tokens: 512
+    chunk_sentences: true
+  2026-11-12 05:17:29 · FishSeed17774 · seed 17774:
+    reference_audio: 2026-11-12_05-17-29_FishSeed17774_seed17774.wav
+    reference_text: Welcome to Hecos—Helping Companion System for the tech-savvy,
+      or 'that thing you built because cloud AI filters wouldn't let you breathe'
+      for the rest of us.
+    inference_preset: Standard & Balanced
+    temperature: 0.7
+    top_p: 0.7
+    repetition_penalty: 1.2
+    max_new_tokens: 512
+    chunk_sentences: true
+  2026-11-12 05:38:03 · FishSeed51948 · seed 51948:
+    reference_audio: 2026-11-12_05-38-03_FishSeed51948_seed51948.wav
+    reference_text: 'Ascoltami bene: questo è un momento straordinario, e ogni dettaglio
+      può fare davvero la differenza!'
+    inference_preset: Standard & Balanced
+    temperature: 0.7
+    top_p: 0.7
+    repetition_penalty: 1.2
+    max_new_tokens: 512
+    chunk_sentences: true
+  2026-11-12 05:39:34 · FishSeed98059 · seed 98059 voce docu donna 1:
+    reference_audio: 2026-11-12-05-39-34-FishSeed98059-seed-98059-voce-docu-donna-1.wav
+    reference_text: 'Listen carefully: this is an incredible opportunity, and every
+      single step counts towards our goal.'
+    inference_preset: Expressive & Dynamic
+    temperature: 0.75
+    top_p: 0.8
+    repetition_penalty: 1.25
+    max_new_tokens: 512
+    chunk_sentences: true
 fish_speech_inference_presets:
   Creative & Wild:
     chunk_length: 220
@@ -445,6 +544,16 @@ fish_speech_inference_presets:
     temperature: 0.7
     top_p: 0.7
     use_memory_cache: true
+  donna mascolina custom_1:
+    chunk_length: 220
+    max_new_tokens: 512
+    normalize: true
+    repetition_penalty: 1.25
+    seed: 0
+    temperature: 0.75
+    top_p: 0.8
+    use_memory_cache: true
+    volume: 1
 listening_status: true
 energy_threshold: 450
 silence_timeout: 5
