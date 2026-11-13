@@ -1,0 +1,1259 @@
+<script src="/hpm_plugin/net_search/web/static/js/search/search_endpoints.js?v=4tab6"></script>
+<script src="/hpm_plugin/net_search/web/static/js/search/search_sources.js?v=4tab6"></script>
+<script src="/hpm_plugin/net_search/web/static/js/netsearch_panel.js?v=4tab6"></script>
+
+<link rel="stylesheet" href="/hpm_plugin/net_search/web/static/css/netsearch_panel.css?v=4tab6">
+
+<div id="tab-netsearch" class="panel">
+  <!-- ═══ NET SEARCH & INTELLIGENCE SUITE ═══ -->
+  <div class="card" style="border-left: 4px solid #38bdf8; margin-bottom: 20px;">
+    <div
+      style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:10px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="card-title" style="margin-bottom:0; color:#38bdf8; font-size:16px;">
+          <i class="fas fa-satellite-dish"></i> Hecos Net Search &amp; Intelligence
+        </div>
+        <label class="switch" title="Enable / Disable Net Search subsystem">
+          <input type="checkbox" id="search-master-enabled"
+            onchange="window.updateNetSearchConfig('enabled', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <a href="/search" target="_blank" class="btn btn-primary"
+        style="font-size:11px; padding:6px 14px; border-radius:6px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+        <i class="fas fa-external-link-alt"></i> Open Net Search Dashboard
+      </a>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">
+      Autonomous multi-engine search suite: Clearnet meta-aggregators, Tor Dark Web (.onion) hidden services, OSINT and
+      deep file hunting.
+    </p>
+
+    <!-- Dedicated Console Notice Banner -->
+    <div
+      style="padding:10px 14px; background:rgba(6, 182, 212, 0.08); border-radius:8px; border:1px solid rgba(6, 182, 212, 0.2); margin-bottom:14px; display:flex; align-items:center; gap:10px;">
+      <i class="fas fa-cubes" style="color:var(--accent-cyan, #06b6d4); font-size:14px;"></i>
+      <div style="font-size:12px; color:var(--text); line-height:1.4;">
+        <strong>Search Engine Nodes &amp; Component Manager</strong>: Manage, restart, or update search nodes (SearXNG,
+        Tor daemon, DDGS, Sherlock) directly from the Net Search Console.
+      </div>
+    </div>
+
+    <!-- Technical Parameters Grid -->
+    <div
+      style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px; margin-bottom:14px;">
+
+      <!-- Tor Technical Network Settings -->
+      <div style="padding:14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:16px;">🧅</span>
+            <strong style="font-size:13px; color:var(--text);">Tor Proxy &amp; Network Ports</strong>
+            <i class="fas fa-info-circle ns-info-icon" title="Built-in Tor daemon &amp; SOCKS5h gateway. Required for .onion engines and optional anonymous fetching of automated source lists without DNS leaks."></i>
+            <span id="tor-cfg-status-badge" class="badge-pill"
+              style="font-size:10px; padding:2px 8px; background:rgba(255,255,255,0.06); color:var(--muted);"
+              title="Live connection status of the local Tor daemon / SOCKS5h port">Checking...</span>
+            <button type="button" class="btn btn-sm btn-secondary"
+              style="font-size:10px; padding:2px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"
+              onclick="window.torNewCircuit()" title="Request a fresh Tor exit circuit and IP identity via Control Port">
+              <i class="fas fa-random"></i> New Circuit
+            </button>
+          </div>
+          <label class="switch" title="Enable or disable Tor routing for .onion search engines and Tor-routed source lists">
+            <input type="checkbox" id="search-tor-enabled"
+              onchange="window.updateNetSearchConfig('tor.enabled', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:12px;">
+          SOCKS5h proxy configuration for .onion queries with zero DNS leaks.
+        </p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:110px;">
+            <label
+              title="Local SOCKS5h proxy port used by Hecos to route .onion requests (DNS resolved remotely through Tor). Default: 9055."
+              style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; display:block; margin-bottom:3px;">SOCKS5
+              Port <i class="fas fa-info-circle ns-info-icon"></i></label>
+            <input type="number" id="search-tor-socks-port" placeholder="9055" min="1024" max="65535"
+              title="Local SOCKS5h proxy port (1024-65535). Must match your Hecos Tor daemon or Tor Browser SOCKS port."
+              onchange="window.updateNetSearchConfig('tor.socks_port', parseInt(this.value))"
+              style="width:100%; padding:5px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-size:12px;">
+          </div>
+          <div style="flex:1; min-width:110px;">
+            <label
+              title="Tor ControlPort used to send NEWNYM signals ('New Circuit' button) and inspect daemon bootstrap status. Default: 9056."
+              style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; display:block; margin-bottom:3px;">Control
+              Port <i class="fas fa-info-circle ns-info-icon"></i></label>
+            <input type="number" id="search-tor-control-port" placeholder="9056" min="1024" max="65535"
+              title="Tor ControlPort (1024-65535) for circuit rotation and health checks."
+              onchange="window.updateNetSearchConfig('tor.control_port', parseInt(this.value))"
+              style="width:100%; padding:5px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-size:12px;">
+          </div>
+        </div>
+
+        <div style="margin-top:12px; border-top:1px dashed var(--border); padding-top:10px;">
+          <label
+            title="Choose what happens when you click a .onion result link in Search: open inside Hecos's Tor Live Viewer, launch external Tor Browser, or prompt every time."
+            style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;">Dark
+            Web (.onion) Link Opening Action <i class="fas fa-info-circle ns-info-icon"></i></label>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
+            <select id="search-tor-onion-action" onchange="window.updateNetSearchConfig('tor.onion_action', this.value)"
+              title="Default handler when opening .onion links from search results"
+              style="flex:1; min-width:200px; padding:5px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-size:12px;">
+              <option value="hecos_viewer">Hecos Tor Live Viewer (In-App Cross-Browser)</option>
+              <option value="tor_browser">External Tor Browser</option>
+              <option value="ask_menu">Always Show Choices Menu</option>
+            </select>
+          </div>
+          <div>
+            <label
+              title="Absolute path to Tor Browser executable (firefox.exe) used when External Tor Browser mode is selected."
+              style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;">Tor
+              Browser Executable Path <i class="fas fa-info-circle ns-info-icon"></i></label>
+            <div style="display:flex; gap:6px;">
+              <input type="text" id="search-tor-browser-path" placeholder="C:\Users\...\Tor Browser\Browser\firefox.exe"
+                title="Full file path to external Tor Browser binary"
+                onchange="window.updateNetSearchConfig('tor.tor_browser_path', this.value)"
+                style="flex:1; padding:5px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-size:11px; font-family:monospace;">
+              <button type="button" class="btn btn-secondary" onclick="window.detectTorBrowserPath()"
+                style="border-radius:6px; font-size:11px; padding:5px 12px; cursor:pointer;"
+                title="Auto-detect installed Tor Browser executable path on this computer">
+                <i class="fas fa-search"></i> Detect
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SearXNG Meta-Search (Pure Python Daemon / Local or Remote) -->
+      <div style="padding:14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:16px;">🔍</span>
+            <strong style="font-size:13px; color:var(--text);">SearXNG Primary Instance</strong>
+            <i class="fas fa-info-circle ns-info-icon" title="Primary meta-search daemon used to fan queries across multiple upstream web/media engines simultaneously."></i>
+          </div>
+          <label class="switch" title="Enable or disable queries to the primary SearXNG instance (fallback mirrors still apply when configured)">
+            <input type="checkbox" id="search-searxng-enabled"
+              onchange="window.updateNetSearchConfig('searxng.enabled', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">
+          Native Pure-Python daemon (100% Docker-Free) or custom SearXNG instance.
+        </p>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="search-searxng-url" placeholder="http://127.0.0.1:8889"
+            title="Base URL of your primary local or remote SearXNG instance (e.g. http://127.0.0.1:8889)"
+            onchange="window.updateNetSearchConfig('searxng.url', this.value)"
+            style="flex:1; padding:5px 10px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text);">
+        </div>
+        <div
+          style="margin-top:10px; padding-top:8px; border-top:1px dashed var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:11px; color:var(--muted);"><i class="fas fa-layer-group"
+              style="color:var(--accent-cyan, #06b6d4);"></i> Backend Engines:</span>
+          <button type="button" class="btn btn-sm btn-secondary"
+            title="Jump to SearXNG tab and open the Aggregated Backend Engines list"
+            onclick="window.switchNetSearchEndpointTab && window.switchNetSearchEndpointTab('searxng'); window.toggleEndpointSection(null, 'endp-searxng-engines-body', true); document.getElementById('endp-searxng-engines-body')?.scrollIntoView({behavior:'smooth'});"
+            style="font-size:10px; padding:3px 8px; border-radius:6px;">
+            <i class="fas fa-sliders-h"></i> Configure Aggregated Engines
+          </button>
+        </div>
+      </div>
+
+      <!-- Brave Search API Key -->
+      <div style="padding:14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border);">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+          <span style="font-size:15px;">🦁</span>
+          <strong style="font-size:13px; color:var(--text);">Brave Search API Key</strong>
+          <i class="fas fa-info-circle ns-info-icon" title="Optional official Brave Search API token (X-Subscription-Token) for fast, CAPTCHA-free web results alongside other engines."></i>
+          <span style="font-size:10px; color:var(--muted); background:var(--bg1); padding:1px 6px; border-radius:4px; margin-left:auto;">optional</span>
+        </div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:8px; line-height:1.4;">
+          Enables direct Brave Search API access — no CAPTCHA, no rate-limits (2 000 req/month free tier).
+          <a href="https://api.search.brave.com/app/keys" target="_blank"
+            style="color:var(--accent-cyan); text-decoration:none;">Get a free key ↗</a>
+        </p>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="password" id="search-brave-api-key" placeholder="BSA…"
+            title="Enter your Brave Search Data API subscription key"
+            onchange="window.updateNetSearchConfig('brave_api_key', this.value)"
+            autocomplete="off"
+            style="flex:1; padding:5px 10px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-family:monospace;">
+          <button type="button" title="Show or hide Brave API key"
+            onclick="const i=document.getElementById('search-brave-api-key'); i.type=i.type==='password'?'text':'password';"
+            style="padding:5px 10px; font-size:11px; border-radius:6px; border:1px solid var(--border); background:var(--bg1); color:var(--text); cursor:pointer;">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Engine Defaults & Limits -->
+      <div style="padding:14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border);">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <span style="font-size:16px;">⚙️</span>
+          <strong style="font-size:13px; color:var(--text);">Search Defaults &amp; Timeouts</strong>
+          <i class="fas fa-info-circle ns-info-icon" title="Global default per-engine network timeout and default maximum result count when a query does not override them."></i>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
+          <div style="flex:1; min-width:110px;">
+            <label
+              title="Maximum seconds to wait per HTTP search engine before timing out. Tor .onion engines automatically receive extra timeout headroom."
+              style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; display:block; margin-bottom:3px;">Timeout
+              (Seconds) <i class="fas fa-info-circle ns-info-icon"></i></label>
+            <input type="number" id="search-timeout" placeholder="10" min="2" max="60"
+              title="Default per-engine request timeout in seconds (2-60)"
+              onchange="window.updateNetSearchConfig('timeout', parseInt(this.value))"
+              style="width:100%; padding:5px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-size:12px;">
+          </div>
+          <div style="flex:1; min-width:110px;">
+            <label
+              title="Default maximum number of merged results returned per search query across active engines."
+              style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; display:block; margin-bottom:3px;">Default
+              Limit <i class="fas fa-info-circle ns-info-icon"></i></label>
+            <input type="number" id="search-limit" placeholder="25" min="5" max="100"
+              title="Default result limit per search request (5-100)"
+              onchange="window.updateNetSearchConfig('limit', parseInt(this.value))"
+              style="width:100%; padding:5px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-size:12px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Privacy Shield: Local Engines Only -->
+      <div style="padding:14px; background:var(--bg3); border-radius:10px; border:1px solid rgba(16, 185, 129, 0.35);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:16px;">🛡️</span>
+            <strong style="font-size:13px; color:var(--text);">Privacy Shield: Local Only</strong>
+            <i class="fas fa-info-circle ns-info-icon" title="Zero-leak mode: blocks direct Clearnet cloud scrapers/APIs and runs searches strictly via local SearXNG / Tor .onion circuits."></i>
+          </div>
+          <label class="switch"
+            title="Disable third-party online engines and restrict queries to local private SearXNG and Tor circuits">
+            <input type="checkbox" id="search-local-only-enabled"
+              onchange="window.updateNetSearchConfig('local_only', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:0; line-height:1.4;">
+          Disables all third-party online cloud engines and scrapers (DDGS, Yahoo News, web scrapers). Runs searches
+          <strong>strictly on private local daemons and circuits</strong> (local SearXNG daemon on
+          <code>127.0.0.1:8889</code> or encrypted Tor .onion circuits) with zero tracking, similar to disabling cloud
+          models in the AI core.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- ═══ RESILIENT SEARCH ENDPOINTS, NODES & FALLBACKS (4-TAB ORGANIZER) ═══ -->
+    <div
+      style="margin-top:16px; padding:16px; background:var(--bg3); border-radius:10px; border:1px solid rgba(6, 182, 212, 0.25);">
+      <div
+        style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:16px;"><i class="fas fa-network-wired"
+              style="color:var(--accent-cyan, #06b6d4);"></i></span>
+          <strong style="font-size:13px; color:var(--text);">Search Endpoints, Fallback Pools &amp; Source Lists</strong>
+          <i class="fas fa-info-circle ns-info-icon" title="Configure active search backends, resilient fallback mirrors, custom query-template engines, Tor .onion gateways, and automated SQLite/list feeds."></i>
+          <span id="badge-sources-count" class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;"
+            title="Total registered automated source lists across all four tabs">0 Lists</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <label style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); cursor:pointer; padding:3px 6px; border:1px solid var(--border); border-radius:6px; background:var(--bg1);"
+            title="Enable/disable periodic background updates for all source lists that have Auto-Update checked">
+            <input type="checkbox" id="sources-auto-update-master" checked
+              onchange="window.SearchSources && window.SearchSources.setGlobalAutoUpdate(this.checked)">
+            <span>Auto-Update <i class="fas fa-info-circle ns-info-icon"></i></span>
+          </label>
+          <button type="button" class="btn btn-sm btn-secondary"
+            style="border-radius:6px; font-size:11px; padding:4px 10px; display:inline-flex; align-items:center; gap:5px;"
+            onclick="window.SearchSources && window.SearchSources.syncAll()" title="Download, parse, deduplicate, and refresh all currently enabled automated source lists right now">
+            <i class="fas fa-sync-alt"></i> Sync All Enabled
+          </button>
+          <button type="button" class="btn btn-sm btn-secondary"
+            style="border-radius:6px; font-size:11px; padding:4px 10px; display:inline-flex; align-items:center; gap:5px;"
+            onclick="window.toggleAllEndpointSections(false)" title="Collapse all collapsible subsections in the currently active tab">
+            <i class="fas fa-compress-alt"></i> Collapse (-)
+          </button>
+          <button type="button" class="btn btn-sm btn-secondary"
+            style="border-radius:6px; font-size:11px; padding:4px 10px; display:inline-flex; align-items:center; gap:5px;"
+            onclick="window.toggleAllEndpointSections(true)" title="Expand all collapsible subsections in the currently active tab">
+            <i class="fas fa-expand-alt"></i> Expand (+)
+          </button>
+          <button type="button" class="btn btn-sm btn-secondary"
+            style="border-radius:6px; font-size:11px; padding:4px 10px; display:inline-flex; align-items:center; gap:5px;"
+            onclick="window.reloadNetSearchEndpoints()" title="Reload saved endpoints, source lists, and SQLite domain statistics from backend">
+            <i class="fas fa-redo-alt"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <p style="font-size:11px; color:var(--muted); margin-bottom:12px; line-height:1.45;">
+        Organize endpoints by network type. Each tab combines direct node/engine configuration with its own dedicated
+        automated lists and presets.
+      </p>
+
+      <div id="netsearch-endpoints-manager-container">
+        <!-- 4 Main Category Tabs -->
+        <div class="ns-tabs-bar" role="tablist">
+          <button type="button" id="ns-tab-btn-searxng" data-ns-tab="searxng" class="ns-tab-btn active"
+            title="Configure the primary SearXNG meta-search daemon, its upstream engines, fallback public/custom mirrors, and automated SearXNG node lists"
+            onclick="window.switchNetSearchEndpointTab('searxng')">
+            <i class="fas fa-server" style="color:var(--accent-cyan, #06b6d4);"></i>
+            <span>SearXNG</span>
+            <span id="badge-tab-searxng-count" class="badge-pill badge-neutral" style="font-size:10px; padding:1px 6px;">0</span>
+          </button>
+          <button type="button" id="ns-tab-btn-web" data-ns-tab="web" class="ns-tab-btn"
+            title="Configure direct Clearnet query-template/OpenSearch engines, Open Archives &amp; Repositories (Internet Archive, Wikimedia, etc.), and automated Web source lists"
+            onclick="window.switchNetSearchEndpointTab('web')">
+            <i class="fas fa-globe" style="color:var(--accent-emerald, #10b981);"></i>
+            <span>Direct Web</span>
+            <span id="badge-tab-web-count" class="badge-pill badge-neutral" style="font-size:10px; padding:1px 6px;">0</span>
+          </button>
+          <button type="button" id="ns-tab-btn-dark" data-ns-tab="dark" class="ns-tab-btn"
+            title="Configure Tor .onion search engines, clearnet gateways routed over Tor SOCKS5h, and automated .onion index feeds"
+            onclick="window.switchNetSearchEndpointTab('dark')">
+            <i class="fas fa-user-secret" style="color:var(--accent-purple, #a855f7);"></i>
+            <span>Dark Web (.onion)</span>
+            <span id="badge-tab-dark-count" class="badge-pill badge-neutral" style="font-size:10px; padding:1px 6px;">0</span>
+          </button>
+          <button type="button" id="ns-tab-btn-files" data-ns-tab="files" class="ns-tab-btn"
+            title="Configure File Hunter sources: dedicated open file APIs, Clearnet meta-engines (Google/DDG/SearXNG), Tor .onion search engines, and SQLite Domain Directory"
+            onclick="window.switchNetSearchEndpointTab('files')">
+            <i class="fas fa-file-shield" style="color:#38bdf8;"></i>
+            <span>File Hunter</span>
+            <span id="badge-tab-files-count" class="badge-pill badge-neutral" style="font-size:10px; padding:1px 6px;">11</span>
+          </button>
+          <button type="button" id="ns-tab-btn-osint" data-ns-tab="osint" class="ns-tab-btn"
+            title="Configure OSINT Hunt sources: Sherlock 480+ site catalog, username variants, People &amp; Social Dorks, OSINT APIs, Clearnet, Tor .onion, and SQLite Directory"
+            onclick="window.switchNetSearchEndpointTab('osint')">
+            <i class="fas fa-id-badge" style="color:#f472b6;"></i>
+            <span>OSINT Hunt</span>
+            <span id="badge-tab-osint-count" class="badge-pill badge-neutral" style="font-size:10px; padding:1px 6px;">11</span>
+          </button>
+          <button type="button" id="ns-tab-btn-domains" data-ns-tab="domains" class="ns-tab-btn"
+            title="Manage large SQLite domain compilations: set any list as Searchable Directory (unfiltered reverse search), SafeSearch Blocklist (exclusion filter), or Allowlist"
+            onclick="window.switchNetSearchEndpointTab('domains')">
+            <i class="fas fa-database" style="color:var(--accent-amber, #f59e0b);"></i>
+            <span>Domains (SQLite)</span>
+            <span id="badge-tab-domains-count" class="badge-pill badge-neutral" style="font-size:10px; padding:1px 6px;">0</span>
+          </button>
+        </div>
+
+        <!-- ═══ TAB 1: SEARXNG ═══ -->
+        <div id="ns-tab-pane-searxng" class="ns-tab-pane active">
+          <!-- 1a. Primary Daemon -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-searxng-local-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-searxng-local-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-server" style="color:var(--accent-cyan, #06b6d4); margin-right:6px;"></i>
+                  Primary SearXNG Daemon
+                  <i class="fas fa-info-circle ns-info-icon" title="Your main SearXNG server (local Pure-Python daemon or self-hosted instance) queried first for web/video/image/audio meta-search."></i>
+                </span>
+                <span class="badge-pill badge-neutral" style="font-size:10px;">Local / Docker-Free</span>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-searxng-local-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">Primary local or remote SearXNG meta-search instance (protocol, host, port, API key).</p>
+              <div id="endp-searxng-local-wrap"></div>
+            </div>
+          </div>
+
+          <!-- 1b. Aggregated Backend Engines -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-searxng-engines-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-searxng-engines-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-layer-group" style="color:var(--accent-cyan, #06b6d4); margin-right:6px;"></i>
+                  Aggregated Backend Engines
+                  <i class="fas fa-info-circle ns-info-icon" title="Upstream search engines enabled inside your SearXNG daemon (e.g., Bing, Yandex, PeerTube, Dailymotion) grouped by search category."></i>
+                </span>
+                <span id="badge-searxng-engines-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Engines</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Add a new upstream engine adapter to your SearXNG backend engine list"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;" onclick="window.addSearxngEngineNode()">
+                  <i class="fas fa-plus"></i> Add Engine
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-searxng-engines-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:10px; line-height:1.4;">
+                Backend search adapters queried by SearXNG (enable/disable, rename, assign categories, or remove).
+              </p>
+              <div
+                style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; padding:8px 10px; background:var(--bg0); border-radius:6px; border:1px solid var(--border); align-items:center;">
+                <span style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-right:4px;" title="One-click shortcuts to add popular upstream SearXNG engine adapters">Quick Presets:</span>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('bing', 'Bing Web Search', 'general')">+ Bing</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('yandex', 'Yandex Web Search', 'general')">+ Yandex</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('yahoo', 'Yahoo Web Search', 'general')">+ Yahoo</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('duckduckgo', 'DuckDuckGo', 'general')">+ DuckDuckGo</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('google', 'Google Web Search', 'general')">+ Google</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('brave', 'Brave Web Search', 'general')">+ Brave</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('wikipedia', 'Wikipedia', 'general')">+ Wikipedia</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('google_videos', 'Google Videos', 'videos')">+ Google Videos</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('bing_videos', 'Bing Videos', 'videos')">+ Bing Videos</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('dailymotion', 'Dailymotion Videos', 'videos')">+ Dailymotion</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('peertube', 'PeerTube Videos', 'videos')">+ PeerTube</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('vimeo', 'Vimeo Videos', 'videos')">+ Vimeo</button>
+              </div>
+              <div id="endp-searxng-engines-wrap" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+          </div>
+
+          <!-- 1c. Unified Fallback Mirrors & Custom SearXNG Nodes -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-searxng-fallbacks-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-searxng-fallbacks-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-network-wired" style="color:var(--accent-cyan, #06b6d4); margin-right:6px;"></i>
+                  Fallback Mirrors &amp; Custom SearXNG Nodes
+                  <i class="fas fa-info-circle ns-info-icon" title="Backup public or self-hosted SearXNG nodes queried automatically whenever your primary SearXNG instance fails or gets rate-limited."></i>
+                </span>
+                <span id="badge-searxng-fallbacks-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Nodes</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Add a structured fallback SearXNG mirror (protocol, host, port, path, optional API key)"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;" onclick="window.addSearxngFallbackNode()">
+                  <i class="fas fa-plus"></i> Add Mirror / Node
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-searxng-fallbacks-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">
+                Unified pool of resilient SearXNG fallback mirrors and custom meta-search nodes queried automatically
+                whenever the primary daemon is offline or rate-limited.
+              </p>
+              <div id="endp-searxng-fallbacks-wrap" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+          </div>
+
+          <!-- 1d. Automated Source Lists for SearXNG -->
+          <div class="endpoint-group" style="margin-bottom:0; border-color:rgba(6, 182, 212, 0.28);">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-sources-searxng-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-sources-searxng-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-rss" style="color:var(--accent-cyan, #06b6d4); margin-right:6px;"></i>
+                  Automated SearXNG Source Lists
+                  <i class="fas fa-info-circle ns-info-icon" title="Remote feeds or files (e.g. searx.space instances JSON) that automatically populate and refresh SearXNG fallback mirrors on schedule."></i>
+                </span>
+                <span id="badge-sources-searxng-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Lists</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Register a URL, local file, or pasted feed of SearXNG instances or engines"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;"
+                  onclick="window.SearchSources && window.SearchSources.openAddFormForTab('searxng', 'searxng_fallbacks')">
+                  <i class="fas fa-plus"></i> Add / Import SearXNG List
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-sources-searxng-body">
+              <div id="endp-sources-presets-searxng"
+                style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; padding:8px 10px; background:var(--bg0); border-radius:6px; border:1px solid var(--border); align-items:center;"></div>
+              <div id="endp-sources-list-searxng" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB 2: DIRECT WEB ═══ -->
+        <div id="ns-tab-pane-web" class="ns-tab-pane">
+          <!-- 2a. Custom Web & OpenSearch Engines -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-custom-clear-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-custom-clear-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-globe" style="color:var(--accent-emerald, #10b981); margin-right:6px;"></i>
+                  Custom Web &amp; OpenSearch Engines
+                  <i class="fas fa-info-circle ns-info-icon" title="Direct Clearnet search engines queried via URL templates ({q}, {api_key}) returning JSON, RSS/Atom XML, or HTML links — no SearXNG required."></i>
+                </span>
+                <span id="badge-custom-clear-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Engines</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Add a custom Clearnet web engine using protocol, host, port, query template ({q}), and optional API key"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;" onclick="window.addCustomClearEngineNode()">
+                  <i class="fas fa-plus"></i> Add Web Engine
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-custom-clear-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">
+                Direct Clearnet search engines using OpenSearch or query templates (<code>{q}</code>, <code>{api_key}</code>) supporting JSON, RSS/Atom XML, and HTML results. Assign category <strong>Files</strong> to query them automatically in <strong>File Hunter</strong>.
+              </p>
+              <div id="endp-custom-clear-wrap" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+          </div>
+
+          <!-- 2b. Open Archives & Repositories -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-archives-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-archives-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-archive" style="color:var(--accent-amber, #f59e0b); margin-right:6px;"></i>
+                  Open Archives &amp; Repositories
+                  <i class="fas fa-info-circle ns-info-icon" title="Built-in public archives (Internet Archive, Wikimedia Commons) plus any custom open repository/feed you add with structured protocol/host/port/template/API-key settings."></i>
+                </span>
+                <span id="badge-archives-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">2 Archives</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Add a custom open archive, library API, or repository endpoint (supports {q}, {api_key}, JSON/XML/HTML)"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;" onclick="window.addCustomArchiveNode()">
+                  <i class="fas fa-plus"></i> Add Archive / Repository
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-archives-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">
+                Configure built-in archive adapters (Internet Archive, Wikimedia Commons) or add custom open repositories &amp; feeds (JSON API, RSS/Atom, OpenSearch <code>{q}</code>, optional <code>{api_key}</code>). Entries with category <strong>Files</strong> automatically feed <strong>File Hunter</strong>.
+              </p>
+              <div id="endp-archives-wrap" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+          </div>
+
+          <!-- 2c. Automated Source Lists for Web / OpenSearch -->
+          <div class="endpoint-group" style="margin-bottom:0; border-color:rgba(16, 185, 129, 0.28);">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-sources-web-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-sources-web-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-rss" style="color:var(--accent-emerald, #10b981); margin-right:6px;"></i>
+                  Automated Web / OpenSearch Source Lists
+                  <i class="fas fa-info-circle ns-info-icon" title="Remote feeds or lists (OpenSearch descriptors, CSV/JSON/YAML engine catalogs) that automatically add direct web engines."></i>
+                </span>
+                <span id="badge-sources-web-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Lists</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Register or import a list of OpenSearch / Clearnet web search engines"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;"
+                  onclick="window.SearchSources && window.SearchSources.openAddFormForTab('web', 'custom_clear_engines')">
+                  <i class="fas fa-plus"></i> Add / Import Web List
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-sources-web-body">
+              <div id="endp-sources-presets-web"
+                style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; padding:8px 10px; background:var(--bg0); border-radius:6px; border:1px solid var(--border); align-items:center;"></div>
+              <div id="endp-sources-list-web" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB 3: DARK WEB (.onion) ═══ -->
+        <div id="ns-tab-pane-dark" class="ns-tab-pane">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding:9px 12px; margin-bottom:14px; background:rgba(168, 85, 247, 0.08); border:1px solid rgba(168, 85, 247, 0.25); border-radius:8px; font-size:11px; color:var(--muted);">
+            <span>
+              <i class="fas fa-shield-alt" style="color:#a855f7; margin-right:6px;"></i>
+              Tor SOCKS5h ports, <code>.onion</code> Link Action and Tor Browser path are configured in the <strong>Tor Dark Web Gateway</strong> card above.
+            </span>
+            <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:3px 9px; border-radius:6px;"
+              title="Scroll up to Tor Proxy &amp; Network Ports card"
+              onclick="const el=document.getElementById('search-tor-onion-action'); if(el){el.scrollIntoView({behavior:'smooth', block:'center'}); el.focus();}">
+              <i class="fas fa-arrow-up"></i> Tor Card Settings
+            </button>
+          </div>
+
+          <!-- 3a. Built-in & Custom Onion Search Engines -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-tor-engines-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-tor-engines-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-user-secret" style="color:var(--accent-purple, #a855f7); margin-right:6px;"></i>
+                  Dark Web (.onion &amp; Gateway) Engines
+                  <i class="fas fa-info-circle ns-info-icon" title="Built-in and custom .onion search engines or clearnet gateways routed through your Tor SOCKS5h proxy when Dark Web search is triggered."></i>
+                </span>
+                <span id="badge-tor-engines-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Engines</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Add a custom .onion hidden service search engine or clearnet Tor gateway"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;" onclick="window.addCustomTorEngineNode()">
+                  <i class="fas fa-plus"></i> Add Tor Engine
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-tor-engines-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">
+                Pre-configured and custom onion search engines / clearnet gateways routed through the Tor SOCKS5h proxy.
+              </p>
+              <div id="endp-tor-engines-wrap" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+          </div>
+
+          <!-- 3b. Automated .onion Source Lists -->
+          <div class="endpoint-group" style="margin-bottom:0; border-color:rgba(168, 85, 247, 0.28);">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-sources-dark-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-sources-dark-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-rss" style="color:var(--accent-purple, #a855f7); margin-right:6px;"></i>
+                  Automated .onion Source Lists
+                  <i class="fas fa-info-circle ns-info-icon" title="Text, Markdown, GitHub, or Tor-hosted lists containing .onion search engines to automatically keep Dark Web backends updated."></i>
+                </span>
+                <span id="badge-sources-dark-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Lists</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Register or import a list of .onion engines (optionally routed over Tor)"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;"
+                  onclick="window.SearchSources && window.SearchSources.openAddFormForTab('dark', 'custom_onion_engines')">
+                  <i class="fas fa-plus"></i> Add / Import .onion List
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-sources-dark-body">
+              <div id="endp-sources-presets-dark"
+                style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; padding:8px 10px; background:var(--bg0); border-radius:6px; border:1px solid var(--border); align-items:center;"></div>
+              <div id="endp-sources-list-dark" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB 4: FILE HUNTER ═══ -->
+        <div id="ns-tab-pane-files" class="ns-tab-pane">
+          <div style="padding:11px 14px; margin-bottom:14px; background:rgba(56, 189, 248, 0.08); border:1px solid rgba(56, 189, 248, 0.28); border-radius:8px; font-size:11px; color:var(--text); line-height:1.5;">
+            <strong style="color:#38bdf8;"><i class="fas fa-file-shield" style="margin-right:6px;"></i>Where File Hunter searches (3 Tiers):</strong>
+            <div style="margin-top:5px; color:var(--muted);">
+              <strong>1. Dedicated File Engine (<code>files_dorks</code>):</strong> Direct APIs &amp; filetype dorks (below).<br>
+              <strong>2. Clearnet Web Engines:</strong> SearXNG (files/IT/science categories), DuckDuckGo/DDGS (<code>filetype:</code> batches), Brave API &amp; Custom OpenSearch/Web repos.<br>
+              <strong>3. Dark Web (.onion):</strong> When Tor is online, fans clean queries across <strong>all 9 active Tor engines</strong> (Ahmia, Torch, Excavator, Tor66, TorDex, OnionLand, Haystak, Phobos &amp; Custom <code>.onion</code>) and groups results in the <strong>Dark Web (.onion)</strong> subtab.
+            </div>
+          </div>
+
+          <!-- 4a. File Hunter Engine Scope Routing -->
+          <div class="endpoint-group" style="margin-bottom:14px; border-color:rgba(56, 189, 248, 0.25);">
+            <div class="endpoint-group-header">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-sliders-h" style="color:#38bdf8; margin-right:6px;"></i>
+                  Search Scope Routing
+                </span>
+              </div>
+              <span class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;">Auto-saved</span>
+            </div>
+            <div class="endpoint-group-body" style="padding-top:10px;">
+              <div style="display:flex; flex-direction:column; gap:10px; font-size:11.5px;">
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:var(--text);">Include All Clearnet Engines</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Fan out <code>filetype:</code> queries across SearXNG, DDG/DDGS, Brave API, and Custom Web/OpenSearch endpoints.</span>
+                  </span>
+                  <input type="checkbox" id="fh-sw-include-clear" checked
+                    onchange="window.updateNetSearchConfig('file_hunter.include_all_clear', this.checked)">
+                </label>
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:#c084fc;">Include All Tor Dark Web (.onion) Engines</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Search across all 9 Tor engines (Ahmia, Torch, Excavator, Tor66, TorDex, OnionLand, Haystak, Phobos &amp; Custom) whenever Tor is online.</span>
+                  </span>
+                  <input type="checkbox" id="fh-sw-include-dark" checked
+                    onchange="window.updateNetSearchConfig('file_hunter.include_all_dark', this.checked)">
+                </label>
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:#fbbf24;">Include SQLite Domain Directory</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Query curated SQLite Directory host compilations alongside public web and file APIs.</span>
+                  </span>
+                  <input type="checkbox" id="fh-sw-include-directory" checked
+                    onchange="window.updateNetSearchConfig('file_hunter.include_domain_directory', this.checked)">
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4b. Dedicated Built-In File API & Dork Sources (11) -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-fh-sources-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-fh-sources-body')"
+                  title="Collapse Section (-)" aria-expanded="true">
+                  <i class="fas fa-minus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-plug" style="color:#38bdf8; margin-right:6px;"></i>
+                  Dedicated Open File APIs &amp; Dorks (<code>files_dorks</code>)
+                </span>
+                <span id="badge-fh-sources-active" class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;">11/11 Active</span>
+              </div>
+            </div>
+            <div class="endpoint-group-body" id="endp-fh-sources-body" style="padding-top:10px;">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:10px;">
+                Toggle individual structured file APIs and clearnet Google/DDG dorks queried in parallel on every File Hunter search:
+              </p>
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:8px; font-size:11px;">
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-dorks_web" checked onchange="window.updateFileHunterSource('dorks_web', this.checked)">
+                  <span><strong>Web Dorks</strong> <span style="color:var(--muted); font-size:10px;">(DDG/Google/SearXNG)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-arxiv" checked onchange="window.updateFileHunterSource('arxiv', this.checked)">
+                  <span><strong>arXiv</strong> <span style="color:var(--muted); font-size:10px;">(Direct PDF Preprints)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-openalex" checked onchange="window.updateFileHunterSource('openalex', this.checked)">
+                  <span><strong>OpenAlex</strong> <span style="color:var(--muted); font-size:10px;">(OA Research PDFs)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-zenodo" checked onchange="window.updateFileHunterSource('zenodo', this.checked)">
+                  <span><strong>Zenodo</strong> <span style="color:var(--muted); font-size:10px;">(Datasets &amp; PDFs)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-openlibrary" checked onchange="window.updateFileHunterSource('openlibrary', this.checked)">
+                  <span><strong>OpenLibrary</strong> <span style="color:var(--muted); font-size:10px;">(Readable/IA eBooks)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-doaj" checked onchange="window.updateFileHunterSource('doaj', this.checked)">
+                  <span><strong>DOAJ</strong> <span style="color:var(--muted); font-size:10px;">(Open-Access Journals)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-huggingface" checked onchange="window.updateFileHunterSource('huggingface', this.checked)">
+                  <span><strong>HuggingFace</strong> <span style="color:var(--muted); font-size:10px;">(Datasets &amp; Models)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-github" checked onchange="window.updateFileHunterSource('github', this.checked)">
+                  <span><strong>GitHub</strong> <span style="color:var(--muted); font-size:10px;">(Code &amp; Releases)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-npm" checked onchange="window.updateFileHunterSource('npm', this.checked)">
+                  <span><strong>npm Registry</strong> <span style="color:var(--muted); font-size:10px;">(Tarballs &amp; Packages)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-archive_org" checked onchange="window.updateFileHunterSource('archive_org', this.checked)">
+                  <span><strong>Internet Archive</strong> <span style="color:var(--muted); font-size:10px;">(PDFs, ISOs &amp; Books)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-wikimedia" checked onchange="window.updateFileHunterSource('wikimedia', this.checked)">
+                  <span><strong>Wikimedia Commons</strong> <span style="color:var(--muted); font-size:10px;">(Media &amp; Docs)</span></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4c. Add Custom File / .onion Sources -->
+          <div class="endpoint-group" style="margin-bottom:0;">
+            <div class="endpoint-group-header">
+              <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                <i class="fas fa-plus-circle" style="color:var(--accent-emerald, #10b981); margin-right:6px;"></i>
+                Add Custom File Repositories &amp; Dark Web Engines
+              </span>
+            </div>
+            <div class="endpoint-group-body" style="padding-top:10px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:5px 12px; border-radius:6px;"
+                onclick="window.switchNetSearchEndpointTab('web'); window.toggleEndpointSection && window.toggleEndpointSection(null, 'endp-custom-clear-body', true); window.addCustomClearEngineNode && window.addCustomClearEngineNode();">
+                <i class="fas fa-globe" style="color:var(--accent-emerald);"></i> + Add Clearnet File / OpenSearch Engine
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:5px 12px; border-radius:6px;"
+                onclick="window.switchNetSearchEndpointTab('dark'); window.toggleEndpointSection && window.toggleEndpointSection(null, 'endp-tor-engines-body', true); window.addCustomTorEngineNode && window.addCustomTorEngineNode();">
+                <i class="fas fa-user-secret" style="color:#a855f7;"></i> + Add Tor .onion Search Engine
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:5px 12px; border-radius:6px;"
+                onclick="window.switchNetSearchEndpointTab('domains'); window.toggleEndpointSection && window.toggleEndpointSection(null, 'endp-sources-domains-body', true);">
+                <i class="fas fa-database" style="color:var(--accent-amber);"></i> Manage Domain Directory
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB 5: OSINT HUNT (PEOPLE / USERNAME / IDENTITY) ═══ -->
+        <div id="ns-tab-pane-osint" class="ns-tab-pane">
+          <div style="margin-bottom:12px; padding:10px 12px; border-radius:8px; background:rgba(244, 114, 182, 0.08); border:1px solid rgba(244, 114, 182, 0.25); font-size:11.5px; color:var(--text); line-height:1.45;">
+            <strong style="color:#f472b6;"><i class="fas fa-id-badge" style="margin-right:5px;"></i>OSINT Hunt Fan-Out Architecture:</strong>
+            Runs <strong>Sherlock 480+ Platform Catalog</strong> (with automatic person-name handle variants) + <strong>11 Dedicated OSINT APIs &amp; Social Dorks</strong>
+            + optionally <strong>All Clearnet Web Engines</strong>, <strong>All Tor Dark Web (.onion) Engines</strong>, and <strong>SQLite Domain Directory</strong>.
+          </div>
+
+          <!-- 5a. OSINT Engine Scope Routing -->
+          <div class="endpoint-group" style="margin-bottom:14px; border-color:rgba(244, 114, 182, 0.25);">
+            <div class="endpoint-group-header">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-sliders-h" style="color:#f472b6; margin-right:6px;"></i>
+                  OSINT Scope &amp; Sherlock Routing
+                </span>
+              </div>
+              <span class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;">Auto-saved</span>
+            </div>
+            <div class="endpoint-group-body" style="padding-top:10px;">
+              <div style="display:flex; flex-direction:column; gap:10px; font-size:11.5px;">
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:var(--text);">Include All Clearnet Engines</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Query SearXNG (local/fallback), DDG/DDGS, Brave API, and Custom Web/OpenSearch engines alongside OSINT APIs.</span>
+                  </span>
+                  <input type="checkbox" id="osint-sw-include-clear" checked
+                    onchange="window.updateNetSearchConfig('osint.include_all_clear', this.checked)">
+                </label>
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:#c084fc;">Include All Tor Dark Web (.onion) Engines</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Scan Tor .onion search engines for leaks, paste mentions, and identity references whenever Tor is online.</span>
+                  </span>
+                  <input type="checkbox" id="osint-sw-include-dark" checked
+                    onchange="window.updateNetSearchConfig('osint.include_all_dark', this.checked)">
+                </label>
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:#fbbf24;">Include SQLite Domain Directory</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Search curated SQLite Directory host lists alongside open OSINT sources.</span>
+                  </span>
+                  <input type="checkbox" id="osint-sw-include-directory" checked
+                    onchange="window.updateNetSearchConfig('osint.include_domain_directory', this.checked)">
+                </label>
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:#34d399;">Use Full Sherlock Site Database &amp; Person Name Variants</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Probes top Sherlock platforms with real error semantics and expands spaces into handle variants (e.g. <code>lisaellis</code>, <code>lisa.ellis</code>).</span>
+                  </span>
+                  <input type="checkbox" id="osint-sw-sherlock-db" checked
+                    onchange="window.updateNetSearchConfig('osint.use_sherlock_db', this.checked); window.updateNetSearchConfig('osint.generate_name_variants', this.checked)">
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5b. Dedicated Built-In OSINT APIs & People Dorks (11) -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-osint-sources-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-osint-sources-body')"
+                  title="Collapse Section (-)" aria-expanded="true">
+                  <i class="fas fa-minus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-fingerprint" style="color:#f472b6; margin-right:6px;"></i>
+                  Dedicated OSINT APIs &amp; People Dorks (<code>osint_sources</code>)
+                </span>
+                <span id="badge-osint-sources-active" class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;">11/11 Active</span>
+              </div>
+            </div>
+            <div class="endpoint-group-body" id="endp-osint-sources-body" style="padding-top:10px;">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:10px;">
+                Toggle individual structured OSINT APIs and multi-platform social/people dorks queried in parallel on every OSINT Hunt:
+              </p>
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:8px; font-size:11px;">
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-people_dorks" checked onchange="window.updateOsintSource('people_dorks', this.checked)">
+                  <span><strong>Social &amp; People Dorks</strong> <span style="color:var(--muted); font-size:10px;">(LinkedIn/IG/X/FB/TikTok)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-github" checked onchange="window.updateOsintSource('github', this.checked)">
+                  <span><strong>GitHub Users</strong> <span style="color:var(--muted); font-size:10px;">(Accounts &amp; Orgs)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-gitlab" checked onchange="window.updateOsintSource('gitlab', this.checked)">
+                  <span><strong>GitLab Users</strong> <span style="color:var(--muted); font-size:10px;">(Public Profiles)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-reddit" checked onchange="window.updateOsintSource('reddit', this.checked)">
+                  <span><strong>Reddit</strong> <span style="color:var(--muted); font-size:10px;">(Users &amp; Bios)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-hackernews" checked onchange="window.updateOsintSource('hackernews', this.checked)">
+                  <span><strong>HackerNews</strong> <span style="color:var(--muted); font-size:10px;">(Algolia Mentions)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-wikipedia" checked onchange="window.updateOsintSource('wikipedia', this.checked)">
+                  <span><strong>Wikipedia</strong> <span style="color:var(--muted); font-size:10px;">(Biographies &amp; Entities)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-wikidata" checked onchange="window.updateOsintSource('wikidata', this.checked)">
+                  <span><strong>Wikidata</strong> <span style="color:var(--muted); font-size:10px;">(Entity Records)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-gravatar" checked onchange="window.updateOsintSource('gravatar', this.checked)">
+                  <span><strong>Gravatar</strong> <span style="color:var(--muted); font-size:10px;">(Email Profiles)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-keybase" checked onchange="window.updateOsintSource('keybase', this.checked)">
+                  <span><strong>Keybase</strong> <span style="color:var(--muted); font-size:10px;">(Cryptographic Proofs)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-archive_org" checked onchange="window.updateOsintSource('archive_org', this.checked)">
+                  <span><strong>Internet Archive</strong> <span style="color:var(--muted); font-size:10px;">(Creators &amp; Records)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-crtsh" checked onchange="window.updateOsintSource('crtsh', this.checked)">
+                  <span><strong>crt.sh</strong> <span style="color:var(--muted); font-size:10px;">(Domain Subdomains)</span></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5c. Add Custom OSINT / Dark Web Engines -->
+          <div class="endpoint-group" style="margin-bottom:0;">
+            <div class="endpoint-group-header">
+              <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                <i class="fas fa-plus-circle" style="color:var(--accent-emerald, #10b981); margin-right:6px;"></i>
+                Add Custom OSINT &amp; Dark Web Sources
+              </span>
+            </div>
+            <div class="endpoint-group-body" style="padding-top:10px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:5px 12px; border-radius:6px;"
+                onclick="window.switchNetSearchEndpointTab('web'); window.toggleEndpointSection && window.toggleEndpointSection(null, 'endp-custom-clear-body', true); window.addCustomClearEngineNode && window.addCustomClearEngineNode();">
+                <i class="fas fa-globe" style="color:var(--accent-emerald);"></i> + Add Custom Web / OSINT Engine
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:5px 12px; border-radius:6px;"
+                onclick="window.switchNetSearchEndpointTab('dark'); window.toggleEndpointSection && window.toggleEndpointSection(null, 'endp-tor-engines-body', true); window.addCustomTorEngineNode && window.addCustomTorEngineNode();">
+                <i class="fas fa-user-secret" style="color:#a855f7;"></i> + Add Tor .onion Search Engine
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:5px 12px; border-radius:6px;"
+                onclick="window.switchNetSearchEndpointTab('domains'); window.toggleEndpointSection && window.toggleEndpointSection(null, 'endp-sources-domains-body', true);">
+                <i class="fas fa-database" style="color:var(--accent-amber);"></i> Manage Domain Directory
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB 6: DOMAINS (SQLITE) ═══ -->
+        <div id="ns-tab-pane-domains" class="ns-tab-pane">
+          <!-- SQLite Domain Index Summary -->
+          <div class="ns-domain-stat-grid">
+            <div class="ns-domain-stat" style="border-color:rgba(16, 185, 129, 0.3);"
+              title="Reverse / Searchable Mode: domains here are actively queried and surfaced when SafeSearch is OFF. Choose Directory if you want unfiltered discovery using adult or parental-control blocklists.">
+              <div style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700;">
+                Searchable Directory <i class="fas fa-info-circle ns-info-icon"></i>
+              </div>
+              <div id="domain-cnt-directory" style="font-size:18px; font-weight:700; color:#34d399; margin:2px 0;">0</div>
+              <div style="font-size:10px; color:var(--muted);">Reverse mode: searchable when SafeSearch is OFF</div>
+            </div>
+            <div class="ns-domain-stat" style="border-color:rgba(244, 63, 94, 0.3);"
+              title="Exclusion Filter Mode: domains here are HIDDEN from results whenever SafeSearch is ON, and are never queried. Switch a list from Blocklist to Directory to search those sites unfiltered.">
+              <div style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700;">
+                Blocklist SafeSearch <i class="fas fa-info-circle ns-info-icon"></i>
+              </div>
+              <div id="domain-cnt-blocklist" style="font-size:18px; font-weight:700; color:#fb7185; margin:2px 0;">0</div>
+              <div style="font-size:10px; color:var(--muted);">Domains excluded/hidden when SafeSearch is ON</div>
+            </div>
+            <div class="ns-domain-stat" style="border-color:rgba(56, 189, 248, 0.3);"
+              title="Whitelist Exceptions: domains here override the SafeSearch Blocklist so they remain visible even if SafeSearch is ON.">
+              <div style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700;">
+                Allowlist Exceptions <i class="fas fa-info-circle ns-info-icon"></i>
+              </div>
+              <div id="domain-cnt-allowlist" style="font-size:18px; font-weight:700; color:#38bdf8; margin:2px 0;">0</div>
+              <div style="font-size:10px; color:var(--muted);">Domains always permitted when SafeSearch is ON</div>
+            </div>
+          </div>
+
+          <!-- Domain Compilation Sources -->
+          <div class="endpoint-group" style="margin-bottom:0; border-color:rgba(245, 158, 11, 0.3);">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-sources-domains-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-sources-domains-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-database" style="color:var(--accent-amber, #f59e0b); margin-right:6px;"></i>
+                  Domain Lists &amp; SQLite Compilations
+                  <i class="fas fa-info-circle ns-info-icon" title="Large domain host lists (hosts files, Pi-hole/parental-control lists, SQLite dumps) indexed in SQLite for millisecond lookup. Pick Directory to search them unfiltered, or Blocklist to filter them out when SafeSearch is ON."></i>
+                </span>
+                <span id="badge-sources-domains-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Lists</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Add or import a remote/local domain list or SQLite compilation into the Domain Index"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;"
+                  onclick="window.SearchSources && window.SearchSources.openAddFormForTab('domains', 'domain_directory')">
+                  <i class="fas fa-plus"></i> Add / Import Domain List
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-sources-domains-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:10px; line-height:1.45;">
+                Manage large domain compilations stored in SQLite (instant lookup for 400k+ hosts without bloating the UI).
+                Use the 1-click role switch on any list to use it as a searchable <strong>Directory</strong> (reverse mode for unfiltered search),
+                a SafeSearch <strong>Blocklist</strong> (exclusion filter), or an <strong>Allowlist</strong>.
+              </p>
+              <div id="endp-sources-presets-domains"
+                style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; padding:8px 10px; background:var(--bg0); border-radius:6px; border:1px solid var(--border); align-items:center;"></div>
+              <div id="endp-sources-list-domains" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ UNIFIED CONTEXTUAL ADD / EDIT / IMPORT SOURCE DRAWER ═══ -->
+        <div id="src-editor-panel"
+          style="display:none; margin-top:16px; padding:14px; background:var(--bg1, #141621); border:1px solid rgba(16, 185, 129, 0.38); border-radius:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <strong id="src-editor-title" style="font-size:12px; color:var(--text);">
+                <i class="fas fa-plus-circle" style="color:var(--accent-emerald, #10b981); margin-right:5px;"></i>
+                Add / Update Source List
+              </strong>
+              <span id="src-editor-pool-hint" class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;"
+                title="Target pool or SQLite domain role where extracted items from this source will be placed">Pool: Auto</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:2px 8px;"
+              onclick="window.SearchSources && window.SearchSources.closeEditor()" title="Close panel">
+              <i class="fas fa-times"></i> Close
+            </button>
+          </div>
+
+          <div style="padding:12px; background:var(--bg0); border:1px solid var(--border); border-radius:8px; margin-bottom:12px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:8px; margin-bottom:8px;">
+              <div>
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;"
+                  title="Human-readable label shown on the source list card">Source Name <i class="fas fa-info-circle ns-info-icon"></i></label>
+                <input type="text" id="src-form-name" class="endpoint-input" style="width:100%;" placeholder="e.g. GitHub Mirror List"
+                  title="Display name for this source list">
+              </div>
+              <div style="grid-column:span 2;">
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;"
+                  title="HTTP/HTTPS URL, GitHub repo or raw link, OpenSearch descriptor URL, .onion feed, or local Windows/Linux file path">URL / GitHub / OpenSearch / Local File Path <i class="fas fa-info-circle ns-info-icon"></i></label>
+                <input type="text" id="src-form-location" class="endpoint-input" style="width:100%;" placeholder="https://raw.githubusercontent.com/... or C:\lists\engines.sqlite"
+                  title="Remote URL, GitHub repository URL, or local disk path to fetch">
+              </div>
+              <div>
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;"
+                  title="File parser format. Leave Auto-Detect unless the URL has an unusual extension or structure">Format <i class="fas fa-info-circle ns-info-icon"></i></label>
+                <select id="src-form-format" class="endpoint-input" style="width:100%;"
+                  title="Parser format for the source content">
+                  <option value="auto">Auto-Detect</option>
+                  <option value="json">JSON</option>
+                  <option value="csv">CSV / TSV</option>
+                  <option value="yaml">YAML / SearXNG settings</option>
+                  <option value="sqlite">SQLite (.db / .sqlite)</option>
+                  <option value="opensearch">OpenSearch XML / HTML</option>
+                  <option value="onion_list">Text / Markdown / .onion list</option>
+                  <option value="domain_list">Domain List / Hosts (.txt)</option>
+                </select>
+              </div>
+              <div id="src-form-pool-wrap">
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;"
+                  title="Destination pool for extracted endpoints or SQLite role for domain lists (choose Domain Directory for reverse unfiltered searching)">Role / Destination Pool <i class="fas fa-info-circle ns-info-icon"></i></label>
+                <select id="src-form-pool" class="endpoint-input" style="width:100%;"
+                  title="Destination endpoint pool or SQLite domain role (Directory vs Blocklist vs Allowlist)">
+                  <option value="auto">Auto Route</option>
+                  <option value="searxng_fallbacks">SearXNG Fallback Mirrors</option>
+                  <option value="custom_nodes">Custom SearXNG Nodes</option>
+                  <option value="searxng_engines">SearXNG Aggregated Engines</option>
+                  <option value="custom_clear_engines">Custom Web / OpenSearch</option>
+                  <option value="custom_onion_engines">Tor .onion Engines</option>
+                  <option value="domain_directory">Domain Directory (Searchable)</option>
+                  <option value="domain_blocklist">SafeSearch Blocklist (SQLite)</option>
+                  <option value="domain_allowlist">SafeSearch Allowlist (SQLite)</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;"
+                  title="How often (in hours) the scheduler re-checks this source when Auto-Update is enabled">Interval (hours) <i class="fas fa-info-circle ns-info-icon"></i></label>
+                <input type="number" id="src-form-interval" class="endpoint-input" style="width:100%;" value="12" min="1" max="720"
+                  title="Automatic refresh interval in hours (1-720)">
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--text);">
+                <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer;"
+                  title="Automatically download and merge updates on the configured hourly schedule">
+                  <input type="checkbox" id="src-form-autoupdate" checked> Auto-Update <i class="fas fa-info-circle ns-info-icon"></i>
+                </label>
+                <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer;" title="Force SOCKS5h Tor routing when downloading this source">
+                  <input type="checkbox" id="src-form-usetor"> Route via Tor (.onion) <i class="fas fa-info-circle ns-info-icon"></i>
+                </label>
+              </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" id="src-form-cancel-btn" class="btn btn-sm btn-secondary" style="display:none; font-size:11px; padding:4px 10px;"
+                  title="Cancel editing and reset the source form"
+                  onclick="window.SearchSources && window.SearchSources.clearForm()">Cancel Edit</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:4px 10px;"
+                  title="Fetch and parse this source in memory without saving to preview new vs duplicate items"
+                  onclick="window.SearchSources && window.SearchSources.previewUrl()">
+                  <i class="fas fa-eye"></i> Preview &amp; Check Duplicates
+                </button>
+                <button type="button" class="btn btn-sm btn-primary" style="font-size:11px; padding:4px 12px;"
+                  title="Register this source, fetch its contents immediately, and deduplicate into the target pool/SQLite DB"
+                  onclick="window.SearchSources && window.SearchSources.saveFromForm()">
+                  <i class="fas fa-download"></i> <span id="src-form-save-label">Add &amp; Sync Source</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- One-shot File Upload or Paste -->
+          <div style="padding:12px; background:var(--bg0); border:1px solid var(--border); border-radius:8px;">
+            <div style="font-size:11px; font-weight:700; color:var(--text); margin-bottom:8px;">
+              <i class="fas fa-file-import" style="color:var(--accent-cyan, #06b6d4); margin-right:5px;"></i>
+              Direct File Import / Paste Compilation
+              <i class="fas fa-info-circle ns-info-icon" title="One-shot local import: upload a .txt/.hosts/.json/.csv/.yaml/.sqlite file or paste raw domain/engine lists directly without setting up a recurring URL."></i>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; align-items:center;">
+              <div style="display:inline-flex; align-items:center; gap:8px; flex:1; min-width:200px; padding:4px 8px; border:1px solid var(--border); border-radius:6px; background:var(--bg1);">
+                <input type="file" id="src-import-file" accept=".json,.csv,.tsv,.yaml,.yml,.sqlite,.sqlite3,.db,.xml,.osd,.txt,.md"
+                  onchange="window.SearchSources && window.SearchSources.updateImportFileLabel()"
+                  style="display:none;">
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:3px 10px; border-radius:5px; white-space:nowrap;"
+                  title="Browse and select a local file (.json, .csv, .yaml, .sqlite, .xml, .txt) to import"
+                  onclick="document.getElementById('src-import-file')?.click()">
+                  <i class="fas fa-folder-open"></i> Choose File
+                </button>
+                <span id="src-import-file-label" style="font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">No file selected</span>
+              </div>
+              <select id="src-import-format" class="endpoint-input" style="max-width:170px;"
+                title="Format of the uploaded file or pasted content">
+                <option value="auto">Format: Auto</option>
+                <option value="json">JSON</option>
+                <option value="csv">CSV</option>
+                <option value="yaml">YAML</option>
+                <option value="sqlite">SQLite</option>
+                <option value="opensearch">OpenSearch XML</option>
+                <option value="onion_list">Text / .onion</option>
+                <option value="domain_list">Domain List / Hosts</option>
+              </select>
+              <div id="src-import-pool-wrap" style="max-width:190px;">
+                <select id="src-import-pool" class="endpoint-input" style="width:100%;"
+                  title="Destination pool or SQLite domain role for imported items">
+                  <option value="auto">Pool: Auto</option>
+                  <option value="searxng_fallbacks">SearXNG Fallbacks</option>
+                  <option value="custom_nodes">Custom Nodes</option>
+                  <option value="searxng_engines">SearXNG Engines</option>
+                  <option value="custom_clear_engines">Custom Web / OpenSearch</option>
+                  <option value="custom_onion_engines">Tor .onion Engines</option>
+                  <option value="domain_directory">Domain Directory (SQLite)</option>
+                  <option value="domain_blocklist">SafeSearch Blocklist (SQLite)</option>
+                  <option value="domain_allowlist">SafeSearch Allowlist (SQLite)</option>
+                </select>
+              </div>
+            </div>
+            <textarea id="src-import-text" rows="3" class="endpoint-input"
+              style="width:100%; resize:vertical; margin-bottom:8px;"
+              title="Paste raw JSON, CSV, YAML, OpenSearch XML, URLs, .onion links, or plain domain lists"
+              placeholder="Or paste JSON, CSV, YAML, OpenSearch XML, URLs / .onion addresses, or domains here..."></textarea>
+            <div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:4px 10px;"
+                title="Inspect what would be extracted and see duplicate counts without saving yet"
+                onclick="window.SearchSources && window.SearchSources.importRawOrFile(true)">
+                <i class="fas fa-search"></i> Dry-Run Preview
+              </button>
+              <button type="button" class="btn btn-sm btn-primary" style="font-size:11px; padding:4px 12px;"
+                title="Parse, deduplicate, and immediately save imported entries into the selected pool or SQLite role"
+                onclick="window.SearchSources && window.SearchSources.importRawOrFile(false)">
+                <i class="fas fa-check"></i> Import &amp; Deduplicate
+              </button>
+            </div>
+          </div>
+
+          <div id="src-preview-box"
+            style="display:none; margin-top:10px; padding:10px; background:var(--bg0); border:1px solid rgba(6,182,212,0.35); border-radius:6px;"></div>
+        </div>
+
+        <!-- Bottom Action Bar -->
+        <div
+          style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; padding-top:14px; border-top:1px solid var(--border); flex-wrap:wrap; gap:10px;">
+          <button type="button" class="btn btn-secondary" style="border-radius:6px; padding:8px 16px; font-size:12px;"
+            title="Restore built-in default endpoints and fallback nodes (does not wipe SQLite domain lists)"
+            onclick="window.resetEndpointsFromUI()">
+            <i class="fas fa-undo"></i> Reset to Defaults
+          </button>
+          <button type="button" class="btn btn-primary" style="border-radius:6px; padding:8px 20px; font-size:12px;"
+            title="Save all endpoint changes across SearXNG, Direct Web, and Dark Web tabs to endpoints config"
+            onclick="window.saveEndpointsFromUI()">
+            <i class="fas fa-save"></i> Save Endpoints
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  function _initNetSearchPanel() {
+    if (typeof window.loadNetSearchPanelConfig === 'function') {
+      window.loadNetSearchPanelConfig();
+    }
+    try {
+      const tabParam = new URLSearchParams(window.location.search).get('tab');
+      if (tabParam && typeof window.switchNetSearchEndpointTab === 'function') {
+        window.switchNetSearchEndpointTab(tabParam);
+      }
+    } catch (_) {}
+  }
+  _initNetSearchPanel();
+  setTimeout(_initNetSearchPanel, 150);
+  setTimeout(_initNetSearchPanel, 600);
+})();
+</script>
