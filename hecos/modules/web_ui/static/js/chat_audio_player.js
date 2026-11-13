@@ -147,6 +147,7 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
       }
       
       historicalPlayer.onplay = () => {
+          if (window.HecosAudioBus) window.HecosAudioBus.claim('main_chat');
           window.currentAudio = historicalPlayer;
           window.showStopVoiceBtn(true);
           if (typeof initOutVuMeter === 'function') initOutVuMeter(historicalPlayer);
@@ -202,6 +203,7 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
   
   window.HecosTTSPlayer.oncanplaythrough = () => {
     console.log("[Audio] Can play through, attempting autoplay...");
+    if (window.HecosAudioBus) window.HecosAudioBus.claim('main_chat');
     window.HecosTTSPlayer.play().then(() => {
         console.log("[Audio] Autoplay success");
     }).catch(err => {
@@ -217,6 +219,7 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
   };
 
   window.HecosTTSPlayer.onplay = () => {
+      if (window.HecosAudioBus) window.HecosAudioBus.claim('main_chat');
       window.showStopVoiceBtn(true);
       if (typeof initOutVuMeter === 'function') initOutVuMeter(window.HecosTTSPlayer);
       fetch('/api/audio/speaking/start', { method: 'POST' }).catch(() => {});
@@ -263,7 +266,7 @@ function showStopVoiceBtn(visible) {
   if (window.updateStopAllBtn) window.updateStopAllBtn();
 }
 
-window.stopVoice = function(engine = null) {
+function _stopLocalChatAudioOnly() {
   if (window.HecosTTSPlayer) {
     try { window.HecosTTSPlayer.pause(); } catch(e) {}
   }
@@ -277,6 +280,22 @@ window.stopVoice = function(engine = null) {
     window._lastAiBubble._chunksFinished = true;
   }
   window.showStopVoiceBtn(false);
+}
+
+if (window.HecosAudioBus) {
+  window.HecosAudioBus.onClaim((msg) => {
+    console.log(`[Audio] Remote tab (${msg.owner}) claimed audio — pausing Main Chat player.`);
+    _stopLocalChatAudioOnly();
+  });
+  window.HecosAudioBus.onStopAll(() => {
+    console.log("[Audio] Remote Stop All received — stopping Main Chat player.");
+    _stopLocalChatAudioOnly();
+  });
+}
+
+window.stopVoice = function(engine = null) {
+  _stopLocalChatAudioOnly();
+  if (window.HecosAudioBus) window.HecosAudioBus.stopAll('main_chat');
   fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
   fetch('/api/audio/stop', { method: 'POST' }).catch(() => {});
 };

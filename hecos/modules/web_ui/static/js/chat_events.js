@@ -107,6 +107,9 @@ window.initEvents = function() {
       }
       
       window.isBackendPTTActive = ev.active;
+      if (window.HecosAudioBus && typeof window.HecosAudioBus.notifyBackendPtt === 'function') {
+          window.HecosAudioBus.notifyBackendPtt(ev.active, ev.source);
+      }
       
       if (ev.active) {
           window.lastBackendPTTStartTime = Date.now();

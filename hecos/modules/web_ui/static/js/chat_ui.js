@@ -203,6 +203,7 @@ window.stopTTS = function() {
   let hadAudio = !!(window.currentAudio && !window.currentAudio.paused);
   console.log("[Audio] stopTTS triggered, hadAudio:", hadAudio);
   window.stopAudioPlayback();
+  if (window.HecosAudioBus) window.HecosAudioBus.stopAll('main_chat');
   
   if (window.DocReader && typeof window.DocReader.isReading === 'function' && window.DocReader.isReading()) {
     window.DocReader.stop();
@@ -245,6 +246,7 @@ window.stopAll = function() {
 
   // Stop audio
   window.stopAudioPlayback();
+  if (window.HecosAudioBus) window.HecosAudioBus.stopAll('main_chat');
   if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
 
   // Stop backend generation

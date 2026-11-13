@@ -1,4 +1,4 @@
-﻿import os
+import os
 
 import json
 
@@ -1129,9 +1129,9 @@ class PromptBuilder:
 
 
 
-        is_image_gen_active = _is_image_gen_plugin_active()
+        is_image_gen_active = _is_image_gen_plugin_active() if send_tools else False
 
-        if is_image_gen_active:
+        if send_tools and is_image_gen_active:
 
             image_gen_protocol_block = (
 

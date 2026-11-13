@@ -1,4 +1,4 @@
-active_engine: fish_speech
+active_engine: piper
 voice_status: true
 piper_autostart: true
 piper_path: C:\Hecos\bin\piper\piper.exe

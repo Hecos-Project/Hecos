@@ -136,11 +136,32 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             mode = data.get("mode", "web")
             engine = data.get("engine", None)
             session_id = data.get("session_id", None)
+            preset_id = (data.get("preset_id") or data.get("soul_id") or "").strip()
+
+            preset_voice_overrides = {}
+            resolved_preset_id = preset_id
+            if not resolved_preset_id or resolved_preset_id == "default":
+                try:
+                    from hecos.core.global_presets.manager import get_active_soul_id
+                    resolved_preset_id = get_active_soul_id("global") or ""
+                except Exception:
+                    resolved_preset_id = ""
+            if resolved_preset_id and resolved_preset_id != "default":
+                try:
+                    from hecos.core.global_presets.manager import get_soul
+                    soul = get_soul(resolved_preset_id)
+                    if soul and getattr(soul, "voice", None):
+                        preset_voice_overrides = soul.voice.model_dump(exclude_none=True)
+                except Exception as soul_err:
+                    logger.debug(f"[WebUI] Could not load preset voice for '{resolved_preset_id}': {soul_err}")
 
             from hecos.modules.web_ui.routes_chat_tts import generate_voice_file, set_last_audio_path
             from hecos.config.session_config_manager import merge_session_config
 
-            logger.info(f"[WebUI] TTS Test — engine: {engine or 'active'}, mode: {mode}, text: {text[:60]!r}")
+            logger.info(
+                f"[WebUI] TTS Test — engine: {engine or preset_voice_overrides.get('tts_engine') or 'active'}, "
+                f"preset: {resolved_preset_id or 'none'}, mode: {mode}, text: {text[:60]!r}"
+            )
             
             draft_data = data.get("draft", None)
             merged_config = merge_session_config(cfg_mgr.config, session_id, extra_draft=draft_data) if (session_id or draft_data) else cfg_mgr.config
@@ -162,6 +183,11 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                     if k.startswith("xtts_") or k.startswith("piper_") or k.startswith("kokoro_") or k.startswith("fish_"):
                         session_overrides[k] = v
 
+            if preset_voice_overrides:
+                for k, v in preset_voice_overrides.items():
+                    if v not in (None, "", "unknown"):
+                        session_overrides[k] = v
+
             if engine:
                 session_overrides["tts_engine"] = engine
                 
@@ -176,6 +202,18 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 if "sentence_silence" in voice_config:
                     session_overrides["kokoro_silence"] = voice_config["sentence_silence"]
                     session_overrides["piper_silence"] = voice_config["sentence_silence"]
+
+            # Preempt any in-progress server TTS playback/synthesis so two generations do not collide
+            try:
+                from hecos.core.audio.voice import stop_voice
+                stop_voice()
+            except Exception:
+                pass
+            try:
+                from hecos.modules.web_ui.routes_chat import stop_voice_generation
+                stop_voice_generation()
+            except Exception:
+                pass
 
             job_id = str(uuid.uuid4())
 

@@ -57,6 +57,15 @@ window.initWebAudio = async function() {
 window.startWebAudioRecording = async function() {
   if (window.isWebAudioRecording) return;
 
+  // Stop any playing TTS (local + cross-tab) and claim mic exclusively across open Hecos tabs
+  if (window.HecosAudioBus) {
+    window.HecosAudioBus.stopAll('main_chat_mic');
+    window.HecosAudioBus.claimMic('main_chat_mic');
+  }
+  if (typeof window.stopPlayback === 'function') {
+    try { window.stopPlayback(); } catch (_e) {}
+  }
+
   if (window._webptt_setButtonState) window._webptt_setButtonState('idle'); 
   const btn = document.getElementById('web-ptt-btn');
   if (btn) btn.innerHTML = '⏳';
@@ -130,6 +139,18 @@ window.cancelWebAudioRecording = function() {
   if (window.UnifiedToast) window.UnifiedToast.hide();
   console.log('[WebAudio] Recording cancelled.');
 };
+
+if (window.HecosAudioBus && typeof window.HecosAudioBus.onMicClaim === 'function') {
+  window.HecosAudioBus.onMicClaim((msg) => {
+    if (msg && msg.owner !== 'main_chat_mic' && window.isWebAudioRecording) {
+      window.isLockedMode = false;
+      window.isTouchHold = false;
+      if (typeof window.cancelWebAudioRecording === 'function') {
+        window.cancelWebAudioRecording();
+      }
+    }
+  });
+}
 
 
 
