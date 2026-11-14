@@ -46,6 +46,7 @@
 
   <link rel="stylesheet" href="/ext/presenter/static/css/presenter.css?v={{ version }}&t=20261106_mob_v1">
   <link rel="stylesheet" href="/netsearch_static/css/search_exclusion.css?v={{ version }}&t=20261113_cyber_scroll_v1">
+  <link rel="stylesheet" href="/netsearch_static/css/cyber_map/cyber_map.css?v={{ version }}&t=20261114_cyber_map_v1">
 
 </head>
 
@@ -82,6 +83,14 @@
       </div>
 
       <!-- -- Action Buttons: Standard Hecos .btn .btn-sm .btn-secondary -- -->
+
+      <button type="button" class="btn btn-sm btn-secondary cm-trigger-btn" id="btn-cyber-map-toggle"
+        onclick="if(window.toggleCyberMap) window.toggleCyberMap();"
+        title="Toggle Interactive Cyber Map (3D Globe / 2D Map)">
+
+        <i class="fas fa-globe-americas" style="color:#22d3ee;"></i> Cyber Map
+
+      </button>
 
       <button type="button" class="btn btn-sm btn-secondary" onclick="torNewCircuit()"
         title="Request new Tor identity (New Circuit)">
@@ -671,6 +680,10 @@
 
       </div>
 
+      <!-- -- Collapsible & Resizable Cyber Map Panel (3D Globe / 2D Map) -- -->
+
+      <div class="cm-dock" id="cyber-map-dock"></div>
+
       <!-- -- Results Feed or Grid -- -->
 
       <div id="results-list" class="results-list">
@@ -1220,15 +1233,23 @@
 
   <script src="/netsearch_static/js/search/search_engine_chips.js?v={{ version }}&t=20261113_osint_opt_v1"></script>
   <script src="/netsearch_static/js/search/search_refine.js?v={{ version }}&t=20261113_modular_v1"></script>
-  <script src="/netsearch_static/js/search/search_filters.js?v={{ version }}&t=20261113_osint_opt_v1"></script>
+  <script src="/netsearch_static/js/search/search_filters.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
 
-  <script src="/netsearch_static/js/search/search_stream.js?v={{ version }}&t=20261113_osint_opt_v1"></script>
+  <script src="/netsearch_static/js/search/search_stream.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
 
-  <script src="/netsearch_static/js/search/search_history.js?v={{ version }}&t=20261113_instant_tab_v1"></script>
+  <script src="/netsearch_static/js/search/search_history.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
 
   <script src="/netsearch_static/js/search/search_modals.js?v={{ version }}&t=20261113_file_hunter_v2"></script>
 
   <script src="/netsearch_static/js/search/search_main.js?v={{ version }}&t=20261113_toggle_persist_v1"></script>
+
+  <!-- Modular Cyber Map (3D Globe.gl + 2D Tactical Map) -->
+  <script src="/netsearch_static/js/search/cyber_map/cyber_map_bus.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
+  <script src="/netsearch_static/js/search/cyber_map/cyber_map_state.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
+  <script src="/netsearch_static/js/search/cyber_map/cyber_map_globe3d.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
+  <script src="/netsearch_static/js/search/cyber_map/cyber_map_flat2d.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
+  <script src="/netsearch_static/js/search/cyber_map/cyber_map_hud.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
+  <script src="/netsearch_static/js/search/cyber_map/cyber_map_main.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
 
 </body>
 

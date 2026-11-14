@@ -629,11 +629,15 @@ hecos/data/search_history.db*
 hecos/modules/web_ui/templates/modules/search.html
 hecos/modules/web_ui/templates/modules/search_viewer.html
 hecos/modules/web_ui/templates/modules/config_netsearch.html
+hecos/modules/web_ui/templates/cyber_map/
 hecos/modules/web_ui/static/css/search.css
 hecos/modules/web_ui/static/css/search_*.css
+hecos/modules/web_ui/static/css/cyber_map/
 hecos/modules/web_ui/static/css/netsearch_panel.css
 hecos/modules/web_ui/static/js/netsearch_panel.js
 hecos/modules/web_ui/static/js/search/
+hecos/modules/web_ui/static/js/cyber_map/
+hecos/modules/web_ui/static/vendor/cyber_map/
 
 # Telemetry Widget (HPM Package)
 hecos/modules/web_ui/extensions/telemetry_widget/

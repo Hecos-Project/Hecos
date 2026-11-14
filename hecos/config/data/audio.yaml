@@ -1,5 +1,5 @@
-active_engine: piper
-voice_status: true
+active_engine: kokoro
+voice_status: false
 piper_autostart: true
 piper_path: C:\Hecos\bin\piper\piper.exe
 onnx_model: C:\Hecos\bin\piper\it_IT-serena-high.onnx
@@ -13,49 +13,49 @@ piper_current_preset: default
 piper_presets: {}
 piper_current_inference_preset: ''
 piper_inference_presets:
-  Creative & Wild:
-    noise_scale: 1.6
-    noise_w: 1.5
-    sentence_silence: 0.35
-    speed: 1.15
-    volume: 1
-  Expressive & Dynamic:
-    noise_scale: 1.2
-    noise_w: 1.2
-    sentence_silence: 0.25
-    speed: 1.05
-    volume: 1
-  Fast & Direct:
-    noise_scale: 0.6
-    noise_w: 0.7
-    sentence_silence: 0.05
-    speed: 1.35
-    volume: 1
-  Stable & Monotone:
-    noise_scale: 0
-    noise_w: 0
-    sentence_silence: 0.15
-    speed: 1
-    volume: 1
   Standard & Balanced:
+    speed: 1
+    sentence_silence: 0.2
     noise_scale: 0.67
     noise_w: 0.8
-    sentence_silence: 0.2
+    volume: 1
+  Expressive & Dynamic:
+    speed: 1.05
+    sentence_silence: 0.25
+    noise_scale: 1.2
+    noise_w: 1.2
+    volume: 1
+  Fast & Direct:
+    speed: 1.35
+    sentence_silence: 0.05
+    noise_scale: 0.6
+    noise_w: 0.7
+    volume: 1
+  Stable & Monotone:
     speed: 1
+    sentence_silence: 0.15
+    noise_scale: 0
+    noise_w: 0
+    volume: 1
+  Creative & Wild:
+    speed: 1.15
+    sentence_silence: 0.35
+    noise_scale: 1.6
+    noise_w: 1.5
     volume: 1
 kokoro:
   autostart: true
   speed: 1.0
-  voice: af_heart
+  voice: if_goblin_folletto
   lang_code: auto
   blend_voice: ''
   alpha: 1.0
-  beta: 1.25
+  beta: 1.0
   sentence_silence: 0.1
   model_path: ''
   volume: 1.0
   normalize: true
-  current_preset: KOKORO1
+  current_preset: voce2donna
   current_inference_preset: ''
 kokoro_presets:
   Default Heart:
@@ -141,56 +141,56 @@ kokoro_presets:
     voice: if_goblin_folletto
     volume: 1
 kokoro_inference_presets:
-  Dynamic Prosody:
-    alpha: 1
-    beta: 1.25
-    blend_voice: ''
-    lang_code: auto
-    normalize: true
-    sentence_silence: 0.1
+  Standard & Balanced:
     speed: 1
-    volume: 1
-  Fast & Direct:
     alpha: 1
     beta: 1
-    blend_voice: ''
-    lang_code: auto
-    normalize: true
-    sentence_silence: 0.05
-    speed: 1.35
-    volume: 1
-  Hyper-Speed Assistant:
-    alpha: 1
-    beta: 1
-    blend_voice: ''
-    lang_code: auto
-    normalize: true
     sentence_silence: 0
-    speed: 1.6
+    blend_voice: ''
+    lang_code: auto
     volume: 1
+    normalize: true
+  Fast & Direct:
+    speed: 1.35
+    alpha: 1
+    beta: 1
+    sentence_silence: 0.05
+    blend_voice: ''
+    lang_code: auto
+    volume: 1
+    normalize: true
   Slow & Articulated:
+    speed: 0.85
     alpha: 1
     beta: 1.1
+    sentence_silence: 0.2
     blend_voice: ''
     lang_code: auto
-    normalize: true
-    sentence_silence: 0.2
-    speed: 0.85
     volume: 1
-  Standard & Balanced:
+    normalize: true
+  Hyper-Speed Assistant:
+    speed: 1.6
     alpha: 1
     beta: 1
+    sentence_silence: 0
     blend_voice: ''
     lang_code: auto
-    normalize: true
-    sentence_silence: 0
-    speed: 1
     volume: 1
+    normalize: true
+  Dynamic Prosody:
+    speed: 1
+    alpha: 1
+    beta: 1.25
+    sentence_silence: 0.1
+    blend_voice: ''
+    lang_code: auto
+    volume: 1
+    normalize: true
 xtts:
   autostart: true
   speed: 1.0
   language: it
-  speaker: Colette Olivier
+  speaker: if_goblin_folletto
   gpu_acceleration: auto
   chunk_sentences: true
   speaker_wav: ''
@@ -250,41 +250,41 @@ xtts_presets:
     top_k: 70
     top_p: 0.9
 xtts_inference_presets:
-  Creative & Wild:
-    length_penalty: 1.5
-    repetition_penalty: 8
-    speed: 1.1
-    temperature: 1.2
-    top_k: 90
-    top_p: 0.95
-  Expressive & Dynamic:
-    length_penalty: 1.2
-    repetition_penalty: 6
-    speed: 1
-    temperature: 0.9
-    top_k: 70
-    top_p: 0.9
   Fast & Direct:
-    length_penalty: 0.9
-    repetition_penalty: 4
     speed: 1.4
     temperature: 0.6
+    repetition_penalty: 4
     top_k: 40
     top_p: 0.8
+    length_penalty: 0.9
+  Expressive & Dynamic:
+    speed: 1
+    temperature: 0.9
+    repetition_penalty: 6
+    top_k: 70
+    top_p: 0.9
+    length_penalty: 1.2
   Slow & Clear:
-    length_penalty: 0.8
-    repetition_penalty: 3
     speed: 0.8
     temperature: 0.4
+    repetition_penalty: 3
     top_k: 30
     top_p: 0.7
+    length_penalty: 0.8
+  Creative & Wild:
+    speed: 1.1
+    temperature: 1.2
+    repetition_penalty: 8
+    top_k: 90
+    top_p: 0.95
+    length_penalty: 1.5
   Stable & Monotone:
-    length_penalty: 1
-    repetition_penalty: 10
     speed: 1
     temperature: 0.1
+    repetition_penalty: 10
     top_k: 10
     top_p: 0.5
+    length_penalty: 1
 fish_speech:
   autostart: true
   api_url: http://127.0.0.1:18480/v1/tts
@@ -504,45 +504,45 @@ fish_speech_presets:
     use_memory_cache: true
     volume: 1
 fish_speech_inference_presets:
-  Creative & Wild:
-    chunk_length: 220
-    max_new_tokens: 512
-    normalize: true
-    repetition_penalty: 1.25
-    temperature: 0.75
-    top_p: 0.8
-    use_memory_cache: true
-  Expressive & Dynamic:
-    chunk_length: 220
-    max_new_tokens: 512
-    normalize: true
-    repetition_penalty: 1.25
-    temperature: 0.75
-    top_p: 0.8
-    use_memory_cache: true
-  Fast & Direct:
-    chunk_length: 160
-    max_new_tokens: 384
-    normalize: true
-    repetition_penalty: 1.15
-    temperature: 0.5
-    top_p: 0.6
-    use_memory_cache: true
-  Stable & Monotone:
-    chunk_length: 200
-    max_new_tokens: 512
-    normalize: true
-    repetition_penalty: 1.3
-    temperature: 0.4
-    top_p: 0.5
-    use_memory_cache: true
   Standard & Balanced:
-    chunk_length: 200
-    max_new_tokens: 512
-    normalize: true
-    repetition_penalty: 1.2
     temperature: 0.7
     top_p: 0.7
+    repetition_penalty: 1.2
+    max_new_tokens: 512
+    chunk_length: 200
+    normalize: true
+    use_memory_cache: true
+  Expressive & Dynamic:
+    temperature: 0.75
+    top_p: 0.8
+    repetition_penalty: 1.25
+    max_new_tokens: 512
+    chunk_length: 220
+    normalize: true
+    use_memory_cache: true
+  Fast & Direct:
+    temperature: 0.5
+    top_p: 0.6
+    repetition_penalty: 1.15
+    max_new_tokens: 384
+    chunk_length: 160
+    normalize: true
+    use_memory_cache: true
+  Creative & Wild:
+    temperature: 0.75
+    top_p: 0.8
+    repetition_penalty: 1.25
+    max_new_tokens: 512
+    chunk_length: 220
+    normalize: true
+    use_memory_cache: true
+  Stable & Monotone:
+    temperature: 0.4
+    top_p: 0.5
+    repetition_penalty: 1.3
+    max_new_tokens: 512
+    chunk_length: 200
+    normalize: true
     use_memory_cache: true
   donna mascolina custom_1:
     chunk_length: 220

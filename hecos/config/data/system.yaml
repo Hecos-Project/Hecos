@@ -48,7 +48,7 @@ backend:
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: nandhank/qwen3.5-abliterated-truthful:9b
+    model: sorc/qwen3.5-claude-4.6-opus:latest
     available_models:
       '1': masska129/gemma-4-abliterated:12b-qat
       '2': sorc/qwen3.5-claude-4.6-opus:4b

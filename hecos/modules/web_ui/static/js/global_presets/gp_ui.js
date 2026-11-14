@@ -24,6 +24,7 @@ window.sfTogglePanel = function(force) {
         panel.classList.remove('open');
         panel.style.display = 'none';
         overlay.style.display = 'none';
+        if (window.sfCloseModelPicker) window.sfCloseModelPicker();
         if (window.sfStopVoicePreview) window.sfStopVoicePreview();
     }
 };
@@ -351,6 +352,326 @@ window.sfPopulateDropdowns = function(optData) {
     }
 };
 
+const _SF_CAP_META = {
+    thinking: {
+        icon: '💭',
+        label: 'Thinking',
+        title: 'Thinking / Reasoning',
+        desc: 'Supports internal <think> reasoning chains (controllable via Enable Thinking toggle).'
+    },
+    tools: {
+        icon: '⚙️',
+        label: 'Tools',
+        title: 'Tools / Function Calling',
+        desc: 'Supports structured tool calling, web search, memory & Hecos module actions.'
+    },
+    vision: {
+        icon: '👁️',
+        label: 'Vision',
+        title: 'Vision / Multimodal',
+        desc: 'Includes vision projector / multimodal weights for analyzing images and screenshots.'
+    }
+};
+
+function _sfEscHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function _sfFormatSizeBytes(bytes) {
+    if (!bytes || bytes <= 0) return '';
+    if (bytes >= 1024 * 1024 * 1024) {
+        return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+    }
+    return Math.round(bytes / (1024 * 1024)) + ' MB';
+}
+
+function _sfBuildModelDisplay(m) {
+    const prefix = (m.type === 'cloud') ? '☁️ ' : (m.type === 'local' ? '🖥️ ' : '');
+    const specParts = [];
+    if (m.parameter_size) {
+        let p = m.parameter_size;
+        if (m.quantization_level) p += ' ' + m.quantization_level;
+        specParts.push(p);
+    } else if (m.quantization_level) {
+        specParts.push(m.quantization_level);
+    }
+    const sizeHuman = _sfFormatSizeBytes(m.size_bytes);
+    if (sizeHuman) specParts.push(sizeHuman.replace(' ', ''));
+
+    const sizeTag = specParts.length ? ` [${specParts.join(' | ')}]` : '';
+    const caps = Array.isArray(m.capabilities) ? m.capabilities : [];
+    const icons = caps.map(c => _SF_CAP_META[c]?.icon).filter(Boolean).join('');
+    const descs = caps.map(c => _SF_CAP_META[c]?.title || c).filter(Boolean);
+
+    let tooltipText = `${m.name}${sizeTag}`;
+    if (m.family) tooltipText += `\nFamily: ${m.family}`;
+    if (sizeHuman) tooltipText += `\nDisk size: ${sizeHuman}`;
+    if (descs.length) tooltipText += `\nCapabilities: ${descs.join(', ')}`;
+    if (m.description) tooltipText += `\n${m.description}`;
+
+    return {
+        prefix,
+        sizeTag,
+        specCompact: specParts.join(' · '),
+        sizeHuman,
+        caps,
+        icons,
+        descs,
+        tooltipText,
+        optionLabel: prefix + m.name + sizeTag + (icons ? ' ' + icons : '')
+    };
+}
+
+function _sfFindSelectedModel(modelId) {
+    const all = window.sfState.allModels || [];
+    if (!modelId) return null;
+    const bType = document.getElementById('sf-backend-select')?.value;
+    return (
+        all.find(m => m.id === modelId && (!bType || (bType === 'cloud' ? m.type === 'cloud' : m.provider === bType))) ||
+        all.find(m => m.id === modelId) ||
+        null
+    );
+}
+
+window.sfUpdateModelHoverCard = function(m) {
+    const card = document.getElementById('sf-model-hover-card');
+    if (!card) return;
+    if (!m) {
+        card.style.display = 'none';
+        return;
+    }
+    const d = _sfBuildModelDisplay(m);
+    const providerLabel = m.type === 'cloud'
+        ? `Cloud (${m.provider || 'api'})`
+        : `Local (${m.provider || 'ollama'})`;
+
+    const specBits = [];
+    if (m.family) specBits.push(`Family: ${m.family}`);
+    if (m.parameter_size) specBits.push(`Params: ${m.parameter_size}`);
+    if (m.quantization_level) specBits.push(`Quant: ${m.quantization_level}`);
+    if (d.sizeHuman) specBits.push(`Disk: ${d.sizeHuman}`);
+    if (m.context_length > 0) specBits.push(`Ctx: ${Math.round(m.context_length / 1024)}k`);
+    if (m.has_projector) specBits.push('Projector: Multimodal');
+
+    const capBadges = d.caps.map(c => {
+        const meta = _SF_CAP_META[c] || { icon: '•', title: c, desc: '' };
+        return `<span class="sf-mib-pill cap-${_sfEscHtml(c)}" title="${_sfEscHtml(meta.desc)}">${meta.icon} ${_sfEscHtml(meta.title)}</span>`;
+    }).join('');
+
+    card.innerHTML = `
+        <div class="sf-mhc-title">
+            <span>${d.prefix}${_sfEscHtml(m.name)}</span>
+            <span style="font-size:10px; color:#94a3b8; font-weight:500;">${_sfEscHtml(providerLabel)}</span>
+        </div>
+        ${specBits.length ? `<div class="sf-mhc-specs">${_sfEscHtml(specBits.join(' · '))}</div>` : ''}
+        ${capBadges ? `<div class="sf-mhc-caps">${capBadges}</div>` : `<div class="sf-mhc-specs">Standard text generation model</div>`}
+    `;
+    card.style.display = 'block';
+};
+
+window.sfRenderModelPickerList = function(filterText = '') {
+    const listEl = document.getElementById('sf-model-picker-list');
+    if (!listEl) return;
+    const filtered = window.sfState.filteredModels || [];
+    const curVal = document.getElementById('sf-model-select')?.value || '';
+    const q = (filterText || '').trim().toLowerCase();
+
+    const visible = q
+        ? filtered.filter(m =>
+            (m.name || '').toLowerCase().includes(q) ||
+            (m.family || '').toLowerCase().includes(q) ||
+            (m.capabilities || []).some(c => c.toLowerCase().includes(q))
+        )
+        : filtered;
+
+    listEl.innerHTML = '';
+    if (!visible.length) {
+        listEl.innerHTML = `<div style="padding:10px; font-size:11.5px; color:var(--text-muted); text-align:center;">No models match filter</div>`;
+        window.sfUpdateModelHoverCard(null);
+        return;
+    }
+
+    visible.forEach(m => {
+        const d = _sfBuildModelDisplay(m);
+        const item = document.createElement('div');
+        item.className = 'sf-mp-item' + (m.id === curVal ? ' selected' : '');
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', m.id === curVal ? 'true' : 'false');
+        item.title = d.tooltipText;
+
+        const capIconsHtml = d.caps.map(c => {
+            const meta = _SF_CAP_META[c];
+            if (!meta) return '';
+            return `<span title="${_sfEscHtml(meta.title + ' — ' + meta.desc)}">${meta.icon}</span>`;
+        }).join('');
+
+        item.innerHTML = `
+            <div class="sf-mp-item-left">
+                <span>${d.prefix.trim()}</span>
+                <span class="sf-mp-item-name">${_sfEscHtml(m.name)}</span>
+            </div>
+            <div class="sf-mp-item-right">
+                ${d.specCompact ? `<span class="sf-mp-spec-tag">${_sfEscHtml(d.specCompact)}</span>` : ''}
+                ${capIconsHtml ? `<span class="sf-mp-cap-icons">${capIconsHtml}</span>` : ''}
+            </div>
+        `;
+
+        item.addEventListener('mouseenter', () => {
+            listEl.querySelectorAll('.sf-mp-item.sf-mp-hovered').forEach(el => el.classList.remove('sf-mp-hovered'));
+            item.classList.add('sf-mp-hovered');
+            window.sfUpdateModelHoverCard(m);
+        });
+
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const mSel = document.getElementById('sf-model-select');
+            if (mSel) {
+                mSel.value = m.id;
+            }
+            window.sfCloseModelPicker();
+            if (window.sfSyncModelUI) window.sfSyncModelUI();
+            if (window.sfDirty) window.sfDirty();
+        });
+
+        listEl.appendChild(item);
+    });
+
+    const activeModel = visible.find(m => m.id === curVal) || visible[0];
+    window.sfUpdateModelHoverCard(activeModel);
+};
+
+window.sfFilterModelPicker = function(val) {
+    window.sfRenderModelPickerList(val);
+};
+
+window.sfToggleModelPicker = function(force) {
+    const menu = document.getElementById('sf-model-picker-menu');
+    const btn = document.getElementById('sf-model-picker-btn');
+    if (!menu || !btn) return;
+    const isOpen = menu.style.display !== 'none';
+    const open = force !== undefined ? force : !isOpen;
+    if (open) {
+        const searchEl = document.getElementById('sf-model-search');
+        if (searchEl) searchEl.value = '';
+        window.sfRenderModelPickerList('');
+        menu.style.display = 'block';
+        btn.setAttribute('aria-expanded', 'true');
+        if (searchEl) setTimeout(() => searchEl.focus(), 20);
+    } else {
+        menu.style.display = 'none';
+        btn.setAttribute('aria-expanded', 'false');
+    }
+};
+
+window.sfCloseModelPicker = function() {
+    window.sfToggleModelPicker(false);
+};
+
+window.sfSyncModelUI = function() {
+    const mSel = document.getElementById('sf-model-select');
+    const labelEl = document.getElementById('sf-model-picker-label');
+    const metaEl = document.getElementById('sf-model-picker-meta');
+    const infoBar = document.getElementById('sf-model-info-bar');
+    if (!mSel) return;
+
+    const val = mSel.value;
+    const m = _sfFindSelectedModel(val);
+
+    if (labelEl && metaEl) {
+        if (m) {
+            const d = _sfBuildModelDisplay(m);
+            labelEl.textContent = d.prefix + m.name;
+            labelEl.title = d.tooltipText;
+            const metaBadges = [];
+            if (d.specCompact) metaBadges.push(`<span class="sf-mp-spec-tag">${_sfEscHtml(d.specCompact)}</span>`);
+            if (d.icons) metaBadges.push(`<span class="sf-mp-cap-icons">${d.icons}</span>`);
+            metaEl.innerHTML = metaBadges.join('');
+        } else {
+            const fallbackTxt = mSel.options[mSel.selectedIndex]?.textContent || val || '(Select model)';
+            labelEl.textContent = fallbackTxt;
+            labelEl.title = fallbackTxt;
+            metaEl.innerHTML = '';
+        }
+    }
+
+    if (infoBar) {
+        if (!m) {
+            infoBar.style.display = 'none';
+            infoBar.innerHTML = '';
+        } else {
+            const d = _sfBuildModelDisplay(m);
+            const pills = [];
+
+            const provTip = m.type === 'local'
+                ? `Local offline model executed via ${m.provider || 'ollama'} on your hardware.`
+                : `Cloud API model via ${m.provider || 'cloud'}.`;
+            const provName = m.type === 'local'
+                ? `Local (${m.provider === 'llama_cpp' ? 'GGUF' : (m.provider || 'Ollama')})`
+                : `Cloud (${m.provider || 'API'})`;
+            pills.push(`<span class="sf-mib-pill" data-sf-tip="${_sfEscHtml(provTip)}" title="${_sfEscHtml(provTip)}">${d.prefix.trim()} ${_sfEscHtml(provName)}</span>`);
+
+            if (m.parameter_size || m.quantization_level) {
+                const pqText = [m.parameter_size, m.quantization_level].filter(Boolean).join(' · ');
+                const pqTip = `Architecture spec: ${m.parameter_size || 'unknown'} parameters` +
+                    (m.quantization_level ? `, ${m.quantization_level} quantization` : '') +
+                    (m.family ? ` (${m.family} family)` : '') + '.';
+                pills.push(`<span class="sf-mib-pill spec-param" data-sf-tip="${_sfEscHtml(pqTip)}" title="${_sfEscHtml(pqTip)}">🧠 ${_sfEscHtml(pqText)}</span>`);
+            }
+
+            if (d.sizeHuman) {
+                const diskTip = `Disk footprint: ${d.sizeHuman} (${(m.size_bytes / (1024 * 1024)).toFixed(0)} MB on disk).`;
+                pills.push(`<span class="sf-mib-pill spec-disk" data-sf-tip="${_sfEscHtml(diskTip)}" title="${_sfEscHtml(diskTip)}">💾 ${_sfEscHtml(d.sizeHuman)}</span>`);
+            }
+
+            if (m.family) {
+                const famTip = `Model architecture family: ${m.family}.`;
+                pills.push(`<span class="sf-mib-pill" data-sf-tip="${_sfEscHtml(famTip)}" title="${_sfEscHtml(famTip)}">🧬 ${_sfEscHtml(m.family)}</span>`);
+            }
+
+            if (m.context_length > 0) {
+                const kCtx = m.context_length >= 1024 ? `${Math.round(m.context_length / 1024)}k` : `${m.context_length}`;
+                const ctxTip = `Native maximum context window reported by Ollama: ${m.context_length} tokens.`;
+                pills.push(`<span class="sf-mib-pill" data-sf-tip="${_sfEscHtml(ctxTip)}" title="${_sfEscHtml(ctxTip)}">📐 ${_sfEscHtml(kCtx)} ctx</span>`);
+            }
+
+            d.caps.forEach(c => {
+                const meta = _SF_CAP_META[c] || { icon: '•', label: c, title: c, desc: '' };
+                const tip = `${meta.title}: ${meta.desc}`;
+                pills.push(`<span class="sf-mib-pill cap-${_sfEscHtml(c)}" data-sf-tip="${_sfEscHtml(tip)}" title="${_sfEscHtml(tip)}">${meta.icon} ${_sfEscHtml(meta.label)}</span>`);
+            });
+
+            const descLine = m.description
+                ? `<div class="sf-mib-desc">${_sfEscHtml(m.description)}</div>`
+                : '';
+
+            infoBar.innerHTML = `<div class="sf-mib-pills">${pills.join('')}</div>${descLine}`;
+            infoBar.style.display = 'flex';
+        }
+    }
+};
+
+if (!window._sfModelPickerEventsBound) {
+    window._sfModelPickerEventsBound = true;
+    document.addEventListener('click', (e) => {
+        const picker = document.getElementById('sf-model-picker');
+        if (picker && !picker.contains(e.target)) {
+            if (window.sfCloseModelPicker) window.sfCloseModelPicker();
+        }
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const menu = document.getElementById('sf-model-picker-menu');
+            if (menu && menu.style.display !== 'none') {
+                window.sfCloseModelPicker();
+            }
+        }
+    });
+}
+
 window.sfUpdateModelsDropdown = function() {
     const bType = document.getElementById('sf-backend-select')?.value;
     const mSel = document.getElementById('sf-model-select');
@@ -366,49 +687,23 @@ window.sfUpdateModelsDropdown = function() {
         if (bType === 'kobold' && m.provider === 'kobold') return true;
         return false;
     });
+
+    window.sfState.filteredModels = filtered;
     
     filtered.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m.id;
-        
-        let prefix = (m.type === 'cloud') ? '☁️ ' : (m.type === 'local' ? '🖥️ ' : '');
-        let suffix = '';
-        let sizeTag = '';
-        if (m.parameter_size || m.size_bytes) {
-            sizeTag = ' [';
-            let parts = [];
-            if (m.parameter_size) {
-                let p = m.parameter_size;
-                if (m.quantization_level) p += ' ' + m.quantization_level;
-                parts.push(p);
-            }
-            if (m.size_bytes) {
-                let gb = (m.size_bytes / (1024*1024*1024)).toFixed(1);
-                parts.push(gb + 'GB');
-            }
-            sizeTag += parts.join(' | ') + ']';
-        }
-        let tooltipText = m.name + sizeTag;
-        
-        if (m.capabilities && m.capabilities.length > 0) {
-            const iconMap = { 'tools': '⚙️', 'vision': '👁️', 'thinking': '💭' };
-            const descMap = { 'tools': 'Tools/Function Calling', 'vision': 'Vision/Multimodal', 'thinking': 'Thinking/Reasoning' };
-            
-            const icons = m.capabilities.map(c => iconMap[c]).filter(Boolean).join('');
-            if (icons) suffix = ' ' + icons;
-            
-            const descs = m.capabilities.map(c => descMap[c]).filter(Boolean).join(', ');
-            if (descs) tooltipText += '\nCapabilities: ' + descs;
-        }
-        
-        opt.textContent = prefix + m.name + sizeTag + suffix;
-        opt.title = tooltipText;
+        const d = _sfBuildModelDisplay(m);
+        opt.textContent = d.optionLabel;
+        opt.title = d.tooltipText;
         mSel.appendChild(opt);
     });
 
     if (prevModel && Array.from(mSel.options).some(o => o.value === prevModel)) {
         mSel.value = prevModel;
     }
+
+    if (window.sfSyncModelUI) window.sfSyncModelUI();
 };
 
 window.sfUpdateVoicesDropdown = async function() {
@@ -491,6 +786,7 @@ window.sfApplySoulToUI = async function(soul) {
     document.getElementById('sf-backend-select').value = soul.model?.backend_type || fallbacks.backend || "ollama";
     window.sfUpdateModelsDropdown();
     document.getElementById('sf-model-select').value = soul.model?.model_name || fallbacks.model || "";
+    if (window.sfSyncModelUI) window.sfSyncModelUI();
     
     // Voice
     const currentEng = (soul.voice?.tts_engine && soul.voice.tts_engine !== 'unknown')
@@ -632,6 +928,7 @@ window.sfApplySessionOverridesToUI = async function(cfg) {
         window.sfUpdateModelsDropdown();
         const mName = cfg.model?.model_name || cfg.backend?.[bType]?.model;
         if (mName) document.getElementById('sf-model-select').value = mName;
+        if (window.sfSyncModelUI) window.sfSyncModelUI();
     }
 
     // TTS Engine & Voice

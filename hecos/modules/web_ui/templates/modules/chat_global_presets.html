@@ -92,12 +92,32 @@
                         <option value="llama_cpp">Llama.cpp (GGUF)</option>
                     </select>
                 </div>
-                <div class="sf-control-group" style="flex: 2;">
+                <div class="sf-control-group" style="flex: 2; position: relative;">
                     <label>Model Name</label>
-                    <select id="sf-model-select" class="form-control" onchange="window.sfDirty()">
+                    <select id="sf-model-select" class="form-control sf-native-model-select-hidden"
+                        onchange="if (window.sfSyncModelUI) window.sfSyncModelUI(); window.sfDirty()">
                     </select>
+                    <div id="sf-model-picker" class="sf-model-picker">
+                        <button type="button" id="sf-model-picker-btn" class="sf-model-picker-btn"
+                            aria-haspopup="listbox" aria-expanded="false"
+                            onclick="if (window.sfToggleModelPicker) window.sfToggleModelPicker()">
+                            <span class="sf-mp-btn-main" id="sf-model-picker-label">Loading models...</span>
+                            <span class="sf-mp-btn-meta" id="sf-model-picker-meta"></span>
+                            <i class="fas fa-chevron-down sf-mp-chevron"></i>
+                        </button>
+                        <div id="sf-model-picker-menu" class="sf-model-picker-menu" role="listbox" style="display: none;">
+                            <div class="sf-mp-search-wrap">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="sf-model-search" class="sf-mp-search"
+                                    placeholder="Filter models..." oninput="if (window.sfFilterModelPicker) window.sfFilterModelPicker(this.value)">
+                            </div>
+                            <div id="sf-model-picker-list" class="sf-model-picker-list"></div>
+                            <div id="sf-model-hover-card" class="sf-model-hover-card" style="display: none;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
+            <div id="sf-model-info-bar" class="sf-model-info-bar" style="display: none;"></div>
         </div>
 
         <!-- SOUL & INSTRUCTIONS -->
