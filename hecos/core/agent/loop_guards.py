@@ -332,10 +332,25 @@ def are_executor_write_tools_enabled(cfg: Optional[dict]) -> bool:
     return bool(selected & {"EXECUTOR__*", "EXECUTOR__write_file", "EXECUTOR__patch_file"})
 
 
+def _has_nonexistent_file_uri(text: str) -> bool:
+    """Returns True if text embeds a local file:/// link pointing to a path missing on disk."""
+    for raw_uri in re.findall(r'file:///([^\s)\]\'"<>`]+)', text, re.IGNORECASE):
+        norm = raw_uri.strip().rstrip(".,;:")
+        lower = norm.lower()
+        if not norm or "path/to/" in lower or "..." in lower:
+            continue
+        candidate = norm.replace("/", os.sep)
+        if not os.path.exists(candidate):
+            return True
+    return False
+
+
 def detect_unexecuted_file_claim(text: Optional[str]) -> bool:
-    """Detects when plain assistant text claims files/modules were created on disk without tool execution."""
+    """Detects when plain assistant text claims files were created or emits dead file:/// links without tool execution."""
     if not text or not isinstance(text, str):
         return False
+    if _has_nonexistent_file_uri(text):
+        return True
     if _NEGATIVE_FILE_CLAIM_RE.search(text):
         return False
     has_claim = bool(_FILE_CLAIM_RE.search(text))

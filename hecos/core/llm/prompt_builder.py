@@ -581,9 +581,9 @@ class PromptBuilder:
 
                     rules = persona_data.get("rules")
 
-                    if rules:
+                    if isinstance(rules, dict):
 
-                        blocks.append("### CORE BEHAVIORAL RULES ###\n" + 
+                        blocks.append("### CORE BEHAVIORAL RULES ###\n" +
 
                                       "\n".join(f"- {r}" for r in rules.get("generic", [])) +
 
@@ -594,6 +594,14 @@ class PromptBuilder:
                                       "\nNever Do: " + ", ".join(rules.get("never_do", [])) +
 
                                       "\nNever Say: " + ", ".join(rules.get("never_say", [])))
+
+                    elif isinstance(rules, list):
+
+                        rule_lines = "\n".join(f"- {r}" for r in rules if str(r).strip())
+
+                        if rule_lines:
+
+                            blocks.append("### CORE BEHAVIORAL RULES ###\n" + rule_lines)
 
                     
 
@@ -1294,13 +1302,19 @@ class PromptBuilder:
 
                     f"  - Role: {profile.get('role', 'admin')}\n"
 
-                    "\n### USER DATA ACCESS ###\n"
-
-                    "- To access full contact info (email, phone, address, bio), use [USERS: get_profile].\n"
-
-                    "- To help the user update their data, use [USERS: update_profile:field=value].\n"
-
                 )
+
+                if _is_tag_allowed_in_prompt("USERS"):
+
+                    user_profile_block += (
+
+                        "\n### USER DATA ACCESS ###\n"
+
+                        "- To access full contact info (email, phone, address, bio), use [USERS: get_profile].\n"
+
+                        "- To help the user update their data, use [USERS: update_profile:field=value].\n"
+
+                    )
 
         except Exception as _pe:
 

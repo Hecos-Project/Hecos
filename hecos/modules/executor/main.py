@@ -69,25 +69,55 @@ class ExecutorTools:
         }
 
         self.workspace_dir = self._resolve_workspace_dir()
+        self.sandbox_dir = self._resolve_sandbox_dir()
         os.makedirs(self.workspace_dir, exist_ok=True)
+        os.makedirs(self.sandbox_dir, exist_ok=True)
+
+    _LEGACY_REL_PATHS = frozenset({
+        "",
+        ".",
+        "./workspace",
+        "workspace",
+        "workspace/sandbox",
+        "./workspace/sandbox",
+    })
+
+    def _resolve_media_managed_dir(self, configured_value: str, default_subpath: str) -> str:
+        """Resolve a user-managed directory inside the hecos package tree (CWD-independent)."""
+        hecos_pkg_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        raw = (configured_value or "").strip()
+        normalized = raw.replace("\\", "/").rstrip("/")
+        if normalized in self._LEGACY_REL_PATHS:
+            return os.path.normpath(os.path.join(hecos_pkg_dir, default_subpath))
+        if os.path.isabs(raw):
+            return os.path.abspath(raw)
+        return os.path.normpath(os.path.join(hecos_pkg_dir, raw))
 
     def _resolve_workspace_dir(self) -> str:
-        """Resolves workspace dir from config (important_paths.projects), falling back to hecos/media/workspace."""
+        """Resolves persistent user projects dir from config (important_paths.projects), defaulting to hecos/media/workspace."""
+        configured = ""
         try:
             import sys
             cfg_mgr = getattr(sys, "hecos_config_manager", None)
             if cfg_mgr:
                 paths = cfg_mgr.get_plugin_config("EXECUTOR", "important_paths", {})
-                projects = paths.get("projects", "").strip() if isinstance(paths, dict) else ""
-                if projects:
-                    return os.path.abspath(projects)
+                if isinstance(paths, dict):
+                    configured = paths.get("projects", "") or ""
         except Exception:
             pass
-        # Default: C:\Hecos\hecos\media\workspace when present, else ./workspace
-        media_ws = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "media", "workspace"))
-        if os.path.exists(os.path.dirname(media_ws)):
-            return media_ws
-        return os.path.abspath(os.path.join(os.getcwd(), "workspace"))
+        return self._resolve_media_managed_dir(configured, os.path.join("media", "workspace"))
+
+    def _resolve_sandbox_dir(self) -> str:
+        """Resolves ephemeral AST sandbox execution dir from config (workspace_dir), defaulting to hecos/media/sandbox."""
+        configured = ""
+        try:
+            import sys
+            cfg_mgr = getattr(sys, "hecos_config_manager", None)
+            if cfg_mgr:
+                configured = cfg_mgr.get_plugin_config("EXECUTOR", "workspace_dir", "") or ""
+        except Exception:
+            pass
+        return self._resolve_media_managed_dir(configured, os.path.join("media", "sandbox"))
 
     def _resolve_target_path(self, path: str) -> str:
         """Resolve relative paths inside the configured projects workspace."""
@@ -155,7 +185,9 @@ class ExecutorTools:
     # ── Code Sandbox ──────────────────────────────────────────────────────────
 
     def run_python_code(self, code: str) -> str:
-        return run_python_code_tool(code, self.workspace_dir, self.tag)
+        sandbox_dir = self._resolve_sandbox_dir()
+        workspace_dir = self._resolve_workspace_dir()
+        return run_python_code_tool(code, sandbox_dir, self.tag, projects_workspace_dir=workspace_dir)
 
     # ── File Management & Developer Tools ────────────────────────────────────
 
@@ -274,13 +306,15 @@ class ExecutorTools:
             if cfg_mgr:
                 paths = cfg_mgr.get_plugin_config("EXECUTOR", "important_paths", {})
             
+            ws_dir = self._resolve_workspace_dir()
+            sb_dir = self._resolve_sandbox_dir()
             if not paths:
-                return "No important paths memorized yet. Default workspace: " + self.workspace_dir
+                return f"No important paths memorized yet. Default workspace: {ws_dir} | Sandbox: {sb_dir}"
             
             res = "Memorized Important Paths:\n"
             for k, v in paths.items():
                 res += f"- {k}: {v}\n"
-            res += f"\nDefault Workspace: {self.workspace_dir}\n"
+            res += f"\nDefault Workspace: {ws_dir}\nSandbox Temp Dir: {sb_dir}\n"
             return res
         except Exception as e:
             return f"Error reading paths: {e}"

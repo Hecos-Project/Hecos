@@ -62,7 +62,7 @@ class PluginExecutor(BaseModel):
     enable_shell_commands: bool = True
     shell_timeout: int = 15
     max_read_lines: int = 200
-    workspace_dir: str = "workspace/sandbox"
+    workspace_dir: str = "media/sandbox"
     important_paths: Dict[str, str] = {}
 
 
