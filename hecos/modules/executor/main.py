@@ -28,6 +28,7 @@ from .file_manager import (
 from .dev_tools import (
     project_tree_tool, search_code_tool, check_syntax_tool, run_project_test_tool
 )
+from .process_runner import get_process_registry, run_tests_for_target
 
 class ExecutorTools:
     """
@@ -65,6 +66,31 @@ class ExecutorTools:
                 "type": "dict",
                 "default": {},
                 "description": "Dictionary of important paths for the AI to use."
+            },
+            "auto_verify_syntax_on_write": {
+                "type": "bool",
+                "default": True,
+                "description": "Automatically verify syntax after writing or patching code/config files."
+            },
+            "auto_run_existing_tests_on_write": {
+                "type": "bool",
+                "default": True,
+                "description": "Automatically run matching existing workspace unit tests after editing Python files."
+            },
+            "auto_generate_unit_tests": {
+                "type": "bool",
+                "default": False,
+                "description": "Encourage coding presets to generate companion unit tests automatically for new modules."
+            },
+            "default_run_timeout_seconds": {
+                "type": "int",
+                "default": 30,
+                "description": "Default timeout in seconds when running scripts or test suites."
+            },
+            "allow_ui_script_execution": {
+                "type": "bool",
+                "default": True,
+                "description": "Allow launching workspace scripts and tests directly from chat cards and Workspace Runner UI."
             }
         }
 
@@ -200,6 +226,50 @@ class ExecutorTools:
         """
         return read_file_tool(self._resolve_target_path(file_path), start_line, end_line)
 
+    _AUTO_CHECK_EXTS = frozenset({".py", ".json", ".yaml", ".yml", ".js", ".mjs", ".cjs"})
+
+    def _get_exec_config(self, key: str, default):
+        try:
+            import sys
+            cfg_mgr = getattr(sys, "hecos_config_manager", None)
+            if cfg_mgr:
+                return cfg_mgr.get_plugin_config(self.tag, key, default)
+        except Exception:
+            pass
+        return default
+
+    def _run_post_write_verification(self, abs_path: str) -> str:
+        """Run deterministic post-write syntax verification and matching existing project tests."""
+        ext = os.path.splitext(abs_path)[1].lower()
+        if ext not in self._AUTO_CHECK_EXTS or not os.path.isfile(abs_path):
+            return ""
+
+        notes = []
+        syntax_ok = True
+        if bool(self._get_exec_config("auto_verify_syntax_on_write", True)):
+            syntax_res = check_syntax_tool(abs_path)
+            syntax_ok = "SYNTAX ERROR" not in syntax_res
+            notes.append(f"[AUTO-CHECK] {syntax_res}")
+
+        ws_dir = self._resolve_workspace_dir()
+        in_workspace = os.path.abspath(abs_path).lower().startswith(os.path.abspath(ws_dir).lower())
+        if syntax_ok and ext == ".py" and in_workspace and bool(self._get_exec_config("auto_run_existing_tests_on_write", True)):
+            timeout = self._get_exec_config("default_run_timeout_seconds", 30)
+            test_res = run_tests_for_target(
+                abs_path,
+                ws_dir,
+                timeout_seconds=timeout,
+                strict_workspace_only=True,
+            )
+            if not test_res.get("no_tests_found"):
+                status_label = "PASSED" if test_res.get("ok") else "FAILED"
+                out_tail = (test_res.get("output") or "").strip()[-1200:]
+                notes.append(
+                    f"[AUTO-TEST] {status_label} (exit={test_res.get('exit_code')}, {test_res.get('duration_ms', 0)}ms):\n{out_tail}"
+                )
+
+        return ("\n" + "\n".join(notes)) if notes else ""
+
     def write_file(self, file_path: str, content: str, mode: str = "w") -> str:
         """
         Writes or creates a file and verifies it exists on disk. Relative paths resolve inside the projects workspace.
@@ -207,7 +277,11 @@ class ExecutorTools:
         :param content: Complete file text content to write.
         :param mode: 'w' to overwrite (default), 'a' to append.
         """
-        return write_file_tool(self._resolve_target_path(file_path), content, mode)
+        resolved = self._resolve_target_path(file_path)
+        res = write_file_tool(resolved, content, mode)
+        if res.startswith("[EXECUTOR] File verified on disk:"):
+            res += self._run_post_write_verification(resolved)
+        return res
 
     def patch_file(self, file_path: str, old_text: str, new_text: str) -> str:
         """
@@ -216,7 +290,11 @@ class ExecutorTools:
         :param old_text: Exact existing block to replace.
         :param new_text: Replacement text block.
         """
-        return patch_file_tool(self._resolve_target_path(file_path), old_text, new_text)
+        resolved = self._resolve_target_path(file_path)
+        res = patch_file_tool(resolved, old_text, new_text)
+        if res.startswith("[EXECUTOR] File patched and verified on disk:"):
+            res += self._run_post_write_verification(resolved)
+        return res
 
     def delete_file(self, file_path: str) -> str:
         return delete_file_tool(self._resolve_target_path(file_path))
@@ -272,6 +350,72 @@ class ExecutorTools:
             timeout_seconds=timeout_seconds,
             default_workspace=self._resolve_workspace_dir(),
         )
+
+    def start_app(self, target_path: str, args: str = "", wait_seconds: float = 2.5) -> str:
+        """
+        Starts a persistent workspace script, local web server (Flask/FastAPI/Streamlit), or desktop GUI app
+        using ManagedProcessRegistry with logs saved under media/sandbox/runs.
+        :param target_path: Workspace-relative or authorized path to the script to launch.
+        :param args: Optional CLI arguments string.
+        :param wait_seconds: Initial startup wait window in seconds to capture banner/URL or immediate errors.
+        """
+        ws_dir = self._resolve_workspace_dir()
+        sb_dir = self._resolve_sandbox_dir()
+        res = get_process_registry().start_target(
+            target_path,
+            ws_dir,
+            sb_dir,
+            args=args,
+            wait_seconds=wait_seconds,
+            strict_workspace_only=False,
+            require_stay_alive=False,
+        )
+        if not res.get("ok") and res.get("status") == "error":
+            return f"[EXECUTOR] {res.get('error', 'Failed to start application.')}"
+        lines = [
+            f"[EXECUTOR] Process {res.get('status', 'unknown').upper()} | run_id={res.get('run_id')} | PID={res.get('pid')} | file={res.get('path')}",
+        ]
+        if res.get("exit_code") is not None:
+            lines.append(f"Exit Code: {res.get('exit_code')}")
+        urls = res.get("detected_urls") or []
+        if urls:
+            lines.append("Detected URL(s): " + ", ".join(urls))
+        out = (res.get("output") or "").strip()[-1500:]
+        if out:
+            lines.append(f"--- LOG ---\n{out}")
+        return "\n".join(lines)
+
+    def get_app_logs(self, run_id: str, tail_lines: int = 80) -> str:
+        """Reads live status and log output of a managed workspace application."""
+        res = get_process_registry().get_logs(run_id.strip(), offset=0, tail_lines=tail_lines)
+        if not res.get("ok"):
+            return f"[EXECUTOR] {res.get('error', 'Log lookup failed.')}"
+        header = f"[EXECUTOR] run_id={res['run_id']} | status={res['status']} | exit_code={res.get('exit_code')}"
+        urls = res.get("detected_urls") or []
+        if urls:
+            header += " | URL=" + ", ".join(urls)
+        chunk = (res.get("chunk") or "").strip() or "(no log output yet)"
+        return f"{header}\n{chunk}"
+
+    def list_running_apps(self) -> str:
+        """Lists all active and recent managed workspace runs."""
+        runs = get_process_registry().list_runs()
+        if not runs:
+            return "[EXECUTOR] No managed workspace processes recorded."
+        lines = ["Managed Workspace Processes:"]
+        for r in runs[:15]:
+            urls = f" | URLs: {', '.join(r['detected_urls'])}" if r.get("detected_urls") else ""
+            lines.append(
+                f"- {r['run_id']} | {r['name']} | status={r['status']} | PID={r['pid']} | exit={r.get('exit_code')}{urls}"
+            )
+        return "\n".join(lines)
+
+    def stop_app(self, run_id: str) -> str:
+        """Stops a running managed workspace application cleanly by run_id."""
+        res = get_process_registry().stop_run(run_id.strip())
+        if not res.get("ok"):
+            return f"[EXECUTOR] {res.get('error', 'Failed to stop process.')}"
+        return f"[EXECUTOR] {res.get('message', 'Stopped.')} (status={res.get('status')})"
 
     def set_important_path(self, name: str, path: str) -> str:
         """
@@ -350,6 +494,10 @@ def info():
             "search_code": "Search code and configuration files for matching text.",
             "check_syntax": "Validate Python, JSON, YAML, or JavaScript file syntax.",
             "run_project_test": "Run a Python script, unittest, or pytest suite inside an authorized workspace/project.",
+            "start_app": "Start a persistent workspace script, local web server, or desktop GUI app with managed logging.",
+            "get_app_logs": "Read status and live log output for a managed workspace app by run_id.",
+            "list_running_apps": "List active and recent managed workspace applications.",
+            "stop_app": "Stop a running managed workspace application by run_id.",
         }
     }
 

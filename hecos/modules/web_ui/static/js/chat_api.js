@@ -300,10 +300,8 @@ window.sendMessage = async function() {
           window.chatHistory[window.chatHistory.length - 1].content = aiText;
         }
         
-        if (ev.model_info) {
-          const tooltipText = window.formatModelTooltip(ev.model_info);
-          aiBubble.setAttribute('title', tooltipText);
-          aiBubble.style.cursor = 'help';
+        if (ev.model_info && typeof window.attachModelInfoTooltip === 'function') {
+          window.attachModelInfoTooltip(aiBubble, ev.model_info);
         }
         
         // Dynamically update the bubble's avatar and name if the persona changed during the run
@@ -502,10 +500,8 @@ window.sendInternalMessage = async function(text) {
           window.chatHistory[window.chatHistory.length - 1].content = aiText;
         }
         
-        if (ev.model_info) {
-          const tooltipText = window.formatModelTooltip(ev.model_info);
-          aiBubble.setAttribute('title', tooltipText);
-          aiBubble.style.cursor = 'help';
+        if (ev.model_info && typeof window.attachModelInfoTooltip === 'function') {
+          window.attachModelInfoTooltip(aiBubble, ev.model_info);
         }
 
         if (ev.persona_name) {

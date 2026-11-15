@@ -10,7 +10,7 @@ window.processAiMedia = function(html) {
 
   function isLocalLink(url) {
     if (!url) return false;
-    return url.startsWith('file://') || url.startsWith('/api/local_file') || url.startsWith('/api/serve_html') || /^[a-zA-Z]:[\\/]/.test(url) || url.startsWith('http://localhost') || url.startsWith('https://localhost');
+    return url.startsWith('file://') || url.startsWith('/api/local_file') || url.startsWith('/api/serve_html') || /^[a-zA-Z]:[\\/]/.test(url) || /^https?:\/\/localhost(?::\d+)?\/api\/(?:local_file|serve_html)/i.test(url);
   }
 
   function getSafeLocalUrl(rawUrl) {
@@ -20,6 +20,96 @@ window.processAiMedia = function(html) {
 
     if (clean.startsWith('/api/') || clean.startsWith('http://') || clean.startsWith('https://')) return clean;
     return `/api/local_file?path=${encodeURIComponent(clean)}`;
+  }
+
+  function _buildLocalFileCardHtml(docPath, src, fileName, ext, includeOpenBtn = false) {
+    const fileIconMap = { pdf: 'fa-file-pdf', html: 'fa-file-code', htm: 'fa-file-code',
+                          py: 'fa-file-code', js: 'fa-file-code', ts: 'fa-file-code',
+                          jsx: 'fa-file-code', tsx: 'fa-file-code', css: 'fa-file-code',
+                          json: 'fa-file-code', yaml: 'fa-file-code', yml: 'fa-file-code',
+                          toml: 'fa-file-code', sh: 'fa-file-code', bat: 'fa-file-code', cmd: 'fa-file-code',
+                          sql: 'fa-file-code',
+                          doc: 'fa-file-word', docx: 'fa-file-word', txt: 'fa-file-alt',
+                          md: 'fa-file-alt', csv: 'fa-file-csv' };
+    const fileColorMap = { pdf: '#e74c3c', html: '#3498db', htm: '#3498db',
+                           py: '#f59e0b', js: '#facc15', ts: '#38bdf8',
+                           json: '#34d399', yaml: '#a78bfa', yml: '#a78bfa',
+                           doc: '#2980b9', docx: '#2980b9', xls: '#27ae60',
+                           xlsx: '#27ae60', ppt: '#e67e22', pptx: '#e67e22' };
+    const iconClass = fileIconMap[ext] || 'fa-file-alt';
+    const iconColor = fileColorMap[ext] || 'var(--accent)';
+
+    const isPreviewable = (ext === 'pdf' || ext === 'html' || ext === 'htm');
+    const previewId = isPreviewable ? ('preview_box_' + Math.random().toString(36).substring(2, 10)) : null;
+    const iframeId = isPreviewable ? ('preview_' + Math.random().toString(36).substring(2, 10)) : null;
+    const serveUrl = (ext === 'html' || ext === 'htm')
+      ? `/api/serve_html?path=${encodeURIComponent(docPath)}`
+      : src;
+
+    const openBtnHtml = (includeOpenBtn && isPreviewable)
+      ? `<a href="${serveUrl}" target="_blank" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.18); border:1px solid rgba(108,140,255,0.35); color:var(--accent); font-size:0.8em; text-decoration:none; font-weight:600;"><i class="fas fa-external-link-alt"></i> Open</a>`
+      : '';
+
+    let actionsHtml;
+    if (window.WorkspaceRunner && typeof window.WorkspaceRunner.buildCardActionsHtml === 'function') {
+      actionsHtml = window.WorkspaceRunner.buildCardActionsHtml({
+        docPath,
+        src,
+        fileName,
+        ext,
+        isPreviewable,
+        previewId,
+        extraButtonsHtml: openBtnHtml,
+      });
+    } else {
+      const zoomBtn = isPreviewable
+        ? `<button class="chat-file-zoom-btn" data-preview-id="${previewId}" onclick="window.togglePdfPreviewZoom('${previewId}')" title="Expand preview in chat" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.15); border:1px solid rgba(108,140,255,0.3); color:#c4b5fd; font-size:0.8em; font-family:inherit; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.2s ease;"><i class="fas fa-expand-arrows-alt"></i> <span class="zoom-label">Zoom</span></button>`
+        : '';
+      actionsHtml = `${openBtnHtml}<a href="${src}" target="_blank" download="${fileName}" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.12); border:1px solid rgba(108,140,255,0.25); color:var(--muted); font-size:0.8em; text-decoration:none;"><i class="fas fa-download"></i> Download</a>${zoomBtn}`;
+    }
+
+    let htmlOut = `<div class="chat-file-card-wrap" style="width:100%;">
+      <div class="chat-file-card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;margin:6px 0;">
+        <div class="chat-file-icon" style="font-size:1.6em;color:${iconColor};"><i class="fas ${iconClass}"></i></div>
+        <div class="chat-file-details" style="flex:1;min-width:0;">
+          <div class="chat-file-name" style="font-weight:600;font-size:0.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${docPath}">${fileName}</div>
+          <div class="chat-file-action" style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;align-items:center;">${actionsHtml}</div>
+        </div>
+      </div>`;
+
+    if (ext === 'html' || ext === 'htm') {
+      const safeDocPath = docPath.replace(/\\/g, '/').replace(/'/g, "\\'");
+      htmlOut += `
+      <div class="chat-html-preview" id="${previewId}">
+        <div class="chat-html-preview-bar">
+          <span>Preview: ${fileName}</span>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button onclick="if(window.openDocPreview) window.openDocPreview('${safeDocPath}');" style="background:rgba(108,140,255,0.2);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9em;"><i class="fas fa-magic"></i> Visual Editor</button>
+            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Reload preview" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <div class="chat-html-preview-body">
+          <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:400px;border:none;display:block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
+        </div>
+      </div>`;
+    } else if (ext === 'pdf') {
+      const pdfServeUrl = `/api/local_file?path=${encodeURIComponent(docPath)}#pagemode=thumbs&navpanes=1&page=1`;
+      htmlOut += `
+      <div class="chat-pdf-preview" id="${previewId}">
+        <div class="chat-pdf-preview-bar">
+          <span>Preview: ${fileName}</span>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Reload preview" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <div class="chat-pdf-preview-body">
+          <iframe id="${iframeId}" src="${pdfServeUrl}" style="width:100%;min-width:min(780px,100%);height:480px;border:none;display:block;"></iframe>
+        </div>
+      </div>`;
+    }
+
+    htmlOut += `</div>`;
+    return htmlOut;
   }
 
   // 1. Process <a> tags (Videos and Generic Files)
@@ -136,91 +226,10 @@ window.processAiMedia = function(html) {
       const fileName = docPath.split('/').pop() || 'Local File';
       const ext = (fileName.match(/\.([a-z0-9]+)$/i) || ['', ''])[1].toLowerCase();
 
-      const fileIconMap = { pdf: 'fa-file-pdf', html: 'fa-file-code', htm: 'fa-file-code',
-                            py: 'fa-file-code', js: 'fa-file-code', ts: 'fa-file-code',
-                            jsx: 'fa-file-code', tsx: 'fa-file-code', css: 'fa-file-code',
-                            json: 'fa-file-code', yaml: 'fa-file-code', yml: 'fa-file-code',
-                            toml: 'fa-file-code', sh: 'fa-file-code', bat: 'fa-file-code',
-                            sql: 'fa-file-code',
-                            doc: 'fa-file-word', docx: 'fa-file-word', txt: 'fa-file-alt',
-                            md: 'fa-file-alt', csv: 'fa-file-csv' };
-      const fileColorMap = { pdf: '#e74c3c', html: '#3498db', htm: '#3498db',
-                             py: '#f59e0b', js: '#facc15', ts: '#38bdf8',
-                             json: '#34d399', yaml: '#a78bfa', yml: '#a78bfa',
-                             doc: '#2980b9', docx: '#2980b9' };
-      const iconClass = fileIconMap[ext] || 'fa-file-alt';
-      const iconColor = fileColorMap[ext] || 'var(--accent)';
-
-      const isPreviewable = (ext === 'pdf' || ext === 'html' || ext === 'htm');
-      const previewId = isPreviewable ? ('preview_box_' + Math.random().toString(36).substring(2, 10)) : null;
-      const iframeId = isPreviewable ? ('preview_' + Math.random().toString(36).substring(2, 10)) : null;
-
-      const zoomBtnHtml = isPreviewable ? `
-        <button class="chat-file-zoom-btn" data-preview-id="${previewId}" onclick="window.togglePdfPreviewZoom('${previewId}')" title="Expand preview in chat" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.15); border:1px solid rgba(108,140,255,0.3); color:#c4b5fd; font-size:0.8em; font-family:inherit; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.2s ease;">
-          <i class="fas fa-expand-arrows-alt"></i> <span class="zoom-label">Zoom</span>
-        </button>
-      ` : '';
-
-      const card = document.createElement('div');
-      card.className = 'chat-file-card';
-      card.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;margin:6px 0;';
-      card.innerHTML = `
-        <div class="chat-file-icon" style="font-size:1.6em;color:${iconColor};"><i class="fas ${iconClass}"></i></div>
-        <div class="chat-file-details" style="flex:1;min-width:0;">
-          <div class="chat-file-name" style="font-weight:600;font-size:0.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${docPath}">${fileName}</div>
-          <div class="chat-file-action" style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;align-items:center;">
-            <a href="${src}" target="_blank" download style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.12); border:1px solid rgba(108,140,255,0.25); color:var(--muted); font-size:0.8em; text-decoration:none;"><i class="fas fa-download"></i> Download</a>${zoomBtnHtml}
-          </div>
-        </div>
-      `;
-
-      if (ext === 'html' || ext === 'htm') {
-        const serveUrl = `/api/serve_html?path=${encodeURIComponent(docPath)}`;
-        const safeDocPath = docPath.replace(/\\/g, '/');
-        const previewDiv = document.createElement('div');
-        previewDiv.className = 'chat-html-preview';
-        previewDiv.id = previewId;
-        previewDiv.innerHTML = `
-          <div class="chat-html-preview-bar">
-            <span>Preview: ${fileName}</span>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <button onclick="if(window.openDocPreview) window.openDocPreview('${safeDocPath.replace(/'/g, "\\'")}');" style="background:rgba(108,140,255,0.2);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9em;"><i class="fas fa-magic"></i> Visual Editor</button>
-              <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Reload preview" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
-            </div>
-          </div>
-          <div class="chat-html-preview-body">
-            <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:400px;border:none;display:block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
-          </div>
-        `;
-        const wrapper = document.createElement('div');
-        wrapper.style.width = '100%';
-        wrapper.appendChild(card);
-        wrapper.appendChild(previewDiv);
-        a.replaceWith(wrapper);
-      } else if (ext === 'pdf') {
-        const serveUrl = `/api/local_file?path=${encodeURIComponent(docPath)}#pagemode=thumbs&navpanes=1&page=1`;
-        const previewDiv = document.createElement('div');
-        previewDiv.className = 'chat-pdf-preview';
-        previewDiv.id = previewId;
-        previewDiv.innerHTML = `
-          <div class="chat-pdf-preview-bar">
-            <span>Preview: ${fileName}</span>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Reload preview" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
-            </div>
-          </div>
-          <div class="chat-pdf-preview-body">
-            <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:480px;border:none;display:block;"></iframe>
-          </div>
-        `;
-        const wrapper = document.createElement('div');
-        wrapper.style.width = '100%';
-        wrapper.appendChild(card);
-        wrapper.appendChild(previewDiv);
-        a.replaceWith(wrapper);
-      } else {
-        a.replaceWith(card);
-      }
+      const wrapper = document.createElement('div');
+      wrapper.style.width = '100%';
+      wrapper.innerHTML = _buildLocalFileCardHtml(docPath, src, fileName, ext, false);
+      a.replaceWith(wrapper.firstElementChild || wrapper);
     }
   });
 
@@ -288,75 +297,7 @@ window.processAiMedia = function(html) {
       return `<video controls style="max-width:100%;border-radius:8px;margin-top:8px;" src="${apiUrl}"></video>`;
     }
 
-    const iconMap = { pdf: 'fa-file-pdf', html: 'fa-file-code', htm: 'fa-file-code',
-                      doc: 'fa-file-word', docx: 'fa-file-word', xls: 'fa-file-excel',
-                      xlsx: 'fa-file-excel', ppt: 'fa-file-powerpoint', pptx: 'fa-file-powerpoint',
-                      txt: 'fa-file-alt', csv: 'fa-file-csv', json: 'fa-file-code',
-                      md: 'fa-file-alt' };
-    const iconClass = iconMap[ext] || 'fa-file-alt';
-    const colorMap = { pdf: '#e74c3c', html: '#3498db', htm: '#3498db',
-                       doc: '#2980b9', docx: '#2980b9', xls: '#27ae60',
-                       xlsx: '#27ae60', ppt: '#e67e22', pptx: '#e67e22' };
-    const iconColor = colorMap[ext] || 'var(--accent)';
-
-    const isPreviewable = (ext === 'pdf' || ext === 'html' || ext === 'htm');
-    const previewId = isPreviewable ? ('preview_box_' + Math.random().toString(36).substring(2, 10)) : null;
-    const iframeId = isPreviewable ? ('preview_' + Math.random().toString(36).substring(2, 10)) : null;
-
-    const serveUrl = (ext === 'html' || ext === 'htm') ? `/api/serve_html?path=${encodeURIComponent(rawPath)}` : apiUrl;
-
-    const openBtn = isPreviewable
-      ? `<a href="${serveUrl}" target="_blank" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.18); border:1px solid rgba(108,140,255,0.35); color:var(--accent); font-size:0.8em; text-decoration:none; font-weight:600;">
-          <i class="fas fa-external-link-alt"></i> Open
-        </a>`
-      : '';
-    const dlBtn = `<a href="${apiUrl}" download="${fileName}" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.12); border:1px solid rgba(108,140,255,0.25); color:var(--muted); font-size:0.8em; text-decoration:none;">
-        <i class="fas fa-download"></i> Download
-      </a>`;
-    const zoomBtn = isPreviewable ? `<button class="chat-file-zoom-btn" data-preview-id="${previewId}" onclick="window.togglePdfPreviewZoom('${previewId}')" title="Expand preview in chat" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.15); border:1px solid rgba(108,140,255,0.3); color:#c4b5fd; font-size:0.8em; font-family:inherit; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.2s ease;">
-        <i class="fas fa-expand-arrows-alt"></i> <span class="zoom-label">Zoom</span>
-      </button>` : '';
-
-    let cardHtml = `<div class="chat-file-card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;margin:6px 0;">
-      <div class="chat-file-icon" style="font-size:1.6em;color:${iconColor};"><i class="fas ${iconClass}"></i></div>
-      <div class="chat-file-details" style="flex:1;min-width:0;">
-        <div class="chat-file-name" style="font-weight:600;font-size:0.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${rawPath}">${fileName}</div>
-        <div class="chat-file-action" style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;align-items:center;">${openBtn}${dlBtn}${zoomBtn}</div>
-      </div>
-    </div>`;
-
-    if (ext === 'html' || ext === 'htm') {
-      const safeDocPath = rawPath.replace(/\\/g, '/');
-      cardHtml += `
-      <div class="chat-html-preview" id="${previewId}">
-        <div class="chat-html-preview-bar">
-          <span>Preview: ${fileName}</span>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <button onclick="if(window.openDocPreview) window.openDocPreview('${safeDocPath.replace(/'/g, "\\'")}');" style="background:rgba(108,140,255,0.2);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9em;"><i class="fas fa-magic"></i> Visual Editor</button>
-            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Reload preview" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
-          </div>
-        </div>
-        <div class="chat-html-preview-body">
-          <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:400px;border:none;display:block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
-        </div>
-      </div>`;
-    } else if (ext === 'pdf') {
-      const pdfServeUrl = `/api/local_file?path=${encodeURIComponent(rawPath)}#pagemode=thumbs&navpanes=1&page=1`;
-      cardHtml += `
-      <div class="chat-pdf-preview" id="${previewId}">
-        <div class="chat-pdf-preview-bar">
-          <span>Preview: ${fileName}</span>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Reload preview" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
-          </div>
-        </div>
-        <div class="chat-pdf-preview-body">
-          <iframe id="${iframeId}" src="${pdfServeUrl}" style="width:100%;min-width:min(780px,100%);height:480px;border:none;display:block;"></iframe>
-        </div>
-      </div>`;
-    }
-
-    return cardHtml;
+    return _buildLocalFileCardHtml(cleanPath, apiUrl, fileName, ext, true);
   }
 
   function _processTextNodes(node) {

@@ -146,6 +146,29 @@ def get_file_timestamp(path):
         return os.path.getmtime(path)
     return 0
 
+_MONITOR_IGNORED_DIRS_ANYWHERE = frozenset({"venv", ".venv", "__pycache__", ".git", "node_modules"})
+_MONITOR_IGNORED_DIRS_TOP_LEVEL = frozenset({"media", "tmp", "logs", "memory", "data"})
+
+
+def get_max_py_mtime(folder):
+    """Return the newest .py mtime under folder, excluding runtime/user-data folders."""
+    base_norm = os.path.normcase(os.path.abspath(folder))
+    max_t = 0
+    for root, dirs, files in os.walk(folder):
+        at_top = os.path.normcase(os.path.abspath(root)) == base_norm
+        dirs[:] = [
+            d for d in dirs
+            if d not in _MONITOR_IGNORED_DIRS_ANYWHERE
+            and not (at_top and d in _MONITOR_IGNORED_DIRS_TOP_LEVEL)
+        ]
+        for f in files:
+            if f.endswith(".py"):
+                t = get_file_timestamp(os.path.join(root, f))
+                if t > max_t:
+                    max_t = t
+    return max_t
+
+
 def start_and_monitor(script_to_run):
     # For module-style runs (like hecos.modules.web_ui.server), we don't check file existence directly if it contains dots
     is_module = ("." in script_to_run and not script_to_run.endswith(".py"))
@@ -174,16 +197,6 @@ def start_and_monitor(script_to_run):
             os.remove(hpm_installing_flag)
     except Exception:
         pass
-    
-    def get_max_py_mtime(folder):
-        max_t = 0
-        for root, dirs, files in os.walk(folder):
-            dirs[:] = [d for d in dirs if d not in ("venv", ".venv", "__pycache__")]
-            for f in files:
-                if f.endswith(".py"):
-                    t = get_file_timestamp(os.path.join(root, f))
-                    if t > max_t: max_t = t
-        return max_t
 
     last_code_time = get_max_py_mtime(hecos_folder)
     

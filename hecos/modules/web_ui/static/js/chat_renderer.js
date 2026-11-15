@@ -106,30 +106,22 @@ function addBubble(role, text, id, opts) {
   }
   
   wrapper.appendChild(bubble);
+  msg.appendChild(avatar);
+  msg.appendChild(wrapper);
 
   if (opts && opts.model_info) {
-      let tooltipText = opts.model_info;
       let parsedModelInfo = null;
       try {
           parsedModelInfo = typeof opts.model_info === 'string' ? JSON.parse(opts.model_info) : opts.model_info;
       } catch (e) {}
 
-      if (window.formatModelTooltip) {
-          tooltipText = window.formatModelTooltip(opts.model_info);
-      } else if (parsedModelInfo && parsedModelInfo.model) {
-          tooltipText = `Model: ${parsedModelInfo.model}\nTemp: ${parsedModelInfo.temperature} | Ctx: ${parsedModelInfo.num_ctx} | GPU: ${parsedModelInfo.num_gpu}\nTop P: ${parsedModelInfo.top_p} | Predict: ${parsedModelInfo.num_predict} | Rep Pen: ${parsedModelInfo.repeat_penalty}`;
-      }
-      bubble.setAttribute('title', tooltipText);
-      bubble.style.cursor = 'help';
+      window.attachModelInfoTooltip(bubble, opts.model_info);
 
       // Restore persisted Agent Trace timeline if present in model_info
       if (parsedModelInfo && parsedModelInfo.agent_trace && window.AgentUI && typeof window.AgentUI.renderHistoricalTrace === 'function') {
           window.AgentUI.renderHistoricalTrace(parsedModelInfo.agent_trace, msg);
       }
   }
-
-  msg.appendChild(avatar);
-  msg.appendChild(wrapper);
   
   const chatArea = document.getElementById('chat-area');
   if (chatArea) {
@@ -190,6 +182,139 @@ window.openAvatarFull = function(src, type = 'image', isUser = false) {
 };
 
 
+function _makeSafeExternalLink(href, titleText) {
+  const a = document.createElement('a');
+  a.setAttribute('href', href);
+  a.setAttribute('target', '_blank');
+  a.setAttribute('rel', 'noopener noreferrer');
+  a.setAttribute('title', titleText || href);
+  return a;
+}
+
+function _normalizeLinksInHtml(rawHtml) {
+  if (!rawHtml || typeof document === 'undefined') return rawHtml || '';
+  const tmp = document.createElement('div');
+  tmp.innerHTML = rawHtml;
+
+  // 1. Convert inline `http://...` code spans (not inside <pre> or <a>) into clickable links
+  tmp.querySelectorAll('code').forEach((codeEl) => {
+    if (codeEl.closest('pre') || codeEl.closest('a')) return;
+    const raw = (codeEl.textContent || '').trim();
+    if (/^https?:\/\/[^\s<>"'`)\]]+$/i.test(raw)) {
+      const cleanHref = raw.replace(/[.,;:!?)]+$/, '');
+      const link = _makeSafeExternalLink(cleanHref, cleanHref);
+      codeEl.parentNode.insertBefore(link, codeEl);
+      link.appendChild(codeEl);
+    }
+  });
+
+  // 2. Linkify any bare http(s):// URLs remaining in text nodes outside links/code
+  if (typeof document.createTreeWalker === 'function' && typeof NodeFilter !== 'undefined') {
+    const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_TEXT, null);
+    const textNodes = [];
+    let node;
+    while ((node = walker.nextNode())) {
+      const parentEl = node.parentElement;
+      if (!parentEl || parentEl.closest('a, pre, code, script, style, textarea')) continue;
+      if (/https?:\/\//i.test(node.nodeValue || '')) textNodes.push(node);
+    }
+    const urlRe = /(https?:\/\/[^\s<>"'`\]]+)/gi;
+    textNodes.forEach((tn) => {
+      const val = tn.nodeValue || '';
+      urlRe.lastIndex = 0;
+      let lastIdx = 0;
+      let match;
+      const frag = document.createDocumentFragment();
+      while ((match = urlRe.exec(val)) !== null) {
+        if (match.index > lastIdx) {
+          frag.appendChild(document.createTextNode(val.slice(lastIdx, match.index)));
+        }
+        const rawUrl = match[1];
+        const cleanUrl = rawUrl.replace(/[.,;:!?)]+$/, '');
+        const trailing = rawUrl.slice(cleanUrl.length);
+        const link = _makeSafeExternalLink(cleanUrl, cleanUrl);
+        link.textContent = cleanUrl;
+        frag.appendChild(link);
+        if (trailing) frag.appendChild(document.createTextNode(trailing));
+        lastIdx = match.index + rawUrl.length;
+      }
+      if (lastIdx > 0) {
+        if (lastIdx < val.length) frag.appendChild(document.createTextNode(val.slice(lastIdx)));
+        tn.parentNode.replaceChild(frag, tn);
+      }
+    });
+  }
+
+  // 3. Ensure all existing http(s) links open safely in a new tab with explicit URL title
+  tmp.querySelectorAll('a[href]').forEach((a) => {
+    const href = a.getAttribute('href') || '';
+    if (/^https?:\/\//i.test(href)) {
+      if (!a.getAttribute('target')) a.setAttribute('target', '_blank');
+      const existingRel = a.getAttribute('rel') || '';
+      if (!existingRel.includes('noopener')) {
+        a.setAttribute('rel', (existingRel ? existingRel + ' ' : '') + 'noopener noreferrer');
+      }
+      if (!a.getAttribute('title')) {
+        a.setAttribute('title', href);
+      }
+    }
+  });
+  return tmp.innerHTML;
+}
+
+window.attachModelInfoTooltip = function(bubbleEl, modelInfo) {
+  if (!bubbleEl || !modelInfo) return;
+
+  // Ensure the message body itself never carries the preset/model tooltip or help cursor
+  bubbleEl.removeAttribute('title');
+  if (bubbleEl.style.cursor === 'help') bubbleEl.style.cursor = '';
+
+  let parsed = null;
+  try {
+    parsed = typeof modelInfo === 'string' ? JSON.parse(modelInfo) : modelInfo;
+  } catch (e) {}
+
+  let tooltipText = typeof modelInfo === 'string' ? modelInfo : JSON.stringify(modelInfo);
+  if (typeof window.formatModelTooltip === 'function') {
+    const rawForFormat = typeof modelInfo === 'string' ? modelInfo : JSON.stringify(modelInfo);
+    tooltipText = window.formatModelTooltip(rawForFormat);
+  } else if (parsed && parsed.model) {
+    tooltipText = `Model: ${parsed.model}\nTemp: ${parsed.temperature} | Ctx: ${parsed.num_ctx} | GPU: ${parsed.num_gpu}\nTop P: ${parsed.top_p} | Predict: ${parsed.num_predict} | Rep Pen: ${parsed.repeat_penalty}`;
+  }
+
+  const containerEl = bubbleEl.closest('.msg') || bubbleEl.closest('.msg-content-wrapper') || bubbleEl.parentElement;
+  const headerEl = containerEl ? containerEl.querySelector('.msg-header') : null;
+  if (!headerEl) return;
+
+  let badge = headerEl.querySelector('.msg-info-badge');
+  if (!badge) {
+    badge = document.createElement('span');
+    badge.className = 'msg-info-badge';
+    headerEl.appendChild(badge);
+  }
+
+  const rawPreset = parsed ? (parsed.session_preset || parsed.global_preset || '') : '';
+  const presetLabel = rawPreset
+    ? String(rawPreset).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    : '';
+
+  badge.innerHTML = '';
+  const iconEl = document.createElement('i');
+  iconEl.className = 'fas fa-info-circle';
+  iconEl.setAttribute('aria-hidden', 'true');
+  badge.appendChild(iconEl);
+
+  if (presetLabel) {
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'msg-info-preset';
+    labelSpan.textContent = presetLabel;
+    badge.appendChild(labelSpan);
+  }
+
+  badge.setAttribute('title', tooltipText);
+  badge.setAttribute('aria-label', tooltipText.replace(/\n+/g, ' | '));
+};
+
 function renderMarkdown(text) {
   let html = "";
   
@@ -217,9 +342,12 @@ function renderMarkdown(text) {
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/(https?:\/\/[^\s<>"'`)\]]+)/gi, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
       .replace(/\n/g, '<br>');
   }
-    
+
+  html = _normalizeLinksInHtml(html);
+
   if (typeof window.processAiMedia === 'function') {
     html = window.processAiMedia(html);
   } else if (typeof window.processAiImages === 'function') {

@@ -63,7 +63,12 @@ class PluginExecutor(BaseModel):
     shell_timeout: int = 15
     max_read_lines: int = 200
     workspace_dir: str = "media/sandbox"
-    important_paths: Dict[str, str] = {}
+    important_paths: Dict[str, str] = {}
+    auto_verify_syntax_on_write: bool = True
+    auto_run_existing_tests_on_write: bool = True
+    auto_generate_unit_tests: bool = False
+    default_run_timeout_seconds: int = 30
+    allow_ui_script_execution: bool = True
 
 
 # PluginDrive removed — Drive is now an HPM system_app (type='app').
