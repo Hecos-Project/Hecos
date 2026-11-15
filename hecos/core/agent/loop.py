@@ -150,6 +150,7 @@ class AgentExecutor:
         iteration = 0
         stream_hallucination_retries = 0
         file_hallucination_retries = 0
+        netsearch_hallucination_retries = 0
         unverified_file_notice: Optional[str] = None
         agent_context: List[Dict[str, Any]] = []
         accumulated_tool_results: List[Dict[str, Any]] = []
@@ -356,6 +357,40 @@ class AgentExecutor:
                                 "> ⚠️ **System Notice:** No files were written to disk because filesystem write tools "
                                 "(`EXECUTOR__write_file` / `patch_file`) are disabled in Payload & Tools Control."
                             )
+
+                    # Safeguard against LLMs answering web/media search requests from memory without invoking NETSEARCH
+                    from hecos.core.agent.loop_guards import (
+                        are_netsearch_tools_enabled,
+                        detect_unexecuted_netsearch_request,
+                        get_netsearch_unexecuted_guard_message,
+                    )
+                    _netsearch_already_ran = any(
+                        str(r.get("tag", "")).upper() in ("NETSEARCH", "SLASH_COMMAND")
+                        or "[[HSEARCH:" in str(r.get("output", ""))
+                        or "[[HMEDIA:" in str(r.get("output", ""))
+                        for r in accumulated_tool_results
+                    )
+                    if (
+                        not _netsearch_already_ran
+                        and netsearch_hallucination_retries < 1
+                        and iteration < self.max_iterations
+                        and are_netsearch_tools_enabled(current_cfg)
+                        and detect_unexecuted_netsearch_request(user_text, extracted_text)
+                    ):
+                        _guard_msg = get_netsearch_unexecuted_guard_message()
+                        if _guard_msg:
+                            netsearch_hallucination_retries += 1
+                            logger.warning(
+                                "[AGENT] Caught unexecuted Net Search request — forcing real search tool retry."
+                            )
+                            llm_step["result_preview"] = tr(
+                                "Ricerca non eseguita — richiamo Net Search",
+                                "Search skipped — retrying with Net Search",
+                            )
+                            AgentTracer.update_step(llm_step, detail=llm_step["result_preview"])
+                            agent_context.append({"role": "assistant", "content": str(raw_response or extracted_text or "")})
+                            agent_context.append({"role": "user", "content": _guard_msg})
+                            continue
 
                     llm_step["result_preview"] = tr("Risposta formulata", "Response formulated")
                     self._finalize_and_store_trace(tr("Risposta formulata", "Response formulated"), status="ok")

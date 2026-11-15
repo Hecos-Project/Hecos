@@ -16,6 +16,74 @@ function _syncPdfPreviewClasses(bubble) {
     }
 }
 
+function _extractHSearchTokens(rawText) {
+    const found = [];
+    const seen = new Set();
+    const re = /\[\[H(SEARCH|MEDIA):([a-zA-Z0-9_-]+)\]\]/g;
+    let m;
+    while ((m = re.exec(rawText || '')) !== null) {
+        const sid = m[2];
+        if (sid && !seen.has(sid)) {
+            seen.add(sid);
+            found.push({ sid, isMedia: m[1] === 'MEDIA' });
+        }
+    }
+    return found;
+}
+
+function _renderBubbleWithHSearch(aiBubble, aiText, cursor, isFinal, fallbackErrorText) {
+    const sourceText = aiText || (fallbackErrorText ? ('❌ ' + fallbackErrorText) : '');
+    const tokens = _extractHSearchTokens(sourceText);
+    const existingCards = aiBubble.querySelectorAll('.hsearch-chat-card');
+
+    if (tokens.length === 0 && existingCards.length === 0) {
+        if (!isFinal || fallbackErrorText || aiBubble.dataset.renderedText !== sourceText) {
+            aiBubble.innerHTML = window.renderMarkdown(sourceText);
+            aiBubble.dataset.renderedText = sourceText;
+        }
+        _syncPdfPreviewClasses(aiBubble);
+        if (!isFinal && cursor) aiBubble.appendChild(cursor);
+        return;
+    }
+
+    const textPart = sourceText.replace(/\[\[H(?:SEARCH|MEDIA):[a-zA-Z0-9_-]+\]\]/g, '');
+    let textEl = aiBubble.querySelector('.hsearch-pre-text');
+    if (!textEl && existingCards.length === 0) {
+        aiBubble.innerHTML = '';
+    }
+    if (!textEl) {
+        textEl = document.createElement('div');
+        textEl.className = 'hsearch-pre-text';
+        if (aiBubble.firstChild) {
+            aiBubble.insertBefore(textEl, aiBubble.firstChild);
+        } else {
+            aiBubble.appendChild(textEl);
+        }
+    }
+    textEl.innerHTML = window.renderMarkdown(textPart);
+
+    tokens.forEach(({ sid, isMedia }) => {
+        if (aiBubble.querySelector(`.hsearch-chat-card[data-session-id="${sid}"]`)) return;
+        const cardHtml = (typeof window.renderHSearchCard === 'function')
+            ? window.renderHSearchCard(sid, isMedia)
+            : '';
+        if (cardHtml) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = cardHtml;
+            while (tmp.firstChild) aiBubble.appendChild(tmp.firstChild);
+        }
+    });
+
+    aiBubble.dataset.renderedText = sourceText;
+    _syncPdfPreviewClasses(aiBubble);
+    if (isFinal && typeof window.linkifyHSearchCitations === 'function') {
+        window.linkifyHSearchCitations(aiBubble);
+    }
+    if (!isFinal && cursor) {
+        aiBubble.appendChild(cursor);
+    }
+}
+
 window.formatModelTooltip = function(jsonStr) {
     try {
         const p = JSON.parse(jsonStr);
@@ -221,51 +289,7 @@ window.sendMessage = async function() {
       } else if(ev.type === 'token') {
         const tokenText = (ev.text !== undefined && ev.text !== null) ? ev.text : (ev.token || '');
         aiText += tokenText;
-
-        // ── Search Card Streaming Protection ──────────────────────────────
-        const hsearchTokenMatch = aiText.match(/\[\[H(?:SEARCH|MEDIA):([a-zA-Z0-9_-]+)\]\]/);
-        if (hsearchTokenMatch) {
-          const sid = hsearchTokenMatch[1];
-          const isMedia = aiText.includes('[[HMEDIA:');
-          const existingCard = aiBubble.querySelector('.hsearch-chat-card');
-          const textPart = aiText.replace(/\[\[H(?:SEARCH|MEDIA):[a-zA-Z0-9_-]+\]\]/g, '');
-
-          if (existingCard) {
-            let textEl = aiBubble.querySelector('.hsearch-pre-text');
-            if (textEl) {
-              textEl.innerHTML = window.renderMarkdown(textPart);
-            }
-          } else {
-            aiBubble.innerHTML = '';
-
-            // 1. Text div (everything except the token)
-            const preDiv = document.createElement('div');
-            preDiv.className = 'hsearch-pre-text';
-            preDiv.innerHTML = window.renderMarkdown(textPart);
-            aiBubble.appendChild(preDiv);
-
-            // 2. Search card shell (rendered via the exported helper)
-            const cardHtml = (typeof window.renderHSearchCard === 'function')
-              ? window.renderHSearchCard(sid, isMedia)
-              : '';
-            if (cardHtml) {
-              const tmp = document.createElement('div');
-              tmp.innerHTML = cardHtml;
-              while (tmp.firstChild) aiBubble.appendChild(tmp.firstChild);
-            }
-
-            // 3. Re-attach cursor
-            aiBubble.appendChild(cursor);
-          }
-          aiBubble.dataset.renderedText = aiText;
-          _syncPdfPreviewClasses(aiBubble);
-        } else {
-          // No search token — normal full re-render
-          aiBubble.innerHTML = window.renderMarkdown(aiText);
-          aiBubble.dataset.renderedText = aiText;
-          _syncPdfPreviewClasses(aiBubble);
-          aiBubble.appendChild(cursor);
-        }
+        _renderBubbleWithHSearch(aiBubble, aiText, cursor, false, null);
         if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
       } else if(ev.type === 'camera_request') {
         if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
@@ -337,28 +361,10 @@ window.sendMessage = async function() {
         if (window.AgentUI) window.AgentUI.finalize();
         cursor.remove();
         const existingBadge = aiBubble.querySelector('.audio-badge');
-        const existingSearchCard = aiBubble.querySelector('.hsearch-chat-card');
-        if (existingSearchCard) {
-          const finalText = (aiText || (ev.type === 'error' ? '❌ ' + ev.text : ''))
-            .replace(/\[\[H(?:SEARCH|MEDIA):[a-zA-Z0-9_-]+\]\]/g, '');
-          let textEl = aiBubble.querySelector('.hsearch-pre-text');
-          if (textEl) {
-            textEl.innerHTML = window.renderMarkdown(finalText);
-          } else if (finalText.trim()) {
-            const newTextEl = document.createElement('div');
-            newTextEl.className = 'hsearch-pre-text';
-            newTextEl.innerHTML = window.renderMarkdown(finalText);
-            aiBubble.insertBefore(newTextEl, existingSearchCard);
-          }
-        } else if (ev.type === 'error' || aiBubble.dataset.renderedText !== aiText) {
-          // Only re-render if error or text changed (avoids reloading iframes/images after TTS finishes)
-          aiBubble.innerHTML = window.renderMarkdown(aiText || (ev.type === 'error' ? '❌ ' + ev.text : ''));
-          aiBubble.dataset.renderedText = aiText;
-          if (existingBadge) {
-            aiBubble.appendChild(existingBadge);
-          }
+        _renderBubbleWithHSearch(aiBubble, aiText, null, true, ev.type === 'error' ? ev.text : null);
+        if (existingBadge && !aiBubble.contains(existingBadge)) {
+          aiBubble.appendChild(existingBadge);
         }
-        _syncPdfPreviewClasses(aiBubble);
         evtSrc.close();
         
         if (window.loadChatSessions) window.loadChatSessions();
@@ -486,46 +492,7 @@ window.sendInternalMessage = async function(text) {
       } else if(ev.type === 'token') {
         const tokenText = (ev.text !== undefined && ev.text !== null) ? ev.text : (ev.token || '');
         aiText += tokenText;
-
-        const hsearchTokenMatch = aiText.match(/\[\[H(?:SEARCH|MEDIA):([a-zA-Z0-9_-]+)\]\]/);
-        if (hsearchTokenMatch) {
-          const sid = hsearchTokenMatch[1];
-          const isMedia = aiText.includes('[[HMEDIA:');
-          const existingCard = aiBubble.querySelector('.hsearch-chat-card');
-          const textPart = aiText.replace(/\[\[H(?:SEARCH|MEDIA):[a-zA-Z0-9_-]+\]\]/g, '');
-
-          if (existingCard) {
-            let textEl = aiBubble.querySelector('.hsearch-pre-text');
-            if (textEl) {
-              textEl.innerHTML = window.renderMarkdown(textPart);
-            }
-          } else {
-            aiBubble.innerHTML = '';
-
-            const preDiv = document.createElement('div');
-            preDiv.className = 'hsearch-pre-text';
-            preDiv.innerHTML = window.renderMarkdown(textPart);
-            aiBubble.appendChild(preDiv);
-
-            const cardHtml = (typeof window.renderHSearchCard === 'function')
-              ? window.renderHSearchCard(sid, isMedia)
-              : '';
-            if (cardHtml) {
-              const tmp = document.createElement('div');
-              tmp.innerHTML = cardHtml;
-              while (tmp.firstChild) aiBubble.appendChild(tmp.firstChild);
-            }
-
-            aiBubble.appendChild(cursor);
-          }
-          aiBubble.dataset.renderedText = aiText;
-          _syncPdfPreviewClasses(aiBubble);
-        } else {
-          aiBubble.innerHTML = window.renderMarkdown(aiText);
-          aiBubble.dataset.renderedText = aiText;
-          _syncPdfPreviewClasses(aiBubble);
-          aiBubble.appendChild(cursor);
-        }
+        _renderBubbleWithHSearch(aiBubble, aiText, cursor, false, null);
         if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
       } else if(ev.type === 'camera_request') {
         if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
@@ -594,27 +561,10 @@ window.sendInternalMessage = async function(text) {
         if (window.AgentUI) window.AgentUI.finalize();
         cursor.remove();
         const existingBadge = aiBubble.querySelector('.audio-badge');
-        const existingSearchCard = aiBubble.querySelector('.hsearch-chat-card');
-        if (existingSearchCard) {
-          const finalText = (aiText || (ev.type === 'error' ? '❌ ' + ev.text : ''))
-            .replace(/\[\[H(?:SEARCH|MEDIA):[a-zA-Z0-9_-]+\]\]/g, '');
-          let textEl = aiBubble.querySelector('.hsearch-pre-text');
-          if (textEl) {
-            textEl.innerHTML = window.renderMarkdown(finalText);
-          } else if (finalText.trim()) {
-            const newTextEl = document.createElement('div');
-            newTextEl.className = 'hsearch-pre-text';
-            newTextEl.innerHTML = window.renderMarkdown(finalText);
-            aiBubble.insertBefore(newTextEl, existingSearchCard);
-          }
-        } else if (ev.type === 'error' || aiBubble.dataset.renderedText !== aiText) {
-          aiBubble.innerHTML = window.renderMarkdown(aiText || (ev.type === 'error' ? '❌ ' + ev.text : ''));
-          aiBubble.dataset.renderedText = aiText;
-          if (existingBadge) {
-            aiBubble.appendChild(existingBadge);
-          }
+        _renderBubbleWithHSearch(aiBubble, aiText, null, true, ev.type === 'error' ? ev.text : null);
+        if (existingBadge && !aiBubble.contains(existingBadge)) {
+          aiBubble.appendChild(existingBadge);
         }
-        _syncPdfPreviewClasses(aiBubble);
         evtSrc.close();
 
         if (window.loadChatSessions) window.loadChatSessions();

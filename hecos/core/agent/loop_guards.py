@@ -236,6 +236,7 @@ def eval_early_termination(
     )
 
     has_pending_vision_review = bool(images and len(images) > 0 and iteration == 1 and has_search_card)
+    wants_synthesis = bool(_NETSEARCH_SYNTHESIS_INTENT_RE.search(user_text or ""))
 
     if has_generated_img and all_images_done and doc_satisfied:
         # Terminate as soon as all requested images are done, regardless of whether the
@@ -246,12 +247,89 @@ def eval_early_termination(
         )
 
     if has_search_card and not has_pending_vision_review and doc_satisfied and has_text:
+        if iteration == 1 and wants_synthesis:
+            return False, ""
         return True, tr(
             "Ricerca completata e risposta formulata",
             "Search completed and response formulated",
         )
 
     return False, ""
+
+
+_NETSEARCH_REQUEST_RE = re.compile(
+    r'(?:'
+    r'\b(?:cerca|cercami|cercare|trova|trovami|trovare|ricerca|recupera|scova|scarica|'
+    r'search|find|look\s+up|fetch|scrape|browse)\b'
+    r'.{0,60}\b(?:su\s+internet|in\s+rete|sul\s+web|online|web|video|filmat[io]|clip|'
+    r'foto\s+e\s+video|immagini\s+e\s+video|foto\s+di|immagini\s+di|materiale|fonti|'
+    r'notizie|articoli|documenti|pdf|torrent|archivi|siti?|link|onion|dark\s*web|osint|avvistament[io])\b'
+    r'|\b(?:foto\s+e\s+video|immagini\s+e\s+video|video\s+e\s+foto|avvistament[io]|'
+    r'cerca\s+sul\s+web|cerca\s+online|cerca\s+in\s+rete|trova\s+online)\b'
+    r')',
+    re.IGNORECASE | re.DOTALL,
+)
+
+_NETSEARCH_SYNTHESIS_INTENT_RE = re.compile(
+    r'\b(?:sunto|riassunt[io]|riassumi|sintesi|sintetizza|spiega|spiegami|analizza|'
+    r'confronta|commenta|descrivi|summariz\w*|summary|analy[sz]\w*|explain|digest|synthesi[sz]\w*)\b',
+    re.IGNORECASE,
+)
+
+
+def are_netsearch_tools_enabled(cfg: Optional[dict]) -> bool:
+    """Returns True if Net Search tools or direct search commands are enabled in config."""
+    if not isinstance(cfg, dict):
+        return True
+    if cfg.get("disable_tools", False):
+        return False
+    plugins_cfg = cfg.get("plugins") or {}
+    if plugins_cfg.get("NETSEARCH", {}).get("enabled", True) is False:
+        return False
+    try:
+        from hecos.modules.net_search.search.config import is_netsearch_package_enabled
+        if not is_netsearch_package_enabled():
+            return False
+    except Exception:
+        pass
+    pctrl = cfg.get("payload_control") or {}
+    if not pctrl.get("send_tools", True):
+        return True
+    mode = str(pctrl.get("tool_selection_mode") or "all").strip().lower()
+    if mode != "custom":
+        return True
+    selected = {str(x).strip() for x in (pctrl.get("selected_tools") or [])}
+    return any(s.startswith("NETSEARCH__") or s == "NETSEARCH" for s in selected)
+
+
+def detect_unexecuted_netsearch_request(user_text: Optional[str], assistant_text: Optional[str]) -> bool:
+    """Returns True when user asked to search online/media and assistant replied in plain text without searching."""
+    if not user_text or not isinstance(user_text, str):
+        return False
+    clean_u = user_text.strip()
+    if not clean_u or clean_u.startswith("/"):
+        return False
+    if not _NETSEARCH_REQUEST_RE.search(clean_u):
+        return False
+    ans = (assistant_text or "").strip()
+    if len(ans) < 20:
+        return False
+    if "[[HSEARCH:" in ans or "[[HMEDIA:" in ans:
+        return False
+    return True
+
+
+def get_netsearch_unexecuted_guard_message() -> Optional[str]:
+    """Reads the configurable Net Search anti-hallucination guard prompt (None if disabled)."""
+    try:
+        from hecos.modules.net_search.search.config import get_ai_prompts_config
+        ai_cfg = get_ai_prompts_config()
+        if not ai_cfg.get("enable_unexecuted_guard", True):
+            return None
+        msg = str(ai_cfg.get("unexecuted_guard_prompt") or "").strip()
+        return msg or None
+    except Exception:
+        return None
 
 
 # --- 5. RESPONSE FINALIZATION & SAFETY FORMATTER ---

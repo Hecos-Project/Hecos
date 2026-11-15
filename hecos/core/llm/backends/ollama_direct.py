@@ -58,6 +58,58 @@ class SyntheticAssistantMessage:
         }
 
 
+def _to_native_ollama_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Converts OpenAI-format messages into native Ollama /api/chat format:
+    - Parses assistant `tool_calls[].function.arguments` from JSON string into dict
+      (Ollama /api/chat rejects string arguments with 400).
+    - Ensures tool result messages carry clean string content without mutating caller history.
+    """
+    native_msgs: List[Dict[str, Any]] = []
+    for m in messages or []:
+        if not isinstance(m, dict):
+            native_msgs.append(m)
+            continue
+        m_copy = dict(m)
+        if m_copy.get("role") == "assistant" and isinstance(m_copy.get("tool_calls"), list):
+            fixed_tcs = []
+            for tc in m_copy["tool_calls"]:
+                if not isinstance(tc, dict):
+                    continue
+                fn = tc.get("function") or {}
+                raw_args = fn.get("arguments", {})
+                if isinstance(raw_args, str):
+                    try:
+                        parsed_args = json.loads(raw_args) if raw_args.strip() else {}
+                        if not isinstance(parsed_args, dict):
+                            parsed_args = {"value": parsed_args}
+                    except Exception:
+                        parsed_args = {}
+                elif isinstance(raw_args, dict):
+                    parsed_args = raw_args
+                else:
+                    parsed_args = {}
+                tc_out: Dict[str, Any] = {
+                    "function": {
+                        "name": str(fn.get("name") or ""),
+                        "arguments": parsed_args,
+                    }
+                }
+                if tc.get("id"):
+                    tc_out["id"] = tc["id"]
+                if tc.get("type"):
+                    tc_out["type"] = tc["type"]
+                fixed_tcs.append(tc_out)
+            if fixed_tcs:
+                m_copy["tool_calls"] = fixed_tcs
+            else:
+                m_copy.pop("tool_calls", None)
+        elif m_copy.get("role") == "tool" and m_copy.get("content") is not None and not isinstance(m_copy.get("content"), str):
+            m_copy["content"] = str(m_copy["content"])
+        native_msgs.append(m_copy)
+    return native_msgs
+
+
 def _call_api_chat(ollama_base: str, ollama_body_v1: Dict[str, Any], params: Dict[str, Any]) -> Dict[str, Any]:
     """
     Calls /api/chat (Ollama native format) and normalizes response to OpenAI-like format.
@@ -68,7 +120,7 @@ def _call_api_chat(ollama_base: str, ollama_body_v1: Dict[str, Any], params: Dic
     # Convert OpenAI-compat body to native Ollama /api/chat format
     native_body: Dict[str, Any] = {
         "model": ollama_body_v1.get("model", ""),
-        "messages": ollama_body_v1.get("messages", []),
+        "messages": _to_native_ollama_messages(ollama_body_v1.get("messages", [])),
         "stream": False,
         "think": ollama_body_v1.get("think", False),
     }
@@ -91,6 +143,8 @@ def _call_api_chat(ollama_base: str, ollama_body_v1: Dict[str, Any], params: Dic
 
     zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] /api/chat with think={ollama_body_v1.get('think')} model={native_body['model']}")
     resp = requests.post(api_chat_url, json=native_body, timeout=params.get("timeout", 300))
+    if resp.status_code >= 400:
+        zlog_error(f"[OLLAMA-DIRECT] /api/chat HTTP {resp.status_code}: {resp.text[:500]}")
     resp.raise_for_status()
     native_data = resp.json()
 

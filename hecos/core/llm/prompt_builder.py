@@ -1108,86 +1108,15 @@ class PromptBuilder:
         _netsearch_active = "NETSEARCH" in [t.upper() for t in _get_active_tags_safe()]
 
         if _is_tag_allowed_in_prompt("NETSEARCH") and _netsearch_active:
-
-            netsearch_protocol = (
-
-                "\n### NET SEARCH & WEB INTELLIGENCE PROTOCOL ###\n"
-
-                "- When the user asks to search the web or find online information, execute an informational web search rather than generating new media.\n\n"
-
-                "AVAILABLE WAYS TO EXECUTE SEARCHES:\n"
-
-                "1. DIRECT COMMANDS (Fastest & Preferred — emit on its own line):\n"
-
-                "   - `/search <query>` : Web search across SearXNG, DuckDuckGo, Google, Qwant, etc.\n"
-
-                "   - `/images <query>` : Search online images across image engines.\n"
-
-                "   - `/videos <query>` : Search online videos (YouTube, Vimeo, Dailymotion, web videos).\n"
-
-                "   - `/media <query>`  : Unified search for images, videos, and music.\n"
-
-                "   - `/files <query>`  : Search documents, PDFs, torrents, archives, and files.\n"
-
-                "   - `/dark <query>`   : Tor Dark Web search (.onion hidden services via Ahmia/TorDex).\n"
-
-                "   - `/fetch <url>`    : Read, scrape, and extract content from any web page.\n"
-
-                "   - `/tv <query>`     : Search live TV / IPTV channels into numbered lineup (`CH 01..NN`).\n"
-
-                "   - `/streams <q>`    : Search all live TV, Radio, Webcam, and raw streams.\n"
-
-                "   - `/radio <query>`  : Search live radio stations.\n"
-
-                "   - `/canale <arg>`   : Play or control a live channel (number, name like `Rai 1`, `next`, `prev`, `stop`, `mute`, `vol 70`, `vlc`).\n"
-
-                "\n"
-
-                "2. NATIVE FUNCTION CALLING (When tool-calling is active):\n"
-
-                "   - `NETSEARCH__web_search(query=\"...\")`\n"
-
-                "   - `NETSEARCH__media_search(query=\"...\", media_type=\"image|video|music\")`\n"
-
-                "   - `NETSEARCH__file_search(query=\"...\")`\n"
-
-                "   - `NETSEARCH__dark_search(query=\"...\")`\n"
-
-                "   - `NETSEARCH__fetch_page(url=\"...\")`\n"
-
-                "   - `NETSEARCH__stream_search(query=\"...\", category=\"tv|radio|webcam|all\")`\n"
-
-                "   - `NETSEARCH__stream_control(action=\"play|ch_up|ch_down|stop|pause|mute|set_volume|open_vlc|status\", query=\"...\", category=\"tv\")`\n"
-
-                "\n"
-
-                "3. BRACKET CALL SYNTAX (Supported for all models):\n"
-
-                "   - `[NETSEARCH: web_search(query=\"...\")]`\n"
-
-                "   - `[NETSEARCH: media_search(query=\"...\", media_type=\"image\")]`\n"
-
-                "   - `[NETSEARCH: media_search(query=\"...\", media_type=\"video\")]`\n"
-
-                "   - `[NETSEARCH: file_search(query=\"...\")]`\n"
-
-                "   - `[NETSEARCH: dark_search(query=\"...\")]`\n"
-
-                "   - `[NETSEARCH: fetch_page(url=\"...\")]`\n"
-
-                "   - `[NETSEARCH: stream_search(query=\"...\", category=\"tv\")]`\n"
-
-                "   - `[NETSEARCH: stream_control(action=\"play\", query=\"Rai 1\", category=\"tv\")]`\n"
-
-                "\n"
-
-                "INTERACTIVE CARDS & RENDERING:\n"
-
-                "- When a search completes, Hecos automatically renders a rich interactive card ([[HSEARCH:...]]) in the chat UI with filters, pagination, links, and media previews.\n"
-
-                "- Accompany the search execution with a concise, helpful response in character.\n"
-
-            )
+            try:
+                from hecos.modules.net_search.search.config import get_ai_prompts_config
+                _ns_ai_cfg = get_ai_prompts_config()
+                if _ns_ai_cfg.get("enable_main_chat_protocol", True):
+                    _raw_proto = str(_ns_ai_cfg.get("main_chat_protocol") or "").strip()
+                    if _raw_proto:
+                        netsearch_protocol = f"\n{_raw_proto}\n"
+            except Exception:
+                netsearch_protocol = ""
 
 
 

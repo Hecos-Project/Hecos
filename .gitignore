@@ -764,3 +764,6 @@ hecos/data/run/
 hecos/engines/fish_speech/
 hecos/data/stream_lists.sqlite*
 hecos/data/stream_hunter_cache/
+
+# Entire Runtime Media Directory (audio, images, video, sandbox, downloads, workspace, etc.)
+hecos/media/
