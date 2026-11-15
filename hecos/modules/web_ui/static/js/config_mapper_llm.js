@@ -22,6 +22,9 @@ window._applyAdaptiveVisibility = function() {
 
 // ── Rich Models Cache (fetched from /api/chat/options) ─────────────────────
 let _richModelsCache = null;
+window.invalidateRichModelsCache = function() {
+    _richModelsCache = null;
+};
 async function _ensureRichModels() {
     if (_richModelsCache) return _richModelsCache;
     try {
@@ -275,6 +278,11 @@ function buildBackendPayload(out) {
     out.backend.ollama.adaptive_ctx                = getC('adaptive-ctx-enable',  window.cfg.backend?.ollama?.adaptive_ctx ?? false);
     out.backend.ollama.adaptive_ctx_auto           = getC('adaptive-ctx-auto',    window.cfg.backend?.ollama?.adaptive_ctx_auto ?? true);
     out.backend.ollama.adaptive_ctx_manual_profile = getV('adaptive-ctx-profile', window.cfg.backend?.ollama?.adaptive_ctx_manual_profile || 'BALANCED');
+    if (Array.isArray(window.sysOptions?.ollama_models)) {
+        const avail = {};
+        window.sysOptions.ollama_models.forEach((m, i) => { avail[String(i + 1)] = m; });
+        out.backend.ollama.available_models = avail;
+    }
     out.backend.kobold.url            = getV('kobold-url',   window.cfg.backend?.kobold?.url);
     out.backend.kobold.model          = getSelectV('kobold-model', window.cfg.backend?.kobold?.model);
     out.backend.kobold.temperature    = parseFloatNum(getV('kobold-temp',  window.cfg.backend?.kobold?.temperature),    0.7);

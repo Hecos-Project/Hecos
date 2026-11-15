@@ -130,6 +130,12 @@ _METHOD_LABELS: Dict[str, Dict[str, str]] = {
     # NetSearch
     "web_search": {"it": "Ricerca sul web", "en": "Searching the web"},
     "deep_search": {"it": "Ricerca approfondita", "en": "Deep web search"},
+    "media_search": {"it": "Ricerca media sul web", "en": "Searching web media"},
+    "file_search": {"it": "Ricerca file e documenti", "en": "Hunting files & documents"},
+    "dark_search": {"it": "Ricerca Dark Web (Tor)", "en": "Searching Dark Web (Tor)"},
+    "osint_search": {"it": "Ricerca OSINT profili", "en": "Running OSINT search"},
+    "stream_search": {"it": "Ricerca canali Live TV / Radio", "en": "Searching live streams (TV/Radio)"},
+    "stream_control": {"it": "Sintonizzazione Live Stream", "en": "Tuning live stream & player"},
     "search_images": {"it": "Ricerca immagini sul web", "en": "Searching web images"},
     "search_videos": {"it": "Ricerca video sul web", "en": "Searching web videos"},
     "search_news": {"it": "Ricerca notizie", "en": "Searching news"},
@@ -290,10 +296,20 @@ def format_args_preview(action_or_args: Any, max_len: int = 80) -> str:
         clean = action_or_args.strip()
         if not clean or clean == "{}":
             return ""
-        # Try parsing if it looks like JSON
+        # Try parsing if it looks like JSON or python key=value syntax
         if clean.startswith("{") and clean.endswith("}"):
             try:
                 action_or_args = json.loads(clean)
+            except Exception:
+                return _truncate(clean, max_len)
+        elif "=" in clean:
+            try:
+                from hecos.core.processing.tool_invoker import parse_call_kwargs
+                parsed = parse_call_kwargs(clean)
+                if parsed:
+                    action_or_args = parsed
+                else:
+                    return _truncate(clean, max_len)
             except Exception:
                 return _truncate(clean, max_len)
         else:
@@ -453,10 +469,37 @@ def describe_tool_call(
             except Exception:
                 pass
 
-    # ── Tier 1: Built-in catalog -> Manifest command description -> Humanized method
+    # Tier 1: Built-in catalog -> Manifest command description -> Humanized method
     act_label = ""
     if clean_method:
-        if clean_method in _METHOD_LABELS:
+        if clean_method in ("stream_search", "stream_control") and raw_tag == "NETSEARCH":
+            icon = "fa-tv"
+        if clean_method == "stream_control":
+            act_val = ""
+            if isinstance(action_or_args, dict):
+                act_val = str(action_or_args.get("action") or "").strip().lower()
+            elif isinstance(action_or_args, str):
+                m_act = re.search(r"\baction\s*=\s*['\"]?([a-zA-Z_]+)", action_or_args)
+                if m_act:
+                    act_val = m_act.group(1).lower()
+            _stream_act_labels = {
+                "play": tr("Sintonizzazione live stream", "Tuning live stream"),
+                "tune": tr("Sintonizzazione live stream", "Tuning live stream"),
+                "channel": tr("Sintonizzazione live stream", "Tuning live stream"),
+                "ch_up": tr("Cambio canale successivo", "Switching to next channel"),
+                "ch_down": tr("Cambio canale precedente", "Switching to previous channel"),
+                "last": tr("Ritorno al canale precedente", "Switching to last channel"),
+                "stop": tr("Arresto riproduzione live", "Stopping live stream"),
+                "pause": tr("Pausa/riprendi live stream", "Toggling stream playback"),
+                "mute": tr("Silenzia/riattiva audio TV", "Toggling stream mute"),
+                "set_volume": tr("Regolazione volume stream", "Adjusting stream volume"),
+                "vol_up": tr("Aumento volume stream", "Increasing stream volume"),
+                "vol_down": tr("Riduzione volume stream", "Lowering stream volume"),
+                "open_vlc": tr("Apertura stream in VLC Desktop", "Opening stream in VLC Desktop"),
+                "status": tr("Verifica stato Live Stream", "Checking live stream status"),
+            }
+            act_label = _stream_act_labels.get(act_val, _METHOD_LABELS["stream_control"][lang])
+        elif clean_method in _METHOD_LABELS:
             act_label = _METHOD_LABELS[clean_method][lang]
         else:
             cmd_desc = (manifest_info.get("commands") or {}).get(clean_method, "")
@@ -489,10 +532,11 @@ def summarize_tool_output(tag: str, method_name: Optional[str], output: Any) -> 
     if not out_str:
         return "ok", tr("Completato", "Completed")
 
-    # 1. Detect explicit error markers
+    # 1. Detect explicit error / warning markers
     if (
         out_str.startswith("Error:")
         or out_str.startswith("❌")
+        or out_str.startswith("⚠️")
         or "FATAL_BACKEND_ERROR" in out_str
         or "[IMAGE_GEN_ERROR]" in out_str
         or "[SYSTEM ERROR:" in out_str
@@ -520,6 +564,11 @@ def summarize_tool_output(tag: str, method_name: Optional[str], output: Any) -> 
         if url_count > 0:
             return "ok", tr(f"{url_count} fonti web trovate", f"{url_count} web sources found")
         return "ok", tr("Risultati di ricerca acquisiti", "Search results acquired")
+
+    # 3b. Detect Live Stream status & lineup outputs
+    if out_str.startswith(("📺 Tuned to", "⏹️ Live Stream stopped", "⏯️ Playback", "### 📡 Live Stream Lineup")):
+        clean_stream = re.sub(r"[*`#]+", "", out_str.splitlines()[0]).strip()
+        return "ok", _truncate(clean_stream, 85)
 
     # 4. Detect generated PDF / HTML documents
     pdf_m = re.search(r"PDF:\s*([^\r\n]+)", out_str)

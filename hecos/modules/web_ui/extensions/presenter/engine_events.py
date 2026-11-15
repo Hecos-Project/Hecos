@@ -23,14 +23,14 @@ class PresenterEventHandler:
         return self._engine.cfg
 
     def on_persona_switched(self, event: Dict[str, Any]):
-        logger.info(f"[Presenter] _on_persona_switched RECEIVED: {event}")
         cfg = self.cfg
-        if not cfg.enabled:
-            logger.info("[Presenter] Skipped: module disabled")
+        if not cfg.enabled or not getattr(cfg, "commentary_on_messages", False):
+            logger.debug("[Presenter] Skipped persona_switched: chat presenter is OFF")
             return
         if not cfg.live_commentary:
-            logger.info("[Presenter] Skipped: live_commentary disabled")
+            logger.debug("[Presenter] Skipped persona_switched: live_commentary disabled")
             return
+        logger.info(f"[Presenter] _on_persona_switched RECEIVED: {event}")
 
         payload = event.get("payload", {})
         persona_name = payload.get("new_persona", "Unknown")
@@ -44,11 +44,11 @@ class PresenterEventHandler:
         generate_presenter_commentary(cfg, "persona_switched", sys_prompt, user_prompt, session_id=session_id)
 
     def on_new_chat(self, event: Dict[str, Any]):
-        logger.info(f"[Presenter] _on_new_chat RECEIVED: {event}")
         cfg = self.cfg
-        if not cfg.enabled or not cfg.briefing_on_new_chat:
-            logger.info("[Presenter] Skipped: disabled or briefing_on_new_chat=False")
+        if not cfg.enabled or not getattr(cfg, "commentary_on_messages", False) or not cfg.briefing_on_new_chat:
+            logger.debug("[Presenter] Skipped new_chat: chat presenter is OFF or briefing_on_new_chat=False")
             return
+        logger.info(f"[Presenter] _on_new_chat RECEIVED: {event}")
 
         payload = event.get("payload", {})
         session_id = payload.get("session_id")

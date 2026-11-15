@@ -267,6 +267,10 @@ window.initEvents = function() {
       if (window.controlRoom && window.controlRoom.refresh) {
         window.controlRoom.refresh();
       }
+      // 3. Soul Forge live tools catalog refresh (Granular Tool Selector)
+      if (ev.type !== 'widgets_refresh' && typeof window.sfRefreshToolsCatalog === 'function') {
+        window.sfRefreshToolsCatalog(false);
+      }
     }
   };
 };

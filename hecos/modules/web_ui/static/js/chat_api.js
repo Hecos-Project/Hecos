@@ -131,6 +131,7 @@ window.sendMessage = async function() {
   const renderedContent = (imgHtml || '') + (typeof window.renderMarkdown === 'function' ? window.renderMarkdown(visibleMessage) : visibleMessage);
   
   const { bubble: userBubble, msg: userMsg } = window.addBubble('user', '');
+  if (userMsg) userMsg.dataset.rawContent = fullMessage;
   userBubble.innerHTML = renderedContent;
   _syncPdfPreviewClasses(userBubble);
   if (typeof window.attachActionsToBubble === 'function') window.attachActionsToBubble(userBubble);
@@ -431,6 +432,7 @@ window.sendInternalMessage = async function(text) {
   if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
   if (window.hideWelcome) window.hideWelcome();
   
+  window.chatHistory.push({role:'assistant', content:''});
   const { bubble: aiBubble } = window.addBubble('ai', '', 'ai-'+Date.now(), { persona_name: window.HecosPersonaName || null });
   const cursor = document.createElement('span');
   cursor.className = 'cursor';
@@ -538,6 +540,45 @@ window.sendInternalMessage = async function(text) {
           aiBubble.setAttribute('title', tooltipText);
           aiBubble.style.cursor = 'help';
         }
+
+        if (ev.persona_name) {
+          const personaTitle = ev.persona_name.replace(/_/g, ' ').replace(/\.yaml$/i, '');
+          const msgContainer = aiBubble.closest('.msg');
+          if (msgContainer) {
+            const nameEl = msgContainer.querySelector('.msg-name');
+            if (nameEl) {
+              const existingBadge = nameEl.querySelector('.think-badge');
+              nameEl.textContent = personaTitle;
+              if (existingBadge) nameEl.appendChild(existingBadge);
+            }
+            const avatarEl = msgContainer.querySelector('.msg-avatar');
+            if (avatarEl) {
+              fetch(`/api/persona/avatar?persona=${encodeURIComponent(ev.persona_name)}`)
+                .then(r => r.json())
+                .then(d => {
+                  if (d.ok && d.avatar_path) {
+                    if (d.avatar_type === 'video') {
+                      avatarEl.innerHTML = `
+                        <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openSoulGallery) window.openSoulGallery('${d.avatar_path}'); else window.openAvatarFull('${d.avatar_path}', 'video')">
+                          <video src="${d.avatar_path}" autoplay loop muted playsinline style="width:100%; height:100%; object-fit:cover; border-radius:50%;"></video>
+                          <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
+                        </div>`;
+                    } else {
+                      const imgStyle = d.avatar_path !== "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png"
+                        ? "object-fit:cover; border-radius:50%;"
+                        : "filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));";
+                      avatarEl.innerHTML = `
+                        <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openSoulGallery) window.openSoulGallery('${d.avatar_path}'); else window.openAvatarFull('${d.avatar_path}', 'image')">
+                          <img src="${d.avatar_path}" onerror="this.src='/assets/Hecos_Logo_SQR_NBG_LogoOnly.png';" style="${imgStyle}">
+                          <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
+                        </div>`;
+                    }
+                  }
+                }).catch(() => {});
+            }
+          }
+        }
+
         window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn();
         if (window.sendBtn) window.sendBtn.disabled = false;
 

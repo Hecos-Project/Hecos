@@ -123,8 +123,13 @@ window.sfComputeDiff = function() {
     for (const k of ['preset_name', 'temperature', 'top_p', 'repeat_penalty', 'num_predict', 'num_ctx', 'n_gpu_layers']) {
         if (!eq(curr.inference?.[k], base.inference?.[k])) { result.inference = true; result.total++; }
     }
-    for (const k of ['send_tools', 'send_personality', 'send_memory', 'include_thinking_in_history']) {
+    for (const k of ['send_tools', 'send_personality', 'send_memory', 'include_thinking_in_history', 'enable_thinking', 'tool_selection_mode']) {
         if (!eq(curr.payload?.[k], base.payload?.[k])) { result.payload = true; result.total++; }
+    }
+    const _normSel = (arr) => Array.isArray(arr) ? [...new Set(arr.map(String))].sort().join('|') : '';
+    if (_normSel(curr.payload?.selected_tools) !== _normSel(base.payload?.selected_tools)) {
+        result.payload = true;
+        result.total++;
     }
     const voiceKeys = [
         'tts_engine', 'tts_voice',
@@ -166,17 +171,43 @@ window.sfRefreshUIVisibilityAndSummaries = function() {
         infSummary.textContent = `Temp ${t} · TopP ${tp} · Ctx ${ctxStr}`;
     }
 
+    const scopePanel = document.getElementById('sf-tools-scope-panel');
     const paySummary = document.getElementById('sf-payload-summary');
+    const toolsBadge = document.getElementById('sf-payload-tools-badge');
+    const tOn = document.getElementById('sf-payload-tools')?.checked !== false;
+    if (scopePanel) scopePanel.classList.toggle('sf-tools-disabled', !tOn);
+
+    const tMode = (window.sfState?.toolSelectionMode === 'custom') ? 'custom' : 'all';
+    const telemetry = window.sfComputeToolsTelemetry ? window.sfComputeToolsTelemetry() : null;
+    const fmtTok = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n}`);
+
+    if (toolsBadge) {
+        if (!tOn) {
+            toolsBadge.textContent = 'OFF';
+        } else if (tMode === 'custom' && telemetry) {
+            toolsBadge.textContent = `${telemetry.selectedCount}/${telemetry.totalCount} tools · ~${fmtTok(telemetry.selectedTokens)} tok`;
+        } else if (telemetry) {
+            toolsBadge.textContent = `All · ~${fmtTok(telemetry.eagerTokens)} tok`;
+        } else {
+            toolsBadge.textContent = 'Auto';
+        }
+    }
+
     if (paySummary) {
-        const tOn = document.getElementById('sf-payload-tools')?.checked !== false;
         const sOn = document.getElementById('sf-payload-soul')?.checked !== false;
         const mOn = document.getElementById('sf-payload-memory')?.checked !== false;
         const thOn = document.getElementById('sf-payload-thinking')?.checked === true;
-        paySummary.textContent = `Tools ${tOn ? 'ON' : 'OFF'} · Soul ${sOn ? 'ON' : 'OFF'} · Mem ${mOn ? 'ON' : 'OFF'}${thOn ? ' · <think>' : ''}`;
+        let tDesc = 'OFF';
+        if (tOn) {
+            tDesc = (tMode === 'custom' && telemetry)
+                ? `${telemetry.selectedCount}/${telemetry.totalCount} (~${fmtTok(telemetry.selectedTokens)} tok)`
+                : 'ON (All)';
+        }
+        paySummary.textContent = `Tools ${tDesc} · Soul ${sOn ? 'ON' : 'OFF'} · Mem ${mOn ? 'ON' : 'OFF'}${thOn ? ' · <think>' : ''}`;
         // Only update the pill if not in the middle of a bulk soul populate,
         // to prevent flickering when sf-payload-tools is momentarily reset.
         if (window.updateToolModeBadge && !window._sfApplyingSoul) {
-            window.updateToolModeBadge(tOn ? 'native' : 'direct');
+            window.updateToolModeBadge(tOn ? (tMode === 'custom' ? 'custom' : 'native') : 'direct');
         }
     }
 
@@ -225,11 +256,17 @@ window.sfRefreshUIVisibilityAndSummaries = function() {
     setDot('sf-dot-voice', diff.voice);
     setDot('sf-dot-payload', diff.payload);
 
-    // Highlight "Aggiorna Preset" button when a preset is selected
+    // Enable preset-specific action buttons only when a Global Preset is selected
+    const hasActiveSoul = !!window.sfState.activeSoulId;
     const topSaveBtn = document.getElementById('sf-top-save-btn');
     if (topSaveBtn) {
-        topSaveBtn.disabled = !window.sfState.activeSoulId;
-        topSaveBtn.style.opacity = window.sfState.activeSoulId ? '1' : '0.45';
+        topSaveBtn.disabled = !hasActiveSoul;
+        topSaveBtn.style.opacity = hasActiveSoul ? '1' : '0.45';
+    }
+    const dupBtn = document.getElementById('sf-duplicate-preset-btn');
+    if (dupBtn) {
+        dupBtn.disabled = !hasActiveSoul;
+        dupBtn.style.opacity = hasActiveSoul ? '1' : '0.45';
     }
 
     if (window.sfUpdateTooltip) {
@@ -244,7 +281,7 @@ window.sfSyncActivePersonaAvatar = function() {
 
     const effectivePVal = pVal || (window.sfSystemFallbacks?.persona) || "";
     if (effectivePVal && effectivePVal !== 'unknown') {
-        window.HecosPersonaName = effectivePVal.replace('.yaml', '').replace(/_/g, ' ');
+        window.HecosPersonaName = effectivePVal.replace(/\.yaml$/i, '');
         fetch(`/api/persona/avatar?persona=${encodeURIComponent(effectivePVal)}`)
             .then(r => r.json())
             .then(d => { 
@@ -258,7 +295,7 @@ window.sfSyncActivePersonaAvatar = function() {
                 if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
             });
     } else {
-        window.HecosPersonaName = 'Hecos System Soul';
+        window.HecosPersonaName = 'Hecos_System_Soul';
         window.HecosAvatar = null;
         window.HecosAvatarType = 'image';
         if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
@@ -781,6 +818,9 @@ window.sfApplySoulToUI = async function(soul) {
     if (payloadThinking) payloadThinking.checked = soul.payload?.include_thinking_in_history === true;
     const payloadEnableThinking = document.getElementById('sf-payload-enable-thinking');
     if (payloadEnableThinking) payloadEnableThinking.checked = soul.payload?.enable_thinking !== false;
+    window.sfState.toolSelectionMode = (soul.payload?.tool_selection_mode === 'custom') ? 'custom' : 'all';
+    window.sfState.selectedTools = Array.isArray(soul.payload?.selected_tools) ? [...soul.payload.selected_tools] : [];
+    if (window.sfSyncToolsSelectorUI) window.sfSyncToolsSelectorUI();
 
     // Model
     document.getElementById('sf-backend-select').value = soul.model?.backend_type || fallbacks.backend || "ollama";
@@ -920,6 +960,17 @@ window.sfApplySessionOverridesToUI = async function(cfg) {
     if (pCtrl.send_personality !== undefined) document.getElementById('sf-payload-soul').checked = pCtrl.send_personality !== false;
     if (pCtrl.send_memory !== undefined) document.getElementById('sf-payload-memory').checked = pCtrl.send_memory !== false;
     if (pCtrl.include_thinking_in_history !== undefined) document.getElementById('sf-payload-thinking').checked = pCtrl.include_thinking_in_history === true;
+    if (pCtrl.enable_thinking !== undefined) {
+        const elTh = document.getElementById('sf-payload-enable-thinking');
+        if (elTh) elTh.checked = pCtrl.enable_thinking !== false;
+    }
+    if (pCtrl.tool_selection_mode !== undefined) {
+        window.sfState.toolSelectionMode = (pCtrl.tool_selection_mode === 'custom') ? 'custom' : 'all';
+    }
+    if (pCtrl.selected_tools !== undefined) {
+        window.sfState.selectedTools = Array.isArray(pCtrl.selected_tools) ? [...pCtrl.selected_tools] : [];
+    }
+    if (window.sfSyncToolsSelectorUI) window.sfSyncToolsSelectorUI();
 
     // Model / Backend
     const bType = cfg.model?.backend_type || cfg.backend?.type;
@@ -1109,7 +1160,9 @@ window.sfCollectUIState = function() {
         send_personality: getCheck('sf-payload-soul'),
         send_memory: getCheck('sf-payload-memory'),
         include_thinking_in_history: getCheck('sf-payload-thinking'),
-        enable_thinking: getCheck('sf-payload-enable-thinking')
+        enable_thinking: getCheck('sf-payload-enable-thinking'),
+        tool_selection_mode: (window.sfState?.toolSelectionMode === 'custom') ? 'custom' : 'all',
+        selected_tools: Array.isArray(window.sfState?.selectedTools) ? [...window.sfState.selectedTools] : []
     };
 
     const backendObj = bType ? { type: bType, [bType]: { model: mName } } : {};
@@ -1428,15 +1481,20 @@ window.sfUpdateCloneState = function() {
 
 
 window.sfOnToolsToggle = function(isChecked) {
+    const scopePanel = document.getElementById('sf-tools-scope-panel');
+    if (scopePanel) scopePanel.classList.toggle('sf-tools-disabled', !isChecked);
+    const isCustom = (window.sfState?.toolSelectionMode === 'custom');
     if (window.updateToolModeBadge) {
-        window.updateToolModeBadge(isChecked ? 'native' : 'direct');
+        window.updateToolModeBadge(isChecked ? (isCustom ? 'custom' : 'native') : 'direct');
     }
     if (window.Presenter && typeof window.Presenter.notify === 'function') {
         if (isChecked) {
             window.Presenter.notify({
                 type: 'action_confirm',
                 title: 'Payload Control',
-                text: '🛠️ Native Tool Calling Mode: Function schemas loaded into model payload.',
+                text: isCustom
+                    ? '🎛️ Granular Tool Selection: Only selected modules/tools are exposed to the LLM in this chat/preset.'
+                    : '🛠️ Native Tool Calling Mode: Function schemas loaded into model payload.',
                 duration: 4000
             });
         } else {
@@ -1447,5 +1505,312 @@ window.sfOnToolsToggle = function(isChecked) {
                 duration: 4000
             });
         }
+    }
+};
+
+// ── Dynamic Granular Tool Selector Helpers ──
+
+window.sfExpandedToolModules = window.sfExpandedToolModules || new Set();
+
+function _sfEscapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function _sfGetExpandedToolState() {
+    const catalog = window.sfState?.toolsCatalog;
+    const raw = Array.isArray(window.sfState?.selectedTools) ? window.sfState.selectedTools : [];
+    const checkedNames = new Set();
+    const knownTags = new Set((catalog?.modules || []).map(m => m.tag));
+    const knownTools = new Set();
+    const wildcardTags = new Set();
+    const explicitNames = new Set();
+
+    for (const mod of (catalog?.modules || [])) {
+        for (const t of (mod.tools || [])) knownTools.add(t.name);
+    }
+
+    for (const item of raw) {
+        const s = String(item || '').trim();
+        if (!s) continue;
+        if (s.endsWith('__*')) wildcardTags.add(s.slice(0, -3));
+        else explicitNames.add(s);
+    }
+
+    const orphanSelectors = [];
+    for (const tag of wildcardTags) {
+        if (!knownTags.has(tag)) orphanSelectors.push(`${tag}__*`);
+    }
+    for (const name of explicitNames) {
+        if (!knownTools.has(name)) orphanSelectors.push(name);
+    }
+
+    for (const mod of (catalog?.modules || [])) {
+        const modWild = wildcardTags.has(mod.tag);
+        for (const t of (mod.tools || [])) {
+            if (modWild || explicitNames.has(t.name)) {
+                checkedNames.add(t.name);
+            }
+        }
+    }
+    return { checkedNames, orphanSelectors };
+}
+
+function _sfCompressSelectedTools(checkedNames, orphanSelectors = []) {
+    const catalog = window.sfState?.toolsCatalog;
+    if (!catalog || !Array.isArray(catalog.modules)) {
+        return Array.from(checkedNames);
+    }
+    const out = [];
+    for (const mod of catalog.modules) {
+        const tools = mod.tools || [];
+        if (!tools.length) continue;
+        const checkedInMod = tools.filter(t => checkedNames.has(t.name));
+        if (checkedInMod.length === tools.length) {
+            out.push(`${mod.tag}__*`);
+        } else {
+            for (const t of checkedInMod) out.push(t.name);
+        }
+    }
+    // Preserve non-present selectors only if user didn't wipe everything with "None"
+    if (orphanSelectors.length && out.length > 0) {
+        for (const o of orphanSelectors) {
+            if (!out.includes(o)) out.push(o);
+        }
+    }
+    return out;
+}
+
+window.sfComputeToolsTelemetry = function() {
+    const catalog = window.sfState?.toolsCatalog;
+    const modules = catalog?.modules || [];
+    const totalCount = catalog?.total_tools || 0;
+    const totalTokens = catalog?.total_est_tokens || 0;
+    const eagerTokens = modules
+        .filter(m => !m.is_lazy || m.loaded_in_ram)
+        .reduce((acc, m) => acc + (m.est_tokens || 0), 0);
+
+    const { checkedNames, orphanSelectors } = _sfGetExpandedToolState();
+    let selectedCount = 0;
+    let selectedChars = 0;
+    for (const mod of modules) {
+        for (const t of (mod.tools || [])) {
+            if (checkedNames.has(t.name)) {
+                selectedCount++;
+                selectedChars += (t.chars || 0);
+            }
+        }
+    }
+    const selectedTokens = selectedChars ? Math.max(1, Math.round(selectedChars / 4)) : 0;
+    return { totalCount, totalTokens, eagerTokens, selectedCount, selectedTokens, orphanSelectors };
+};
+
+window.sfUpdateToolsLiveStats = function() {
+    const statsEl = document.getElementById('sf-tools-live-stats');
+    const orphanEl = document.getElementById('sf-tools-orphan-note');
+    const t = window.sfComputeToolsTelemetry();
+    const fmtTok = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n}`);
+    if (statsEl) {
+        statsEl.textContent = `${t.selectedCount} / ${t.totalCount} tools · ~${fmtTok(t.selectedTokens)} tok`;
+    }
+    if (orphanEl) {
+        if (t.orphanSelectors.length > 0) {
+            orphanEl.style.display = 'block';
+            orphanEl.textContent = `Preset notice: ${t.orphanSelectors.length} selector(s) reference inactive or uninstalled modules (${t.orphanSelectors.slice(0, 3).join(', ')}) and will be safely ignored.`;
+        } else {
+            orphanEl.style.display = 'none';
+            orphanEl.textContent = '';
+        }
+    }
+};
+
+window.sfRenderToolsTree = function() {
+    const container = document.getElementById('sf-tools-tree');
+    if (!container) return;
+
+    const catalog = window.sfState?.toolsCatalog;
+    if (!catalog || !Array.isArray(catalog.modules)) {
+        container.innerHTML = '<div class="sf-tools-loading">Tools catalog not loaded yet. Click refresh.</div>';
+        return;
+    }
+
+    const q = (document.getElementById('sf-tools-search')?.value || '').trim().toLowerCase();
+    const { checkedNames } = _sfGetExpandedToolState();
+    const htmlParts = [];
+
+    for (const mod of catalog.modules) {
+        const modTagLower = (mod.tag || '').toLowerCase();
+        const modNameLower = (mod.name || '').toLowerCase();
+        const modMatches = q && (modTagLower.includes(q) || modNameLower.includes(q));
+        const allTools = mod.tools || [];
+        const visibleTools = (!q || modMatches)
+            ? allTools
+            : allTools.filter(t =>
+                (t.name || '').toLowerCase().includes(q) ||
+                (t.method || '').toLowerCase().includes(q) ||
+                (t.description || '').toLowerCase().includes(q)
+            );
+
+        if (q && visibleTools.length === 0) continue;
+
+        const checkedCount = allTools.filter(t => checkedNames.has(t.name)).length;
+        const allChecked = allTools.length > 0 && checkedCount === allTools.length;
+        const isPartial = checkedCount > 0 && checkedCount < allTools.length;
+        const isExpanded = Boolean(q) || window.sfExpandedToolModules.has(mod.tag);
+
+        let badgeClass = 'ram';
+        let badgeLabel = 'Core RAM';
+        if (mod.source === 'builtin') {
+            badgeClass = 'builtin';
+            badgeLabel = 'Built-in';
+        } else if (mod.is_lazy && !mod.loaded_in_ram) {
+            badgeClass = 'lazy';
+            badgeLabel = 'HPM Lazy';
+        } else if (mod.source === 'hpm') {
+            badgeClass = 'ram';
+            badgeLabel = 'HPM RAM';
+        }
+
+        const modEsc = _sfEscapeHtml(mod.tag);
+        htmlParts.push(`
+            <div class="sf-tool-mod" data-tag="${modEsc}">
+                <div class="sf-tool-mod-header" onclick="window.sfToggleToolModuleExpand('${modEsc}', event)">
+                    <span class="sf-tool-mod-caret">${isExpanded ? '▾' : '▸'}</span>
+                    <input type="checkbox"
+                           class="sf-tool-mod-cb"
+                           data-tag="${modEsc}"
+                           data-indeterminate="${isPartial ? '1' : '0'}"
+                           ${allChecked ? 'checked' : ''}
+                           onclick="event.stopPropagation(); window.sfOnModuleToolToggle('${modEsc}', this.checked)">
+                    <span class="sf-tool-mod-title">${_sfEscapeHtml(mod.name)}</span>
+                    <span class="sf-tool-mod-tag">[${modEsc}]</span>
+                    <span class="sf-tool-mod-badge ${badgeClass}">${badgeLabel}</span>
+                    <span class="sf-tool-mod-meta">${checkedCount}/${allTools.length} · ~${mod.est_tokens || 0} tok</span>
+                </div>
+                <div class="sf-tool-mod-list" style="display: ${isExpanded ? 'flex' : 'none'};">
+                    ${visibleTools.map(t => `
+                        <label class="sf-tool-item">
+                            <input type="checkbox"
+                                   class="sf-tool-item-cb"
+                                   data-tag="${modEsc}"
+                                   data-tool="${_sfEscapeHtml(t.name)}"
+                                   ${checkedNames.has(t.name) ? 'checked' : ''}
+                                   onchange="window.sfOnSingleToolToggle('${_sfEscapeHtml(t.name)}', this.checked)">
+                            <span class="sf-tool-item-main">
+                                <span class="sf-tool-item-name">${_sfEscapeHtml(t.method || t.name)}</span>
+                                <span class="sf-tool-item-desc" title="${_sfEscapeHtml(t.description)}">${_sfEscapeHtml(t.description)}</span>
+                            </span>
+                            <span class="sf-tool-item-tok">~${t.est_tokens || 1}t</span>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+        `);
+    }
+
+    container.innerHTML = htmlParts.length
+        ? htmlParts.join('')
+        : '<div class="sf-tools-empty">No modules or tools match your filter.</div>';
+
+    container.querySelectorAll('.sf-tool-mod-cb[data-indeterminate="1"]').forEach(cb => {
+        cb.indeterminate = true;
+    });
+
+    window.sfUpdateToolsLiveStats();
+};
+
+window.sfSyncToolsSelectorUI = function() {
+    const mode = (window.sfState?.toolSelectionMode === 'custom') ? 'custom' : 'all';
+    const btnAll = document.getElementById('sf-tools-mode-all');
+    const btnCustom = document.getElementById('sf-tools-mode-custom');
+    const customBody = document.getElementById('sf-tools-custom-body');
+
+    if (btnAll) btnAll.classList.toggle('active', mode === 'all');
+    if (btnCustom) btnCustom.classList.toggle('active', mode === 'custom');
+    if (customBody) customBody.style.display = (mode === 'custom') ? 'block' : 'none';
+
+    if (mode === 'custom') {
+        if (!window.sfState.toolsCatalog && window.sfRefreshToolsCatalog) {
+            window.sfRefreshToolsCatalog(false);
+        } else {
+            window.sfRenderToolsTree();
+        }
+    }
+};
+
+window.sfSetToolSelectionMode = function(mode) {
+    window.sfState.toolSelectionMode = (mode === 'custom') ? 'custom' : 'all';
+    window.sfSyncToolsSelectorUI();
+    window.sfRefreshUIVisibilityAndSummaries();
+    window.sfDirty();
+};
+
+window.sfFilterToolsTree = function() {
+    window.sfRenderToolsTree();
+};
+
+window.sfToggleToolModuleExpand = function(tag, ev) {
+    if (ev && ev.target && ev.target.tagName === 'INPUT') return;
+    if (window.sfExpandedToolModules.has(tag)) window.sfExpandedToolModules.delete(tag);
+    else window.sfExpandedToolModules.add(tag);
+    window.sfRenderToolsTree();
+};
+
+window.sfOnModuleToolToggle = function(tag, checked) {
+    const mod = (window.sfState?.toolsCatalog?.modules || []).find(m => m.tag === tag);
+    if (!mod) return;
+    const { checkedNames, orphanSelectors } = _sfGetExpandedToolState();
+    for (const t of (mod.tools || [])) {
+        if (checked) checkedNames.add(t.name);
+        else checkedNames.delete(t.name);
+    }
+    window.sfState.selectedTools = _sfCompressSelectedTools(checkedNames, orphanSelectors);
+    window.sfRenderToolsTree();
+    window.sfRefreshUIVisibilityAndSummaries();
+    window.sfDirty();
+};
+
+window.sfOnSingleToolToggle = function(toolName, checked) {
+    const { checkedNames, orphanSelectors } = _sfGetExpandedToolState();
+    if (checked) checkedNames.add(toolName);
+    else checkedNames.delete(toolName);
+    window.sfState.selectedTools = _sfCompressSelectedTools(checkedNames, orphanSelectors);
+    window.sfRenderToolsTree();
+    window.sfRefreshUIVisibilityAndSummaries();
+    window.sfDirty();
+};
+
+window.sfSelectAllTools = function(selectAll) {
+    if (!selectAll) {
+        window.sfState.selectedTools = [];
+    } else {
+        const mods = window.sfState?.toolsCatalog?.modules || [];
+        window.sfState.selectedTools = mods.map(m => `${m.tag}__*`);
+    }
+    window.sfRenderToolsTree();
+    window.sfRefreshUIVisibilityAndSummaries();
+    window.sfDirty();
+};
+
+window.sfRefreshToolsCatalog = async function(manualClick = false) {
+    const btn = document.getElementById('sf-tools-refresh-btn');
+    if (btn && manualClick) btn.classList.add('fa-spin');
+    try {
+        const res = await fetch('/api/tools/catalog', { cache: 'no-store' });
+        const data = await res.json();
+        if (data && data.ok) {
+            window.sfState.toolsCatalog = data;
+            if (window.sfState.toolSelectionMode === 'custom') {
+                window.sfRenderToolsTree();
+            }
+            window.sfRefreshUIVisibilityAndSummaries();
+        }
+    } catch (e) {
+        console.warn('sfRefreshToolsCatalog error:', e);
+    } finally {
+        if (btn && manualClick) btn.classList.remove('fa-spin');
     }
 };

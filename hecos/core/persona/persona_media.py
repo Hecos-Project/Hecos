@@ -21,12 +21,31 @@ class PersonaMediaManager:
         return os.path.join(HECOS_DIR, "personas")
 
     @staticmethod
-    def _persona_dir(persona_name: str) -> str:
-        safe_name = persona_name.replace(".yaml", "")
-        # Prevent path traversal
+    def _resolve_safe_name(persona_name: str) -> str:
+        if not persona_name or not isinstance(persona_name, str):
+            return "Hecos_System_Soul"
+        safe_name = persona_name.strip().replace(".yaml", "")
         if ".." in safe_name or "/" in safe_name or "\\" in safe_name:
-            safe_name = "Hecos_System_Soul"
-        
+            return "Hecos_System_Soul"
+        base_dir = PersonaMediaManager._personas_dir()
+        if os.path.isdir(os.path.join(base_dir, safe_name)):
+            return safe_name
+        underscored = safe_name.replace(" ", "_")
+        if os.path.isdir(os.path.join(base_dir, underscored)):
+            return underscored
+        try:
+            target_low = underscored.lower()
+            for entry in os.listdir(base_dir):
+                if entry.lower() == target_low or entry.replace(" ", "_").lower() == target_low:
+                    if os.path.isdir(os.path.join(base_dir, entry)):
+                        return entry
+        except Exception:
+            pass
+        return safe_name
+
+    @staticmethod
+    def _persona_dir(persona_name: str) -> str:
+        safe_name = PersonaMediaManager._resolve_safe_name(persona_name)
         p_dir = os.path.join(PersonaMediaManager._personas_dir(), safe_name)
         if not os.path.isdir(p_dir):
             return os.path.join(PersonaMediaManager._personas_dir(), "Hecos_System_Soul")
@@ -48,10 +67,7 @@ class PersonaMediaManager:
         """
         import urllib.parse
         
-        safe_name = persona_name.replace(".yaml", "")
-        if ".." in safe_name or "/" in safe_name or "\\" in safe_name:
-            safe_name = "Hecos_System_Soul"
-            
+        safe_name = PersonaMediaManager._resolve_safe_name(persona_name)
         p_dir = os.path.join(PersonaMediaManager._personas_dir(), safe_name)
         default_avatar = {"url": "/assets/Hecos_Logo_NBG.png", "type": "image"}
         

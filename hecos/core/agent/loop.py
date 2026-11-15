@@ -24,6 +24,9 @@ from hecos.core.agent.loop_guards import (
     eval_early_termination,
     finalize_response,
     sync_assistant_history,
+    extract_verified_files_from_results,
+    are_executor_write_tools_enabled,
+    detect_unexecuted_file_claim,
 )
 
 
@@ -145,6 +148,9 @@ class AgentExecutor:
             emit_missing_image_gen_warning()
 
         iteration = 0
+        stream_hallucination_retries = 0
+        file_hallucination_retries = 0
+        unverified_file_notice: Optional[str] = None
         agent_context: List[Dict[str, Any]] = []
         accumulated_tool_results: List[Dict[str, Any]] = []
 
@@ -183,13 +189,24 @@ class AgentExecutor:
                         m_detail = tr("Esecuzione tool disabilitata a livello di sistema", "Tool execution disabled by system")
                         m_icon = "fa-comments"
                     elif send_tools:
-                        m_label = tr("Modalità: Tool Calling Nativo", "Mode: Native Tool Calling")
+                        _tool_mode = str(pctrl.get("tool_selection_mode") or "all").strip().lower()
+                        _selected_tools = pctrl.get("selected_tools") or []
+                        m_label = (
+                            tr("Modalità: Tool Selezionati", "Mode: Selected Tools")
+                            if _tool_mode == "custom"
+                            else tr("Modalità: Tool Calling Nativo", "Mode: Native Tool Calling")
+                        )
                         try:
                             from hecos.core.system.module_docs import get_tools_schema as _gts
-                            _schema_count = len(_gts())
+                            _schema_list = _gts(payload_control=pctrl, config=current_cfg) or []
+                            _schema_count = len(_schema_list)
                         except Exception:
                             _schema_count = 0
-                        m_detail = tr(f"{_schema_count} funzioni caricate nel modello", f"{_schema_count} function schemas loaded in model")
+                        m_detail = (
+                            tr(f"{_schema_count} funzioni selezionate nel modello", f"{_schema_count} selected schemas loaded in model")
+                            if _tool_mode == "custom"
+                            else tr(f"{_schema_count} funzioni caricate nel modello", f"{_schema_count} function schemas loaded in model")
+                        )
                         m_icon = "fa-toolbox"
                     else:
                         m_label = tr("Modalità: Comandi Rapidi (Fast Chat)", "Mode: Direct Commands (Fast Chat)")
@@ -267,6 +284,79 @@ class AgentExecutor:
 
                 # Case A: Plain text response (no further tools called)
                 if not tools_called:
+                    # Safeguard against text-mode LLMs mimicking '📺 Tuned to...' from history without calling a tool
+                    _fake_stream_claim = any(
+                        tok in (extracted_text or "")
+                        for tok in ("📺 Tuned to", "Launched in VLC Desktop", "⏹️ Live Stream stopped")
+                    )
+                    _stream_tool_already_ran = any(
+                        r.get("action") in ("stream_control", "stream_search")
+                        or "📺 Tuned to" in str(r.get("output", ""))
+                        or "Live Stream stopped" in str(r.get("output", ""))
+                        for r in accumulated_tool_results
+                    )
+                    if (
+                        _fake_stream_claim
+                        and not _stream_tool_already_ran
+                        and stream_hallucination_retries < 1
+                        and iteration < self.max_iterations
+                    ):
+                        stream_hallucination_retries += 1
+                        logger.warning(
+                            "[AGENT] Caught unexecuted stream status badge hallucination — forcing tool retry."
+                        )
+                        llm_step["result_preview"] = tr(
+                            "Rilevato falso stato streaming — richiamo il tool",
+                            "Detected unexecuted stream badge — retrying tool call",
+                        )
+                        AgentTracer.update_step(llm_step, detail=llm_step["result_preview"])
+                        agent_context.append({"role": "assistant", "content": str(raw_response or extracted_text or "")})
+                        agent_context.append({
+                            "role": "user",
+                            "content": (
+                                "[SYSTEM GUARD]: You wrote a fake '📺 Tuned to...' text line without actually calling any tool, "
+                                "so VLC/player was NOT changed. Emit `NETSEARCH__stream_control(action='play', query='<requested channel>', category='tv')` "
+                                "(or `/canale <channel>` on its own line) NOW to execute it for real."
+                            ),
+                        })
+                        continue
+
+                    # Safeguard against local coding LLMs claiming they created files without calling EXECUTOR write tools
+                    _verified_disk_files = extract_verified_files_from_results(accumulated_tool_results)
+                    if not _verified_disk_files and detect_unexecuted_file_claim(extracted_text):
+                        if are_executor_write_tools_enabled(current_cfg):
+                            if file_hallucination_retries < 1 and iteration < self.max_iterations:
+                                file_hallucination_retries += 1
+                                logger.warning(
+                                    "[AGENT] Caught unexecuted file creation claim — forcing real EXECUTOR tool retry."
+                                )
+                                llm_step["result_preview"] = tr(
+                                    "Rilevata creazione file simulata — richiamo EXECUTOR",
+                                    "Detected unexecuted file claim — retrying EXECUTOR tools",
+                                )
+                                AgentTracer.update_step(llm_step, detail=llm_step["result_preview"])
+                                agent_context.append({"role": "assistant", "content": str(raw_response or extracted_text or "")})
+                                agent_context.append({
+                                    "role": "user",
+                                    "content": (
+                                        "[SYSTEM GUARD]: You stated in text that you created or saved files, but NO filesystem tool "
+                                        "was called, so ZERO files exist on disk yet. Invoke `EXECUTOR__create_dir` and "
+                                        "`EXECUTOR__write_file` right now to write every real file to disk, validate with "
+                                        "`EXECUTOR__check_syntax`, and only reference verified paths."
+                                    ),
+                                })
+                                continue
+                            else:
+                                unverified_file_notice = (
+                                    "> ⚠️ **System Notice:** No files were actually written to disk in this turn "
+                                    "(no `EXECUTOR` file write tool succeeded)."
+                                )
+                        else:
+                            unverified_file_notice = (
+                                "> ⚠️ **System Notice:** No files were written to disk because filesystem write tools "
+                                "(`EXECUTOR__write_file` / `patch_file`) are disabled in Payload & Tools Control."
+                            )
+
                     llm_step["result_preview"] = tr("Risposta formulata", "Response formulated")
                     self._finalize_and_store_trace(tr("Risposta formulata", "Response formulated"), status="ok")
 
@@ -277,6 +367,7 @@ class AgentExecutor:
                         voice_status=voice_status,
                         think_block=think_block,
                         missing_igen_detected=missing_igen_detected,
+                        unverified_file_notice=unverified_file_notice,
                     )
                     self._sync_assistant_history(video_response, think_block)
                     return video_response, clean_voice

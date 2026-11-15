@@ -60,21 +60,26 @@ def read_file_tool(file_path: str, start_line: int = 1, end_line: int = -1) -> s
 def write_file_tool(file_path: str, content: str, mode: str = "w") -> str:
     """
     Writes or creates a file. Mode 'w' overwrites; 'a' appends.
-    :param file_path: Absolute path to the file to write or create.
+    :param file_path: Absolute or workspace-relative path to the file to write or create.
     :param content: The full text content to write.
     :param mode: 'w' to overwrite (default), 'a' to append.
     """
-    if not _is_safe_path(file_path):
+    abs_path = os.path.abspath(file_path)
+    if not _is_safe_path(abs_path):
         return "[EXECUTOR] ACCESS DENIED: Writing to system paths is forbidden."
     try:
-        parent = os.path.dirname(os.path.abspath(file_path))
+        parent = os.path.dirname(abs_path)
         if parent:
             os.makedirs(parent, exist_ok=True)
-        with open(file_path, mode, encoding="utf-8") as f:
+        with open(abs_path, mode, encoding="utf-8") as f:
             f.write(content)
-        logger.info(f"[EXECUTOR] write_file OK: {file_path} (mode={mode})")
-        res = f"[EXECUTOR] File written successfully: {file_path}"
-        AgentTracer.emit_action("write_file", f"Mode: {mode} -> {file_path}", f"{len(content)} characters written")
+        if not os.path.exists(abs_path):
+            return f"[EXECUTOR] Write failed: file was not created at {abs_path}"
+        size_bytes = os.path.getsize(abs_path)
+        uri = "file:///" + abs_path.replace("\\", "/")
+        logger.info(f"[EXECUTOR] write_file OK: {abs_path} (mode={mode}, bytes={size_bytes})")
+        res = f"[EXECUTOR] File verified on disk: {abs_path} ({size_bytes} bytes) | URI: {uri}"
+        AgentTracer.emit_action("write_file", f"Mode: {mode} -> {abs_path}", f"{len(content)} characters written ({size_bytes} bytes)")
         return res
     except Exception as e:
         return f"[EXECUTOR] Write error: {e}"
@@ -84,26 +89,29 @@ def patch_file_tool(file_path: str, old_text: str, new_text: str) -> str:
     Replaces the first occurrence of old_text with new_text in a file.
     Use this for surgical edits instead of rewriting the entire file.
     Returns an error with a file preview if old_text is not found.
-    :param file_path: Absolute path to the file to patch.
+    :param file_path: Absolute or workspace-relative path to the file to patch.
     :param old_text: The exact text block to find (whitespace must match exactly).
     :param new_text: The replacement text block.
     """
-    if not _is_safe_path(file_path):
+    abs_path = os.path.abspath(file_path)
+    if not _is_safe_path(abs_path):
         return "[EXECUTOR] ACCESS DENIED: Patching system paths is forbidden."
-    if not os.path.exists(file_path):
-        return f"[EXECUTOR] File not found: {file_path}"
+    if not os.path.exists(abs_path):
+        return f"[EXECUTOR] File not found: {abs_path}"
     try:
-        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+        with open(abs_path, "r", encoding="utf-8", errors="replace") as f:
             original = f.read()
         if old_text not in original:
             preview = original[:400].replace('\n', '↵')
             return f"[EXECUTOR] Text to replace not found. File starts with: {preview}..."
         patched = original.replace(old_text, new_text, 1)
-        with open(file_path, "w", encoding="utf-8") as f:
+        with open(abs_path, "w", encoding="utf-8") as f:
             f.write(patched)
-        logger.info(f"[EXECUTOR] patch_file OK: {file_path}")
-        res = f"[EXECUTOR] File patched successfully: {file_path}"
-        AgentTracer.emit_action("patch_file", f"Patching {file_path}", f"Replaced text block successfully")
+        size_bytes = os.path.getsize(abs_path)
+        uri = "file:///" + abs_path.replace("\\", "/")
+        logger.info(f"[EXECUTOR] patch_file OK: {abs_path} (bytes={size_bytes})")
+        res = f"[EXECUTOR] File patched and verified on disk: {abs_path} ({size_bytes} bytes) | URI: {uri}"
+        AgentTracer.emit_action("patch_file", f"Patching {abs_path}", f"Replaced text block successfully ({size_bytes} bytes)")
         return res
     except Exception as e:
         return f"[EXECUTOR] Patch error: {e}"

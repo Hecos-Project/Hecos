@@ -381,13 +381,13 @@
             if (mode === 'embedded') {
                 if (emb) {
                     emb.classList.toggle('collapsed', shouldCollapse);
-                    if (UI && typeof UI.updatePowerUI === 'function') UI.updatePowerUI(!shouldCollapse);
+                    if (UI && typeof UI.updateCollapseUI === 'function') UI.updateCollapseUI(shouldCollapse);
                 }
                 if (ov) ov.classList.remove('active');
             } else if (mode === 'collapsed') {
                 if (emb) {
                     emb.classList.add('collapsed');
-                    if (UI && typeof UI.updatePowerUI === 'function') UI.updatePowerUI(false);
+                    if (UI && typeof UI.updateCollapseUI === 'function') UI.updateCollapseUI(true);
                 }
                 if (ov) ov.classList.remove('active');
             } else if (mode === 'overlay') {
@@ -398,15 +398,32 @@
             }
         },
 
-        togglePower: function(e) {
+        toggleCollapse: function(e) {
             if (e) {
                 e.preventDefault();
                 e.stopPropagation();
             }
             const emb = UI.getEmbedded();
             if (!emb) return;
-            const isColl = emb.classList.contains('collapsed');
-            const nextActive = isColl; // if collapsed, turn ON; else turn OFF
+            if (!emb.classList.contains('active')) {
+                emb.classList.add('active');
+            }
+            const isNetSearch = (window.location && window.location.pathname.includes('/netsearch')) || emb.classList.contains('netsearch-presenter-embedded');
+            const storageKey = isNetSearch ? 'hecos_netsearch_presenter_collapsed' : 'hecos_chat_presenter_collapsed';
+            const nextCollapsed = !emb.classList.contains('collapsed');
+            emb.classList.toggle('collapsed', nextCollapsed);
+            localStorage.setItem(storageKey, nextCollapsed ? 'true' : 'false');
+            if (UI && typeof UI.updateCollapseUI === 'function') {
+                UI.updateCollapseUI(nextCollapsed);
+            }
+        },
+
+        togglePower: function(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const nextActive = !STATE.contextActive;
             Presenter.setContextEnabled(nextActive);
         },
 
@@ -414,19 +431,10 @@
             const emb = UI.getEmbedded();
             const isNetSearch = (window.location && window.location.pathname.includes('/netsearch')) || (emb && emb.classList.contains('netsearch-presenter-embedded'));
             const ctx = isNetSearch ? 'netsearch' : 'chat';
-            const storageKey = isNetSearch ? 'hecos_netsearch_presenter_collapsed' : 'hecos_chat_presenter_collapsed';
+            STATE.contextActive = !!active;
 
-            if (emb) {
-                if (active) {
-                    emb.classList.remove('collapsed');
-                    localStorage.setItem(storageKey, 'false');
-                } else {
-                    emb.classList.add('collapsed');
-                    localStorage.setItem(storageKey, 'true');
-                }
-            }
             if (UI && typeof UI.updatePowerUI === 'function') {
-                UI.updatePowerUI(active);
+                UI.updatePowerUI(!!active);
             }
 
             // Sync with backend independent context toggle
@@ -603,13 +611,9 @@
         const isSavedCollapsed = storedCollapsed !== null ? (storedCollapsed === 'true') : (window.innerWidth <= 768);
         const embInit = UI.getEmbedded();
         if (embInit) {
-            if (isSavedCollapsed) {
-                embInit.classList.add('collapsed');
-                if (UI && typeof UI.updatePowerUI === 'function') UI.updatePowerUI(false);
-            } else {
-                embInit.classList.remove('collapsed');
-                if (UI && typeof UI.updatePowerUI === 'function') UI.updatePowerUI(true);
-            }
+            embInit.classList.toggle('collapsed', isSavedCollapsed);
+            if (UI && typeof UI.updateCollapseUI === 'function') UI.updateCollapseUI(isSavedCollapsed);
+            if (UI && typeof UI.updatePowerUI === 'function') UI.updatePowerUI(false);
         }
 
         fetch('/api/ext/presenter/config')
@@ -620,9 +624,13 @@
                     if (!isNetSearch) {
                         Presenter.setDisplayMode(d.config.panel_default);
                     }
-                    // If a saved collapsed state exists in localStorage, sync with backend context
-                    if (localStorage.getItem(storageKey) !== null) {
-                        Presenter.setContextEnabled(!isSavedCollapsed);
+                    // Restore power ON/OFF state strictly from backend config (independent of collapse visibility)
+                    const ctxActive = isNetSearch
+                        ? !!d.config.commentary_on_search
+                        : !!d.config.commentary_on_messages;
+                    STATE.contextActive = ctxActive;
+                    if (UI && typeof UI.updatePowerUI === 'function') {
+                        UI.updatePowerUI(ctxActive);
                     }
 
                     if (d.config.enabled && !isNetSearch) {

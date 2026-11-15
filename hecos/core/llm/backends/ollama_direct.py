@@ -115,6 +115,62 @@ def _call_api_chat(ollama_base: str, ollama_body_v1: Dict[str, Any], params: Dic
     return normalized
 
 
+_HIST_STREAM_BADGE_RE = re.compile(
+    r"(?m)^\s*(?:>\s*)?(?:📺\s*Tuned to|⏹️\s*Live Stream stopped|⏯️\s*Playback)[^\r\n]*$"
+)
+
+
+def _rewrite_assistant_stream_badges(content: str) -> str:
+    """Replaces stored UI stream status blockquotes with explicit tool-call context for text-mode LLMs."""
+    if not content or not any(tok in content for tok in ("📺 Tuned to", "⏹️ Live Stream stopped", "⏯️ Playback")):
+        return content
+
+    def _repl(match: re.Match) -> str:
+        line = re.sub(r"^\s*>\s*", "", match.group(0)).strip()
+        return f"[System Note: You previously executed NETSEARCH__stream_control(...) which returned -> {line}]"
+
+    return _HIST_STREAM_BADGE_RE.sub(_repl, content)
+
+
+def _normalize_messages_for_ollama(messages: List[Dict[str, Any]], has_tools: bool) -> List[Dict[str, Any]]:
+    """
+    When native tools are disabled (e.g. Gemma 4 text-only tool mode):
+    1. Converts orphaned role='tool' entries into plain user context blocks so Ollama never drops them.
+    2. Rewrites stored assistant '📺 Tuned to ...' UI badges into explicit tool execution reminders
+       so text-mode models do not mimic the badge directly instead of calling NETSEARCH__stream_control(...).
+    """
+    if has_tools:
+        return messages
+    out: List[Dict[str, Any]] = []
+    for m in messages or []:
+        if not isinstance(m, dict):
+            out.append(m)
+            continue
+        role = m.get("role")
+        if role == "tool":
+            t_name = m.get("name") or "TOOL"
+            t_content = m.get("content") or ""
+            out.append({
+                "role": "user",
+                "content": (
+                    f"[TOOL EXECUTION RESULT · {t_name}]:\n{t_content}\n\n"
+                    "Now reply in character to the user based strictly on this real tool result. "
+                    "Do not print raw function call syntax unless invoking another required action."
+                ),
+            })
+        elif role == "assistant" and isinstance(m.get("content"), str):
+            rewritten = _rewrite_assistant_stream_badges(m["content"])
+            if rewritten != m["content"]:
+                m_copy = dict(m)
+                m_copy["content"] = rewritten
+                out.append(m_copy)
+            else:
+                out.append(m)
+        else:
+            out.append(m)
+    return out
+
+
 def execute_ollama_direct(params: Dict[str, Any], stream: bool = False) -> Any:
     """
     Directly invokes Ollama's /v1/chat/completions endpoint (or /api/chat when think=False).
@@ -124,10 +180,11 @@ def execute_ollama_direct(params: Dict[str, Any], stream: bool = False) -> Any:
     ollama_base = params.get("api_base", "http://localhost:11434").rstrip("/")
     ollama_url = f"{ollama_base}/v1/chat/completions"
 
+    has_native_tools = bool(params.get("tools"))
     # Translate LiteLLM params to OpenAI format for Ollama
     ollama_body: Dict[str, Any] = {
         "model": params["model"].replace("ollama/", "", 1),
-        "messages": params["messages"],
+        "messages": _normalize_messages_for_ollama(params["messages"], has_native_tools),
         "temperature": params.get("temperature", 0.7),
         "top_p": params.get("top_p", 0.9),
         "stream": False,

@@ -87,9 +87,10 @@
         "slash_commands": []
     },
     "EXECUTOR": {
-        "description": "Safe Python execution (AST Sandbox), system control, and file management.",
+        "description": "Safe Python execution (AST Sandbox), developer tools, system control, and file management.",
         "commands": {
-            "create_dir": "Method",
+            "check_syntax": "Checks syntax of a Python (.py), JSON (.json), YAML (.yaml/.yml), or JS (.js) file on disk.",
+            "create_dir": "Creates a directory and any missing parent folders.",
             "delete_file": "Method",
             "execute_background_command": "Method",
             "execute_shell_command": "Method",
@@ -102,12 +103,15 @@
             "list_dir": "Method",
             "list_processes": "Method",
             "open_media_file": "Opens a media file (video, audio, image) using VLC if installed, otherwise the OS default player.",
-            "patch_file": "Method",
-            "read_file": "Method",
+            "patch_file": "Replaces the first exact occurrence of old_text with new_text in a file.",
+            "project_tree": "Generates a compact project folder tree (skipping .git, __pycache__, python_env, node_modules).",
+            "read_file": "Reads the contents of a file. Relative paths resolve inside the projects workspace.",
             "reboot_system": "Method",
+            "run_project_test": "Runs a real Python script, unittest, or pytest suite inside an authorized workspace/project using python_env.",
             "run_python_code": "Method",
+            "search_code": "Searches text/code recursively inside a project or module directory.",
             "set_important_path": "Memorizes an important directory path for the user (e.g. user_profile, downloads, projects).",
-            "write_file": "Method"
+            "write_file": "Writes or creates a file and verifies it exists on disk. Relative paths resolve inside the projects workspace."
         },
         "status": "ONLINE (Core Tools Active)",
         "example": "",
@@ -179,6 +183,8 @@
             "media_search": "Searches for images, videos, audio and podcasts matching the query.",
             "osint_search": "OSINT identity hunt: finds active user profiles across 15+ social and coding platforms.",
             "slash_audio": "Method",
+            "slash_canale": "Method",
+            "slash_canali": "Method",
             "slash_dark": "Method",
             "slash_fetch": "Method",
             "slash_files": "Method",
@@ -186,16 +192,22 @@
             "slash_media": "Method",
             "slash_netsearch": "Method",
             "slash_osint": "Method",
+            "slash_radio": "Method",
             "slash_search": "Method",
             "slash_search_config": "Method",
             "slash_search_engines": "Method",
+            "slash_streams": "Method",
             "slash_tor_new": "Method",
+            "slash_tv": "Method",
             "slash_videos": "Method",
+            "slash_webcam": "Method",
+            "stream_control": "Controls Live TV/Radio TV Remote: play, list, ch_up, ch_down, last, stop, pause, vol_up, vol_down, set_volume, mute, fullscreen, target, open_vlc, status.",
+            "stream_search": "Searches live TV channels, radio stations, public webcams, or raw streams into a numbered lineup (pass empty query or max_results=500 for full list).",
             "web_search": "Searches the Clearnet using privacy-preserving aggregators (SearXNG, DuckDuckGo, Brave, etc.)."
         },
         "status": "ONLINE",
         "example": "",
-        "routing_instructions": "NET SEARCH & INTELLIGENCE EXECUTION RULES:\n\n1. WEB SEARCH: If the user asks to search the web, find news, or search anything online, call NETSEARCH__web_search(query=...).\n2. DARK WEB: If the user asks for Tor, .onion, hidden services, dark web, or uninhibited search, call NETSEARCH__dark_search(query=...).\n3. DEEP SEARCH: If the user asks for comprehensive / deep search combining Clear + Dark + Files, call NETSEARCH__deep_search(query=...).\n4. MEDIA SEARCH: If the user asks for images, videos, audio/soundtracks, call NETSEARCH__media_search(query=..., media_type=...).\n5. FILE SEARCH: If the user asks for documents, PDFs, ebooks, zip archives, or file downloads, call NETSEARCH__file_search(query=..., file_types=...).\n6. OSINT: If the user asks to find a person's online accounts, usernames, or social profiles, call NETSEARCH__osint_search(username=...).\n7. READ WEBPAGE: If the user asks to inspect, read, or scrape a specific URL (clearnet or .onion), call NETSEARCH__fetch_page(url=...).",
+        "routing_instructions": "NET SEARCH & INTELLIGENCE EXECUTION RULES:\n\n1. WEB SEARCH: If the user asks to search the web, find news, or search anything online, call NETSEARCH__web_search(query=...).\n2. DARK WEB: If the user asks for Tor, .onion, hidden services, dark web, or uninhibited search, call NETSEARCH__dark_search(query=...).\n3. DEEP SEARCH: If the user asks for comprehensive / deep search combining Clear + Dark + Files, call NETSEARCH__deep_search(query=...).\n4. MEDIA SEARCH: If the user asks for images, videos, audio/soundtracks, call NETSEARCH__media_search(query=..., media_type=...).\n5. FILE SEARCH: If the user asks for documents, PDFs, ebooks, zip archives, or file downloads, call NETSEARCH__file_search(query=..., file_types=...).\n6. OSINT: If the user asks to find a person's online accounts, usernames, or social profiles, call NETSEARCH__osint_search(username=...).\n7. READ WEBPAGE: If the user asks to inspect, read, or scrape a specific URL (clearnet or .onion), call NETSEARCH__fetch_page(url=...).\n8. LIVE STREAMS DISCOVERY: If the user asks for live TV channels, IPTV, radio stations, or live webcams, or asks for the full list of available channels, invoke NETSEARCH__stream_search(query='', category='all', max_results=500) or NETSEARCH__stream_control(action='list') or /canali.\n9. TV REMOTE & VOICE CONTROL: If the user asks to play a channel by name (pass channel name in query=, integer 1..N only in channel=) or number, list channels, toggle fullscreen, zap next/previous, stop, pause, adjust volume, mute, or open a stream in VLC Desktop (target='vlc'), invoke NETSEARCH__stream_control(action='play', query='Rai 1', category='tv') or /canale Rai 1.",
         "is_class_based": true,
         "icon": "fas fa-satellite-dish",
         "category": "SISTEMA",
@@ -386,6 +398,110 @@
                 "icon": "⚙️",
                 "category": "NETSEARCH",
                 "method": "slash_search_config",
+                "args_schema": {
+                    "args": "str"
+                },
+                "requires_args": false
+            },
+            {
+                "id": "streams",
+                "aliases": [
+                    "/streams",
+                    "/live"
+                ],
+                "description": "Searches live TV, radio, webcams, and raw M3U8/RTSP streams",
+                "usage": "/streams <query>",
+                "example": "/streams italy news",
+                "icon": "📡",
+                "category": "NETSEARCH",
+                "method": "slash_streams",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": false
+            },
+            {
+                "id": "tv",
+                "aliases": [
+                    "/tv",
+                    "/iptv"
+                ],
+                "description": "Searches live TV & IPTV channels into numbered CH 01..NN lineup",
+                "usage": "/tv <query>",
+                "example": "/tv rai",
+                "icon": "📺",
+                "category": "NETSEARCH",
+                "method": "slash_tv",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": false
+            },
+            {
+                "id": "radio",
+                "aliases": [
+                    "/radio",
+                    "/fm"
+                ],
+                "description": "Searches live Icecast/MP3 radio stations",
+                "usage": "/radio <query>",
+                "example": "/radio jazz",
+                "icon": "📻",
+                "category": "NETSEARCH",
+                "method": "slash_radio",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": false
+            },
+            {
+                "id": "webcam",
+                "aliases": [
+                    "/webcam",
+                    "/cam"
+                ],
+                "description": "Searches live public webcams (cities, ports, weather, space)",
+                "usage": "/webcam <query>",
+                "example": "/webcam tokyo",
+                "icon": "📷",
+                "category": "NETSEARCH",
+                "method": "slash_webcam",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": false
+            },
+            {
+                "id": "canali",
+                "aliases": [
+                    "/canali",
+                    "/channels",
+                    "/lista"
+                ],
+                "description": "Lists all available live TV, radio, webcam, and raw channels (optionally filtered by tv/radio/webcam/keyword)",
+                "usage": "/canali [tv|radio|webcam|query]",
+                "example": "/canali",
+                "icon": "📋",
+                "category": "NETSEARCH",
+                "method": "slash_canali",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": false
+            },
+            {
+                "id": "canale",
+                "aliases": [
+                    "/canale",
+                    "/channel",
+                    "/remote"
+                ],
+                "description": "Controls Live TV/Radio playback (number, channel name, next, prev, stop, mute, vol <0-100>, vlc)",
+                "usage": "/canale <number|name|next|prev|stop|mute|vol 60|vlc>",
+                "example": "/canale 3",
+                "icon": "🎛️",
+                "category": "NETSEARCH",
+                "method": "slash_canale",
                 "args_schema": {
                     "args": "str"
                 },

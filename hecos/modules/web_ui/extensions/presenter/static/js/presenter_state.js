@@ -7,6 +7,7 @@
     window.HBSPresenterState = {
         displayMode: 'collapsed',
         presenterEnabled: true,
+        contextActive: false,
         hideTimeout: null,
         feedHistory: [],
         MAX_FEED: 50,

@@ -101,7 +101,7 @@
                     </button>` : ''}
                 </div>
 
-                <button id="hbs-presenter-toggle" class="hbs-presenter-toggle-btn" onclick="window.Presenter.togglePower(event)" title="Collapse/Expand">
+                <button id="hbs-presenter-toggle" class="hbs-presenter-toggle-btn" onclick="window.Presenter.toggleCollapse(event)" title="Show/Hide Presenter Panel">
                     <i class="fas fa-chevron-up"></i>
                 </button>
             </div>
@@ -405,12 +405,17 @@
                 pwr.title = 'Presenter is OFF (Click to turn ON)';
             }
         }
+    }
+
+    function updateCollapseUI(isCollapsed) {
+        const emb = getEmbedded();
+        if (!emb) return;
         const toggleBtn = emb.querySelector('#hbs-presenter-toggle');
         if (toggleBtn) {
             const icon = toggleBtn.querySelector('i');
             if (icon) {
-                icon.classList.toggle('fa-chevron-up', active);
-                icon.classList.toggle('fa-chevron-down', !active);
+                icon.classList.toggle('fa-chevron-up', !isCollapsed);
+                icon.classList.toggle('fa-chevron-down', !!isCollapsed);
             }
         }
     }
@@ -460,8 +465,8 @@
         const container = document.getElementById('hbs-presenter-embedded');
         if (!container) return;
 
-        if (window.Presenter && typeof window.Presenter.togglePower === 'function') {
-            window.Presenter.togglePower(e);
+        if (window.Presenter && typeof window.Presenter.toggleCollapse === 'function') {
+            window.Presenter.toggleCollapse(e);
         } else {
             container.classList.toggle('collapsed');
         }
@@ -778,6 +783,7 @@
         applyFilters,
         renderPlaybookPill,
         updatePowerUI,
+        updateCollapseUI,
         simAction,
         toggleSubbar,
         isSubbarOpen,

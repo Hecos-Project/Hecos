@@ -6,7 +6,7 @@ Manages Global Presets (Souls) containing personality, inference, voice, and mod
 
 from .schema import SoulProfile, SoulMeta, SoulPersona, SoulInference, SoulVoice, SoulModel
 from .schema import InferencePreset
-from .manager import list_souls, get_soul, save_soul, delete_soul, get_active_soul, get_active_soul_id
+from .manager import list_souls, get_soul, save_soul, duplicate_soul, delete_soul, get_active_soul, get_active_soul_id
 from .inference_presets import list_inference_presets, get_inference_preset, save_inference_preset, delete_inference_preset
 from .merger import merge_soul_into_config
 
@@ -14,7 +14,7 @@ from .merger import merge_soul_into_config
 __all__ = [
     'SoulProfile', 'SoulMeta', 'SoulPersona', 'SoulInference', 'SoulVoice', 'SoulModel',
     'InferencePreset',
-    'list_souls', 'get_soul', 'save_soul', 'delete_soul', 'get_active_soul', 'get_active_soul_id',
+    'list_souls', 'get_soul', 'save_soul', 'duplicate_soul', 'delete_soul', 'get_active_soul', 'get_active_soul_id',
     'list_inference_presets', 'get_inference_preset', 'save_inference_preset', 'delete_inference_preset',
     'merge_soul_into_config'
 ]

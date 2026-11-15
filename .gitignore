@@ -625,18 +625,24 @@ hecos/config/data/net_search*.json
 hecos/hpm/net_search/
 hecos/data/tor/
 hecos/data/searxng/
+hecos/data/stream_hunter_cache/
 hecos/data/search_history.db*
 hecos/modules/web_ui/templates/modules/search.html
 hecos/modules/web_ui/templates/modules/search_viewer.html
 hecos/modules/web_ui/templates/modules/config_netsearch.html
 hecos/modules/web_ui/templates/cyber_map/
+hecos/modules/web_ui/templates/netsearch_hub/
+hecos/modules/web_ui/templates/search_partials/
+hecos/modules/web_ui/templates/stream_hunter/
 hecos/modules/web_ui/static/css/search.css
 hecos/modules/web_ui/static/css/search_*.css
 hecos/modules/web_ui/static/css/cyber_map/
+hecos/modules/web_ui/static/css/stream_hunter/
 hecos/modules/web_ui/static/css/netsearch_panel.css
 hecos/modules/web_ui/static/js/netsearch_panel.js
 hecos/modules/web_ui/static/js/search/
 hecos/modules/web_ui/static/js/cyber_map/
+hecos/modules/web_ui/static/js/stream_hunter/
 hecos/modules/web_ui/static/vendor/cyber_map/
 
 # Telemetry Widget (HPM Package)
@@ -756,3 +762,5 @@ hecos/data/run/
 .env.*
 
 hecos/engines/fish_speech/
+hecos/data/stream_lists.sqlite*
+hecos/data/stream_hunter_cache/

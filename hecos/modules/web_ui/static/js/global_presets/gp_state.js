@@ -8,7 +8,10 @@ window.sfState = {
     sessionHasDraft: false,
     isDirty: false,
     baselineState: null,
-    lastLabResponse: ""
+    lastLabResponse: "",
+    toolsCatalog: null,
+    toolSelectionMode: "all",
+    selectedTools: []
 };
 
 // Backwards-compatible alias for any external callers checking window.soState
@@ -48,7 +51,7 @@ window.hecosConfirm = function(msg, onYes, onNo) {
     }
 };
 
-window.hecosPrompt = function(msg, onSave) {
+window.hecosPrompt = function(msg, onSave, defaultVal = '') {
     const modal = document.getElementById('hecos-prompt-modal');
     const textEl = document.getElementById('hecos-prompt-modal-text');
     const inputEl = document.getElementById('hecos-prompt-modal-input');
@@ -56,9 +59,10 @@ window.hecosPrompt = function(msg, onSave) {
     
     if (modal && textEl && inputEl && yesBtn) {
         textEl.textContent = msg;
-        inputEl.value = '';
+        inputEl.value = typeof defaultVal === 'string' ? defaultVal : '';
         modal.style.display = 'flex';
         inputEl.focus();
+        if (inputEl.value) inputEl.select();
         
         const finish = function() {
             const val = inputEl.value.trim();
@@ -72,7 +76,7 @@ window.hecosPrompt = function(msg, onSave) {
             if (e.key === 'Enter') finish();
         };
     } else {
-        const val = prompt(msg);
+        const val = prompt(msg, typeof defaultVal === 'string' ? defaultVal : '');
         if (val && val.trim() !== '') onSave(val.trim());
     }
 };
@@ -119,7 +123,9 @@ window.sfBuildBaseVirtualSoul = function(cfg) {
             send_personality: cfg.payload_control?.send_personality !== false,
             send_memory: cfg.payload_control?.send_memory !== false,
             include_thinking_in_history: cfg.payload_control?.include_thinking_in_history === true,
-            enable_thinking: cfg.payload_control?.enable_thinking !== false
+            enable_thinking: cfg.payload_control?.enable_thinking !== false,
+            tool_selection_mode: cfg.payload_control?.tool_selection_mode || "all",
+            selected_tools: Array.isArray(cfg.payload_control?.selected_tools) ? [...cfg.payload_control.selected_tools] : []
         },
         voice: {
             tts_engine: ttsEngine || "piper",
@@ -166,20 +172,23 @@ window.sfBuildBaseVirtualSoul = function(cfg) {
 
 window.sfLoadData = async function() {
     try {
-        const [soulsRes, infRes, chatOptRes, audioConfRes] = await Promise.all([
+        const [soulsRes, infRes, chatOptRes, audioConfRes, toolsCatRes] = await Promise.all([
             fetch('/api/souls', { cache: 'no-store' }),
             fetch('/api/souls/presets/inference', { cache: 'no-store' }),
             fetch('/api/chat/options', { cache: 'no-store' }), 
-            fetch('/api/audio/config', { cache: 'no-store' })
+            fetch('/api/audio/config', { cache: 'no-store' }),
+            fetch('/api/tools/catalog', { cache: 'no-store' }).catch(() => null)
         ]);
         
         const soulsData = await soulsRes.json();
         const infData = await infRes.json();
         const optData = await chatOptRes.json();
         const audioConfData = await audioConfRes.json();
+        const toolsCatData = toolsCatRes ? await toolsCatRes.json().catch(() => null) : null;
         
         if (soulsData.ok) window.sfState.souls = soulsData.souls;
         if (infData.ok) window.sfState.inferencePresets = infData.presets;
+        if (toolsCatData && toolsCatData.ok) window.sfState.toolsCatalog = toolsCatData;
         if (audioConfData.ok) {
             window.sfState.audioConfig = audioConfData.config || {};
             window.sfState.xttsPresets = audioConfData.config.xtts_presets || {};

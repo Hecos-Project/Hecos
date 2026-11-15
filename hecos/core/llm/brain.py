@@ -79,7 +79,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         tools = None
         logger.info("[BRAIN] PayloadControl: Tools schema injection DISABLED.")
     else:
-        tools = get_tools_schema()
+        tools = get_tools_schema(payload_control=payload_ctrl, config=config)
     backend_config["payload_control"] = payload_ctrl
     
     response = client.generate(

@@ -300,13 +300,17 @@
     border-radius: 6px;
     margin-left: 2px;
     text-transform: uppercase;
-    animation: dccNewVibrate 1.5s infinite;
-    box-shadow: 0 0 5px rgba(255, 235, 59, 0.5);
+    box-shadow: none;
+}
+
+.dcc-new-badge.dcc-new-flash {
+    /* Flash 3 times when first shown on chat open, then stay calm */
+    animation: dccNewVibrate 0.9s ease-in-out 3 forwards;
 }
 
 @keyframes dccNewVibrate {
     0% { box-shadow: 0 0 0px rgba(255, 235, 59, 0); transform: scale(1); }
-    50% { box-shadow: 0 0 8px rgba(255, 235, 59, 1); transform: scale(1.05); }
+    50% { box-shadow: 0 0 8px rgba(255, 235, 59, 0.95); transform: scale(1.06); }
     100% { box-shadow: 0 0 0px rgba(255, 235, 59, 0); transform: scale(1); }
 }
 

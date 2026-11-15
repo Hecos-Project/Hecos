@@ -380,8 +380,9 @@ window.refreshStatus = async function() {
             const sfInitialized = !!(window.sfState && window.sfState.baselineState);
             const sfToolsEl = document.getElementById('sf-payload-tools');
             if (sfInitialized && sfToolsEl) {
-                // QC loaded — read actual checkbox, never the stale server value
-                window.updateToolModeBadge(sfToolsEl.checked ? 'native' : 'direct');
+                // QC loaded — read actual checkbox + scope mode, never the stale server value
+                const isCustom = (window.sfState?.toolSelectionMode === 'custom');
+                window.updateToolModeBadge(sfToolsEl.checked ? (isCustom ? 'custom' : 'native') : 'direct');
             } else if (!sfInitialized) {
                 // QC not yet loaded — server value is the only source of truth
                 window.updateToolModeBadge(d.tool_mode);
@@ -517,6 +518,12 @@ window.updateToolModeBadge = function(mode) {
         icon.className = 'fas fa-comments';
         label.textContent = 'Chat Only';
         chip.title = 'Chat Only Mode: Tool execution disabled at system level. Click to configure.';
+    } else if (mode === 'custom') {
+        chip.classList.add('tool-mode-native');
+        icon.className = 'fas fa-sliders-h';
+        const selCount = (window.sfState?.selectedTools || []).length;
+        label.textContent = `Tools: Granular${selCount ? ' (' + selCount + ')' : ''}`;
+        chip.title = 'Granular Tool Selection Mode: Only selected modules/tools are exposed to the LLM in this chat/preset. Click to configure.';
     } else {
         chip.classList.add('tool-mode-native');
         icon.className = 'fas fa-toolbox';

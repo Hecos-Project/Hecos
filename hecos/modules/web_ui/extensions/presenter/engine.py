@@ -103,7 +103,13 @@ _engine_instance = None
 
 
 def get_engine() -> PresenterEngine:
+    import sys
     global _engine_instance
+    shared = getattr(sys, "_hecos_presenter_engine", None)
+    if shared is not None:
+        _engine_instance = shared
+        return _engine_instance
     if _engine_instance is None:
         _engine_instance = PresenterEngine()
+    setattr(sys, "_hecos_presenter_engine", _engine_instance)
     return _engine_instance

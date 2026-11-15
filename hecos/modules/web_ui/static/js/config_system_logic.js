@@ -217,6 +217,14 @@ async function refreshModels() {
       // (called by populateUI inside initAll) sees the correct model list.
       window.sysOptions = window.sysOptions || {};
       window.sysOptions.ollama_models = ollamaModels;
+      if (window.cfg && window.cfg.backend && window.cfg.backend.ollama) {
+        const avail = {};
+        ollamaModels.forEach((m, i) => { avail[String(i + 1)] = m; });
+        window.cfg.backend.ollama.available_models = avail;
+      }
+      if (typeof window.invalidateRichModelsCache === 'function') {
+        window.invalidateRichModelsCache();
+      }
       if (data.cloud_models) {
         window.sysOptions.cloud_models = data.cloud_models;
         window.sysOptions.all_cloud = Object.values(data.cloud_models).flat();

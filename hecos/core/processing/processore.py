@@ -44,8 +44,9 @@ _PRESERVED_TOKENS = ["[CAMERA_SNAPSHOT_REQUEST]"]
 _EXECUTED_SLASH_CMD_RE = (
     r'(?m)^\s*/(?:img|image|photo|foto|search|netsearch|cerca|websearch|dark|onion|tor_search|'
     r'media|find_media|videos|video|cerca_video|images|immagini|foto_web|cerca_immagini|'
-    r'files|file|cerca_file|fetch|read_url|osint|whois_user|pdf|makepdf|documento|'
-    r'generate_pdf|DOCS__generate_pdf|modify_document|DOCS__modify_document|'
+    r'files|file|cerca_file|fetch|read_url|osint|whois_user|'
+    r'streams|live|tv|iptv|radio|fm|webcam|cam|canale|channel|remote|canali|channels|lista|'
+    r'pdf|makepdf|documento|generate_pdf|DOCS__generate_pdf|modify_document|DOCS__modify_document|'
     r'list_documents|DOCS__list_documents|optimize_layout|DOCS__optimize_layout)\b[^\r\n]*(?:\r?\n)?'
 )
 
@@ -70,6 +71,13 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
         if clean_m and clean_m not in _collected_alerts:
             _collected_alerts.append(clean_m)
 
+    # Collect [[STREAM_STATUS]]...[[/STREAM_STATUS]] blocks so they render in UI without being spoken by TTS
+    _collected_stream_badges = []
+    for match in _re.findall(r'\[\[STREAM_STATUS\]\](.*?)\[\[/STREAM_STATUS\]\]', base_text, flags=_re.DOTALL):
+        clean_s = match.strip()
+        if clean_s and clean_s not in _collected_stream_badges:
+            _collected_stream_badges.append(clean_s)
+
     if tool_results:
         for r in tool_results:
             out = r.get('output', '')
@@ -79,12 +87,18 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
                     if clean_m and clean_m not in _collected_alerts:
                         _collected_alerts.append(clean_m)
 
-    # Strip raw [[IGEN_ALERT]]...[[/IGEN_ALERT]] wrappers from base_text before bracket regex & TTS
+    # Strip raw [[IGEN_ALERT]] / [[STREAM_STATUS]] wrappers from base_text before bracket regex & TTS
     base_text = _re.sub(r'\[\[IGEN_ALERT\]\].*?\[\[/IGEN_ALERT\]\]', '', base_text, flags=_re.DOTALL).strip()
+    base_text = _re.sub(r'\[\[STREAM_STATUS\]\].*?\[\[/STREAM_STATUS\]\]', '', base_text, flags=_re.DOTALL).strip()
 
-    # Strip executed slash command lines from the visible text when tools were executed
+    # Strip executed slash command lines and inline MODULE__method(...) calls when tools were executed
     if tool_results:
         base_text = _re.sub(_EXECUTED_SLASH_CMD_RE, '', base_text).strip()
+        try:
+            from hecos.core.processing.parsers.legacy_tag_parser import strip_module_call_syntax
+            base_text = strip_module_call_syntax(base_text)
+        except Exception:
+            pass
 
     # Temporarily protect special tokens from regex stripping
     _placeholders = {}
@@ -93,6 +107,13 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
         _placeholders[placeholder] = tok
         base_text = base_text.replace(tok, placeholder)
     
+    # Protect fenced and inline code blocks first so Python/JS brackets & slices are never corrupted
+    _code_blocks = _re.findall(r'```[\s\S]*?```|`[^`\r\n]+`', base_text)
+    for c_idx, c_block in enumerate(_code_blocks):
+        c_marker = f"__CODEBLOCK_{c_idx}__"
+        _placeholders[c_marker] = c_block
+        base_text = base_text.replace(c_block, c_marker, 1)
+
     # Protect [[IMG:...]] tags from the regex below
     _img_tags = _re.findall(r'\[\[IMG:[^\]]+\]\]', base_text)
     for j, img_tag in enumerate(_img_tags):
@@ -114,9 +135,19 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
         _placeholders[marker] = md_link
         base_text = base_text.replace(md_link, marker, 1)
     
-    # Strip legacy tool tags (e.g. [SYSTEM: time], [DOCS: ...])
-    base_video = _re.sub(r'\[.*?:.*?\]', '', base_text, flags=_re.DOTALL).strip()
-    base_video = _re.sub(r'\[.*?\]', '', base_video).strip()
+    # Strip legacy tool tags (e.g. [SYSTEM: time], [DOCS: ...]) while leaving non-module brackets untouched
+    base_video = _re.sub(r'\[[A-Za-z][A-Za-z0-9_]*:[^\]]*?\]', '', base_text, flags=_re.DOTALL).strip()
+    base_video = _re.sub(r'\[[A-Za-z][A-Za-z0-9_]*\]', '', base_video).strip()
+
+    # Strip any orphan/hallucinated Live Stream status lines or dangling > 📺 blockquotes
+    # (genuine stream status badges are collected via [[STREAM_STATUS]] and appended below)
+    base_video = _re.sub(
+        r'(?m)^\s*(?:>\s*)?(?:📺|⏹️|⏯️)\s*(?:Tuned to[^\r\n]*|Live Stream stopped[^\r\n]*|Playback (?:paused|resumed)[^\r\n]*)?\s*(?:\r?\n)?',
+        '',
+        base_video,
+    ).strip()
+    base_video = _re.sub(r'(?m)^\s*>\s*(?:\r?\n|$)', '', base_video).strip()
+    base_video = _re.sub(r'\n{3,}', '\n\n', base_video).strip()
     
     # Restore preserved tokens, IMG tags, HSEARCH tags, and Markdown links
     for placeholder, tok in _placeholders.items():
@@ -126,7 +157,7 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
         if _collected_alerts:
             base_video = ""
         elif tool_results:
-            base_video = f"✅ {translator.t('command_executed_info', info='Tools Eseguiti')}"
+            base_video = f"✅ {translator.t('command_executed_info', info='Tools Executed')}"
         else:
             base_video = translator.t('model_no_response_error')
     
@@ -149,11 +180,17 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
                     if img_tag not in video_response:
                         video_response = f"{video_response}\n\n{img_tag}".strip()
 
-    # Append any diagnostic [[IGEN_ALERT]] banners as formatted blockquotes
+    # Append any diagnostic [[IGEN_ALERT]] or verified [[STREAM_STATUS]] banners as formatted blockquotes
     if _collected_alerts:
         for alert_body in _collected_alerts:
             formatted_block = _format_igen_alert_blockquote(alert_body)
             if formatted_block and formatted_block not in video_response:
                 video_response = f"{video_response}\n\n{formatted_block}".strip()
+
+    if _collected_stream_badges:
+        for badge_body in _collected_stream_badges:
+            formatted_badge = _format_igen_alert_blockquote(badge_body)
+            if formatted_badge and formatted_badge not in video_response:
+                video_response = f"{video_response}\n\n{formatted_badge}".strip()
                 
     return video_response, clean_voice_text

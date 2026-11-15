@@ -18,7 +18,7 @@ from hecos.core.logging import logger
 
 from hecos.core.global_presets import (
 
-    list_souls, get_soul, save_soul, delete_soul, SoulProfile,
+    list_souls, get_soul, save_soul, duplicate_soul, delete_soul, SoulProfile,
 
     list_inference_presets, get_inference_preset, save_inference_preset, delete_inference_preset, InferencePreset
 
@@ -95,6 +95,42 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
             logger.error(f"[GlobalPresets] Error saving soul: {e}")
 
             return jsonify({"ok": False, "error": str(e)}), 400
+
+
+
+    @app.route("/api/souls/<soul_id>/duplicate", methods=["POST"])
+
+    def api_duplicate_soul(soul_id):
+
+        try:
+
+            data = request.json or {}
+
+            new_name = (data.get("name") or "").strip() or None
+
+            new_id = (data.get("id") or "").strip() or None
+
+            cloned = duplicate_soul(soul_id, new_name=new_name, new_id=new_id)
+
+            if cloned:
+
+                return jsonify({
+
+                    "ok": True,
+
+                    "soul_id": cloned.meta.id,
+
+                    "soul": cloned.model_dump()
+
+                })
+
+            return jsonify({"ok": False, "error": "Source preset not found"}), 404
+
+        except Exception as e:
+
+            logger.error(f"[GlobalPresets] Error duplicating soul {soul_id}: {e}")
+
+            return jsonify({"ok": False, "error": str(e)}), 500
 
 
 
@@ -219,6 +255,14 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                             if soul.payload.enable_thinking is not None:
 
                                 p_ctrl["enable_thinking"] = soul.payload.enable_thinking
+
+                            p_ctrl["tool_selection_mode"] = soul.payload.tool_selection_mode or "all"
+
+                            p_ctrl["selected_tools"] = (
+                                list(soul.payload.selected_tools)
+                                if soul.payload.selected_tools is not None
+                                else []
+                            )
 
 
 
@@ -787,6 +831,19 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
             return jsonify({"ok": False, "error": str(e)}), 500
 
 
+
+    # ── Dynamic Tools Catalog (for Soul Forge granular tool selector) ──
+
+    @app.route("/api/tools/catalog", methods=["GET"])
+    def api_get_tools_catalog():
+        try:
+            from hecos.core.system.module_docs import get_available_tools_catalog
+            cfg = cfg_mgr.config if cfg_mgr else None
+            catalog = get_available_tools_catalog(config=cfg)
+            return jsonify({"ok": True, **catalog})
+        except Exception as e:
+            logger.error(f"[GlobalPresets] Error building tools catalog: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
 
     # ── Inference Presets ──
 

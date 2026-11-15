@@ -5,6 +5,7 @@ and lifecycle helpers for the Hecos Agentic Loop.
 """
 
 import json
+import os
 import re
 import threading
 from typing import Any, Dict, List, Optional, Tuple
@@ -195,7 +196,13 @@ def eval_early_termination(
     Returns:
         (should_terminate: bool, reason_message: str)
     """
-    has_text = bool(extracted_text and len(extracted_text.strip()) > 10)
+    cleaned_for_len = str(extracted_text or "")
+    try:
+        from hecos.core.processing.parsers.legacy_tag_parser import strip_module_call_syntax
+        cleaned_for_len = strip_module_call_syntax(cleaned_for_len)
+    except Exception:
+        pass
+    has_text = bool(cleaned_for_len and len(cleaned_for_len.strip()) > 10)
     has_generated_img = any("[[IMG:" in str(r.get("output", "")) for r in accumulated_tool_results)
 
     image_limit = getattr(state_manager, "requested_image_limit", 1) if state_manager else 1
@@ -211,10 +218,20 @@ def eval_early_termination(
     )
     doc_satisfied = (not wants_doc) or has_doc
 
+    def _is_err(out_str: str) -> bool:
+        s = out_str.lstrip()
+        return s.startswith(("Error:", "⚠️", "[SYSTEM ERROR"))
+
     has_search_card = any(
-        r.get("tag") == "NETSEARCH"
-        or "[[HSEARCH:" in str(r.get("output", ""))
-        or "[[HMEDIA:" in str(r.get("output", ""))
+        (not _is_err(str(r.get("output", ""))))
+        and (
+            "[[HSEARCH:" in str(r.get("output", ""))
+            or "[[HMEDIA:" in str(r.get("output", ""))
+            or str(r.get("output", "")).lstrip().startswith((
+                "📺 Tuned to",
+                "⏹️ Live Stream stopped",
+            ))
+        )
         for r in accumulated_tool_results
     )
 
@@ -239,6 +256,117 @@ def eval_early_termination(
 
 # --- 5. RESPONSE FINALIZATION & SAFETY FORMATTER ---
 
+# --- 5. FILE CREATION TRACKING, ANTI-HALLUCINATION GUARD & STANDARDIZED FINAL RESPONSE ---
+
+_FILE_CLAIM_RE = re.compile(
+    r'(?:\b(?:i(?:\s+have|\'ve)?\s+(?:already\s+)?(?:created|written|generated|saved|patched|updated)'
+    r'|files?\s+(?:created|written|generated|saved)'
+    r'|ho\s+(?:gi[aà]\s+)?(?:creato|scritto|generato|salvato|iniziato\s+a\s+creare)'
+    r'|file\s+(?:creati|scritti|salvati))\b'
+    r'|`?[A-Za-z0-9_./\\-]+\.(?:py|js|ts|jsx|tsx|json|ya?ml|html?|css|sh|bat|md|txt)`?'
+    r'(?:.{0,80}\b(?:created|written|saved|creato|creati|salvato|pronto\s+per|ready)\b))',
+    re.IGNORECASE | re.DOTALL,
+)
+
+_NEGATIVE_FILE_CLAIM_RE = re.compile(
+    r'\b(?:haven\'t|have\s+not|did\s+not|didn\'t|no\s+files?\s+(?:were\s+)?(?:created|written|saved)'
+    r'|non\s+ho\s+(?:ancora\s+)?(?:creato|scritto|salvato)|nessun\s+file)\b',
+    re.IGNORECASE,
+)
+
+
+def extract_verified_files_from_results(accumulated_tool_results: List[Dict[str, Any]]) -> List[Tuple[str, str, str]]:
+    """
+    Scans EXECUTOR tool results and returns a deduplicated list of verified files
+    that genuinely exist on disk: [(abs_path, file_uri, basename), ...].
+    """
+    verified: List[Tuple[str, str, str]] = []
+    seen_lower = set()
+    uri_re = re.compile(r'\|\s*URI:\s*(file:///[^\r\n]+)', re.IGNORECASE)
+    legacy_re = re.compile(r'\[EXECUTOR\]\s+File\s+(?:written|patched)[^:]*:\s*([^\r\n(]+)', re.IGNORECASE)
+
+    for res in accumulated_tool_results or []:
+        tag = str(res.get("tag", "")).upper()
+        if tag != "EXECUTOR":
+            continue
+        out = str(res.get("output", "") or "")
+        candidates: List[str] = []
+        for m in uri_re.finditer(out):
+            uri_val = m.group(1).strip()
+            raw_path = uri_val[8:] if uri_val.lower().startswith("file:///") else uri_val
+            candidates.append(raw_path.replace("/", os.sep))
+        if not candidates:
+            for m in legacy_re.finditer(out):
+                candidates.append(m.group(1).strip())
+
+        for cand in candidates:
+            abs_p = os.path.abspath(cand)
+            key = abs_p.lower()
+            if key in seen_lower:
+                continue
+            if os.path.isfile(abs_p):
+                seen_lower.add(key)
+                file_uri = "file:///" + abs_p.replace("\\", "/")
+                verified.append((abs_p, file_uri, os.path.basename(abs_p)))
+    return verified
+
+
+def are_executor_write_tools_enabled(cfg: Optional[dict]) -> bool:
+    """Returns True if EXECUTOR file-writing tools are currently exposed in config/payload_control."""
+    if not isinstance(cfg, dict):
+        return True
+    if cfg.get("disable_tools", False):
+        return False
+    pctrl = cfg.get("payload_control") or {}
+    if not pctrl.get("send_tools", True):
+        return False
+    plugins_cfg = cfg.get("plugins") or {}
+    if not plugins_cfg.get("EXECUTOR", {}).get("enabled", True):
+        return False
+    if not plugins_cfg.get("EXECUTOR", {}).get("llm_callable", True):
+        return False
+    mode = str(pctrl.get("tool_selection_mode") or "all").strip().lower()
+    if mode != "custom":
+        return True
+    selected = {str(x).strip() for x in (pctrl.get("selected_tools") or [])}
+    return bool(selected & {"EXECUTOR__*", "EXECUTOR__write_file", "EXECUTOR__patch_file"})
+
+
+def detect_unexecuted_file_claim(text: Optional[str]) -> bool:
+    """Detects when plain assistant text claims files/modules were created on disk without tool execution."""
+    if not text or not isinstance(text, str):
+        return False
+    if _NEGATIVE_FILE_CLAIM_RE.search(text):
+        return False
+    has_claim = bool(_FILE_CLAIM_RE.search(text))
+    if not has_claim:
+        return False
+    # Require concrete file/folder evidence (e.g. main.py, cli/, utils/, file path) to avoid conversational false positives
+    has_artifact_ref = bool(re.search(
+        r'(?:[A-Za-z0-9_.-]+\.(?:py|js|ts|jsx|tsx|json|ya?ml|html?|css|sh|bat|md|txt)\b|\b(?:cli|core|utils|src|tests)/)',
+        text,
+        re.IGNORECASE,
+    ))
+    return has_artifact_ref
+
+
+def append_verified_file_links(text: str, verified_files: List[Tuple[str, str, str]]) -> str:
+    """Appends real Markdown file links for disk-verified files missing from the response."""
+    if not verified_files:
+        return text
+    existing_lower = text.lower()
+    missing_links: List[str] = []
+    for abs_p, file_uri, fname in verified_files:
+        uri_slash = abs_p.replace("\\", "/").lower()
+        if file_uri.lower() in existing_lower or uri_slash in existing_lower:
+            continue
+        missing_links.append(f"- [📄 {fname}]({file_uri})")
+    if not missing_links:
+        return text
+    section = "### Verified Files Created on Disk\n" + "\n".join(missing_links)
+    return f"{text.rstrip()}\n\n{section}".strip()
+
+
 def finalize_response(
     extracted_text: Optional[str],
     accumulated_tool_results: List[Dict[str, Any]],
@@ -246,6 +374,7 @@ def finalize_response(
     voice_status: bool,
     think_block: Optional[str] = None,
     missing_igen_detected: bool = False,
+    unverified_file_notice: Optional[str] = None,
 ) -> Tuple[str, str]:
     """
     Standardizes the final response formatting across all termination paths:
@@ -289,6 +418,13 @@ def finalize_response(
                 "[[/IGEN_ALERT]]"
             ),
         })
+
+    # Append real clickable links for all verified disk files created/patched by EXECUTOR
+    verified_files = extract_verified_files_from_results(accumulated_tool_results)
+    if verified_files:
+        text = append_verified_file_links(text, verified_files)
+    elif unverified_file_notice:
+        text = f"{text.rstrip()}\n\n{unverified_file_notice}".strip()
 
     # Append UI images and rich media tokens
     text = MediaInterceptor.append_ui_media_to_text(text, accumulated_tool_results)

@@ -25,12 +25,26 @@ window.sfSaveDraftToSession = async function() {
 };
 
 window.sfSaveAsNewSoul = function() {
-    window.hecosPrompt("Enter name for the new Global Preset:", async function(name) {
+    window.hecosPrompt("Enter name for the new blank Global Preset:", async function(name) {
         if (!name) return;
         
-        const id = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-        const data = window.sfCollectUIState();
-        data.meta = { id: id, name: name, icon: "⚡" };
+        const baseId = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'custom_preset';
+        const existingIds = new Set((window.sfState.souls || []).map(s => s.meta?.id).filter(Boolean));
+        let id = baseId;
+        let suffix = 2;
+        while (existingIds.has(id)) {
+            id = `${baseId}_${suffix}`;
+            suffix += 1;
+        }
+        // Build a clean, system-agnostic SoulProfile (no overrides carried over from active UI state)
+        const data = {
+            meta: { id: id, name: name, icon: "🧠", description: "" },
+            persona: {},
+            model: {},
+            inference: {},
+            voice: {},
+            payload: {}
+        };
         
         try {
             const res = await fetch('/api/souls', {
@@ -41,13 +55,59 @@ window.sfSaveAsNewSoul = function() {
             if (res.ok) {
                 await window.sfLoadData();
                 await window.sfSelectSessionSoul(id);
-                if (window.showToast) window.showToast(`Global Preset "${name}" created!`, "success");
+                const msgEl = document.getElementById('sf-status-msg');
+                if (msgEl) {
+                    msgEl.textContent = `✓ Created blank preset "${name}".`;
+                    clearTimeout(window._sfStatusClearTimer);
+                    window._sfStatusClearTimer = setTimeout(() => { if (msgEl) msgEl.textContent = ""; }, 3000);
+                }
+                if (window.showToast) window.showToast(`Blank Global Preset "${name}" created!`, "success");
             }
         } catch(e) {}
     });
 };
 
 window.soSaveAsNewSoul = window.sfSaveAsNewSoul;
+
+window.sfDuplicateSoul = function() {
+    const soulId = window.sfState.activeSoulId;
+    if (!soulId) {
+        if (window.showToast) window.showToast("Select a Global Preset to duplicate first.", "error");
+        return;
+    }
+    const soulObj = (window.sfState.souls || []).find(s => s.meta?.id === soulId);
+    const sourceName = soulObj?.meta?.name || soulId;
+    const suggestedName = `${sourceName} (Copy)`;
+
+    window.hecosPrompt("Enter name for the duplicated Global Preset:", async function(newName) {
+        if (!newName) return;
+        try {
+            const res = await fetch(`/api/souls/${encodeURIComponent(soulId)}/duplicate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName })
+            });
+            const data = await res.json();
+            if (res.ok && data.ok && data.soul_id) {
+                await window.sfLoadData();
+                await window.sfSelectSessionSoul(data.soul_id);
+                const msgEl = document.getElementById('sf-status-msg');
+                if (msgEl) {
+                    msgEl.textContent = `✓ Duplicated "${sourceName}" as "${newName}".`;
+                    clearTimeout(window._sfStatusClearTimer);
+                    window._sfStatusClearTimer = setTimeout(() => { if (msgEl) msgEl.textContent = ""; }, 3500);
+                }
+                if (window.showToast) window.showToast(`Global Preset "${newName}" duplicated!`, "success");
+            } else {
+                if (window.showToast) window.showToast(data.error || "Failed to duplicate Global Preset.", "error");
+            }
+        } catch(e) {
+            if (window.showToast) window.showToast("Failed to duplicate Global Preset.", "error");
+        }
+    }, suggestedName);
+};
+
+window.soDuplicateSoul = window.sfDuplicateSoul;
 
 window.sfSaveInlineToActive = async function() {
     const soulId = window.sfState.activeSoulId;

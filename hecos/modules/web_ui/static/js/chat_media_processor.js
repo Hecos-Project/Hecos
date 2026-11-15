@@ -137,9 +137,16 @@ window.processAiMedia = function(html) {
       const ext = (fileName.match(/\.([a-z0-9]+)$/i) || ['', ''])[1].toLowerCase();
 
       const fileIconMap = { pdf: 'fa-file-pdf', html: 'fa-file-code', htm: 'fa-file-code',
+                            py: 'fa-file-code', js: 'fa-file-code', ts: 'fa-file-code',
+                            jsx: 'fa-file-code', tsx: 'fa-file-code', css: 'fa-file-code',
+                            json: 'fa-file-code', yaml: 'fa-file-code', yml: 'fa-file-code',
+                            toml: 'fa-file-code', sh: 'fa-file-code', bat: 'fa-file-code',
+                            sql: 'fa-file-code',
                             doc: 'fa-file-word', docx: 'fa-file-word', txt: 'fa-file-alt',
                             md: 'fa-file-alt', csv: 'fa-file-csv' };
       const fileColorMap = { pdf: '#e74c3c', html: '#3498db', htm: '#3498db',
+                             py: '#f59e0b', js: '#facc15', ts: '#38bdf8',
+                             json: '#34d399', yaml: '#a78bfa', yml: '#a78bfa',
                              doc: '#2980b9', docx: '#2980b9' };
       const iconClass = fileIconMap[ext] || 'fa-file-alt';
       const iconColor = fileColorMap[ext] || 'var(--accent)';

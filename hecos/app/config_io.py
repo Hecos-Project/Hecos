@@ -101,12 +101,26 @@ def save_config(yaml_path, plugins_path, widgets_path, config_dict, project_root
     return True, system_model, plugins_model, widgets_model
 
 
+_ATOMIC_DICT_KEYS = {"available_models", "available_personalities", "custom_replacements"}
+
+
 def update_config_logic(current_config, new_data):
     import copy
     temp_config = copy.deepcopy(current_config)
+    preserve_avail = not (isinstance(new_data, dict) and new_data.pop("_update_available_models", False))
+    saved_ollama_avail = copy.deepcopy(current_config.get("backend", {}).get("ollama", {}).get("available_models"))
+    saved_kobold_avail = copy.deepcopy(current_config.get("backend", {}).get("kobold", {}).get("available_models"))
+
     if isinstance(new_data, dict) and "hpm" in new_data and isinstance(new_data["hpm"], dict):
         new_data["hpm"].pop("github_token", None)
     deep_update(temp_config, new_data)
+
+    if preserve_avail:
+        if saved_ollama_avail is not None and isinstance(temp_config.get("backend", {}).get("ollama"), dict):
+            temp_config["backend"]["ollama"]["available_models"] = saved_ollama_avail
+        if saved_kobold_avail is not None and isinstance(temp_config.get("backend", {}).get("kobold"), dict):
+            temp_config["backend"]["kobold"]["available_models"] = saved_kobold_avail
+
     if "hpm" in temp_config and isinstance(temp_config["hpm"], dict):
         temp_config["hpm"]["github_token"] = ""
     
@@ -131,8 +145,11 @@ def update_config_logic(current_config, new_data):
     return temp_config, new_system, new_plugins, new_widgets
 
 def deep_update(base: dict, patch: dict):
+    import copy
     for k, v in patch.items():
-        if isinstance(v, dict) and k in base and isinstance(base[k], dict):
+        if k in _ATOMIC_DICT_KEYS and isinstance(v, dict):
+            base[k] = copy.deepcopy(v)
+        elif isinstance(v, dict) and k in base and isinstance(base[k], dict):
             deep_update(base[k], v)
         else:
             base[k] = v

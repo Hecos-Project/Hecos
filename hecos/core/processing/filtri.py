@@ -111,9 +111,10 @@ def clean_for_video(text):
     if not text:
         return ""
     
-    # Protect UI media tokens and Markdown links before applying bracket/asterisk filters
+    # Protect fenced/inline code blocks, UI media tokens, and Markdown links before applying bracket/asterisk filters
     _protected = {}
-    for idx, tok in enumerate(re.findall(r'\[\[(?:IMG|HSEARCH|HMEDIA):[^\]]+\]\]|!?\[[^\]]*\]\([^\)]+\)', text)):
+    _prot_pattern = r'```[\s\S]*?```|`[^`\r\n]+`|\[\[(?:IMG|HSEARCH|HMEDIA):[^\]]+\]\]|!?\[[^\]]*\]\([^\)]+\)'
+    for idx, tok in enumerate(re.findall(_prot_pattern, text)):
         marker = f"__VID_MEDIA_{idx}__"
         _protected[marker] = tok
         text = text.replace(tok, marker, 1)

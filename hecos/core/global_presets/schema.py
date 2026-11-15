@@ -103,6 +103,8 @@ class SoulModel(BaseModel):
 
 class SoulPayload(BaseModel):
     send_tools: Optional[bool] = None
+    tool_selection_mode: Optional[str] = None  # "all" (default) | "custom"
+    selected_tools: Optional[List[str]] = None  # ["EXECUTOR__*", "NETSEARCH__web_search", ...]
     send_personality: Optional[bool] = None
     send_memory: Optional[bool] = None
     include_thinking_in_history: Optional[bool] = None

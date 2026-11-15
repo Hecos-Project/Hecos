@@ -45,6 +45,10 @@
                             title="Rename selected preset" style="padding: 5px 9px;">
                             <i class="fas fa-pencil-alt"></i>
                         </button>
+                        <button id="sf-duplicate-preset-btn" class="btn btn-secondary btn-sm" onclick="window.sfDuplicateSoul()"
+                            title="Duplicate selected preset" style="padding: 5px 9px;">
+                            <i class="fas fa-copy"></i>
+                        </button>
                         <button class="btn btn-danger btn-sm" onclick="window.sfDeleteSoul()"
                             title="Delete selected preset" style="padding: 5px 9px;">
                             <i class="fas fa-trash"></i>
@@ -59,7 +63,7 @@
                     <i class="fas fa-save"></i> <span>Update Preset</span>
                 </button>
                 <button id="sf-new-preset-btn" class="btn btn-secondary btn-sm sf-promo-btn" onclick="window.sfSaveAsNewSoul()"
-                    title="Save current settings as new Global Preset">
+                    title="Create a new blank, system-agnostic Global Preset from scratch">
                     <i class="fas fa-plus"></i> <span>New Preset</span>
                 </button>
                 <button id="sf-set-default-btn" class="btn btn-info btn-sm sf-promo-btn" onclick="window.sfSetAsGlobalDefault()"
@@ -504,9 +508,9 @@
                             <div class="sf-toggle-text">
                                 <span class="sf-toggle-title">
                                     Function Calling Tools (JSON Schemas)
-                                    <span class="sf-toggle-badge">~25k Tokens</span>
+                                    <span class="sf-toggle-badge" id="sf-payload-tools-badge">Auto</span>
                                 </span>
-                                <span class="sf-toggle-desc">Send plugin functions to LLM. Disable to reduce prompt tokens and maximize speed.</span>
+                                <span class="sf-toggle-desc">Per-chat/preset LLM prompt exposure. Does not affect system <em>Lazy Load</em> (startup/RAM in Package Manager).</span>
                             </div>
                         </div>
                         <div class="sf-switch">
@@ -515,12 +519,43 @@
                         </div>
                     </label>
 
+                    <div id="sf-tools-scope-panel" class="sf-tools-scope-panel">
+                        <div class="sf-tools-mode-row">
+                            <div class="sf-tools-mode-info">
+                                <span class="sf-tools-mode-title"><i class="fas fa-sliders-h"></i> Payload Tool Selection</span>
+                                <span class="sf-tools-mode-hint">Choose which modules/tools the LLM can see in this context — system packages stay untouched.</span>
+                            </div>
+                            <div class="sf-tools-mode-switch" role="group" aria-label="Tool selection mode">
+                                <button type="button" class="sf-tools-mode-btn active" id="sf-tools-mode-all" data-mode="all" onclick="window.sfSetToolSelectionMode('all')">All (Auto)</button>
+                                <button type="button" class="sf-tools-mode-btn" id="sf-tools-mode-custom" data-mode="custom" onclick="window.sfSetToolSelectionMode('custom')">Granular Selection</button>
+                            </div>
+                        </div>
+                        <div id="sf-tools-custom-body" class="sf-tools-custom-body" style="display: none;">
+                            <div class="sf-tools-toolbar">
+                                <input type="search" id="sf-tools-search" class="sf-tools-search" placeholder="Filter modules or tools (e.g. executor, netsearch, write)..." oninput="window.sfFilterToolsTree()">
+                                <div class="sf-tools-toolbar-actions">
+                                    <button type="button" class="sf-tools-mini-btn" onclick="window.sfSelectAllTools(true)">All</button>
+                                    <button type="button" class="sf-tools-mini-btn" onclick="window.sfSelectAllTools(false)">None</button>
+                                    <button type="button" class="sf-tools-mini-btn" id="sf-tools-refresh-btn" title="Reload installed packages catalog" onclick="window.sfRefreshToolsCatalog(true)"><i class="fas fa-sync-alt"></i></button>
+                                </div>
+                                <span id="sf-tools-live-stats" class="sf-tools-live-stats">0 / 0 tools · ~0 tok</span>
+                            </div>
+                            <div id="sf-tools-orphan-note" class="sf-tools-orphan-note" style="display: none;"></div>
+                            <div id="sf-tools-tree" class="sf-tools-tree">
+                                <div class="sf-tools-loading">Loading tools catalog...</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <label class="sf-toggle-row">
                         <div class="sf-toggle-info">
                             <div class="sf-toggle-icon" style="color: #a78bfa; background: rgba(167, 139, 250, 0.1);"><i class="fas fa-masks-theater"></i></div>
                             <div class="sf-toggle-text">
-                                <span class="sf-toggle-title">Soul &amp; Personality Directives</span>
-                                <span class="sf-toggle-desc">Inject active personality traits and tone directives. Disable for neutral LLM mode.</span>
+                                <span class="sf-toggle-title">
+                                    Soul &amp; Personality Directives
+                                    <span class="sf-toggle-badge">Context Injection</span>
+                                </span>
+                                <span class="sf-toggle-desc">Inject personality traits and tone into the system prompt (does not toggle <code>PERSONALITY</code> action tools). Disable for neutral LLM mode.</span>
                             </div>
                         </div>
                         <div class="sf-switch">
@@ -533,8 +568,11 @@
                         <div class="sf-toggle-info">
                             <div class="sf-toggle-icon" style="color: #34d399; background: rgba(52, 211, 153, 0.1);"><i class="fas fa-brain"></i></div>
                             <div class="sf-toggle-text">
-                                <span class="sf-toggle-title">Memory Vault &amp; History</span>
-                                <span class="sf-toggle-desc">Include conversation history and memories. Disable for isolated single-turn queries.</span>
+                                <span class="sf-toggle-title">
+                                    Memory Vault &amp; History
+                                    <span class="sf-toggle-badge">Context Injection</span>
+                                </span>
+                                <span class="sf-toggle-desc">Attach conversation history, memories, and RAG context (does not toggle <code>MEMORY</code> action tools). Disable for isolated single-turn queries.</span>
                             </div>
                         </div>
                         <div class="sf-switch">

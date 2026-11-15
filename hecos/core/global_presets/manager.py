@@ -4,6 +4,7 @@ CRUD operations for SoulProfiles (Global Presets).
 """
 
 import os
+import re
 import glob
 from typing import Dict, List, Optional
 from datetime import datetime
@@ -54,6 +55,41 @@ def save_soul(soul: SoulProfile) -> bool:
         
     filepath = os.path.join(GLOBAL_PRESETS_DIR, f"{soul.meta.id}.global_preset.yaml")
     return save_yaml(filepath, soul)
+
+def duplicate_soul(
+    source_soul_id: str,
+    new_name: Optional[str] = None,
+    new_id: Optional[str] = None,
+) -> Optional[SoulProfile]:
+    """Creates and saves a deep copy of an existing SoulProfile under a unique ID."""
+    source = get_soul(source_soul_id)
+    if not source:
+        return None
+
+    target_name = (new_name or f"{source.meta.name} (Copy)").strip()
+    if not target_name:
+        target_name = f"{source.meta.name} (Copy)"
+
+    raw_base = (new_id or target_name).lower()
+    base_id = re.sub(r"[^a-z0-9]+", "_", raw_base).strip("_") or f"{source_soul_id}_copy"
+
+    # Guarantee unique ID on disk so duplication never overwrites an existing preset
+    existing_ids = {s.meta.id for s in list_souls()}
+    candidate_id = base_id
+    suffix = 2
+    while candidate_id in existing_ids:
+        candidate_id = f"{base_id}_{suffix}"
+        suffix += 1
+
+    cloned = source.model_copy(deep=True)
+    cloned.meta.id = candidate_id
+    cloned.meta.name = target_name
+    cloned.meta.created_at = ""
+    cloned.meta.updated_at = ""
+
+    if save_soul(cloned):
+        return cloned
+    return None
 
 def delete_soul(soul_id: str) -> bool:
     """Deletes a SoulProfile from disk."""

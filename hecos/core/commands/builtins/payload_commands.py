@@ -150,17 +150,20 @@ def _cmd_payload(raw_args_str: str = "", config=None, session_id=None, **kwargs)
 
     cfg_p_ctrl = config.get("payload_control", {}) if isinstance(config, dict) else {}
     tools_on = p_ctrl.get("send_tools", cfg_p_ctrl.get("send_tools", True))
+    tool_sel_mode = p_ctrl.get("tool_selection_mode", cfg_p_ctrl.get("tool_selection_mode", "all"))
+    selected_tools = p_ctrl.get("selected_tools", cfg_p_ctrl.get("selected_tools", [])) or []
     soul_on = p_ctrl.get("send_personality", cfg_p_ctrl.get("send_personality", True))
     mem_on = p_ctrl.get("send_memory", cfg_p_ctrl.get("send_memory", True))
 
     badge_tools = "🟢 ON" if tools_on else "🔴 OFF"
+    tools_scope = f"Custom ({len(selected_tools)} selectors)" if str(tool_sel_mode).lower() == "custom" else "All active modules"
     badge_soul = "🟢 ON" if soul_on else "🔴 OFF"
     badge_mem = "🟢 ON" if mem_on else "🔴 OFF"
 
     lines = [
         "## 📊 Context & Token Payload Inspector\n",
         "### ⚙️ Session Payload Toggles",
-        f"- **Tools (Function Schemas):** {badge_tools} *(commands: `/tools on|off`, `/notools`)*",
+        f"- **Tools (Function Schemas):** {badge_tools} · Scope: `{tools_scope}` *(commands: `/tools on|off`, `/notools`)*",
         f"- **Personality (Soul):** {badge_soul} *(commands: `/soul on|off`, `/nosoul`)*",
         f"- **Memory & History:** {badge_mem} *(commands: `/memory on|off`, `/nomemory`)*",
         "\n### 📦 Last LLM Model Payload",

@@ -424,9 +424,17 @@ def inject_local_tool_hints(
 
         tool_hint = (
 
-            "\n### DIRECT ACTIONS RULES (SLASH COMMANDS) ###\n"
+            "\n### DIRECT ACTIONS RULES (TEXT-MODE TOOL CALLS) ###\n"
 
-            "Action modules can be invoked via slash commands (e.g. `/search <query>`, `/img <description>`) when requested by the user.\n"
+            "Active modules can be invoked using slash commands (e.g. `/search <query>`, `/tv <channel>`, `/streams <query>`), "
+
+            "explicit module tags (`[NETSEARCH: stream_control(action='play', query='Rai 1', category='tv')]`), "
+
+            "or double-underscore calls (`NETSEARCH__stream_control(action='play', query='Rai 1', category='tv')`) when requested by the user.\n"
+
+            "Wait for the tool output before claiming playback or external results succeeded. "
+
+            "NEVER write `'📺 Tuned to...'`, `'⏹️ Live Stream stopped'`, or `'> 📺'` status lines directly in plain text — playback only happens when you emit the real tool call.\n"
 
         )
 

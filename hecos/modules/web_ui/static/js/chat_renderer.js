@@ -276,6 +276,9 @@ window.appendMessage = function(role, text, opts = {}) {
     }
 
     const { msg, bubble } = window.addBubble(role, displayHtml, null, opts);
+    if (msg && role === 'user') {
+        msg.dataset.rawContent = text;
+    }
     if (bubble && bubble.querySelector('.chat-pdf-preview, .chat-html-preview')) {
         bubble.classList.add('has-pdf');
         if (msg) msg.classList.add('has-pdf');

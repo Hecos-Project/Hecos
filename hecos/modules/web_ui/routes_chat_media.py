@@ -273,11 +273,15 @@ def init_chat_media_routes(app, logger):
 
         # If path does not exist directly, try resolving candidate files
         if not path or not os.path.exists(path):
-            docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "media", "documents")
+            docs_dir = os.path.join(MEDIA_DIR, "documents")
+            workspace_dir = os.path.join(MEDIA_DIR, "workspace")
             basename = os.path.basename(path)
-            candidate = os.path.join(docs_dir, basename)
-            if os.path.exists(candidate):
-                path = candidate
+            candidate_doc = os.path.join(docs_dir, basename)
+            candidate_ws = os.path.join(workspace_dir, basename)
+            if os.path.exists(candidate_doc):
+                path = candidate_doc
+            elif os.path.exists(candidate_ws):
+                path = candidate_ws
             else:
                 # Match if filename was concatenated without slashes (e.g. C:Hecos...file.pdf)
                 matched = False

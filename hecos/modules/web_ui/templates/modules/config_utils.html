@@ -68,6 +68,24 @@
     </div>
   </div>
 
+  <!-- CODING & PROJECT TEST RUNNER (EXECUTOR) -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-code"></i> Coding &amp; Project Test Runner</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">Settings for <code>EXECUTOR__run_project_test</code>, which validates and executes multi-file projects outside the AST sandbox inside authorized workspace or Hecos module folders.</p>
+    <div class="field">
+      <label>Project Test Timeout (seconds)</label>
+      <input type="number" id="executor-test-timeout" min="5" max="180" placeholder="30"
+             onchange="savePluginKey('EXECUTOR','test_timeout_seconds',parseInt(this.value) || 30)">
+      <small style="color:var(--muted); font-size:11px;">Maximum seconds allowed for <code>run_project_test</code> (unittest / pytest / script run) before termination.</small>
+    </div>
+    <div class="field">
+      <label>Python Interpreter Override (optional)</label>
+      <input type="text" id="executor-python-interpreter" placeholder="python_env\python.exe (auto-detected if blank)"
+             onchange="savePluginKey('EXECUTOR','python_interpreter',this.value.trim())">
+      <small style="color:var(--muted); font-size:11px;">Leave blank to automatically use Hecos's embedded <code>python_env\python.exe</code>.</small>
+    </div>
+  </div>
+
   <!-- IMPORTANT PATHS (EXECUTOR) -->
   <div class="card">
     <div class="card-title"><i class="fas fa-folder-open"></i> Default User Paths</div>

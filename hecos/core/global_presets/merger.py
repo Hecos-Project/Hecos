@@ -65,6 +65,10 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
             merged['payload_control'] = {}
         if soul.payload.send_tools is not None:
             merged['payload_control']['send_tools'] = soul.payload.send_tools
+        if getattr(soul.payload, 'tool_selection_mode', None) is not None:
+            merged['payload_control']['tool_selection_mode'] = soul.payload.tool_selection_mode
+        if getattr(soul.payload, 'selected_tools', None) is not None:
+            merged['payload_control']['selected_tools'] = list(soul.payload.selected_tools)
         if soul.payload.send_personality is not None:
             merged['payload_control']['send_personality'] = soul.payload.send_personality
         if soul.payload.send_memory is not None:

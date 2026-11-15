@@ -166,6 +166,72 @@ def execute_mcp_tool(
     return None
 
 
+def parse_call_kwargs(raw_call_args: str) -> Any:
+    """
+    Parses Python/JSON-style call arguments into a kwargs dict (or fallback scalar/empty dict).
+    Supports multiline triple-quoted strings, AST literals, escaped quotes, bare enum words, ints, floats, and bools.
+    """
+    raw = (raw_call_args or "").strip()
+    if not raw:
+        return {}
+    if raw.startswith("{") and raw.endswith("}"):
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                return parsed
+        except Exception:
+            pass
+
+    # Primary pass: safe AST parsing of keyword arguments (handles triple-quoted multiline strings cleanly)
+    try:
+        import ast
+        expr = ast.parse(f"_call({raw})", mode="eval")
+        if isinstance(expr.body, ast.Call) and expr.body.keywords and not expr.body.args:
+            ast_kwargs: Dict[str, Any] = {}
+            for kw in expr.body.keywords:
+                if kw.arg is not None:
+                    ast_kwargs[kw.arg] = ast.literal_eval(kw.value)
+            if ast_kwargs:
+                return ast_kwargs
+    except Exception:
+        pass
+
+    parsed_kwargs: Dict[str, Any] = {}
+    kw_pat = re.compile(
+        r'(?:^|[\s,]+)([a-zA-Z0-9_]+)\s*=\s*(?:"""([\s\S]*?)"""|\'\'\'([\s\S]*?)\'\'\'|"((?:\\.|[^"])*)"|\'((?:\\.|[^\'])*)\'|([^,\)\s]+))'
+    )
+    for m in kw_pat.finditer(raw):
+        key = m.group(1)
+        if m.group(2) is not None:
+            val: Any = m.group(2)
+        elif m.group(3) is not None:
+            val = m.group(3)
+        elif m.group(4) is not None:
+            val = m.group(4).replace('\\"', '"').replace('\\n', '\n')
+        elif m.group(5) is not None:
+            val = m.group(5).replace("\\'", "'").replace('\\n', '\n')
+        else:
+            bare = (m.group(6) or "").strip()
+            low = bare.lower()
+            if re.fullmatch(r'-?\d+', bare):
+                val = int(bare)
+            elif re.fullmatch(r'-?\d+\.\d+', bare):
+                val = float(bare)
+            elif low == "true":
+                val = True
+            elif low == "false":
+                val = False
+            elif low in ("none", "null"):
+                val = None
+            else:
+                val = bare
+        parsed_kwargs[key] = val
+
+    if parsed_kwargs:
+        return parsed_kwargs
+    return raw.strip('"\'')
+
+
 def resolve_native_tools_method_and_args(
     plugin_tools_obj: Any,
     module_to_call: str,
@@ -179,48 +245,46 @@ def resolve_native_tools_method_and_args(
     actual_method_name = method_name
     actual_args = action_or_args
 
+    # Normalize raw string args even when method_name was already extracted (e.g. MODULE__method(k=v))
+    if actual_method_name and isinstance(action_or_args, str):
+        parsed = parse_call_kwargs(action_or_args)
+        return actual_method_name, parsed
+
     if not actual_method_name and isinstance(action_or_args, str):
         clean_str = action_or_args.strip()
 
         # 1. Match method(args...) syntax e.g. web_search(query="...", engine="SearXNG")
-        call_match = re.match(r'^([a-zA-Z0-9_]+)\s*\((.*)\)$', clean_str, re.DOTALL)
-        if call_match:
-            cand_name = call_match.group(1).strip()
-            raw_call_args = call_match.group(2).strip()
-            if hasattr(plugin_tools_obj, cand_name):
-                actual_method_name = cand_name
-                parsed_kwargs = {}
-                if raw_call_args.startswith("{") and raw_call_args.endswith("}"):
-                    try:
-                        parsed_kwargs = json.loads(raw_call_args)
-                    except Exception:
-                        parsed_kwargs = {}
-                if not parsed_kwargs:
-                    kwarg_matches = re.findall(
-                        r'([a-zA-Z0-9_]+)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s,]+))',
-                        raw_call_args,
-                    )
-                    if kwarg_matches:
-                        for kw, v1, v2, v3 in kwarg_matches:
-                            parsed_kwargs[kw] = v1 or v2 or v3
-                if parsed_kwargs:
-                    actual_args = parsed_kwargs
-                elif raw_call_args:
-                    actual_args = raw_call_args.strip('"\'')
-                else:
-                    actual_args = {}
+        call_match = re.match(r'^(?:[A-Za-z0-9_]+__)?([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*)\)$', clean_str, re.DOTALL)
+        colon_match = re.match(r'^(?:[A-Za-z0-9_]+__)?([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.*)$', clean_str, re.DOTALL)
+        space_match = re.match(r'^(?:[A-Za-z0-9_]+__)?([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+(.*))?$', clean_str, re.DOTALL)
 
-        # 2. Match method:arg syntax e.g. web_search: flying horses
-        elif ":" in clean_str:
-            m_name, m_args = clean_str.split(":", 1)
-            m_name = m_name.strip()
-            if hasattr(plugin_tools_obj, m_name):
-                actual_method_name = m_name
-                actual_args = {
-                    "query": m_args.strip(),
-                    "prompt": m_args.strip(),
-                    "html_content": m_args.strip(),
-                }
+        if call_match and hasattr(plugin_tools_obj, call_match.group(1).strip()):
+            actual_method_name = call_match.group(1).strip()
+            actual_args = parse_call_kwargs(call_match.group(2).strip())
+
+        # 2. Match method: arg syntax ONLY when colon immediately follows identifier
+        elif colon_match and hasattr(plugin_tools_obj, colon_match.group(1).strip()):
+            actual_method_name = colon_match.group(1).strip()
+            m_args = colon_match.group(2).strip()
+            actual_args = {
+                "query": m_args,
+                "prompt": m_args,
+                "html_content": m_args,
+            }
+
+        # 3. Match bare method or "method key=val ..." / "method {json}" syntax
+        elif space_match and hasattr(plugin_tools_obj, space_match.group(1).strip()):
+            actual_method_name = space_match.group(1).strip()
+            rest = (space_match.group(2) or "").strip()
+            if not rest:
+                actual_args = {}
+            elif rest.startswith("{") and rest.endswith("}"):
+                try:
+                    actual_args = json.loads(rest)
+                except Exception:
+                    actual_args = parse_call_kwargs(rest)
+            else:
+                actual_args = parse_call_kwargs(rest)
 
         # 3. Default method fallback for IMAGE_GEN / DOCS when called as [IMAGE_GEN: prompt] or [DOCS: html]
         if not actual_method_name:

@@ -25,6 +25,9 @@ from .file_manager import (
     read_file_tool, write_file_tool, patch_file_tool, 
     delete_file_tool, create_dir_tool, list_dir_tool
 )
+from .dev_tools import (
+    project_tree_tool, search_code_tool, check_syntax_tool, run_project_test_tool
+)
 
 class ExecutorTools:
     """
@@ -34,7 +37,7 @@ class ExecutorTools:
 
     def __init__(self):
         self.tag = "EXECUTOR"
-        self.desc = "Safe Python execution (AST Sandbox), system control, and file management."
+        self.desc = "Safe Python execution (AST Sandbox), developer tools, system control, and file management."
         self.status = "ONLINE (Core Tools Active)"
 
         self.config_schema = {
@@ -42,6 +45,16 @@ class ExecutorTools:
                 "type": "int",
                 "default": 10,
                 "description": "Timeout in seconds for Python sandbox execution."
+            },
+            "test_timeout_seconds": {
+                "type": "int",
+                "default": 30,
+                "description": "Timeout in seconds for run_project_test project execution."
+            },
+            "python_interpreter": {
+                "type": "string",
+                "default": "",
+                "description": "Optional Python executable override for run_project_test (defaults to python_env\\python.exe)."
             },
             "enable_shell_commands": {
                 "type": "bool",
@@ -59,7 +72,7 @@ class ExecutorTools:
         os.makedirs(self.workspace_dir, exist_ok=True)
 
     def _resolve_workspace_dir(self) -> str:
-        """Resolves workspace dir from config (important_paths.projects), falling back to ./workspace."""
+        """Resolves workspace dir from config (important_paths.projects), falling back to hecos/media/workspace."""
         try:
             import sys
             cfg_mgr = getattr(sys, "hecos_config_manager", None)
@@ -70,8 +83,20 @@ class ExecutorTools:
                     return os.path.abspath(projects)
         except Exception:
             pass
-        # Default: ./workspace relative to Hecos root
+        # Default: C:\Hecos\hecos\media\workspace when present, else ./workspace
+        media_ws = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "media", "workspace"))
+        if os.path.exists(os.path.dirname(media_ws)):
+            return media_ws
         return os.path.abspath(os.path.join(os.getcwd(), "workspace"))
+
+    def _resolve_target_path(self, path: str) -> str:
+        """Resolve relative paths inside the configured projects workspace."""
+        clean = (path or "").strip()
+        if not clean:
+            return self._resolve_workspace_dir()
+        if os.path.isabs(clean):
+            return os.path.abspath(clean)
+        return os.path.abspath(os.path.join(self._resolve_workspace_dir(), clean))
 
     # ── System Tools ──────────────────────────────────────────────────────────
 
@@ -132,25 +157,89 @@ class ExecutorTools:
     def run_python_code(self, code: str) -> str:
         return run_python_code_tool(code, self.workspace_dir, self.tag)
 
-    # ── File Management ───────────────────────────────────────────────────────
+    # ── File Management & Developer Tools ────────────────────────────────────
 
     def read_file(self, file_path: str, start_line: int = 1, end_line: int = -1) -> str:
-        return read_file_tool(file_path, start_line, end_line)
+        """
+        Reads the contents of a file. Relative paths resolve inside the projects workspace.
+        :param file_path: File path to read.
+        :param start_line: First line to read (1-indexed). Default: 1.
+        :param end_line: Last line to read (inclusive). Use -1 for the entire file.
+        """
+        return read_file_tool(self._resolve_target_path(file_path), start_line, end_line)
 
     def write_file(self, file_path: str, content: str, mode: str = "w") -> str:
-        return write_file_tool(file_path, content, mode)
+        """
+        Writes or creates a file and verifies it exists on disk. Relative paths resolve inside the projects workspace.
+        :param file_path: File path to create or overwrite.
+        :param content: Complete file text content to write.
+        :param mode: 'w' to overwrite (default), 'a' to append.
+        """
+        return write_file_tool(self._resolve_target_path(file_path), content, mode)
 
     def patch_file(self, file_path: str, old_text: str, new_text: str) -> str:
-        return patch_file_tool(file_path, old_text, new_text)
+        """
+        Replaces the first exact occurrence of old_text with new_text in a file.
+        :param file_path: File path to patch.
+        :param old_text: Exact existing block to replace.
+        :param new_text: Replacement text block.
+        """
+        return patch_file_tool(self._resolve_target_path(file_path), old_text, new_text)
 
     def delete_file(self, file_path: str) -> str:
-        return delete_file_tool(file_path)
+        return delete_file_tool(self._resolve_target_path(file_path))
 
     def create_dir(self, directory_path: str) -> str:
-        return create_dir_tool(directory_path)
+        """
+        Creates a directory and any missing parent folders.
+        :param directory_path: Directory path to create.
+        """
+        return create_dir_tool(self._resolve_target_path(directory_path))
 
     def list_dir(self, directory_path: str) -> str:
-        return list_dir_tool(directory_path)
+        return list_dir_tool(self._resolve_target_path(directory_path))
+
+    def project_tree(self, path: str = "", max_depth: int = 3) -> str:
+        """
+        Generates a compact project folder tree (skipping .git, __pycache__, python_env, node_modules).
+        :param path: Root directory to inspect (defaults to projects workspace).
+        :param max_depth: Maximum folder depth (1 to 6, default 3).
+        """
+        resolved = self._resolve_target_path(path) if path else self._resolve_workspace_dir()
+        return project_tree_tool(resolved, max_depth=max_depth, default_workspace=self._resolve_workspace_dir())
+
+    def search_code(self, query: str, path: str = "", file_glob: str = "") -> str:
+        """
+        Searches text/code recursively inside a project or module directory.
+        :param query: Case-insensitive substring to find in files.
+        :param path: Root directory or file to search (defaults to projects workspace).
+        :param file_glob: Optional filename filter such as '*.py' or '*.js'.
+        """
+        resolved = self._resolve_target_path(path) if path else self._resolve_workspace_dir()
+        return search_code_tool(query, path=resolved, file_glob=file_glob, default_workspace=self._resolve_workspace_dir())
+
+    def check_syntax(self, file_path: str) -> str:
+        """
+        Checks syntax of a Python (.py), JSON (.json), YAML (.yaml/.yml), or JS (.js) file on disk.
+        :param file_path: Path to the file to validate.
+        """
+        return check_syntax_tool(self._resolve_target_path(file_path))
+
+    def run_project_test(self, target_path_or_command: str, cwd: str = "", timeout_seconds: int = 30) -> str:
+        """
+        Runs a real Python script, unittest, or pytest suite inside an authorized workspace/project using python_env.
+        Unlike run_python_code, allows standard imports (os, sys, pathlib, requests, project modules).
+        :param target_path_or_command: Script path (e.g. 'main.py') or test command (e.g. '-m unittest discover').
+        :param cwd: Working directory for execution (defaults to projects workspace).
+        :param timeout_seconds: Execution timeout in seconds (5 to 180, default 30).
+        """
+        work_dir = self._resolve_target_path(cwd) if cwd else self._resolve_workspace_dir()
+        return run_project_test_tool(
+            target_path_or_command=target_path_or_command,
+            cwd=work_dir,
+            timeout_seconds=timeout_seconds,
+            default_workspace=self._resolve_workspace_dir(),
+        )
 
     def set_important_path(self, name: str, path: str) -> str:
         """
@@ -223,6 +312,10 @@ def info():
             "list_dir": "List a directory's contents.",
             "set_important_path": "Memorize an important directory path for the user (e.g., user_profile, downloads).",
             "get_important_paths": "Get all important paths memorized by the user, and the default workspace.",
+            "project_tree": "Display a compact directory tree for a project or module.",
+            "search_code": "Search code and configuration files for matching text.",
+            "check_syntax": "Validate Python, JSON, YAML, or JavaScript file syntax.",
+            "run_project_test": "Run a Python script, unittest, or pytest suite inside an authorized workspace/project.",
         }
     }
 

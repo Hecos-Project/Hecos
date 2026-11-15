@@ -876,6 +876,21 @@ class PromptBuilder:
 
 
         cfg_plugins = (config.get("plugins") or {}) if isinstance(config, dict) else {}
+        p_ctrl = (config.get("payload_control") or {}) if isinstance(config, dict) else {}
+        sel_mode = str(p_ctrl.get("tool_selection_mode") or "all").strip().lower()
+        custom_allowed_tags = None
+        if sel_mode == "custom":
+            custom_allowed_tags = set()
+            for item in (p_ctrl.get("selected_tools") or []):
+                s = str(item).strip()
+                if not s:
+                    continue
+                if "__" in s:
+                    custom_allowed_tags.add(s.split("__", 1)[0].upper())
+                else:
+                    custom_allowed_tags.add(s.upper())
+            if not custom_allowed_tags:
+                return ""
 
 
 
@@ -892,6 +907,11 @@ class PromptBuilder:
             if tag_upper in INTERNAL_SYSTEM_MODULES:
 
                 continue
+
+            if custom_allowed_tags is not None:
+                mcp_match = (tag_upper == "MCP_BRIDGE") and any(t.startswith("MCP_") for t in custom_allowed_tags)
+                if tag_upper not in custom_allowed_tags and not mcp_match:
+                    continue
 
 
 
@@ -997,6 +1017,24 @@ class PromptBuilder:
             except Exception:
                 return []
 
+        p_ctrl = (config.get("payload_control") or {}) if isinstance(config, dict) else {}
+        sel_mode = str(p_ctrl.get("tool_selection_mode") or "all").strip().lower()
+        custom_allowed_tags = None
+        if sel_mode == "custom":
+            custom_allowed_tags = set()
+            for item in (p_ctrl.get("selected_tools") or []):
+                s = str(item).strip()
+                if s:
+                    custom_allowed_tags.add(s.split("__", 1)[0].upper() if "__" in s else s.upper())
+            if not custom_allowed_tags:
+                send_tools = False
+
+        def _is_tag_allowed_in_prompt(tag_name):
+            if not send_tools:
+                return False
+            if custom_allowed_tags is None:
+                return True
+            return tag_name.upper() in custom_allowed_tags
 
         identity_rules = f"{translator.t('identity_protocol')}\n"
 
@@ -1004,7 +1042,7 @@ class PromptBuilder:
 
         file_manager_rules = ""
 
-        if send_tools:
+        if _is_tag_allowed_in_prompt("EXECUTOR"):
 
             file_manager_rules = (
 
@@ -1058,10 +1096,10 @@ class PromptBuilder:
 
         netsearch_protocol = ""
 
-        # Only inject netsearch protocol if NETSEARCH module is actually active
+        # Only inject netsearch protocol if NETSEARCH module is active and selected for this prompt
         _netsearch_active = "NETSEARCH" in [t.upper() for t in _get_active_tags_safe()]
 
-        if send_tools and _netsearch_active:
+        if _is_tag_allowed_in_prompt("NETSEARCH") and _netsearch_active:
 
             netsearch_protocol = (
 
@@ -1087,6 +1125,14 @@ class PromptBuilder:
 
                 "   - `/fetch <url>`    : Read, scrape, and extract content from any web page.\n"
 
+                "   - `/tv <query>`     : Search live TV / IPTV channels into numbered lineup (`CH 01..NN`).\n"
+
+                "   - `/streams <q>`    : Search all live TV, Radio, Webcam, and raw streams.\n"
+
+                "   - `/radio <query>`  : Search live radio stations.\n"
+
+                "   - `/canale <arg>`   : Play or control a live channel (number, name like `Rai 1`, `next`, `prev`, `stop`, `mute`, `vol 70`, `vlc`).\n"
+
                 "\n"
 
                 "2. NATIVE FUNCTION CALLING (When tool-calling is active):\n"
@@ -1100,6 +1146,10 @@ class PromptBuilder:
                 "   - `NETSEARCH__dark_search(query=\"...\")`\n"
 
                 "   - `NETSEARCH__fetch_page(url=\"...\")`\n"
+
+                "   - `NETSEARCH__stream_search(query=\"...\", category=\"tv|radio|webcam|all\")`\n"
+
+                "   - `NETSEARCH__stream_control(action=\"play|ch_up|ch_down|stop|pause|mute|set_volume|open_vlc|status\", query=\"...\", category=\"tv\")`\n"
 
                 "\n"
 
@@ -1117,6 +1167,10 @@ class PromptBuilder:
 
                 "   - `[NETSEARCH: fetch_page(url=\"...\")]`\n"
 
+                "   - `[NETSEARCH: stream_search(query=\"...\", category=\"tv\")]`\n"
+
+                "   - `[NETSEARCH: stream_control(action=\"play\", query=\"Rai 1\", category=\"tv\")]`\n"
+
                 "\n"
 
                 "INTERACTIVE CARDS & RENDERING:\n"
@@ -1129,9 +1183,9 @@ class PromptBuilder:
 
 
 
-        is_image_gen_active = _is_image_gen_plugin_active() if send_tools else False
+        is_image_gen_active = _is_image_gen_plugin_active() if _is_tag_allowed_in_prompt("IMAGE_GEN") else False
 
-        if send_tools and is_image_gen_active:
+        if _is_tag_allowed_in_prompt("IMAGE_GEN") and is_image_gen_active:
 
             image_gen_protocol_block = (
 
@@ -1242,9 +1296,9 @@ class PromptBuilder:
 
                     "\n### USER DATA ACCESS ###\n"
 
-                    "- To access full contact info (email, phone, address, bio), use [USER: get_profile].\n"
+                    "- To access full contact info (email, phone, address, bio), use [USERS: get_profile].\n"
 
-                    "- To help the user update their data, use [USER: update_profile:field=value].\n"
+                    "- To help the user update their data, use [USERS: update_profile:field=value].\n"
 
                 )
 

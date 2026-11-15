@@ -19,7 +19,9 @@ class HistoryManager:
         if not is_error and save_history:
             # Snapshot the clean persona name so avatar stays correct even if user changes personality later
             clean_persona = personality_name.replace(".yaml", "") if personality_name else "Hecos_System_Soul"
-            brain_interface.save_message("user", user_text, config=config, user_id=user_id, session_id=session_id, sender_tab_id=sender_tab_id)
+            already_has_trailing_user = HistoryManager._has_trailing_matching_user_msg(user_text, user_id=user_id, session_id=session_id)
+            if not already_has_trailing_user:
+                brain_interface.save_message("user", user_text, config=config, user_id=user_id, session_id=session_id, sender_tab_id=sender_tab_id)
             
             # Build generation parameters JSON string for UI Tooltip and History
             llm_config = config.get("llm", {})
@@ -59,6 +61,42 @@ class HistoryManager:
         else:
             logger.debug("HistoryManager", "AI response is an error; skipping history persistence.")
             
+    @staticmethod
+    def _has_trailing_matching_user_msg(user_text, user_id="admin", session_id=None) -> bool:
+        """Returns True if the latest stored message in the session is already an unanswered user message with the same text."""
+        try:
+            clean_text = (user_text or "").strip()
+            if not clean_text:
+                return False
+            from hecos.core.privacy import privacy_manager
+            sid = session_id or privacy_manager.get_session_id()
+            if not sid:
+                return False
+
+            from hecos.memory.session_state import _ram_sessions
+            if sid in _ram_sessions:
+                msgs = _ram_sessions[sid].get("messages", [])
+                if msgs and msgs[-1].get("role") == "user" and (msgs[-1].get("message") or "").strip() == clean_text:
+                    return True
+                return False
+
+            import os, sqlite3
+            db_path = brain_interface._db_path(user_id or "admin")
+            if not os.path.exists(db_path):
+                return False
+            with sqlite3.connect(db_path, timeout=10) as conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT role, message FROM history WHERE session_id = ? ORDER BY id DESC LIMIT 1",
+                    (sid,)
+                )
+                row = cur.fetchone()
+                if row and row[0] == "user" and (row[1] or "").strip() == clean_text:
+                    return True
+        except Exception:
+            pass
+        return False
+
     @staticmethod
     def _build_model_info(backend_config, llm_config, full_config=None):
         _model_info_str = None

@@ -310,19 +310,13 @@
   
   <div style="flex: 1;"></div>
   
-  <button class="toolbar-btn" title="Toggle Chat Presenter" onclick="
+  <button class="toolbar-btn" title="Show/Hide Chat Presenter" onclick="
     if (!window.Presenter) return;
-    const el = document.getElementById('hbs-presenter-embedded');
-    if (el && !el.classList.contains('active')) {
-        el.classList.add('active');
-        window.Presenter.setContextEnabled(true);
-        return;
-    }
-    if (typeof window.Presenter.togglePower === 'function') {
-        window.Presenter.togglePower(event);
-    } else if (typeof window.Presenter.setContextEnabled === 'function') {
-        const nextState = el ? el.classList.contains('collapsed') : !window._presenterEnabled;
-        window.Presenter.setContextEnabled(nextState);
+    if (typeof window.Presenter.toggleCollapse === 'function') {
+        window.Presenter.toggleCollapse(event);
+    } else {
+        const el = document.getElementById('hbs-presenter-embedded');
+        if (el) el.classList.toggle('collapsed');
     }
   ">
     <span class="tb-icon" style="color: #ff512f;"><i class="fas fa-bullhorn"></i></span> Presenter

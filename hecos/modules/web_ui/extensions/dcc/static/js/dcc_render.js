@@ -18,6 +18,8 @@
     
     let _level = 1;
     let _activeCat = null;
+    // Track NEW badges already flashed in this chat page session so they flash only 3x on first view
+    const _flashedNewIds = new Set();
 
     // ── Navigation ─────────────────────────────────────────────────────────────
 
@@ -141,8 +143,21 @@
                 
                 el.title = tooltip;
                 
-                const newBadgeHtml = isNew ? `<span class="dcc-new-badge">NEW</span>` : '';
+                const shouldFlashNew = isNew && !_flashedNewIds.has(mod.id);
+                if (shouldFlashNew) _flashedNewIds.add(mod.id);
+
+                const badgeClass = shouldFlashNew ? 'dcc-new-badge dcc-new-flash' : 'dcc-new-badge';
+                const newBadgeHtml = isNew ? `<span class="${badgeClass}">NEW</span>` : '';
                 el.innerHTML = `<i class="${mod.icon}"></i> <span>${shortText}</span> ${newBadgeHtml}`;
+
+                if (shouldFlashNew) {
+                    const badgeEl = el.querySelector('.dcc-new-badge');
+                    if (badgeEl) {
+                        badgeEl.addEventListener('animationend', () => {
+                            badgeEl.classList.remove('dcc-new-flash');
+                        }, { once: true });
+                    }
+                }
                 
                 el.addEventListener('click', (e) => {
                     e.stopPropagation();

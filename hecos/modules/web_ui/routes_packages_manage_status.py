@@ -74,6 +74,7 @@ def register_manage_status_routes(app, _hecos_src: str, cfg_mgr, log):
 
             ok = registry.set_status(pkg_id, status)
             if ok:
+                cfg_mgr.set(status == "installed", "plugins", pkg_tag, "enabled")
                 if status == "disabled":
                     # ── Call on_unload() on the plugin if it defines one ───────────
                     try:
@@ -86,33 +87,26 @@ def register_manage_status_routes(app, _hecos_src: str, cfg_mgr, log):
                         log.warning(f"[HPM] on_unload() error for '{pkg_tag}': {_ul_e}")
                     # ─────────────────────────────────────────────────────────────
 
-                    widgets_modified = 0
                     for w in snap.get("widgets", []):
                         ext_id = w.get("id")
                         if ext_id:
                             cfg_mgr.set(False, "widgets", "per_widget", ext_id, "enabled")
                             cfg_mgr.set(False, "widgets", "per_widget", ext_id, "visible")
                             cfg_mgr.set(False, "widgets", "per_widget", ext_id, "room_visible")
-                            widgets_modified += 1
-                    if widgets_modified > 0:
-                        cfg_mgr.save()
                 elif status == "installed":
-                    widgets_modified = 0
                     for w in snap.get("widgets", []):
                         ext_id = w.get("id")
                         if ext_id:
                             cfg_mgr.set(True, "widgets", "per_widget", ext_id, "enabled")
                             cfg_mgr.set(True, "widgets", "per_widget", ext_id, "visible")
                             cfg_mgr.set(True, "widgets", "per_widget", ext_id, "room_visible")
-                            widgets_modified += 1
-                    if widgets_modified > 0:
-                        cfg_mgr.save()
+                cfg_mgr.save()
 
+                _invalidate_all_caches()
+                _hot_reload_registry(cfg_mgr, log)
                 _hpm_event_broadcast("hpm:package_status_changed", {
                     "id": pkg_id, "status": status
                 })
-                _invalidate_all_caches()
-                _hot_reload_registry(cfg_mgr, log)
             return jsonify({"ok": ok, "id": pkg_id, "status": status, "tag": pkg_tag, "panel_id": panel_id})
         except Exception as e:
             log.error(f"[HPM] PATCH /api/packages/{pkg_id}/status error: {e}")

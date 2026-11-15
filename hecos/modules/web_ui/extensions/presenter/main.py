@@ -14,8 +14,11 @@ def init_routes(app, root_dir: str = None):
     except Exception as _mig_err:
         logger.warning(f"[Presenter] Legacy feed migration skipped: {_mig_err}")
 
-    if not getattr(cfg, 'enabled', True):
-        logger.info("[Presenter] Module is disabled in configuration.")
+    active_any = bool(getattr(cfg, 'enabled', True)) and (
+        bool(getattr(cfg, 'commentary_on_messages', False)) or bool(getattr(cfg, 'commentary_on_search', False))
+    )
+    if not active_any:
+        logger.info("[Presenter] Module is disabled/OFF in all contexts (chat & netsearch). Not starting engine.")
     else:
         from .engine import get_engine
         get_engine().start()
@@ -91,7 +94,7 @@ def init_routes(app, root_dir: str = None):
 
             save_presenter_config(cfg)
 
-            if cfg.enabled:
+            if cfg.enabled and (getattr(cfg, "commentary_on_messages", False) or getattr(cfg, "commentary_on_search", False)):
                 get_engine().start()
             else:
                 get_engine().stop()

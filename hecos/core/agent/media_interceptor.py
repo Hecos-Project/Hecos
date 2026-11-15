@@ -76,6 +76,23 @@ class MediaInterceptor:
                 for sid in hmedia_tags:
                     if f"[[HMEDIA:{sid}]]" not in extracted_text and f"[[HSEARCH:{sid}]]" not in extracted_text:
                         extracted_text += f"\n\n[[HMEDIA:{sid}]]"
+
+                # 5. Surface verified Live Stream remote status / lineup cleanly in UI without TTS clutter
+                stripped_out = out.strip()
+                is_stream_status = stripped_out.startswith((
+                    "📺 Tuned to",
+                    "⏹️ Live Stream stopped",
+                    "⏯️ Playback",
+                    "🔊 Volume set to",
+                    "🛡️ Anti-CORS Stream Proxy",
+                )) or (
+                    (tag_name in ("NETSEARCH", "DIRECT_COMMAND", "DIRECT", "COMMAND") or tag_name.startswith("/"))
+                    and stripped_out.startswith(("⏸️", "▶️", "🔊 Unmuted", "🔇 Muted", "📡 Live Stream target"))
+                )
+                if is_stream_status:
+                    wrapped_stream = f"[[STREAM_STATUS]]{stripped_out}[[/STREAM_STATUS]]"
+                    if wrapped_stream not in extracted_text and stripped_out not in extracted_text:
+                        extracted_text += f"\n\n{wrapped_stream}"
                     
         return extracted_text
 
