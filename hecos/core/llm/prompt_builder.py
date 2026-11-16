@@ -276,7 +276,11 @@ class PromptBuilder:
 
         closing_identity_block = ""
 
-        if send_personality and personality_name and personality_name.lower() != "hecos_system_soul":
+        is_technical_persona = bool(
+            personality_name and personality_name.lower() in {"hecos_system_soul", "hecos_coder"}
+        )
+
+        if send_personality and personality_name and not is_technical_persona:
 
             char_name = display_name if display_name else personality_name.replace("_", " ").strip()
 
@@ -711,7 +715,7 @@ class PromptBuilder:
 
                     self_awareness += f"{translator.t('admin_structure_hint')}\n"
 
-                else:
+                elif personality_name.lower() != "hecos_coder":
 
                     self_awareness += f"Note: This system awareness applies only to the Hecos platform architecture. When interacting in character, stay strictly true to your character's physical persona.\n"
 
@@ -1089,6 +1093,59 @@ class PromptBuilder:
             except Exception as e:
 
                 logger.debug(f"PromptBuilder: Could not inject important paths: {e}")
+
+            try:
+                raw_pname = (config.get("ai") or {}).get("active_personality") or (config.get("persona") or {}).get("soul_file") or ""
+                pname_low = str(raw_pname).replace(".yaml", "").strip().lower()
+                sel_list = [str(x).strip() for x in (p_ctrl.get("selected_tools") or [])]
+                aider_tool_allowed = (
+                    sel_mode != "custom"
+                    or "EXECUTOR__*" in sel_list
+                    or "EXECUTOR__run_aider_task" in sel_list
+                )
+                if pname_low and pname_low != "hecos_coder" and aider_tool_allowed:
+                    from hecos.modules.executor.aider_bridge import resolve_aider_command, _read_executor_cfg
+                    if _read_executor_cfg("aider_enabled", True) and resolve_aider_command() is not None:
+                        file_manager_rules += (
+                            "\n### INVISIBLE CODING DELEGATION (AIDER SIDECAR) ###\n"
+                            "When the user asks you to create, refactor, or fix a multi-file software or web project:\n"
+                            "- Delegate code creation/editing to `EXECUTOR__run_aider_task(repo_path=..., instruction=...)` instead of writing large code blocks directly in chat.\n"
+                            "- Afterwards, launch or verify with `EXECUTOR__start_app` / `EXECUTOR__run_project_test` / `EXECUTOR__probe_url` if relevant, then respond strictly in your own character and voice with the verified file links.\n"
+                        )
+            except Exception as e:
+                logger.debug(f"PromptBuilder: Aider delegation check skipped: {e}")
+
+            try:
+                import sys as _sys_ex
+                from hecos.config.schemas.plugins_schema import DEFAULT_EXECUTOR_ANTI_HALLUCINATION_DIRECTIVE
+
+                _ex_cfg = (config.get("plugins") or {}).get("EXECUTOR") if isinstance(config, dict) else None
+                _cfg_mgr_ex = getattr(_sys_ex, "hecos_config_manager", None)
+
+                def _read_ex_bool(key, default):
+                    if isinstance(_ex_cfg, dict) and key in _ex_cfg:
+                        return bool(_ex_cfg[key])
+                    if _cfg_mgr_ex:
+                        return bool(_cfg_mgr_ex.get_plugin_config("EXECUTOR", key, default))
+                    return default
+
+                def _read_ex_str(key, default):
+                    if isinstance(_ex_cfg, dict) and _ex_cfg.get(key) is not None:
+                        return str(_ex_cfg[key])
+                    if _cfg_mgr_ex:
+                        val = _cfg_mgr_ex.get_plugin_config("EXECUTOR", key, default)
+                        return str(val) if val is not None else default
+                    return default
+
+                if _read_ex_bool("enable_anti_hallucination_guard", True):
+                    _ah_text = _read_ex_str("anti_hallucination_directive", "").strip() or DEFAULT_EXECUTOR_ANTI_HALLUCINATION_DIRECTIVE
+                    file_manager_rules += f"\n### EXECUTOR ANTI-HALLUCINATION DIRECTIVE ###\n{_ah_text}\n"
+
+                _override_text = _read_ex_str("model_directive_override", "").strip()
+                if _override_text:
+                    file_manager_rules += f"\n### EXECUTOR MODEL DIRECTIVE OVERRIDE ###\n{_override_text}\n"
+            except Exception as e:
+                logger.debug(f"PromptBuilder: Executor directive injection skipped: {e}")
 
             
 

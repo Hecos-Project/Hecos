@@ -171,6 +171,10 @@ window.initEvents = function() {
           window.isStreaming = true;
           if (window.sendBtn) window.sendBtn.disabled = true;
           if (window.showStopVoiceBtn) window.showStopVoiceBtn(true);
+          if (window.HecosChatStatus) {
+              const sid = ev.session_id || window.chatHistoryState?.activeSessionId;
+              if (sid) window.HecosChatStatus.markStreamStart(sid);
+          }
           if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
       }
 
@@ -196,6 +200,10 @@ window.initEvents = function() {
       window.isStreaming = false;
       if (window.sendBtn) window.sendBtn.disabled = false;
       if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
+      if (window.HecosChatStatus) {
+          const sid = ev.session_id || window.chatHistoryState?.activeSessionId;
+          if (sid) window.HecosChatStatus.markStreamEnd(sid, 'done');
+      }
       
       // Save voice message to input history (ev.user is the transcribed text from backend PTT)
       if (ev.user && typeof window.saveInputHistory === 'function') window.saveInputHistory(ev.user);
@@ -205,10 +213,25 @@ window.initEvents = function() {
 
     } else if (ev.type === 'audio_ready') {
       console.log("[Audio] Global audio ready from backend", ev);
+      if (ev.tab_id && ev.tab_id === window.hecosTabId) {
+        return; // Already handled by this tab's /api/stream listener
+      }
+      const activeSid = window.chatHistoryState?.activeSessionId || null;
+      if (ev.session_id && activeSid && ev.session_id !== activeSid) {
+        console.log(`[Audio] Ignoring global audio_ready for inactive session ${ev.session_id} (viewing ${activeSid})`);
+        if (window.HecosChatStatus && typeof window.HecosChatStatus.noteRemoteOrBackgroundAudio === 'function') {
+          window.HecosChatStatus.noteRemoteOrBackgroundAudio(ev.session_id, ev);
+        }
+        return;
+      }
       const targetBubble = window._lastAiBubble;
       if (targetBubble && window.tryLoadAudio) {
         if (ev.audio_id) targetBubble.dataset.audioId = ev.audio_id;
-        window.tryLoadAudio(targetBubble, true);
+        window.tryLoadAudio(targetBubble, true, null, {
+          sessionId: ev.session_id || activeSid,
+          sessionTitle: ev.session_title || '',
+          personaName: ev.persona_name || ''
+        });
       }
 
     } else if (ev.type === 'chat_background_append') {

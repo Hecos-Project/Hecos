@@ -26,8 +26,166 @@ from hecos.core.agent.loop_guards import (
     sync_assistant_history,
     extract_verified_files_from_results,
     are_executor_write_tools_enabled,
+    is_executor_anti_hallucination_enabled,
     detect_unexecuted_file_claim,
+    LoopStagnationTracker,
 )
+
+
+def _is_coding_loop_active(cfg: Optional[Dict[str, Any]]) -> bool:
+    """Detect whether the current turn runs in dedicated coding mode (Hecos Coder / Executor write tools)."""
+    if not isinstance(cfg, dict):
+        return False
+    ai_cfg = cfg.get("ai", {}) if isinstance(cfg.get("ai"), dict) else {}
+    persona_cfg = cfg.get("persona", {}) if isinstance(cfg.get("persona"), dict) else {}
+    persona = str(
+        ai_cfg.get("active_personality")
+        or ai_cfg.get("personality")
+        or persona_cfg.get("soul_file")
+        or cfg.get("personality_name", "")
+        or ""
+    ).lower()
+    if "hecos_coder" in persona:
+        return True
+    pctrl = cfg.get("payload_control", {}) if isinstance(cfg.get("payload_control"), dict) else {}
+    selected = pctrl.get("selected_tools") or []
+    if isinstance(selected, list):
+        coding_markers = {"EXECUTOR__*", "EXECUTOR__write_file", "EXECUTOR__patch_file", "EXECUTOR__repo_map"}
+        if any(s in coding_markers for s in selected):
+            return True
+    return False
+
+
+def compact_agent_context_tool_messages(
+    agent_context: List[Dict[str, Any]],
+    keep_recent: int = 3,
+    min_chars_to_compact: int = 700,
+) -> int:
+    """
+    Compact verbose older `role='tool'` outputs inside `agent_context` while keeping the newest
+    `keep_recent` tool outputs verbatim. Preserves first header line and key diagnostics so
+    local 16k-context models do not overflow during multi-step coding workflows.
+    Returns the number of messages compacted.
+    """
+    tool_indices = [
+        idx for idx, msg in enumerate(agent_context)
+        if isinstance(msg, dict) and msg.get("role") == "tool"
+    ]
+    if len(tool_indices) <= max(1, int(keep_recent)):
+        return 0
+
+    cutoff_indices = tool_indices[:-max(1, int(keep_recent))]
+    compacted = 0
+    important_tokens = (
+        "[AUTO-CHECK]", "[WEB-DIAGNOSTIC]", "[AUTO-TEST]", "[HEALTH-CHECK",
+        "SYNTAX ERROR", "RUFF", "Traceback", "FAILED", "Ambiguous patch",
+    )
+
+    for idx in cutoff_indices:
+        msg = agent_context[idx]
+        content = msg.get("content")
+        if not isinstance(content, str) or len(content) <= min_chars_to_compact:
+            continue
+        if "[COMPACTED EARLIER OUTPUT" in content:
+            continue
+
+        orig_len = len(content)
+        lines = [ln.strip() for ln in content.splitlines() if ln.strip()]
+        kept: List[str] = []
+        if lines:
+            kept.append(lines[0][:220])
+        for ln in lines[1:]:
+            if any(tok in ln for tok in important_tokens):
+                kept.append(ln[:200])
+                if len(kept) >= 4:
+                    break
+        summary = "\n".join(kept)
+        if len(summary) > 520:
+            summary = summary[:520] + "..."
+        msg["content"] = (
+            f"{summary}\n"
+            f"[COMPACTED EARLIER OUTPUT ({msg.get('name') or 'tool'}): {orig_len} chars condensed "
+            f"to protect context window; re-read/re-run if exact contents are needed.]"
+        )
+        compacted += 1
+
+    return compacted
+
+
+def _resolve_effective_num_ctx(cfg: Optional[Dict[str, Any]]) -> int:
+    """Resolve active context window size (tokens) from session/backend config cleanly."""
+    default_ctx = 16384
+    if not isinstance(cfg, dict):
+        return default_ctx
+    backend = cfg.get("backend", {})
+    if isinstance(backend, dict):
+        btype = str(backend.get("type") or "ollama").lower()
+        sub = backend.get(btype, {})
+        if isinstance(sub, dict) and sub.get("num_ctx"):
+            try:
+                return max(4096, int(sub["num_ctx"]))
+            except (TypeError, ValueError):
+                pass
+    inf = cfg.get("inference", {})
+    if isinstance(inf, dict) and inf.get("num_ctx"):
+        try:
+            return max(4096, int(inf["num_ctx"]))
+        except (TypeError, ValueError):
+            pass
+    return default_ctx
+
+
+def enforce_agent_context_budget(
+    agent_context: List[Dict[str, Any]],
+    cfg: Optional[Dict[str, Any]],
+    user_text: str = "",
+) -> int:
+    """
+    Keep multi-step `agent_context` + `user_text` comfortably inside ~70% of `num_ctx`
+    so local models (e.g. 14B on 16k ctx) do not overflow, stall in KV thrash, or
+    get silently left-truncated by Ollama. Returns number of compacted/trimmed messages.
+    """
+    if not agent_context:
+        return 0
+
+    num_ctx = _resolve_effective_num_ctx(cfg)
+    # Estimate ~3.2 chars/token; reserve headroom for system prompt (~8k chars) + schemas (~10k chars) + reply
+    total_char_cap = max(14000, int(num_ctx * 0.78 * 3.2) - 18000)
+    def _context_chars() -> int:
+        return len(user_text or "") + sum(len(str(m.get("content") or "")) for m in agent_context)
+
+    if _context_chars() <= total_char_cap:
+        return 0
+
+    changed = compact_agent_context_tool_messages(agent_context, keep_recent=2, min_chars_to_compact=260)
+    if _context_chars() <= total_char_cap:
+        return changed
+
+    # Condense verbose older assistant messages while always preserving the latest assistant turn
+    asst_indices = [
+        i for i, m in enumerate(agent_context)
+        if isinstance(m, dict) and m.get("role") == "assistant"
+    ]
+    for idx in asst_indices[:-1]:
+        msg = agent_context[idx]
+        content = str(msg.get("content") or "")
+        if len(content) <= 400 or "[CONDENSED PRIOR STEP" in content:
+            continue
+        first_line = next((ln.strip()[:180] for ln in content.splitlines() if ln.strip()), "")
+        msg["content"] = f"{first_line}\n[CONDENSED PRIOR STEP ({len(content)} chars) to stay within num_ctx={num_ctx}.]"
+        changed += 1
+        if _context_chars() <= total_char_cap:
+            return changed
+
+    # Final safety trim: drop oldest turns paired with trailing tool messages while keeping >= 4 entries
+    while len(agent_context) > 4 and _context_chars() > total_char_cap:
+        removed = agent_context.pop(0)
+        if isinstance(removed, dict) and removed.get("role") == "assistant":
+            while len(agent_context) > 4 and isinstance(agent_context[0], dict) and agent_context[0].get("role") == "tool":
+                agent_context.pop(0)
+        changed += 1
+
+    return changed
 
 
 class AgentExecutor:
@@ -60,6 +218,7 @@ class AgentExecutor:
 
         # Load cached agent configuration
         self.agent_config = get_agent_config()
+        self._explicit_max_iterations = max_iterations is not None
         self.max_iterations = (
             max_iterations
             if max_iterations is not None
@@ -80,7 +239,12 @@ class AgentExecutor:
         except Exception as e:
             logger.debug(f"[AGENT] finalize_turn error: {e}")
 
-    def _sync_assistant_history(self, video_response: str, think_block: Optional[str] = None) -> None:
+    def _sync_assistant_history(
+        self,
+        video_response: str,
+        think_block: Optional[str] = None,
+        user_text: Optional[str] = None,
+    ) -> None:
         """Persists the turn's response and trace summary to the database."""
         sync_assistant_history(
             config=self.config,
@@ -91,6 +255,7 @@ class AgentExecutor:
             last_trace_summary=self.last_trace_summary,
             video_response=video_response,
             think_block=think_block,
+            user_text=user_text,
         )
 
     def _sync_telemetry(self) -> None:
@@ -152,6 +317,7 @@ class AgentExecutor:
         file_hallucination_retries = 0
         netsearch_hallucination_retries = 0
         unverified_file_notice: Optional[str] = None
+        stagnation_tracker = LoopStagnationTracker()
         agent_context: List[Dict[str, Any]] = []
         accumulated_tool_results: List[Dict[str, Any]] = []
 
@@ -168,7 +334,9 @@ class AgentExecutor:
                 iteration += 1
                 logger.info(f"[AGENT] --- Iteration {iteration}/{self.max_iterations} ---")
 
-                save_hist = (iteration == 1)
+                # Persist turn history only once at loop completion (via sync_assistant_history)
+                # so intermediate tool/prose iterations never duplicate inside PromptBuilder DB history.
+                save_hist = False
                 current_cfg = (
                     self.config
                     if getattr(self, "config", None)
@@ -181,6 +349,8 @@ class AgentExecutor:
 
                 # Turn 1: Emit Execution Mode Badge to Timeline (Native Tools vs Fast Direct Commands)
                 if iteration == 1:
+                    if not self._explicit_max_iterations and _is_coding_loop_active(current_cfg):
+                        self.max_iterations = max(self.max_iterations, 25)
                     pctrl = current_cfg.get("payload_control", {})
                     send_tools = pctrl.get("send_tools", True)
                     disable_tools = current_cfg.get("disable_tools", False)
@@ -232,6 +402,8 @@ class AgentExecutor:
                     user_text, images = process_initial_vision(
                         user_text, images, current_cfg, emit_callback=self._emit
                     )
+
+                enforce_agent_context_budget(agent_context, current_cfg, user_text=user_text)
 
                 model_short = resolve_short_model_label(current_cfg)
                 llm_label = (
@@ -322,35 +494,68 @@ class AgentExecutor:
                         })
                         continue
 
-                    # Safeguard against local coding LLMs claiming they created files without calling EXECUTOR write tools
+                    # Safeguard against coding LLMs claiming edits/fixes without real disk writes,
+                    # echoing <tool_response>, or parroting an old Loop Breaker error from history.
                     _verified_disk_files = extract_verified_files_from_results(accumulated_tool_results)
-                    if not _verified_disk_files and detect_unexecuted_file_claim(extracted_text):
+                    _write_actions = {"write_file", "patch_file", "run_aider_task", "git_restore", "move_path", "create_dir", "delete_file"}
+                    _executor_mutated_disk = bool(_verified_disk_files) or any(
+                        str(r.get("tag", "")).upper() == "EXECUTOR"
+                        and str(r.get("action") or "") in _write_actions
+                        and "SYNTAX ERROR" not in str(r.get("output", ""))
+                        and "Path not found:" not in str(r.get("output", ""))
+                        and "Text to replace not found" not in str(r.get("output", ""))
+                        for r in accumulated_tool_results
+                    )
+                    _echoed_tool_resp = "<tool_response>" in str(raw_response or "").lower()
+                    _parroted_loop_breaker = (
+                        "Loop Breaker: Stopped after" in (extracted_text or "")
+                        or ("> ⚠️" in (extracted_text or "") and "SYNTAX ERROR" in (extracted_text or ""))
+                    )
+                    if (
+                        (
+                            (not _executor_mutated_disk and not _verified_disk_files and detect_unexecuted_file_claim(extracted_text))
+                            or (_echoed_tool_resp and not _verified_disk_files)
+                            or _parroted_loop_breaker
+                        )
+                        and is_executor_anti_hallucination_enabled(current_cfg)
+                    ):
                         if are_executor_write_tools_enabled(current_cfg):
-                            if file_hallucination_retries < 1 and iteration < self.max_iterations:
+                            if file_hallucination_retries < 2 and iteration < self.max_iterations:
                                 file_hallucination_retries += 1
                                 logger.warning(
-                                    "[AGENT] Caught unexecuted file creation claim — forcing real EXECUTOR tool retry."
+                                    "[AGENT] Caught unexecuted EXECUTOR claim / <tool_response> / Loop Breaker parrot — forcing real EXECUTOR tool retry."
                                 )
                                 llm_step["result_preview"] = tr(
-                                    "Rilevata creazione file simulata — richiamo EXECUTOR",
-                                    "Detected unexecuted file claim — retrying EXECUTOR tools",
+                                    "Rilevata risposta simulata — richiamo EXECUTOR",
+                                    "Detected unexecuted claim or echoed error — retrying EXECUTOR",
                                 )
                                 AgentTracer.update_step(llm_step, detail=llm_step["result_preview"])
                                 agent_context.append({"role": "assistant", "content": str(raw_response or extracted_text or "")})
-                                agent_context.append({
-                                    "role": "user",
-                                    "content": (
-                                        "[SYSTEM GUARD]: You stated in text that you created or saved files, but NO filesystem tool "
-                                        "was called, so ZERO files exist on disk yet. Invoke `EXECUTOR__create_dir` and "
-                                        "`EXECUTOR__write_file` right now to write every real file to disk, validate with "
-                                        "`EXECUTOR__check_syntax`, and only reference verified paths."
-                                    ),
-                                })
+                                if _echoed_tool_resp:
+                                    guard_content = (
+                                        "[SYSTEM GUARD]: Do NOT echo `<tool_response>` text! Output real tool calls only. "
+                                        "Invoke `EXECUTOR__run_aider_task` or write ONE concise file per turn via `EXECUTOR__write_file` "
+                                        "(with forward slashes `/` in Windows paths) right now."
+                                    )
+                                elif _parroted_loop_breaker:
+                                    guard_content = (
+                                        "[SYSTEM GUARD]: You repeated an old Loop Breaker error from chat history instead of fixing the files! "
+                                        "Call `EXECUTOR__read_file` on the target files (e.g. `storage.py`, `app.py`, `static/app.js`, `index.html`) "
+                                        "and apply real fixes with `EXECUTOR__write_file` / `EXECUTOR__patch_file` now."
+                                    )
+                                else:
+                                    guard_content = (
+                                        "[SYSTEM GUARD]: You claimed files were created, patched, or fixed, "
+                                        "but NO file write/patch succeeded on disk yet (`_verified_disk_files` is empty). "
+                                        "Call `EXECUTOR__read_file` to inspect the actual file lines, then fix it cleanly with `EXECUTOR__write_file` "
+                                        "or `EXECUTOR__patch_file` (using forward slashes `/` in Windows paths)."
+                                    )
+                                agent_context.append({"role": "user", "content": guard_content})
                                 continue
                             else:
                                 unverified_file_notice = (
-                                    "> ⚠️ **System Notice:** No files were actually written to disk in this turn "
-                                    "(no `EXECUTOR` file write tool succeeded)."
+                                    "> ⚠️ **System Notice:** No files were actually written or modified on disk in this turn "
+                                    "(no `EXECUTOR` tool was invoked)."
                                 )
                         else:
                             unverified_file_notice = (
@@ -404,7 +609,7 @@ class AgentExecutor:
                         missing_igen_detected=missing_igen_detected,
                         unverified_file_notice=unverified_file_notice,
                     )
-                    self._sync_assistant_history(video_response, think_block)
+                    self._sync_assistant_history(video_response, think_block, user_text=user_text)
                     return video_response, clean_voice
 
                 # Case B: Tools were triggered
@@ -436,6 +641,7 @@ class AgentExecutor:
                         )
                         camera_resp = "Sure! [CAMERA_SNAPSHOT_REQUEST] Please take the photo when prompted by your browser."
                         video_response, clean_voice = processore.clean_final_output(camera_resp, tool_results, camera_resp, voice_status)
+                        self._sync_assistant_history(video_response, user_text=user_text)
                         return video_response, clean_voice
 
                     agent_context.append({
@@ -447,6 +653,48 @@ class AgentExecutor:
 
                     images = MediaInterceptor.load_vision_images(output_text, images, self._emit)
                     images = MediaInterceptor.load_search_vision_images(output_text, images, self._emit)
+
+                compact_agent_context_tool_messages(agent_context, keep_recent=3)
+
+                stagnation_decision, stagnation_msg, _ = stagnation_tracker.step(tool_results)
+                if stagnation_decision == "nudge" and iteration < self.max_iterations:
+                    logger.warning(f"[AGENT] Loop breaker nudge triggered at iteration {iteration}/{self.max_iterations}")
+                    nudge_step = AgentTracer.start_step(
+                        kind="system",
+                        label=tr("Loop ripetitivo — cambio strategia", "Repetitive loop — forcing strategy change"),
+                        icon="fa-rotate-left",
+                        level="warning",
+                        module_name="Loop Breaker",
+                    )
+                    AgentTracer.finish_step(nudge_step, status="ok", result_preview=stagnation_msg[:180])
+                    agent_context.append({"role": "user", "content": stagnation_msg})
+                    continue
+
+                if stagnation_decision == "break":
+                    logger.warning(f"[AGENT] Repetitive loop broken early at iteration {iteration}/{self.max_iterations}: {stagnation_msg}")
+                    brk_step = AgentTracer.start_step(
+                        kind="error",
+                        label=tr("Loop ripetitivo interrotto", "Repetitive loop aborted early"),
+                        icon="fa-hand",
+                        level="error",
+                        module_name="Loop Breaker",
+                    )
+                    AgentTracer.finish_step(brk_step, status="error", result_preview=stagnation_msg[:180])
+                    self._finalize_and_store_trace(
+                        tr("Loop ripetitivo interrotto in anticipo", "Repetitive no-progress loop broken early"),
+                        status="error",
+                    )
+                    combined_text = f"{(extracted_text or '').strip()}\n\n{stagnation_msg}".strip()
+                    video_response, clean_voice = finalize_response(
+                        extracted_text=combined_text,
+                        accumulated_tool_results=accumulated_tool_results,
+                        raw_response=raw_response,
+                        voice_status=voice_status,
+                        think_block=think_block,
+                        missing_igen_detected=missing_igen_detected,
+                    )
+                    self._sync_assistant_history(video_response, think_block, user_text=user_text)
+                    return video_response, clean_voice
 
                 # Check early termination (e.g., image generated or search cards completed)
                 should_short, reason = eval_early_termination(
@@ -467,7 +715,7 @@ class AgentExecutor:
                         think_block=think_block,
                         missing_igen_detected=missing_igen_detected,
                     )
-                    self._sync_assistant_history(video_response, think_block)
+                    self._sync_assistant_history(video_response, think_block, user_text=user_text)
                     return video_response, clean_voice
 
                 # Max iterations limit safeguard
@@ -487,7 +735,7 @@ class AgentExecutor:
                         think_block=think_block,
                         missing_igen_detected=missing_igen_detected,
                     )
-                    self._sync_assistant_history(video_response, think_block)
+                    self._sync_assistant_history(video_response, think_block, user_text=user_text)
                     return video_response, clean_voice
 
         # Fallback if loop was interrupted without reaching return
@@ -497,4 +745,5 @@ class AgentExecutor:
             raw_response="",
             voice_status=voice_status,
         )
+        self._sync_assistant_history(video_response, user_text=user_text)
         return video_response, clean_voice

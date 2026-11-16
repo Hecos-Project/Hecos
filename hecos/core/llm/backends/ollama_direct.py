@@ -188,39 +188,51 @@ def _rewrite_assistant_stream_badges(content: str) -> str:
 
 def _normalize_messages_for_ollama(messages: List[Dict[str, Any]], has_tools: bool) -> List[Dict[str, Any]]:
     """
-    When native tools are disabled (e.g. Gemma 4 text-only tool mode):
-    1. Converts orphaned role='tool' entries into plain user context blocks so Ollama never drops them.
+    Normalizes OpenAI-style history cleanly for Ollama:
+    1. Converts orphan `role='tool'` entries (when native tools are off OR when the preceding
+       assistant turn used inline text/JSON fallback without structured `tool_calls`) into clean
+       `role='user'` execution summaries so ChatML never emits stray `<tool_response>` loops.
     2. Rewrites stored assistant '📺 Tuned to ...' UI badges into explicit tool execution reminders
        so text-mode models do not mimic the badge directly instead of calling NETSEARCH__stream_control(...).
     """
-    if has_tools:
-        return messages
     out: List[Dict[str, Any]] = []
+    last_asst_had_tool_calls = False
     for m in messages or []:
         if not isinstance(m, dict):
             out.append(m)
             continue
         role = m.get("role")
         if role == "tool":
+            if has_tools and last_asst_had_tool_calls:
+                out.append(m)
+                continue
             t_name = m.get("name") or "TOOL"
             t_content = m.get("content") or ""
-            out.append({
-                "role": "user",
-                "content": (
-                    f"[TOOL EXECUTION RESULT · {t_name}]:\n{t_content}\n\n"
+            guidance = (
+                "Based strictly on this real tool result above, run the next required tool call "
+                "(or summarize concisely once all deliverables are verified). Never echo <tool_response> tags."
+                if has_tools
+                else (
                     "Now reply in character to the user based strictly on this real tool result. "
                     "Do not print raw function call syntax unless invoking another required action."
-                ),
+                )
+            )
+            out.append({
+                "role": "user",
+                "content": f"[TOOL EXECUTION RESULT · {t_name}]:\n{t_content}\n\n{guidance}",
             })
-        elif role == "assistant" and isinstance(m.get("content"), str):
-            rewritten = _rewrite_assistant_stream_badges(m["content"])
-            if rewritten != m["content"]:
-                m_copy = dict(m)
-                m_copy["content"] = rewritten
-                out.append(m_copy)
-            else:
-                out.append(m)
+        elif role == "assistant":
+            last_asst_had_tool_calls = bool(m.get("tool_calls"))
+            if not has_tools and isinstance(m.get("content"), str):
+                rewritten = _rewrite_assistant_stream_badges(m["content"])
+                if rewritten != m["content"]:
+                    m_copy = dict(m)
+                    m_copy["content"] = rewritten
+                    out.append(m_copy)
+                    continue
+            out.append(m)
         else:
+            last_asst_had_tool_calls = False
             out.append(m)
     return out
 

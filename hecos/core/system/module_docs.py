@@ -316,9 +316,48 @@ def _sanitize_tool_schema(schema_list):
     return sanitized
 
 
+def _annotation_to_json_type(annotation) -> str:
+    """Map Python parameter type annotations to JSON Schema scalar types."""
+    import inspect
+    from typing import Union, get_args, get_origin
+
+    if annotation is inspect.Parameter.empty or annotation is None:
+        return "string"
+    if annotation is bool or annotation == "bool":
+        return "boolean"
+    if annotation is int or annotation == "int":
+        return "integer"
+    if annotation is float or annotation == "float":
+        return "number"
+    origin = get_origin(annotation)
+    if origin is Union or str(origin) == "types.UnionType":
+        args = [a for a in get_args(annotation) if a is not type(None)]
+        if len(args) == 1:
+            return _annotation_to_json_type(args[0])
+    if isinstance(annotation, str):
+        norm = annotation.strip().lower().replace("typing.", "")
+        for prefix in ("optional[", "union["):
+            if norm.startswith(prefix) and norm.endswith("]"):
+                inner = [p.strip() for p in norm[len(prefix):-1].split(",") if p.strip() != "none"]
+                if len(inner) == 1:
+                    norm = inner[0]
+        if "|" in norm:
+            parts = [p.strip() for p in norm.split("|") if p.strip() != "none"]
+            if len(parts) == 1:
+                norm = parts[0]
+        if norm == "bool":
+            return "boolean"
+        if norm == "int":
+            return "integer"
+        if norm == "float":
+            return "number"
+    return "string"
+
+
 def _extract_module_tools(tag, module):
     """Extract JSON function-calling schemas from a loaded plugin instance."""
     import inspect
+    from typing import get_type_hints
 
     extracted = []
     if hasattr(module, "tools"):
@@ -331,6 +370,10 @@ def _extract_module_tools(tag, module):
 
             description, params_description = _parse_tool_docstring(method.__doc__)
             signature = inspect.signature(method)
+            try:
+                type_hints = get_type_hints(method)
+            except Exception:
+                type_hints = {}
 
             properties = {}
             required = []
@@ -338,8 +381,9 @@ def _extract_module_tools(tag, module):
                 if param_name == 'self':
                     continue
                 param_description = params_description.get(param_name, f"Parameter {param_name}")
+                ann = type_hints.get(param_name, param.annotation)
                 properties[param_name] = {
-                    "type": "string",
+                    "type": _annotation_to_json_type(ann),
                     "description": param_description
                 }
                 if param.default == inspect.Parameter.empty:
@@ -609,7 +653,7 @@ def get_available_tools_catalog(config=None):
 
     # 1. Currently loaded plugins in RAM (core + awakened lazy plugins)
     seen_tags = set()
-    for tag, module in _loaded_plugins.items():
+    for tag, module in list(_loaded_plugins.items()):
         if not _plugins_cfg.get(tag, {}).get("llm_callable", True):
             continue
         seen_tags.add(tag)
@@ -619,7 +663,7 @@ def get_available_tools_catalog(config=None):
         _finalize_module_entry(tag, schemas, is_lazy=is_lazy, loaded_in_ram=True)
 
     # 2. Dormant lazy plugins (schemas cached in _lazy_tool_schemas during scan)
-    for tag, lazy_schemas in _lazy_tool_schemas.items():
+    for tag, lazy_schemas in list(_lazy_tool_schemas.items()):
         if tag in seen_tags:
             continue
         if not _lazy_llm_callable.get(tag, True):
@@ -668,7 +712,7 @@ def get_tools_schema(payload_control=None, config=None):
     tools_list = []
 
     # 1. Loaded plugins in RAM
-    for tag, module in _loaded_plugins.items():
+    for tag, module in list(_loaded_plugins.items()):
         if not _plugins_cfg.get(tag, {}).get("llm_callable", True):
             continue
 
@@ -686,7 +730,7 @@ def get_tools_schema(payload_control=None, config=None):
     # In 'custom' mode, if a user/preset explicitly checked a lazy module or tool for this chat/preset,
     # expose its cached schema (tool_invoker will JIT-load it when invoked).
     if mode == "custom":
-        for tag, lazy_schemas in _lazy_tool_schemas.items():
+        for tag, lazy_schemas in list(_lazy_tool_schemas.items()):
             if tag in _loaded_plugins:
                 continue
             if not _lazy_llm_callable.get(tag, True):

@@ -1,4 +1,5 @@
 import os
+import re
 
 try:
     from hecos.core.i18n import translator
@@ -22,13 +23,19 @@ from .sys_tools import (
 )
 from .sandbox import run_python_code_tool
 from .file_manager import (
-    read_file_tool, write_file_tool, patch_file_tool, 
-    delete_file_tool, create_dir_tool, list_dir_tool
+    AgentTracer, logger, sanitize_llm_path, read_file_tool, write_file_tool, patch_file_tool,
+    delete_file_tool, create_dir_tool, list_dir_tool, move_path_tool
 )
 from .dev_tools import (
-    project_tree_tool, search_code_tool, check_syntax_tool, run_project_test_tool
+    project_tree_tool, search_code_tool, check_syntax_tool,
+    run_project_test_tool, inspect_web_project_issues
 )
-from .process_runner import get_process_registry, run_tests_for_target
+from .code_intel import build_repo_map
+from .git_tools import (
+    git_status_tool, git_diff_tool, git_checkpoint_tool, git_restore_tool
+)
+from .aider_bridge import run_aider_task_tool
+from .process_runner import get_process_registry, probe_local_http_url, run_tests_for_target
 
 class ExecutorTools:
     """
@@ -91,6 +98,36 @@ class ExecutorTools:
                 "type": "bool",
                 "default": True,
                 "description": "Allow launching workspace scripts and tests directly from chat cards and Workspace Runner UI."
+            },
+            "aider_enabled": {
+                "type": "bool",
+                "default": True,
+                "description": "Enable invisible Aider sidecar delegation for multi-file coding tasks."
+            },
+            "aider_global_preset": {
+                "type": "string",
+                "default": "hecos_coder",
+                "description": "Default Global Preset ID used by Aider (provides model, backend, and num_ctx unless overridden)."
+            },
+            "aider_model": {
+                "type": "string",
+                "default": "",
+                "description": "Optional LiteLLM/Ollama model override for Aider (empty = use Global Preset / active model)."
+            },
+            "aider_num_ctx": {
+                "type": "int",
+                "default": 0,
+                "description": "Optional context window override for Ollama (0 = inherit from Global Preset or 16384 fallback)."
+            },
+            "aider_edit_format": {
+                "type": "string",
+                "default": "",
+                "description": "Optional Aider edit format override (e.g. diff, whole, udiff)."
+            },
+            "aider_auto_lint": {
+                "type": "bool",
+                "default": True,
+                "description": "Let Aider run automatic syntax/lint checks after editing files."
             }
         }
 
@@ -147,7 +184,7 @@ class ExecutorTools:
 
     def _resolve_target_path(self, path: str) -> str:
         """Resolve relative paths inside the configured projects workspace."""
-        clean = (path or "").strip()
+        clean = sanitize_llm_path(path)
         if not clean:
             return self._resolve_workspace_dir()
         if os.path.isabs(clean):
@@ -194,8 +231,14 @@ class ExecutorTools:
     def reboot_system(self) -> str:
         return reboot_system_tool()
 
-    def execute_shell_command(self, command: str) -> str:
-        return execute_shell_command_tool(command, self.tag)
+    def execute_shell_command(self, command: str, cwd: str = "") -> str:
+        """
+        Executes a shell command with python_env tools (pytest, ruff, uv, python) on PATH.
+        :param command: Shell command to execute.
+        :param cwd: Optional working directory (workspace-relative or absolute path).
+        """
+        resolved_cwd = self._resolve_target_path(cwd) if cwd and str(cwd).strip() else ""
+        return execute_shell_command_tool(command, self.tag, cwd=resolved_cwd)
 
     def execute_background_command(self, command: str) -> str:
         return execute_background_command_tool(command, self.tag)
@@ -226,7 +269,11 @@ class ExecutorTools:
         """
         return read_file_tool(self._resolve_target_path(file_path), start_line, end_line)
 
-    _AUTO_CHECK_EXTS = frozenset({".py", ".json", ".yaml", ".yml", ".js", ".mjs", ".cjs"})
+    _AUTO_CHECK_EXTS = frozenset({
+        ".py", ".json", ".yaml", ".yml",
+        ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".css", ".html", ".htm",
+    })
+    _WEB_DIAG_EXTS = frozenset({".py", ".html", ".htm"})
 
     def _get_exec_config(self, key: str, default):
         try:
@@ -239,17 +286,34 @@ class ExecutorTools:
         return default
 
     def _run_post_write_verification(self, abs_path: str) -> str:
-        """Run deterministic post-write syntax verification and matching existing project tests."""
+        """Run deterministic post-write syntax verification, web/Flask diagnostics, and matching project tests."""
         ext = os.path.splitext(abs_path)[1].lower()
-        if ext not in self._AUTO_CHECK_EXTS or not os.path.isfile(abs_path):
+        if (ext not in self._AUTO_CHECK_EXTS and ext not in self._WEB_DIAG_EXTS) or not os.path.isfile(abs_path):
             return ""
 
         notes = []
         syntax_ok = True
-        if bool(self._get_exec_config("auto_verify_syntax_on_write", True)):
+        if ext in self._AUTO_CHECK_EXTS and bool(self._get_exec_config("auto_verify_syntax_on_write", True)):
             syntax_res = check_syntax_tool(abs_path)
             syntax_ok = "SYNTAX ERROR" not in syntax_res
             notes.append(f"[AUTO-CHECK] {syntax_res}")
+            if not syntax_ok:
+                m_ln = re.search(r"line\s+(\d+)", syntax_res)
+                if m_ln:
+                    err_ln = max(1, int(m_ln.group(1)))
+                    excerpt = read_file_tool(
+                        abs_path,
+                        start_line=max(1, err_ln - 8),
+                        end_line=err_ln + 8,
+                    )
+                    notes.append(
+                        f"[ERROR CONTEXT around line {err_ln}]:\n{excerpt}\n"
+                        "[ACTION REQUIRED]: Fix the syntax error shown in the numbered lines above before running tests or starting the app."
+                    )
+
+        if ext in self._WEB_DIAG_EXTS:
+            for warn in inspect_web_project_issues(abs_path):
+                notes.append(f"[WEB-DIAGNOSTIC] {warn}")
 
         ws_dir = self._resolve_workspace_dir()
         in_workspace = os.path.abspath(abs_path).lower().startswith(os.path.abspath(ws_dir).lower())
@@ -264,6 +328,9 @@ class ExecutorTools:
             if not test_res.get("no_tests_found"):
                 status_label = "PASSED" if test_res.get("ok") else "FAILED"
                 out_tail = (test_res.get("output") or "").strip()[-1200:]
+                logger.info(
+                    f"[EXECUTOR] post-write test {status_label}: {os.path.basename(abs_path)} exit={test_res.get('exit_code')}"
+                )
                 notes.append(
                     f"[AUTO-TEST] {status_label} (exit={test_res.get('exit_code')}, {test_res.get('duration_ms', 0)}ms):\n{out_tail}"
                 )
@@ -283,18 +350,100 @@ class ExecutorTools:
             res += self._run_post_write_verification(resolved)
         return res
 
-    def patch_file(self, file_path: str, old_text: str, new_text: str) -> str:
+    def patch_file(
+        self,
+        file_path: str,
+        old_text: str,
+        new_text: str,
+        start_line: int = 0,
+        end_line: int = 0,
+    ) -> str:
         """
-        Replaces the first exact occurrence of old_text with new_text in a file.
+        Replaces a unique existing occurrence of old_text with new_text in a file.
         :param file_path: File path to patch.
         :param old_text: Exact existing block to replace.
         :param new_text: Replacement text block.
+        :param start_line: Optional 1-indexed start line to scope the replacement.
+        :param end_line: Optional 1-indexed end line to scope the replacement.
         """
         resolved = self._resolve_target_path(file_path)
-        res = patch_file_tool(resolved, old_text, new_text)
+        res = patch_file_tool(resolved, old_text, new_text, start_line=start_line, end_line=end_line)
         if res.startswith("[EXECUTOR] File patched and verified on disk:"):
             res += self._run_post_write_verification(resolved)
         return res
+
+    def move_path(self, src_path: str, dst_path: str) -> str:
+        """
+        Moves or renames a file or folder inside the authorized workspace.
+        :param src_path: Source file or directory path.
+        :param dst_path: Destination file or directory path.
+        """
+        return move_path_tool(self._resolve_target_path(src_path), self._resolve_target_path(dst_path))
+
+    def repo_map(self, path: str = "", max_files: int = 60, max_lines: int = 160) -> str:
+        """
+        Generates a compact multi-language AST map (files, classes, functions, line numbers) for a codebase.
+        :param path: Project root directory (defaults to projects workspace).
+        :param max_files: Maximum files to inspect (default 60).
+        :param max_lines: Maximum output lines (default 160).
+        """
+        resolved = self._resolve_target_path(path) if path else self._resolve_workspace_dir()
+        return build_repo_map(resolved, max_files=max_files, max_lines=max_lines)
+
+    def git_status(self, repo_path: str = "") -> str:
+        """
+        Inspects Git branch and modified/untracked files inside a project repository.
+        :param repo_path: Repository path (defaults to projects workspace).
+        """
+        resolved = self._resolve_target_path(repo_path) if repo_path else self._resolve_workspace_dir()
+        return git_status_tool(resolved)
+
+    def git_diff(self, repo_path: str = "", file_path: str = "", staged: bool = False) -> str:
+        """
+        Shows unified Git diff (size-capped) for the repository or a specific file.
+        :param repo_path: Repository path (defaults to projects workspace).
+        :param file_path: Optional file path filter inside the repository.
+        :param staged: When true, inspect staged changes instead of unstaged changes.
+        """
+        resolved = self._resolve_target_path(repo_path) if repo_path else self._resolve_workspace_dir()
+        return git_diff_tool(resolved, file_path=file_path, staged=staged)
+
+    def git_checkpoint(self, repo_path: str = "", message: str = "hecos checkpoint") -> str:
+        """
+        Saves a non-destructive Git checkpoint snapshot (tracked + untracked files) without mutating HEAD.
+        :param repo_path: Project or repository directory (auto-initializes .git if missing).
+        :param message: Short label describing the checkpoint.
+        """
+        resolved = self._resolve_target_path(repo_path) if repo_path else self._resolve_workspace_dir()
+        return git_checkpoint_tool(resolved, message=message, auto_init=True)
+
+    def git_restore(
+        self,
+        repo_path: str = "",
+        file_path: str = "",
+        target_ref: str = "HEAD",
+        confirm_all: bool = False,
+    ) -> str:
+        """
+        Restores a file (or the full tree when confirm_all=True) from HEAD or a saved checkpoint ('latest' or SHA).
+        :param repo_path: Project or repository directory.
+        :param file_path: File path inside the repo to restore.
+        :param target_ref: Git ref, commit SHA, or 'latest' for the last checkpoint.
+        :param confirm_all: Must be true if restoring all tracked files without specifying file_path.
+        """
+        resolved = self._resolve_target_path(repo_path) if repo_path else self._resolve_workspace_dir()
+        return git_restore_tool(resolved, file_path=file_path, target_ref=target_ref, confirm_all=confirm_all)
+
+    def run_aider_task(self, repo_path: str, instruction: str, files: str = "", model: str = "") -> str:
+        """
+        Delegates a multi-file refactor/generation task to isolated Aider CLI (if installed).
+        :param repo_path: Target Git project directory.
+        :param instruction: Detailed coding task prompt for Aider.
+        :param files: Optional comma-separated list of target file paths.
+        :param model: Optional LiteLLM/Ollama model override (e.g. 'ollama_chat/qwen2.5-coder:14b').
+        """
+        resolved = self._resolve_target_path(repo_path) if repo_path else self._resolve_workspace_dir()
+        return run_aider_task_tool(resolved, instruction=instruction, files=files, model=model)
 
     def delete_file(self, file_path: str) -> str:
         return delete_file_tool(self._resolve_target_path(file_path))
@@ -371,26 +520,57 @@ class ExecutorTools:
             require_stay_alive=False,
         )
         if not res.get("ok") and res.get("status") == "error":
+            logger.warning(f"[EXECUTOR] start_app failed for {target_path}: {res.get('error')}")
             return f"[EXECUTOR] {res.get('error', 'Failed to start application.')}"
         lines = [
             f"[EXECUTOR] Process {res.get('status', 'unknown').upper()} | run_id={res.get('run_id')} | PID={res.get('pid')} | file={res.get('path')}",
         ]
+        if res.get("log_path"):
+            lines.append(f"Log File: {res.get('log_path')}")
         if res.get("exit_code") is not None:
             lines.append(f"Exit Code: {res.get('exit_code')}")
         urls = res.get("detected_urls") or []
         if urls:
             lines.append("Detected URL(s): " + ", ".join(urls))
-        out = (res.get("output") or "").strip()[-1500:]
+        probe = res.get("http_probe")
+        if isinstance(probe, dict):
+            if probe.get("ok"):
+                lines.append(f"[HEALTH-CHECK OK] {probe.get('url')} -> {probe.get('summary')}")
+            else:
+                lines.append(
+                    f"[HEALTH-CHECK FAILED] {probe.get('url')} -> {probe.get('summary')} "
+                    "(fix templates/static/routes before finishing!)"
+                )
+                target_file = res.get("path")
+                if target_file:
+                    for diag in inspect_web_project_issues(target_file):
+                        lines.append(f"[WEB-DIAGNOSTIC] {diag}")
+        out = (res.get("output") or "").strip()[-1800:]
         if out:
             lines.append(f"--- LOG ---\n{out}")
         return "\n".join(lines)
+
+    def probe_url(self, url: str) -> str:
+        """
+        Tests a local running web server URL (http://127.0.0.1:<port> or http://localhost:<port>),
+        verifies the HTML HTTP status, and checks referenced local CSS/JS assets for 404/500 errors.
+        :param url: Local URL to probe (e.g. 'http://127.0.0.1:5000/').
+        """
+        res = probe_local_http_url(url, timeout=2.5, check_assets=True, retries=2)
+        AgentTracer.emit_action("probe_url", url, res.get("summary") or res.get("error", ""))
+        if res.get("ok"):
+            return f"[EXECUTOR] [HEALTH-CHECK OK] {res.get('url')} -> {res.get('summary')}"
+        return f"[EXECUTOR] [HEALTH-CHECK FAILED] {res.get('url')} -> {res.get('summary') or res.get('error')}"
 
     def get_app_logs(self, run_id: str, tail_lines: int = 80) -> str:
         """Reads live status and log output of a managed workspace application."""
         res = get_process_registry().get_logs(run_id.strip(), offset=0, tail_lines=tail_lines)
         if not res.get("ok"):
+            logger.debug(f"[EXECUTOR] get_app_logs miss run_id={run_id}: {res.get('error')}")
             return f"[EXECUTOR] {res.get('error', 'Log lookup failed.')}"
-        header = f"[EXECUTOR] run_id={res['run_id']} | status={res['status']} | exit_code={res.get('exit_code')}"
+        logger.debug(f"[EXECUTOR] get_app_logs run_id={res['run_id']} status={res['status']} bytes={len(res.get('chunk') or '')}")
+        resolved_note = f" (resolved from '{res['resolved_from']}')" if res.get("resolved_from") else ""
+        header = f"[EXECUTOR] run_id={res['run_id']}{resolved_note} | status={res['status']} | exit_code={res.get('exit_code')}"
         urls = res.get("detected_urls") or []
         if urls:
             header += " | URL=" + ", ".join(urls)
@@ -482,19 +662,27 @@ def info():
             "kill_process": "Terminate a process by name.",
             "reboot_system": "Restart the Hecos system.",
             "open_media_file": "Open a video or audio file with VLC or the OS default player. Use this to play any local media file.",
-            "read_file": "Read a file's content by line range.",
+            "read_file": "Read a file's content with line numbers and safe pagination.",
             "write_file": "Write or create a file (overwrite or append).",
-            "patch_file": "Surgically replace a text block inside a file.",
+            "patch_file": "Surgically replace a unique text block inside a file.",
+            "move_path": "Move or rename a file or folder.",
             "delete_file": "Delete a file.",
             "create_dir": "Create a directory tree.",
             "list_dir": "List a directory's contents.",
             "set_important_path": "Memorize an important directory path for the user (e.g., user_profile, downloads).",
             "get_important_paths": "Get all important paths memorized by the user, and the default workspace.",
             "project_tree": "Display a compact directory tree for a project or module.",
-            "search_code": "Search code and configuration files for matching text.",
-            "check_syntax": "Validate Python, JSON, YAML, or JavaScript file syntax.",
+            "repo_map": "Generate an AST repository map (files, classes, functions, line numbers).",
+            "search_code": "AST-aware code search (grep-ast) across project files.",
+            "check_syntax": "Validate Python (AST+Ruff), JSON, YAML, JS/TS, CSS, or HTML syntax.",
             "run_project_test": "Run a Python script, unittest, or pytest suite inside an authorized workspace/project.",
+            "git_status": "Check Git branch and modified/untracked files.",
+            "git_diff": "View unified Git diff for a repository or file.",
+            "git_checkpoint": "Save a non-destructive Git checkpoint snapshot.",
+            "git_restore": "Restore a file or tree from HEAD or a saved Git checkpoint.",
+            "run_aider_task": "Delegate multi-file coding edits to isolated Aider CLI (if installed).",
             "start_app": "Start a persistent workspace script, local web server, or desktop GUI app with managed logging.",
+            "probe_url": "Verify a local HTTP URL and referenced static CSS/JS assets return 200 OK.",
             "get_app_logs": "Read status and live log output for a managed workspace app by run_id.",
             "list_running_apps": "List active and recent managed workspace applications.",
             "stop_app": "Stop a running managed workspace application by run_id.",

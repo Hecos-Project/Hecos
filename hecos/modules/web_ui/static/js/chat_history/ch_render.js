@@ -127,14 +127,23 @@ function renderSessionList() {
                 actionsHtml += `<button class="history-action-btn" style="margin-left:2px;" title="${descTitle}" onclick="${descFn}">🗑️</button>`;
             }
 
+            const st = window.HecosChatStatus && typeof window.HecosChatStatus.getSessionState === 'function'
+                ? window.HecosChatStatus.getSessionState(s.id)
+                : { status: 'idle' };
+            const ledStatus = st.status || 'idle';
+            const ledTitle = _getChatLedLabel(ledStatus);
+            const statusCls = ledStatus !== 'idle' ? ` status-${ledStatus}` : '';
+
             html += `
-        <div class="history-item${isActive ? ' active' : ''}" data-id="${s.id}" onclick="window.activateChatSession('${s.id}')">
+        <div class="history-item${isActive ? ' active' : ''}${statusCls}" data-id="${s.id}" onclick="window.activateChatSession('${s.id}')">
           <div class="history-item-main">
+            <span class="chat-status-led is-${ledStatus}" data-session-led="${s.id}" title="${ledTitle}"></span>
             <span class="history-icon">${modeIcon || '💬'}</span>
             <div class="history-item-info">
               <div class="history-title" title="${window.I18N?.webui_chat_rename_hint || 'Double click to rename'}" ondblclick="window.startRenameSession(event, '${s.id}')">${title}</div>
               <div class="history-meta">${timeStr} · ${msgCount} msg</div>
             </div>
+            <span class="history-speaking-tag" data-session-speaking-tag="${s.id}" style="display:${ledStatus === 'speaking' ? 'inline-flex' : 'none'};" title="Audio attivo"><i class="fas fa-volume-up"></i></span>
           </div>
           <div class="history-item-actions">
             ${actionsHtml}
@@ -145,3 +154,45 @@ function renderSessionList() {
 
     container.innerHTML = html;
 }
+
+function _getChatLedLabel(status) {
+    const labels = {
+        idle: 'Idle',
+        running: 'In esecuzione…',
+        speaking: 'Voce attiva…',
+        stopped: 'Interrotta',
+        error: 'Errore'
+    };
+    return labels[status] || 'Idle';
+}
+
+window.updateChatSessionLeds = function () {
+    const container = document.getElementById('chat-history-list');
+    if (!container) return;
+
+    const statusClasses = ['status-running', 'status-speaking', 'status-stopped', 'status-error'];
+    const ledClasses = ['is-idle', 'is-running', 'is-speaking', 'is-stopped', 'is-error'];
+
+    container.querySelectorAll('.history-item[data-id]').forEach((item) => {
+        const sid = item.dataset.id;
+        const st = window.HecosChatStatus && typeof window.HecosChatStatus.getSessionState === 'function'
+            ? window.HecosChatStatus.getSessionState(sid)
+            : { status: 'idle' };
+        const status = st.status || 'idle';
+
+        item.classList.remove(...statusClasses);
+        if (status !== 'idle') item.classList.add(`status-${status}`);
+
+        const led = item.querySelector('.chat-status-led');
+        if (led) {
+            led.classList.remove(...ledClasses);
+            led.classList.add(`is-${status}`);
+            led.title = _getChatLedLabel(status);
+        }
+
+        const spTag = item.querySelector('.history-speaking-tag');
+        if (spTag) {
+            spTag.style.display = (status === 'speaking') ? 'inline-flex' : 'none';
+        }
+    });
+};

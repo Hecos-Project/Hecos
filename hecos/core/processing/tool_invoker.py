@@ -399,7 +399,21 @@ def execute_plugin_tool(
     new_done = update_image_turn_counters(
         output_val, is_image_call, image_limit, images_already_done, sm
     )
-    return {"id": call_id, "output": output_val, "tag": mod_tag}, resolved_method, new_done
+    try:
+        args_sig = (
+            json.dumps(action_or_args, ensure_ascii=False, sort_keys=True, default=str)[:240]
+            if isinstance(action_or_args, dict)
+            else str(action_or_args or "")[:240]
+        )
+    except Exception:
+        args_sig = ""
+    return {
+        "id": call_id,
+        "output": output_val,
+        "tag": mod_tag,
+        "action": resolved_method or method_name or "",
+        "args_sig": args_sig,
+    }, resolved_method, new_done
 
 
 def build_missing_plugin_result(

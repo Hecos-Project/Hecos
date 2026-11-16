@@ -767,3 +767,6 @@ hecos/data/stream_hunter_cache/
 
 # Entire Runtime Media Directory (audio, images, video, sandbox, downloads, workspace, etc.)
 hecos/media/
+
+# Isolated external CLI sidecars (e.g. Aider venv managed via uv)
+tools/

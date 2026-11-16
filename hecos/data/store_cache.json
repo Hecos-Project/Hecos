@@ -1,7 +1,7 @@
 {
   "version": "1",
   "catalog_url": "https://hecos-project.github.io/store/index.json",
-  "generated_at": "2026-11-13T09:44:16Z",
+  "generated_at": "2026-11-14T08:24:26Z",
   "packages": [
     {
       "id": "org.hecos.testbuilder",
@@ -407,13 +407,13 @@
       "name": "Net Search",
       "type": "system_app",
       "level": 5,
-      "version": "1.1.4",
+      "version": "1.3.4",
       "author": "Antonio Meloni",
       "description": "Hecos Net Search & Intelligence System App. Privacy-preserving ClearWeb multi-engine meta-search, Tor DarkWeb (.onion) hidden services, OSINT identity lookup, media discovery, and deep file hunting.",
       "tags": [],
-      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/core_modules/net_search-1.1.4.hpkg",
-      "size_bytes": 2601402,
-      "sha256": "351398554caf427646d6a6b93f335447ce3bec61f2579637208e5d91ab9d8e35",
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/core_modules/net_search-1.3.4.hpkg",
+      "size_bytes": 25686360,
+      "sha256": "301d3f8f1976ca497738d1a4f2c9e3845dcb4b680949499a7fd7860216f32d2e",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -443,12 +443,18 @@
         "requests>=2.31.0",
         "requests[socks]>=2.31.0",
         "beautifulsoup4>=4.12.0",
-        "lxml==6.0.0",
+        "lxml>=5.2.0",
         "readability-lxml>=0.8.1",
+        "trafilatura>=1.8.0",
         "ddgs>=0.7.0",
         "simplexng>=0.1.0",
+        "yt-dlp>=2024.8.0",
+        "pillow>=10.0.0",
+        "imageio-ffmpeg>=0.4.9",
+        "python-vlc>=3.0.0",
         "waitress>=3.0.0",
         "PyYAML>=6.0",
+        "psutil>=5.9.0",
         "sherlock-project>=0.15.0"
       ]
     },
@@ -1754,5 +1760,5 @@
       "pip_requirements": []
     }
   ],
-  "cached_at": 1794726135.210974
+  "cached_at": 1794802626.9597828
 }

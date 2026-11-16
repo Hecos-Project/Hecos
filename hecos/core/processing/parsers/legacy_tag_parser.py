@@ -106,6 +106,18 @@ def _mask_code_spans(text: str) -> str:
     return masked
 
 
+_TOOL_RESPONSE_BLOCK_RE = re.compile(
+    r"<tool_response>[\s\S]*?(?:</tool_response>|$)",
+    re.IGNORECASE,
+)
+
+_NON_EMPTY_SIMPLE_TAGS = frozenset({
+    "EXECUTOR", "SYSTEM", "CORE", "MEMORY", "NETSEARCH", "MCP_BRIDGE",
+    "INFO", "DEBUG", "WARNING", "WARN", "ERROR", "CRITICAL", "TRACE",
+    "TOOL", "STATUS", "OK", "FAILED", "HEALTH", "AUTO", "WEB",
+})
+
+
 class LegacyTagParser:
     """
     Extracts legacy bracket tags (e.g., [TOOL:ACTION] or [TOOL]), slash commands,
@@ -117,14 +129,17 @@ class LegacyTagParser:
         """
         Extracts tags and mutates the tags_found list.
         """
-        masked_text = _mask_code_spans(base_text) if isinstance(base_text, str) else ""
-        masked_raw = _mask_code_spans(raw_response) if isinstance(raw_response, str) else ""
+        sanitized_base = _TOOL_RESPONSE_BLOCK_RE.sub("", base_text) if isinstance(base_text, str) else ""
+        sanitized_raw = _TOOL_RESPONSE_BLOCK_RE.sub("", raw_response) if isinstance(raw_response, str) else ""
+        masked_text = _mask_code_spans(sanitized_base)
+        masked_raw = _mask_code_spans(sanitized_raw)
 
         bracket_spans: List[Tuple[int, int]] = []
-        # Match standard [TOOL:ACTION] (requiring identifier starting with a letter), ignoring double-bracket UI tokens & code blocks
+        # Match standard [TOOL:ACTION] (requiring identifier starting with a letter), ignoring double-bracket UI tokens, URIs & code blocks
+        _uri_schemes = frozenset({"IMG", "HSEARCH", "HMEDIA", "HTTP", "HTTPS", "FTP", "FILE", "WS", "WSS", "MAILTO", "TEL", "DATA"})
         for m in re.finditer(r'(?<!\[)\[([A-Za-z][A-Za-z0-9_]*):([^\[\]]*?)\](?!\])', masked_text, flags=re.DOTALL):
             tag, action = m.group(1), m.group(2)
-            if tag.upper() in ("IMG", "HSEARCH", "HMEDIA"):
+            if tag.upper() in _uri_schemes or action.lstrip().startswith("//"):
                 continue
             bracket_spans.append((m.start(), m.end()))
             tags_found.append((tag.lower(), action.strip(), "standard", None))
@@ -133,6 +148,8 @@ class LegacyTagParser:
         if masked_raw:
             matches_simple = re.findall(r'(?<!\[)\[([A-Za-z][A-Za-z0-9_]*)\](?!\])', masked_raw)
             for tag in matches_simple:
+                if tag.upper() in _NON_EMPTY_SIMPLE_TAGS:
+                    continue
                 if not any(t[0] == tag.lower() for t in tags_found):
                     tags_found.append((tag.lower(), "", "simple", None))
 
@@ -184,7 +201,7 @@ class LegacyTagParser:
             except Exception:
                 allowed_mods = None
 
-            spans = extract_module_call_spans(base_text, allowed_modules=allowed_mods)
+            spans = extract_module_call_spans(sanitized_base, allowed_modules=allowed_mods)
             if spans:
                 from hecos.core.processing.tool_invoker import parse_call_kwargs
                 seen_calls: Set[Tuple[str, str, str]] = set()

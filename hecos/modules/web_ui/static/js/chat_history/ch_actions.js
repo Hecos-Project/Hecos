@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ch_actions.js
  * ─────────────────────────────────────────────────────────────────────────────
  * Hecos Chat History — User Actions and Interactions
@@ -38,6 +38,9 @@ window.newChatSession = async function (mode = null) {
     }
 
     await window.loadChatSessions();
+    if (window.HecosChatStatus && typeof window.HecosChatStatus.syncActiveViewControls === 'function') {
+        window.HecosChatStatus.syncActiveViewControls();
+    }
 };
 
 
@@ -73,6 +76,9 @@ window.activateChatSession = async function (sessionId) {
 
     if (window.renderHistoryMessages) window.renderHistoryMessages(res.messages || []);
     if (window.loadChatSessions) await window.loadChatSessions();
+    if (window.HecosChatStatus && typeof window.HecosChatStatus.syncActiveViewControls === 'function') {
+        window.HecosChatStatus.syncActiveViewControls();
+    }
 
     const overlay = document.getElementById('mobile-overlay');
     if (overlay && overlay.classList.contains('active')) {
@@ -144,6 +150,9 @@ window.toggleShowArchived = async function() {
     }
     
     await window.loadChatSessions();
+    if (window.HecosChatStatus && typeof window.HecosChatStatus.syncActiveViewControls === 'function') {
+        window.HecosChatStatus.syncActiveViewControls();
+    }
 };
 
 window.deleteChatSession = async function (e, sessionId) {

@@ -422,6 +422,30 @@ def inject_local_tool_hints(
 
     else:
 
+        has_executor_tools = any(
+
+            isinstance(t, dict) and ((t.get("function") or {}).get("name", "").startswith("EXECUTOR__"))
+
+            for t in (tools or [])
+
+        )
+
+        exec_examples = ""
+
+        if has_executor_tools:
+
+            exec_examples = (
+
+                "For code/files/app execution in text-mode, emit calls like `EXECUTOR__read_file(file_path='C:/Hecos/hecos/media/workspace/...')`, "
+
+                "`EXECUTOR__run_aider_task(repo_path='C:/Hecos/hecos/media/workspace/...', instruction='...')`, "
+
+                "`EXECUTOR__patch_file(file_path='...', old_text='...', new_text='...')`, or `EXECUTOR__start_app(target_path='...')` "
+
+                "(always use forward slashes `/` in Windows paths). NEVER claim files or servers were created, fixed, updated, or started unless you actually emitted the `EXECUTOR__*` call and read its output.\n"
+
+            )
+
         tool_hint = (
 
             "\n### DIRECT ACTIONS RULES (TEXT-MODE TOOL CALLS) ###\n"
@@ -431,6 +455,8 @@ def inject_local_tool_hints(
             "explicit module tags (`[NETSEARCH: stream_control(action='play', query='Rai 1', category='tv')]`), "
 
             "or double-underscore calls (`NETSEARCH__stream_control(action='play', query='Rai 1', category='tv')`) when requested by the user.\n"
+
+            f"{exec_examples}"
 
             "Wait for the tool output before claiming playback or external results succeeded. "
 

@@ -4,7 +4,7 @@
  * Delegates preview zoom and VLC commands to chat_media_zoom.js and styling to chat_media_preview.css.
  */
 
-window.processAiMedia = function(html) {
+window.processAiMedia = function (html) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
 
@@ -22,32 +22,39 @@ window.processAiMedia = function(html) {
     return `/api/local_file?path=${encodeURIComponent(clean)}`;
   }
 
-  function _buildLocalFileCardHtml(docPath, src, fileName, ext, includeOpenBtn = false) {
-    const fileIconMap = { pdf: 'fa-file-pdf', html: 'fa-file-code', htm: 'fa-file-code',
-                          py: 'fa-file-code', js: 'fa-file-code', ts: 'fa-file-code',
-                          jsx: 'fa-file-code', tsx: 'fa-file-code', css: 'fa-file-code',
-                          json: 'fa-file-code', yaml: 'fa-file-code', yml: 'fa-file-code',
-                          toml: 'fa-file-code', sh: 'fa-file-code', bat: 'fa-file-code', cmd: 'fa-file-code',
-                          sql: 'fa-file-code',
-                          doc: 'fa-file-word', docx: 'fa-file-word', txt: 'fa-file-alt',
-                          md: 'fa-file-alt', csv: 'fa-file-csv' };
-    const fileColorMap = { pdf: '#e74c3c', html: '#3498db', htm: '#3498db',
-                           py: '#f59e0b', js: '#facc15', ts: '#38bdf8',
-                           json: '#34d399', yaml: '#a78bfa', yml: '#a78bfa',
-                           doc: '#2980b9', docx: '#2980b9', xls: '#27ae60',
-                           xlsx: '#27ae60', ppt: '#e67e22', pptx: '#e67e22' };
+  function _buildLocalFileCardHtml(docPath, src, fileName, ext, includeOpenBtn = true) {
+    const fileIconMap = {
+      pdf: 'fa-file-pdf', html: 'fa-file-code', htm: 'fa-file-code',
+      py: 'fa-file-code', js: 'fa-file-code', ts: 'fa-file-code',
+      jsx: 'fa-file-code', tsx: 'fa-file-code', css: 'fa-file-code',
+      json: 'fa-file-code', yaml: 'fa-file-code', yml: 'fa-file-code',
+      toml: 'fa-file-code', sh: 'fa-file-code', bat: 'fa-file-code', cmd: 'fa-file-code',
+      sql: 'fa-file-code',
+      doc: 'fa-file-word', docx: 'fa-file-word', txt: 'fa-file-alt',
+      md: 'fa-file-alt', csv: 'fa-file-csv'
+    };
+    const fileColorMap = {
+      pdf: '#e74c3c', html: '#3498db', htm: '#3498db',
+      py: '#f59e0b', js: '#facc15', ts: '#38bdf8',
+      json: '#34d399', yaml: '#a78bfa', yml: '#a78bfa',
+      doc: '#2980b9', docx: '#2980b9', xls: '#27ae60',
+      xlsx: '#27ae60', ppt: '#e67e22', pptx: '#e67e22'
+    };
     const iconClass = fileIconMap[ext] || 'fa-file-alt';
     const iconColor = fileColorMap[ext] || 'var(--accent)';
 
-    const isPreviewable = (ext === 'pdf' || ext === 'html' || ext === 'htm');
+    const isHtml = (ext === 'html' || ext === 'htm');
+    const isPreviewable = (ext === 'pdf' || isHtml);
     const previewId = isPreviewable ? ('preview_box_' + Math.random().toString(36).substring(2, 10)) : null;
     const iframeId = isPreviewable ? ('preview_' + Math.random().toString(36).substring(2, 10)) : null;
-    const serveUrl = (ext === 'html' || ext === 'htm')
+    const serveUrl = isHtml
       ? `/api/serve_html?path=${encodeURIComponent(docPath)}`
       : src;
 
     const openBtnHtml = (includeOpenBtn && isPreviewable)
-      ? `<a href="${serveUrl}" target="_blank" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.18); border:1px solid rgba(108,140,255,0.35); color:var(--accent); font-size:0.8em; text-decoration:none; font-weight:600;"><i class="fas fa-external-link-alt"></i> Open</a>`
+      ? (isHtml
+        ? `<a href="${serveUrl}" target="_blank" rel="noopener noreferrer" class="wr-btn wr-btn-url" title="Open HTML page in new browser tab"><i class="fas fa-external-link-alt"></i> Open in Browser</a>`
+        : `<a href="${serveUrl}" target="_blank" rel="noopener noreferrer" class="wr-btn wr-btn-view" title="Open in new tab"><i class="fas fa-external-link-alt"></i> Open</a>`)
       : '';
 
     let actionsHtml;
@@ -79,17 +86,36 @@ window.processAiMedia = function(html) {
 
     if (ext === 'html' || ext === 'htm') {
       const safeDocPath = docPath.replace(/\\/g, '/').replace(/'/g, "\\'");
+      const modeNow = (window.HecosHtmlPreview && window.HecosHtmlPreview.getMode)
+        ? window.HecosHtmlPreview.getMode()
+        : 'static';
+      const isDyn = (modeNow === 'dynamic');
+      const initSandbox = isDyn
+        ? 'allow-same-origin allow-scripts allow-forms allow-popups allow-modals'
+        : 'allow-same-origin';
+      const modeBtnLabel = isDyn
+        ? '<i class="fas fa-bolt"></i> Live Dynamic'
+        : '<i class="fas fa-lock"></i> Static Frame';
+      const isFit = (window.HecosHtmlPreview && window.HecosHtmlPreview.getFit)
+        ? window.HecosHtmlPreview.getFit()
+        : true;
       htmlOut += `
-      <div class="chat-html-preview" id="${previewId}">
+      <div class="chat-html-preview ${isDyn ? 'is-dynamic' : 'is-static'} ${isFit ? 'is-fit' : ''}" id="${previewId}" data-doc-path="${docPath.replace(/"/g, '&quot;')}" data-static-src="${serveUrl.replace(/"/g, '&quot;')}" data-iframe-id="${iframeId}">
         <div class="chat-html-preview-bar">
-          <span>Preview: ${fileName}</span>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <button onclick="if(window.openDocPreview) window.openDocPreview('${safeDocPath}');" style="background:rgba(108,140,255,0.2);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9em;"><i class="fas fa-magic"></i> Visual Editor</button>
-            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Reload preview" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
+          <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+            <span>Preview: ${fileName}</span>
+            <span class="chat-preview-live-meta" style="font-size:11px; color:var(--muted,#94a3b8);">${isDyn ? '⚡ Live' : '🔒 Privacy Static'}</span>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+            <button type="button" class="chat-preview-mode-btn ${isDyn ? 'is-dynamic' : ''}" onclick="if(window.HecosHtmlPreview) window.HecosHtmlPreview.toggleMode();" title="Switch between privacy Static frame and persistent Live Dynamic preview (with auto-refresh on file edits)">${modeBtnLabel}</button>
+            <button type="button" class="chat-preview-fit-btn ${isFit ? 'is-active' : ''}" onclick="if(window.HecosHtmlPreview) window.HecosHtmlPreview.toggleFit();" title="Toggle between scaled Full Desktop Page (1280px) and 1:1 native frame">${isFit ? '<i class="fas fa-desktop"></i> Fit Page' : '<i class="fas fa-expand"></i> 1:1'}</button>
+            <button type="button" class="chat-preview-start-btn" style="display:none;" onclick="if(window.HecosHtmlPreview) window.HecosHtmlPreview.startBackendForBox('${previewId}');" title="Start local backend server for this project"><i class="fas fa-play"></i> Start Backend</button>
+            <button type="button" onclick="if(window.openDocPreview) window.openDocPreview('${safeDocPath}');" title="Open Visual Document Editor" style="background:rgba(108,140,255,0.2);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9em;"><i class="fas fa-magic"></i> Visual Editor</button>
+            <button type="button" onclick="if(window.HecosHtmlPreview) window.HecosHtmlPreview.reloadBox('${previewId}');" title="Reload preview" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
           </div>
         </div>
         <div class="chat-html-preview-body">
-          <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:400px;border:none;display:block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
+          <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:400px;border:none;display:block;" sandbox="${initSandbox}"></iframe>
         </div>
       </div>`;
     } else if (ext === 'pdf') {
@@ -115,6 +141,7 @@ window.processAiMedia = function(html) {
   // 1. Process <a> tags (Videos and Generic Files)
   const links = doc.querySelectorAll('a');
   links.forEach(a => {
+    if (a.closest('.chat-file-card-wrap, .chat-file-card, .wr-item-actions, .wr-subfile-row')) return;
     const href = a.getAttribute('href');
     if (!href) return;
 
@@ -137,7 +164,7 @@ window.processAiMedia = function(html) {
 
     // Is it a video file?
     const NATIVE_VIDEO_EXTS = /\.(mp4|webm|ogg|mov)$/i;
-    const ALL_VIDEO_EXTS    = /\.(mp4|webm|ogg|mov|avi|mkv|m4v|ts|flv|3gp|wmv|mpeg|mpg)$/i;
+    const ALL_VIDEO_EXTS = /\.(mp4|webm|ogg|mov|avi|mkv|m4v|ts|flv|3gp|wmv|mpeg|mpg)$/i;
     if (ALL_VIDEO_EXTS.test(href)) {
       const src = isLocalLink(href) ? getSafeLocalUrl(href) : href;
       const fileName = href.split(/[\\/]/).pop() || 'Video';
@@ -155,10 +182,10 @@ window.processAiMedia = function(html) {
         const card = document.createElement('div');
         card.className = 'chat-video-card';
         const extIcon = href.match(/\.mkv$/i) ? '🎬' : '🎥';
-        const extName = (href.match(/\.([a-z0-9]+)$/i) || ['','?'])[1].toUpperCase();
+        const extName = (href.match(/\.([a-z0-9]+)$/i) || ['', '?'])[1].toUpperCase();
         const rawPath = href.startsWith('file:///') ? href.slice(8)
-                      : href.startsWith('file://') ? href.slice(7)
-                      : href;
+          : href.startsWith('file://') ? href.slice(7)
+            : href;
         const safeRawPath = rawPath.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         const videoId = 'vid_' + Math.random().toString(36).slice(2, 9);
 
@@ -220,7 +247,7 @@ window.processAiMedia = function(html) {
         } else if (docPath.startsWith('file://')) {
           docPath = decodeURIComponent(docPath.substring(7));
         }
-      } catch(e) {}
+      } catch (e) { }
       docPath = docPath.replace(/\\/g, '/');
 
       const fileName = docPath.split('/').pop() || 'Local File';
@@ -228,7 +255,7 @@ window.processAiMedia = function(html) {
 
       const wrapper = document.createElement('div');
       wrapper.style.width = '100%';
-      wrapper.innerHTML = _buildLocalFileCardHtml(docPath, src, fileName, ext, false);
+      wrapper.innerHTML = _buildLocalFileCardHtml(docPath, src, fileName, ext, true);
       a.replaceWith(wrapper.firstElementChild || wrapper);
     }
   });
@@ -263,6 +290,18 @@ window.processAiMedia = function(html) {
         </div>
       `;
       img.replaceWith(wrapper);
+    }
+  });
+
+  // Normalize any inline <video>, <audio>, <source> tags using local file:// or drive paths
+  doc.querySelectorAll('video, audio, source').forEach(el => {
+    const rawSrc = el.getAttribute('src');
+    if (rawSrc && isLocalLink(rawSrc)) {
+      el.setAttribute('src', getSafeLocalUrl(rawSrc));
+    }
+    const rawPoster = el.getAttribute('poster');
+    if (rawPoster && isLocalLink(rawPoster)) {
+      el.setAttribute('poster', getSafeLocalUrl(rawPoster));
     }
   });
 
@@ -327,8 +366,8 @@ window.processAiMedia = function(html) {
       parts.forEach(p => frag.appendChild(p));
       node.parentNode.replaceChild(frag, node);
     } else if (node.nodeType === Node.ELEMENT_NODE) {
-      if (['A','PRE','CODE','SCRIPT','STYLE'].includes(node.tagName)) return;
-      if (node.classList && (node.classList.contains('chat-file-card') || node.classList.contains('chat-img-wrap') || node.classList.contains('chat-video-card') || node.classList.contains('action-console-block'))) return;
+      if (['A', 'PRE', 'CODE', 'SCRIPT', 'STYLE'].includes(node.tagName)) return;
+      if (node.classList && (node.classList.contains('chat-file-card-wrap') || node.classList.contains('chat-file-card') || node.classList.contains('chat-img-wrap') || node.classList.contains('chat-video-card') || node.classList.contains('action-console-block'))) return;
       Array.from(node.childNodes).forEach(_processTextNodes);
     }
   }
@@ -390,7 +429,7 @@ window.processAiMedia = function(html) {
           parent.insertBefore(wall, group[0]);
           group.forEach(w => {
             let p = w.previousSibling;
-            while(p && (p.nodeType === Node.TEXT_NODE || p.tagName === 'BR')) {
+            while (p && (p.nodeType === Node.TEXT_NODE || p.tagName === 'BR')) {
               let toRemove = p;
               p = p.previousSibling;
               if (toRemove.parentNode === parent) parent.removeChild(toRemove);
@@ -407,3 +446,272 @@ window.processAiMedia = function(html) {
 
   return finalHtml;
 };
+
+// --- Persistent Static vs Live Dynamic HTML Preview Manager ---
+(function () {
+  if (window.HecosHtmlPreview) return;
+
+  const STORAGE_KEY = 'hecos_html_preview_mode';
+  const FIT_STORAGE_KEY = 'hecos_html_preview_fit';
+  const VIRTUAL_W = 1280;
+  const VIRTUAL_H = 820;
+  const _watchers = new Map();
+  let _memMode = 'static';
+  let _memFit = true;
+  try {
+    if (localStorage.getItem(STORAGE_KEY) === 'dynamic') _memMode = 'dynamic';
+    if (localStorage.getItem(FIT_STORAGE_KEY) === 'false') _memFit = false;
+  } catch (e) {}
+
+  function getFit() {
+    try {
+      const saved = localStorage.getItem(FIT_STORAGE_KEY);
+      if (saved === 'false' || saved === 'true') _memFit = (saved === 'true');
+    } catch (e) {}
+    return _memFit;
+  }
+
+  function applyViewportFit(box) {
+    if (!box) return;
+    const fitOn = getFit();
+    const isExpanded = box.classList.contains('expanded');
+    const fitBtn = box.querySelector('.chat-preview-fit-btn');
+    const bodyEl = box.querySelector('.chat-html-preview-body');
+    const iframe = document.getElementById(box.dataset.iframeId || '') || box.querySelector('iframe');
+    box.classList.toggle('is-fit', fitOn);
+    if (fitBtn) {
+      fitBtn.classList.toggle('is-active', fitOn);
+      fitBtn.innerHTML = fitOn
+        ? '<i class="fas fa-desktop"></i> Fit Page'
+        : '<i class="fas fa-expand"></i> 1:1';
+    }
+    if (!bodyEl || !iframe) return;
+    if (!fitOn || isExpanded) {
+      iframe.style.transform = '';
+      bodyEl.style.height = '';
+      bodyEl.style.overflow = '';
+      return;
+    }
+    const availW = bodyEl.clientWidth || box.clientWidth || 780;
+    const scale = Math.min(1, Math.max(0.28, availW / VIRTUAL_W));
+    iframe.style.transform = `scale(${scale.toFixed(4)})`;
+    bodyEl.style.height = `${Math.round(VIRTUAL_H * scale)}px`;
+    bodyEl.style.overflow = 'hidden';
+  }
+
+  function toggleFit() {
+    _memFit = !getFit();
+    try {
+      localStorage.setItem(FIT_STORAGE_KEY, _memFit ? 'true' : 'false');
+    } catch (e) {}
+    document.querySelectorAll('.chat-html-preview').forEach((b) => applyViewportFit(b));
+    return _memFit;
+  }
+
+  function getMode() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved === 'dynamic' || saved === 'static') _memMode = saved;
+    } catch (e) {}
+    return _memMode;
+  }
+
+  function setMode(mode) {
+    const clean = mode === 'dynamic' ? 'dynamic' : 'static';
+    _memMode = clean;
+    try {
+      localStorage.setItem(STORAGE_KEY, clean);
+    } catch (e) {}
+    syncAll();
+    return clean;
+  }
+
+  function toggleMode() {
+    return setMode(getMode() === 'dynamic' ? 'static' : 'dynamic');
+  }
+
+  function _clearWatcher(boxId) {
+    if (_watchers.has(boxId)) {
+      clearInterval(_watchers.get(boxId));
+      _watchers.delete(boxId);
+    }
+  }
+
+  function _withCacheBust(url) {
+    if (!url) return url;
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}_t=${Date.now()}`;
+  }
+
+  function _withStaticFlag(url) {
+    if (!url || !url.includes('/api/serve_html')) return url;
+    if (url.includes('static=')) return url;
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}static=1`;
+  }
+
+  async function _syncBox(box, forceReload) {
+    if (!box || !box.id) return;
+    box.dataset.hpInit = '1';
+    const mode = getMode();
+    const isDyn = mode === 'dynamic';
+    const iframe = document.getElementById(box.dataset.iframeId || '') || box.querySelector('iframe');
+    const modeBtn = box.querySelector('.chat-preview-mode-btn');
+    const metaEl = box.querySelector('.chat-preview-live-meta');
+    const startBtn = box.querySelector('.chat-preview-start-btn');
+    const staticSrc = box.dataset.staticSrc || (iframe ? iframe.getAttribute('src') : '');
+    const docPath = box.dataset.docPath || '';
+
+    box.classList.toggle('is-dynamic', isDyn);
+    box.classList.toggle('is-static', !isDyn);
+    applyViewportFit(box);
+    if (modeBtn) {
+      modeBtn.classList.toggle('is-dynamic', isDyn);
+      modeBtn.innerHTML = isDyn
+        ? '<i class="fas fa-bolt"></i> Live Dynamic'
+        : '<i class="fas fa-lock"></i> Static Frame';
+    }
+
+    if (!isDyn) {
+      _clearWatcher(box.id);
+      box.dataset.lastSig = '';
+      box.dataset.lastRunId = '';
+      box.dataset.backendEntry = '';
+      if (metaEl) metaEl.textContent = '🔒 Privacy Static';
+      if (startBtn) startBtn.style.display = 'none';
+      if (iframe) {
+        iframe.setAttribute('sandbox', 'allow-same-origin');
+        const curSrc = iframe.getAttribute('src') || '';
+        const safeStaticUrl = _withStaticFlag(staticSrc);
+        if (safeStaticUrl && (forceReload || curSrc.includes('/api/workspace/preview_proxy/'))) {
+          iframe.setAttribute('src', forceReload ? _withCacheBust(safeStaticUrl) : safeStaticUrl);
+        }
+      }
+      return;
+    }
+
+    if (iframe) {
+      iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups allow-modals');
+    }
+
+    async function _probeAndApply(allowSetNow) {
+      if (!document.body.contains(box) || getMode() !== 'dynamic') {
+        _clearWatcher(box.id);
+        return;
+      }
+      try {
+        const resp = await fetch(`/api/workspace/preview_target?path=${encodeURIComponent(docPath)}`);
+        if (!resp.ok) {
+          if (allowSetNow && iframe && staticSrc) {
+            iframe.setAttribute('src', _withCacheBust(staticSrc));
+          }
+          if (metaEl) metaEl.textContent = '⚡ Live JS';
+          return;
+        }
+        const info = await resp.json();
+        const prevSig = box.dataset.lastSig || '';
+        const prevRun = box.dataset.lastRunId || '';
+        const newSig = String(info.signature || '');
+        const newRun = String(info.run_id || '');
+        const targetBase = (info.backend_running && info.proxy_url) ? info.proxy_url : staticSrc;
+        box.dataset.backendEntry = info.backend_entry_path || '';
+
+        if (startBtn) {
+          startBtn.style.display = (!info.backend_running && info.backend_entry_path) ? 'inline-flex' : 'none';
+        }
+        if (metaEl) {
+          metaEl.textContent = info.backend_running
+            ? '⚡ Live Backend + Auto-Refresh'
+            : '⚡ Live Dynamic + Auto-Refresh';
+        }
+
+        const changed = (prevSig && newSig !== prevSig) || (prevRun !== '' && newRun !== prevRun) || (!prevRun && newRun !== '');
+        box.dataset.lastSig = newSig;
+        box.dataset.lastRunId = newRun;
+
+        if (iframe && (allowSetNow || changed)) {
+          iframe.setAttribute('src', _withCacheBust(targetBase));
+        }
+      } catch (e) {
+        if (allowSetNow && iframe && staticSrc) {
+          iframe.setAttribute('src', _withCacheBust(staticSrc));
+        }
+      }
+    }
+
+    await _probeAndApply(true);
+    _clearWatcher(box.id);
+    const timer = setInterval(() => _probeAndApply(false), 2000);
+    _watchers.set(box.id, timer);
+  }
+
+  async function startBackendForBox(boxId) {
+    const box = document.getElementById(boxId);
+    if (!box) return;
+    const entry = box.dataset.backendEntry;
+    const btn = box.querySelector('.chat-preview-start-btn');
+    if (!entry) return;
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+    }
+    try {
+      const resp = await fetch('/api/workspace/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: entry, mode: 'app', wait_seconds: 1.5 }),
+      });
+      await resp.json();
+      await _syncBox(box, true);
+    } catch (e) {
+      if (window.showToast) window.showToast('Failed to start backend: ' + e, true);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play"></i> Start Backend';
+      }
+    }
+  }
+
+  function reloadBox(boxId) {
+    const box = document.getElementById(boxId);
+    if (box) _syncBox(box, true);
+  }
+
+  function syncAll() {
+    document.querySelectorAll('.chat-html-preview').forEach((box) => _syncBox(box, true));
+  }
+
+  function initPending() {
+    document.querySelectorAll('.chat-html-preview:not([data-hp-init])').forEach((box) => _syncBox(box, false));
+  }
+
+  function _attachObserver() {
+    if (!document.body || typeof MutationObserver === 'undefined') return;
+    initPending();
+    const obs = new MutationObserver(() => initPending());
+    obs.observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _attachObserver);
+  } else {
+    _attachObserver();
+  }
+  window.addEventListener('resize', () => {
+    document.querySelectorAll('.chat-html-preview').forEach((b) => applyViewportFit(b));
+  });
+
+  window.HecosHtmlPreview = {
+    getMode,
+    setMode,
+    toggleMode,
+    getFit,
+    toggleFit,
+    applyViewportFit,
+    reloadBox,
+    startBackendForBox,
+    syncAll,
+    initPending,
+  };
+})();

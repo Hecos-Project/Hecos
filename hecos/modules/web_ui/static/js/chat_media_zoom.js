@@ -76,6 +76,9 @@ window.togglePdfPreviewZoom = function(previewId) {
       };
       bar.appendChild(closeBtn);
     }
+    if (window.HecosHtmlPreview && typeof window.HecosHtmlPreview.applyViewportFit === 'function') {
+      window.HecosHtmlPreview.applyViewportFit(el);
+    }
   } else {
     if (msgBubble) msgBubble.classList.remove('has-expanded-preview');
     if (msgEl) msgEl.classList.remove('has-expanded-preview');
@@ -91,6 +94,9 @@ window.togglePdfPreviewZoom = function(previewId) {
 
     const closeBtn = el.querySelector('.chat-preview-close-btn');
     if (closeBtn) closeBtn.remove();
+    if (window.HecosHtmlPreview && typeof window.HecosHtmlPreview.applyViewportFit === 'function') {
+      window.HecosHtmlPreview.applyViewportFit(el);
+    }
   }
 };
 

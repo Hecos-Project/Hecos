@@ -30,8 +30,8 @@ class HistoryManager:
             # Structured response management (String or Message with tool_calls)
             if isinstance(response, str):
                 logger.debug("HistoryManager", f"Response received from backend: {len(response)} characters")
-                # Sanitize: if the model returned raw JSON (e.g. Ollama fallback format),
-                # save only the clean text to DB so history doesn't store raw JSON.
+                # Sanitize: if the model returned raw JSON (wrapper or inline tool calls),
+                # save only the clean prose so history never stores raw tool JSON on crash/abort.
                 _text_to_save = response
                 try:
                     _stripped = response.strip()
@@ -45,6 +45,23 @@ class HistoryManager:
                                 _text_to_save = _resp
                 except Exception:
                     pass
+
+                try:
+                    if "__" in _text_to_save and '"name"' in _text_to_save and '"arguments"' in _text_to_save:
+                        from hecos.core.processing.parsers.json_fallback_parser import JsonFallbackParser
+                        _inline_tags = []
+                        _cleaned_text, _ = JsonFallbackParser.parse(_text_to_save, _inline_tags, None)
+                        if _inline_tags:
+                            logger.debug(
+                                "HistoryManager",
+                                f"Stripped {len(_inline_tags)} inline JSON tool call(s) before history save."
+                            )
+                            _text_to_save = _cleaned_text
+                            if not _text_to_save.strip():
+                                logger.debug("HistoryManager", "Skipping empty tool-only assistant message persistence.")
+                                return
+                except Exception as _jerr:
+                    logger.debug("HistoryManager", f"Inline JSON history sanitize skipped: {_jerr}")
                 
                 # Keep thinking blocks intact so reasoning appears on page refresh.
                 # The frontend JS (appendMessage) will extract and hide them properly.

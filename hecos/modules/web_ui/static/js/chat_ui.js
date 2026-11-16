@@ -226,6 +226,9 @@ window.stopGeneration = function() {
 
   try { fetch('/api/system/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
   
+  if (window.HecosChatStatus && window.chatHistoryState?.activeSessionId) {
+    window.HecosChatStatus.markStreamEnd(window.chatHistoryState.activeSessionId, 'stopped');
+  }
   if (window.AgentUI) window.AgentUI.finalize();
   window.isStreaming = false;
   if (sendBtn) sendBtn.disabled = false;
@@ -254,6 +257,12 @@ window.stopAll = function() {
   try { fetch('/api/system/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
 
   // Reset chat state unconditionally to recover from any stuck state
+  if (window.HecosChatStatus) {
+    if (window.chatHistoryState?.activeSessionId) {
+      window.HecosChatStatus.markStreamEnd(window.chatHistoryState.activeSessionId, 'stopped');
+    }
+    window.HecosChatStatus.clearSpeakingLocal();
+  }
   if (window.AgentUI) window.AgentUI.finalize();
   window.isStreaming = false;
   if (sendBtn) sendBtn.disabled = false;

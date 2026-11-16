@@ -402,7 +402,13 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         _chat_log.info(f"[INFERENCE] TTS done in {time.monotonic() - t_tts_start:.2f}s | status={audio_status} id={audio_id}")
 
         if audio_status == "web":
-            sess["queue"].put({"type": "audio_ready", "text": "", "audio_id": audio_id or ""})
+            sess["queue"].put({
+                "type": "audio_ready",
+                "text": "",
+                "audio_id": audio_id or "",
+                "session_id": session_id,
+                "tab_id": sender_tab_id or "",
+            })
             # Persist audio_id to the last assistant message in the DB
             if audio_id:
                 try:
@@ -422,7 +428,12 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
                 except Exception as _ae:
                     _chat_log.warning(f"[INFERENCE] Could not save audio_id to DB: {_ae}")
         elif audio_status == "system":
-            sess["queue"].put({"type": "system_audio_playing", "text": ""})
+            sess["queue"].put({
+                "type": "system_audio_playing",
+                "text": "",
+                "session_id": session_id,
+                "tab_id": sender_tab_id or "",
+            })
 
         sess["queue"].put({"type": "done", "text": ""})
 

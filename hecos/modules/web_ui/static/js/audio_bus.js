@@ -16,6 +16,9 @@
   const stopListeners = [];
   const micClaimListeners = [];
   const backendPttListeners = [];
+  const chatStateListeners = [];
+  const chatStateReqListeners = [];
+  let _seq = 0;
   let channel = null;
 
   try {
@@ -42,27 +45,26 @@
     } catch (e) { /* ignore */ }
   }
 
+  function _notify(listeners, label, msg) {
+    listeners.forEach((fn) => {
+      try { fn(msg); } catch (e) { console.warn(`[AudioBus] ${label} error:`, e); }
+    });
+  }
+
   function _handleMessage(msg) {
     if (!msg || typeof msg !== 'object') return;
     if (msg.tabId === tabId) return; // Ignore our own echoes
 
-    if (msg.type === 'tts_claim') {
-      claimListeners.forEach((fn) => {
-        try { fn(msg); } catch (e) { console.warn('[AudioBus] onClaim error:', e); }
-      });
-    } else if (msg.type === 'tts_stop_all') {
-      stopListeners.forEach((fn) => {
-        try { fn(msg); } catch (e) { console.warn('[AudioBus] onStopAll error:', e); }
-      });
-    } else if (msg.type === 'mic_claim') {
-      micClaimListeners.forEach((fn) => {
-        try { fn(msg); } catch (e) { console.warn('[AudioBus] onMicClaim error:', e); }
-      });
-    } else if (msg.type === 'backend_ptt') {
-      backendPttListeners.forEach((fn) => {
-        try { fn(msg); } catch (e) { console.warn('[AudioBus] onBackendPtt error:', e); }
-      });
-    }
+    const dispatchMap = {
+      tts_claim: [claimListeners, 'onClaim'],
+      tts_stop_all: [stopListeners, 'onStopAll'],
+      mic_claim: [micClaimListeners, 'onMicClaim'],
+      backend_ptt: [backendPttListeners, 'onBackendPtt'],
+      chat_state: [chatStateListeners, 'onChatState'],
+      chat_state_req: [chatStateReqListeners, 'onChatStateRequest'],
+    };
+    const target = dispatchMap[msg.type];
+    if (target) _notify(target[0], target[1], msg);
   }
 
   window.HecosAudioBus = {
@@ -73,11 +75,16 @@
      * Other tabs receive this and pause/cancel their own local audio players.
      */
     claim(owner, meta = {}) {
+      const m = (meta && typeof meta === 'object') ? meta : {};
       const msg = {
         type: 'tts_claim',
         owner: owner || 'unknown',
         tabId,
-        playbackId: (meta && meta.playbackId) || ('pb_' + Date.now()),
+        playbackId: m.playbackId || ('pb_' + Date.now()),
+        sessionId: m.sessionId || null,
+        sessionTitle: m.sessionTitle || '',
+        personaName: m.personaName || '',
+        seq: ++_seq,
         ts: Date.now()
       };
       _dispatch(msg);
@@ -92,6 +99,7 @@
         type: 'tts_stop_all',
         owner: owner || 'unknown',
         tabId,
+        seq: ++_seq,
         ts: Date.now()
       });
     },
@@ -106,6 +114,7 @@
         owner: owner || 'unknown',
         tabId,
         captureId: (meta && meta.captureId) || ('mic_' + Date.now()),
+        seq: ++_seq,
         ts: Date.now()
       };
       _dispatch(msg);
@@ -121,6 +130,37 @@
         active: Boolean(active),
         source: source || 'host',
         tabId,
+        seq: ++_seq,
+        ts: Date.now()
+      });
+    },
+
+    /**
+     * Broadcast per-session chat activity ('idle'|'running'|'speaking'|'stopped'|'error') to other tabs.
+     */
+    publishChatState(payload = {}) {
+      const p = (payload && typeof payload === 'object') ? payload : {};
+      _dispatch({
+        type: 'chat_state',
+        tabId,
+        sessionId: p.sessionId || null,
+        sessionTitle: p.sessionTitle || '',
+        personaName: p.personaName || '',
+        status: p.status || 'idle',
+        ttlMs: p.ttlMs || 120000,
+        seq: ++_seq,
+        ts: Date.now()
+      });
+    },
+
+    /**
+     * Ask active tabs to replay their current non-idle session states.
+     */
+    requestChatStates() {
+      _dispatch({
+        type: 'chat_state_req',
+        tabId,
+        seq: ++_seq,
         ts: Date.now()
       });
     },
@@ -139,6 +179,14 @@
 
     onBackendPtt(fn) {
       if (typeof fn === 'function') backendPttListeners.push(fn);
+    },
+
+    onChatState(fn) {
+      if (typeof fn === 'function') chatStateListeners.push(fn);
+    },
+
+    onChatStateRequest(fn) {
+      if (typeof fn === 'function') chatStateReqListeners.push(fn);
     }
   };
 })();

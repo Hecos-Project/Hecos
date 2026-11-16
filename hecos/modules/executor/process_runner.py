@@ -16,6 +16,9 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
+from urllib.error import HTTPError, URLError
+from urllib.parse import urljoin, urlparse
+from urllib.request import Request, urlopen
 
 from .dev_tools import (
     _IGNORED_DIRS,
@@ -63,6 +66,123 @@ def extract_local_urls(text: str) -> List[str]:
     return found
 
 
+_LOCAL_HTML_ASSET_RE = re.compile(
+    r"""<(?:link\b[^>]*?\bhref|script\b[^>]*?\bsrc)=['"]([^'"]+)['"]""",
+    re.IGNORECASE,
+)
+
+
+def _is_loopback_http_url(url: str) -> bool:
+    try:
+        parsed = urlparse((url or "").strip())
+        return parsed.scheme in {"http", "https"} and (parsed.hostname or "").lower() in {"127.0.0.1", "localhost"}
+    except Exception:
+        return False
+
+
+def _probe_single_get(url: str, timeout: float) -> tuple[Optional[int], str, bytes, Optional[str]]:
+    req = Request(url, headers={"User-Agent": "Hecos-Executor-Probe/1.0"})
+    try:
+        with urlopen(req, timeout=timeout) as resp:
+            status = int(getattr(resp, "status", 200) or 200)
+            ctype = (resp.headers.get("Content-Type") or "").lower()
+            body = resp.read(65536)
+            return status, ctype, body, None
+    except HTTPError as herr:
+        body = b""
+        try:
+            body = herr.read(16384)
+        except Exception:
+            pass
+        return int(herr.code), (herr.headers.get("Content-Type") or "").lower() if herr.headers else "", body, f"HTTP {herr.code} {herr.reason}"
+    except URLError as uerr:
+        return None, "", b"", str(uerr.reason or uerr)
+    except Exception as exc:
+        return None, "", b"", str(exc)
+
+
+def probe_local_http_url(
+    url: str,
+    timeout: float = 2.0,
+    *,
+    check_assets: bool = True,
+    retries: int = 3,
+) -> Dict[str, Any]:
+    """
+    Perform a safe HTTP GET health probe against a localhost/127.0.0.1 app URL
+    and verify local CSS/JS assets referenced by the returned HTML page.
+    """
+    clean_url = (url or "").strip()
+    if not _is_loopback_http_url(clean_url):
+        return {"ok": False, "url": clean_url, "error": "Only localhost / 127.0.0.1 HTTP URLs are allowed."}
+
+    status: Optional[int] = None
+    ctype = ""
+    body = b""
+    err_msg: Optional[str] = None
+    attempts = max(1, min(int(retries), 5))
+    for attempt in range(attempts):
+        status, ctype, body, err_msg = _probe_single_get(clean_url, timeout=float(timeout))
+        if status is not None:
+            break
+        if attempt + 1 < attempts:
+            time.sleep(0.25)
+
+    assets_checked = 0
+    asset_errors: List[str] = []
+    if check_assets and status is not None and 200 <= status < 400 and ("html" in ctype or b"<html" in body[:512].lower()):
+        html_text = body.decode("utf-8", errors="replace")
+        seen_assets = set()
+        base_netloc = urlparse(clean_url).netloc
+        for raw_ref in _LOCAL_HTML_ASSET_RE.findall(html_text):
+            ref = raw_ref.strip()
+            low = ref.lower()
+            if not ref or low.startswith(("data:", "javascript:", "mailto:", "#")):
+                continue
+            resolved = urljoin(clean_url if clean_url.endswith("/") else clean_url + "/", ref)
+            parsed_asset = urlparse(resolved)
+            if parsed_asset.netloc != base_netloc:
+                continue
+            if resolved in seen_assets:
+                continue
+            seen_assets.add(resolved)
+            if len(seen_assets) > 8:
+                break
+            assets_checked += 1
+            a_status, _, _, a_err = _probe_single_get(resolved, timeout=min(float(timeout), 1.5))
+            if a_status is None or a_status >= 400:
+                code_txt = f"HTTP {a_status}" if a_status is not None else (a_err or "unreachable")
+                asset_errors.append(f"{parsed_asset.path} -> {code_txt}")
+
+    main_ok = status is not None and 200 <= status < 400
+    overall_ok = main_ok and not asset_errors
+    summary_parts = []
+    if status is None:
+        summary_parts.append(f"HTTP unreachable ({err_msg or 'connection error'})")
+    else:
+        summary_parts.append(f"HTTP {status} ({len(body)}B)")
+    if assets_checked:
+        ok_assets = assets_checked - len(asset_errors)
+        summary_parts.append(f"assets={ok_assets}/{assets_checked}")
+    if asset_errors:
+        summary_parts.append("asset_errors=[" + ", ".join(asset_errors) + "]")
+    summary = " | ".join(summary_parts)
+
+    log_fn = logger.info if overall_ok else logger.warning
+    log_fn(f"[RUNNER] http_probe url={clean_url} -> {summary}")
+    return {
+        "ok": overall_ok,
+        "url": clean_url,
+        "status_code": status,
+        "content_type": ctype,
+        "body_bytes": len(body),
+        "assets_checked": assets_checked,
+        "asset_errors": asset_errors,
+        "error": err_msg if not main_ok else ("; ".join(asset_errors) if asset_errors else None),
+        "summary": summary,
+    }
+
+
 def is_test_filename(filename: str) -> bool:
     """Return True if filename follows unittest/pytest naming conventions."""
     low = os.path.basename(filename).lower()
@@ -99,7 +219,9 @@ def resolve_authorized_target(
     Resolve a relative or absolute path and enforce containment within authorized roots.
     Returns (abs_path, error_message).
     """
-    clean = (target_path or "").strip()
+    from .file_manager import sanitize_llm_path
+
+    clean = sanitize_llm_path(target_path)
     if not clean:
         return None, "Target path cannot be empty."
 
@@ -114,7 +236,22 @@ def resolve_authorized_target(
     if not _is_authorized_project_dir(candidate, allowed_roots):
         return None, f"Access denied: '{candidate}' is outside authorized workspace paths."
     if not os.path.exists(candidate):
-        return None, f"Path not found: {candidate}"
+        hint = ""
+        if not os.path.isabs(clean) and os.path.isdir(ws_abs):
+            fname = os.path.basename(candidate)
+            matches: List[str] = []
+            try:
+                for entry in sorted(os.listdir(ws_abs)):
+                    sub_dir = os.path.join(ws_abs, entry)
+                    if os.path.isdir(sub_dir) and os.path.exists(os.path.join(sub_dir, fname)):
+                        matches.append(f"{entry}/{fname}")
+                        if len(matches) >= 4:
+                            break
+            except OSError:
+                pass
+            if matches:
+                hint = f" (Found in workspace subfolder(s): {', '.join(matches)}. Pass the full subfolder path.)"
+        return None, f"Path not found: {candidate}{hint}"
     return candidate, None
 
 
@@ -367,6 +504,7 @@ def run_tests_for_target(
     popen_flags = (subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
 
     started = time.perf_counter()
+    logger.info(f"[RUNNER] test_runner start target={abs_target} files={len(test_files)} cmd={display}")
     try:
         proc = subprocess.run(
             cmd,
@@ -403,6 +541,9 @@ def run_tests_for_target(
 
         duration_ms = int((time.perf_counter() - started) * 1000)
         combined = (combined or "(no output)")[-8000:]
+        logger.info(
+            f"[RUNNER] test_runner done target={os.path.basename(abs_target)} exit={proc.returncode} duration_ms={duration_ms}"
+        )
         AgentTracer.emit_action("test_runner", os.path.basename(abs_target), f"exit={proc.returncode} ({duration_ms}ms)")
         return {
             "ok": proc.returncode == 0,
@@ -478,19 +619,42 @@ class ManagedProcessRegistry:
             self._close_log_handle(entry)
         return "running" if entry.exit_code is None else ("stopped" if entry.stopped_by_user else "exited")
 
-    def _read_log_text(self, log_path: str, offset: int = 0, max_bytes: int = 65536) -> tuple[str, int]:
+    def _read_log_text(self, log_path: str, offset: int = 0, max_bytes: int = 262144) -> tuple[str, int]:
+        text, new_offset, _, _ = self._read_log_window(log_path, offset=offset, max_bytes=max_bytes)
+        return text, new_offset
+
+    def _read_log_window(
+        self,
+        log_path: str,
+        offset: int = 0,
+        max_bytes: int = 262144,
+        tail_bytes: int = 0,
+    ) -> tuple[str, int, int, bool]:
         if not os.path.isfile(log_path):
-            return "", 0
+            return "", 0, 0, False
         try:
             file_size = os.path.getsize(log_path)
             safe_offset = max(0, min(int(offset), file_size))
+            if tail_bytes and tail_bytes > 0 and safe_offset == 0 and file_size > tail_bytes:
+                safe_offset = max(0, file_size - int(tail_bytes))
+                read_limit = int(tail_bytes)
+                truncated = True
+            else:
+                read_limit = int(max_bytes)
+                truncated = (file_size - safe_offset) > read_limit
+
             with open(log_path, "rb") as fb:
                 fb.seek(safe_offset)
-                chunk = fb.read(max_bytes)
+                chunk = fb.read(read_limit)
                 new_offset = fb.tell()
-            return chunk.decode("utf-8", errors="replace"), new_offset
+            # Align start cleanly to next newline when slicing from middle of file
+            if safe_offset > 0 and tail_bytes and chunk:
+                nl_idx = chunk.find(b"\n")
+                if 0 <= nl_idx < len(chunk) - 1:
+                    chunk = chunk[nl_idx + 1:]
+            return chunk.decode("utf-8", errors="replace"), new_offset, file_size, truncated
         except OSError:
-            return "", offset
+            return "", offset, 0, False
 
     def _prune_old_runs_locked(self):
         finished = [
@@ -508,6 +672,34 @@ class ManagedProcessRegistry:
             except OSError:
                 pass
 
+    @staticmethod
+    def _extract_cli_port(extra_args: List[str]) -> Optional[int]:
+        for idx, tok in enumerate(extra_args or []):
+            t = str(tok).strip()
+            if t.startswith("--port="):
+                val = t.split("=", 1)[1]
+                if val.isdigit():
+                    return int(val)
+            elif t in {"--port", "-p"} and idx + 1 < len(extra_args):
+                val = str(extra_args[idx + 1]).strip()
+                if val.isdigit():
+                    return int(val)
+        return None
+
+    def _find_conflicting_running_ids_locked(self, abs_target: str, target_port: Optional[int]) -> List[str]:
+        norm_target = os.path.normcase(os.path.abspath(abs_target))
+        conflicts: List[str] = []
+        port_token = f":{target_port}" if target_port else ""
+        for rid, entry in self._runs.items():
+            if self._refresh_entry(entry) != "running":
+                continue
+            if os.path.normcase(os.path.abspath(entry.target_path)) == norm_target:
+                conflicts.append(rid)
+                continue
+            if port_token and any(port_token in u for u in (entry.detected_urls or [])):
+                conflicts.append(rid)
+        return conflicts
+
     def start_target(
         self,
         target_path: str,
@@ -518,6 +710,7 @@ class ManagedProcessRegistry:
         wait_seconds: float = 1.5,
         strict_workspace_only: bool = True,
         require_stay_alive: bool = False,
+        replace_existing: bool = True,
     ) -> Dict[str, Any]:
         """
         Launch an authorized script or app in workspace_dir, logging output under sandbox_dir/runs.
@@ -543,10 +736,21 @@ class ManagedProcessRegistry:
         if build_err or not cmd:
             return {"ok": False, "status": "error", "error": build_err or "Invalid command", "output": build_err or ""}
 
+        if replace_existing:
+            target_port = self._extract_cli_port(extra_args)
+            with self._lock:
+                stale_ids = self._find_conflicting_running_ids_locked(abs_target, target_port)
+            for old_rid in stale_ids:
+                logger.info(f"[RUNNER] Stopping previous active run_id={old_rid} before restarting {os.path.basename(abs_target)}")
+                self.stop_run(old_rid)
+
         runs_dir = os.path.join(os.path.abspath(sandbox_dir), "runs")
         os.makedirs(runs_dir, exist_ok=True)
         run_id = f"run_{int(time.time())}_{uuid.uuid4().hex[:6]}"
         log_path = os.path.join(runs_dir, f"{run_id}.log")
+        logger.info(
+            f"[RUNNER] start_target run_id={run_id} file={abs_target} cwd={work_dir} cmd={display_cmd} wait={wait_seconds}s"
+        )
 
         ws_abs = os.path.abspath(workspace_dir)
         import_roots = [ws_abs, work_dir] if os.path.normcase(work_dir) != os.path.normcase(ws_abs) else [ws_abs]
@@ -597,6 +801,7 @@ class ManagedProcessRegistry:
         with self._lock:
             self._prune_old_runs_locked()
             self._runs[run_id] = entry
+        logger.debug(f"[RUNNER] spawned PID={proc.pid} run_id={run_id} log={log_path}")
 
         wait_cap = max(0.2, min(float(wait_seconds or 1.5), 10.0))
         deadline = time.monotonic() + wait_cap
@@ -613,6 +818,10 @@ class ManagedProcessRegistry:
 
         if status != "running":
             ok = (entry.exit_code == 0)
+            log_fn = logger.info if ok else logger.warning
+            log_fn(
+                f"[RUNNER] oneshot finished run_id={run_id} name={entry.name} exit={entry.exit_code} duration_ms={duration_ms}"
+            )
             AgentTracer.emit_action("run_script", entry.name, f"exit={entry.exit_code} ({duration_ms}ms)")
             if require_stay_alive and not ok:
                 return {
@@ -659,6 +868,18 @@ class ManagedProcessRegistry:
                 output_text, offset = self._read_log_text(entry.log_path, offset=0)
                 entry.detected_urls = extract_local_urls(output_text)
 
+        http_probe: Optional[Dict[str, Any]] = None
+        if status == "running" and entry.detected_urls:
+            http_probe = probe_local_http_url(entry.detected_urls[0], timeout=1.0, check_assets=True, retries=2)
+            # Allow server stdout/stderr (e.g. Flask traceback/access log) triggered by probe to flush
+            time.sleep(0.12)
+            with self._lock:
+                status = self._refresh_entry(entry)
+                output_text, offset = self._read_log_text(entry.log_path, offset=0)
+
+        logger.info(
+            f"[RUNNER] app status={status} run_id={run_id} pid={proc.pid} urls={entry.detected_urls} probe={http_probe.get('summary') if http_probe else 'none'}"
+        )
         AgentTracer.emit_action("start_app", entry.name, f"PID {proc.pid} ({run_id})")
         return {
             "ok": True if status == "running" else (entry.exit_code == 0),
@@ -675,32 +896,78 @@ class ManagedProcessRegistry:
             "offset": offset,
             "output": output_text,
             "detected_urls": entry.detected_urls,
+            "http_probe": http_probe,
             "log_path": log_path,
         }
 
-    def get_logs(self, run_id: str, offset: int = 0, tail_lines: int = 0) -> Dict[str, Any]:
+    def get_run_log_path(self, run_id: str) -> Optional[tuple[str, str]]:
         with self._lock:
             entry = self._runs.get(run_id)
+            if not entry or not entry.log_path or not os.path.isfile(entry.log_path):
+                return None
+            return entry.log_path, entry.name
+
+    def resolve_run_id(self, run_id_hint: str) -> tuple[Optional[str], bool]:
+        """Resolve exact run_id or placeholder hints ('latest', '<run_id...>') to the newest recorded run."""
+        raw = (run_id_hint or "").strip()
+        with self._lock:
+            if raw in self._runs:
+                return raw, False
+            is_placeholder = (
+                not raw
+                or (raw.startswith("<") and raw.endswith(">"))
+                or raw.lower() in {"latest", "last", "current", "auto", "previous", "prev"}
+            )
+            if is_placeholder and self._runs:
+                newest = max(
+                    self._runs.values(),
+                    key=lambda e: (1 if self._refresh_entry(e) == "running" else 0, e.started_at),
+                )
+                return newest.run_id, True
+        return None, False
+
+    def get_logs(self, run_id: str, offset: int = 0, tail_lines: int = 0, tail_bytes: int = 0) -> Dict[str, Any]:
+        resolved_id, was_resolved = self.resolve_run_id(run_id)
+        with self._lock:
+            entry = self._runs.get(resolved_id) if resolved_id else None
             if not entry:
-                return {"ok": False, "error": f"Unknown run_id: {run_id}"}
+                recent = sorted(self._runs.values(), key=lambda e: e.started_at, reverse=True)[:5]
+                recent_hint = (
+                    " Recent run_ids: " + ", ".join(f"{e.run_id} ({e.name}, {self._refresh_entry(e)})" for e in recent)
+                    if recent
+                    else " No active/recent managed runs found."
+                )
+                return {"ok": False, "error": f"Unknown run_id: {run_id}.{recent_hint}"}
             status = self._refresh_entry(entry)
-            text, new_offset = self._read_log_text(entry.log_path, offset=offset)
-            # Re-scan full log for URL detection when offset > 0 missed earlier chunk
-            if text:
-                full_text = text if offset == 0 else self._read_log_text(entry.log_path, offset=0)[0]
-                entry.detected_urls = extract_local_urls(full_text)
+            text, new_offset, total_bytes, truncated = self._read_log_window(
+                entry.log_path,
+                offset=offset,
+                max_bytes=262144,
+                tail_bytes=tail_bytes,
+            )
+            # Re-scan beginning/recent log for URL detection when offset > 0 missed earlier chunk
+            if text or total_bytes > 0:
+                if offset == 0 and not truncated:
+                    url_scan_text = text
+                else:
+                    head_txt, _ = self._read_log_text(entry.log_path, offset=0, max_bytes=131072)
+                    url_scan_text = head_txt if head_txt == text else f"{head_txt}\n{text}"
+                entry.detected_urls = extract_local_urls(url_scan_text)
             if tail_lines and tail_lines > 0 and text:
                 lines = text.splitlines()
                 text = "\n".join(lines[-tail_lines:])
             return {
                 "ok": True,
                 "run_id": entry.run_id,
+                "resolved_from": run_id if was_resolved else None,
                 "name": entry.name,
                 "path": entry.target_path,
                 "pid": entry.process.pid,
                 "status": status,
                 "exit_code": entry.exit_code,
                 "offset": new_offset,
+                "total_bytes": total_bytes,
+                "truncated": truncated,
                 "chunk": text,
                 "detected_urls": list(entry.detected_urls),
                 "duration_ms": int(((entry.ended_at or time.time()) - entry.started_at) * 1000),
@@ -746,6 +1013,7 @@ class ManagedProcessRegistry:
 
         with self._lock:
             status = self._refresh_entry(entry)
+            logger.info(f"[RUNNER] stop_run run_id={run_id} pid={proc.pid} status={status} exit={entry.exit_code}")
             AgentTracer.emit_action("stop_app", entry.name, f"{run_id} ({status})")
             return {
                 "ok": True,

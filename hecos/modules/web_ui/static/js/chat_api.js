@@ -130,6 +130,188 @@ window.formatModelTooltip = function(jsonStr) {
     } catch(e) { return jsonStr; }
 };
 
+function _attachChatStreamListeners({ evtSrc, sessionId, aiBubble, cursor }) {
+  let aiText = '';
+  const resolveMeta = () => ({
+    sessionId,
+    sessionTitle: window.HecosChatStatus?.resolveSessionTitle?.(sessionId) || '',
+    personaName: aiBubble?.dataset?.personaTitle || window.HecosChatStatus?.resolvePersonaName?.() || ''
+  });
+  const isCurrentView = () => !sessionId || !window.chatHistoryState?.activeSessionId || window.chatHistoryState.activeSessionId === sessionId;
+
+  if (aiBubble && sessionId) aiBubble.dataset.sessionId = sessionId;
+  if (window.HecosChatStatus && sessionId) {
+    window.HecosChatStatus.markStreamStart(sessionId, resolveMeta());
+  }
+
+  evtSrc.onmessage = (e) => {
+    const ev = JSON.parse(e.data);
+    if (ev.type === 'agent_trace') {
+      if (window.AgentUI && isCurrentView()) {
+        window.AgentUI.handleEvent(ev, aiBubble.closest('.msg') || aiBubble.parentElement);
+      }
+    } else if (ev.type === 'think') {
+      if (window.renderThinkBlock) window.renderThinkBlock(ev.text, aiBubble);
+    } else if (ev.type === 'token') {
+      const tokenText = (ev.text !== undefined && ev.text !== null) ? ev.text : (ev.token || '');
+      aiText += tokenText;
+      _renderBubbleWithHSearch(aiBubble, aiText, cursor, false, null);
+      if (isCurrentView() && window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
+    } else if (ev.type === 'camera_request') {
+      if (isCurrentView() && window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
+    } else if (ev.type === 'trace_done') {
+      if (window.AgentUI && isCurrentView()) window.AgentUI.finalize(ev.trace_summary || null);
+      if (isCurrentView() && window.chatHistory.length > 0) {
+        window.chatHistory[window.chatHistory.length - 1].content = aiText;
+      }
+
+      if (ev.model_info && typeof window.attachModelInfoTooltip === 'function') {
+        window.attachModelInfoTooltip(aiBubble, ev.model_info);
+      }
+
+      if (ev.persona_name) {
+        const personaTitle = ev.persona_name.replace(/_/g, ' ').replace(/\.yaml$/i, '');
+        aiBubble.dataset.personaTitle = personaTitle;
+        const msgContainer = aiBubble.closest('.msg');
+        if (msgContainer) {
+          const nameEl = msgContainer.querySelector('.msg-name');
+          if (nameEl) {
+            const existingBadge = nameEl.querySelector('.think-badge');
+            nameEl.textContent = personaTitle;
+            if (existingBadge) nameEl.appendChild(existingBadge);
+          }
+          const avatarEl = msgContainer.querySelector('.msg-avatar');
+          if (avatarEl) {
+            fetch(`/api/persona/avatar?persona=${encodeURIComponent(ev.persona_name)}`)
+              .then(r => r.json())
+              .then(d => {
+                if (d.ok && d.avatar_path) {
+                  if (d.avatar_type === 'video') {
+                    avatarEl.innerHTML = `
+                      <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openSoulGallery) window.openSoulGallery('${d.avatar_path}'); else window.openAvatarFull('${d.avatar_path}', 'video')">
+                        <video src="${d.avatar_path}" autoplay loop muted playsinline style="width:100%; height:100%; object-fit:cover; border-radius:50%;"></video>
+                        <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
+                      </div>`;
+                  } else {
+                    const imgStyle = d.avatar_path !== "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png"
+                      ? "object-fit:cover; border-radius:50%;"
+                      : "filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));";
+                    avatarEl.innerHTML = `
+                      <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openSoulGallery) window.openSoulGallery('${d.avatar_path}'); else window.openAvatarFull('${d.avatar_path}', 'image')">
+                        <img src="${d.avatar_path}" onerror="this.src='/assets/Hecos_Logo_SQR_NBG_LogoOnly.png';" style="${imgStyle}">
+                        <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
+                      </div>`;
+                  }
+                }
+              }).catch(() => {});
+          }
+        }
+      }
+
+      if (window.HecosChatStatus && sessionId) {
+        window.HecosChatStatus.markInputReady(sessionId);
+      } else {
+        window.isStreaming = false;
+        if (window.updateStopAllBtn) window.updateStopAllBtn();
+        if (window.sendBtn) window.sendBtn.disabled = false;
+      }
+
+    } else if (ev.type === 'audio_chunk') {
+      // Ignored: single consolidated audio player used per message
+    } else if (ev.type === 'audio_ready') {
+      if (ev.audio_id) aiBubble.dataset.audioId = ev.audio_id;
+      const meta = resolveMeta();
+      if (window.tryLoadAudio) window.tryLoadAudio(aiBubble, true, null, meta);
+    } else if (ev.type === 'system_audio_playing') {
+      const meta = { ...resolveMeta(), ttlMs: 65000 };
+      if (window.HecosChatStatus && sessionId) {
+        window.HecosChatStatus.setLocalState(sessionId, 'speaking', meta);
+      }
+      if (window.showStopVoiceBtn) window.showStopVoiceBtn(true);
+      if (window._stopTimeout) clearTimeout(window._stopTimeout);
+      window._stopTimeout = setTimeout(() => {
+        if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
+        if (window.HecosChatStatus && sessionId) {
+          const cur = window.HecosChatStatus.getSessionState(sessionId);
+          if (cur && cur.status === 'speaking') {
+            window.HecosChatStatus.setLocalState(sessionId, 'idle', meta);
+          }
+        }
+      }, 60000);
+    } else if (ev.type === 'done' || ev.type === 'error') {
+      if (window.AgentUI && isCurrentView()) window.AgentUI.finalize();
+      cursor.remove();
+      const existingBadge = aiBubble.querySelector('.audio-badge');
+      _renderBubbleWithHSearch(aiBubble, aiText, null, true, ev.type === 'error' ? ev.text : null);
+      if (existingBadge && !aiBubble.contains(existingBadge)) {
+        aiBubble.appendChild(existingBadge);
+      }
+      evtSrc.close();
+
+      if (window.HecosChatStatus && sessionId) {
+        window.HecosChatStatus.markStreamEnd(sessionId, ev.type === 'error' ? 'error' : 'done', resolveMeta());
+      } else {
+        window.isStreaming = false;
+        if (window.updateStopAllBtn) window.updateStopAllBtn();
+        if (window.sendBtn) window.sendBtn.disabled = false;
+      }
+      if (window.loadChatSessions) window.loadChatSessions();
+    }
+  };
+
+  evtSrc.onerror = () => {
+    const wasStreaming = window.HecosChatStatus && sessionId
+      ? window.HecosChatStatus.isSessionStreaming(sessionId)
+      : !!window.isStreaming;
+    if (window.AgentUI && isCurrentView()) window.AgentUI.finalize();
+    cursor.remove();
+    if (!wasStreaming && aiText) {
+      evtSrc.close();
+      if (window.HecosChatStatus && sessionId) window.HecosChatStatus.markStreamEnd(sessionId, 'done');
+      return;
+    }
+    evtSrc.close();
+    if (window.HecosChatStatus && sessionId) {
+      window.HecosChatStatus.markStreamEnd(sessionId, 'error');
+    } else {
+      window.isStreaming = false;
+      if (window.updateStopAllBtn) window.updateStopAllBtn();
+      if (window.sendBtn) window.sendBtn.disabled = false;
+    }
+
+    const existingBadge = aiBubble.querySelector('.audio-badge');
+    if (!aiText) {
+      aiBubble.textContent = '❌ ' + (window.I18N?.err_connected || 'Connection error') + ' - Reconnecting...';
+    } else {
+      if (!aiBubble._chunksFinished && (!aiBubble._audioChunks || aiBubble._audioChunks.length === 0) && !aiBubble._isCurrentlyPlaying) {
+        aiBubble.innerHTML = window.renderMarkdown(aiText) + '<br><br><span style="color:#f39c12;font-size:0.9em;opacity:0.8;">⚠️ Connection lost. Waiting for Hecos to restart...</span>';
+        if (existingBadge) aiBubble.appendChild(existingBadge);
+      }
+    }
+
+    if (!window.isReconnectingAuto) {
+      window.isReconnectingAuto = true;
+      let sawDown = false;
+      const poller = setInterval(async () => {
+        try {
+          const r = await fetch('/hecos/status');
+          if (!r.ok) {
+            sawDown = true;
+          } else if (sawDown) {
+            clearInterval(poller);
+            window.location.reload();
+          } else {
+            clearInterval(poller);
+            window.isReconnectingAuto = false;
+          }
+        } catch (e) {
+          sawDown = true;
+        }
+      }, 2000);
+    }
+  };
+}
+
 window.sendMessage = async function() {
   if (typeof window.unlockAudioContext === 'function') {
       window.unlockAudioContext();
@@ -235,21 +417,26 @@ window.sendMessage = async function() {
   }
 
   window.chatHistory.push({role:'assistant', content:''});
+  const pendingSid = window.chatHistoryState?.activeSessionId || null;
   const { bubble: aiBubble } = window.addBubble('ai', '', 'ai-'+Date.now(), { persona_name: window.HecosPersonaName || null });
   const cursor = document.createElement('span');
   cursor.className = 'cursor';
   aiBubble.appendChild(cursor);
   
-  if (window.sendBtn) window.sendBtn.disabled = true; 
-  window.isStreaming = true; if (window.updateStopAllBtn) window.updateStopAllBtn();
-  let aiText = '';
+  if (window.HecosChatStatus && pendingSid) {
+    window.HecosChatStatus.markStreamStart(pendingSid, { personaName: window.HecosPersonaName || null });
+  } else {
+    if (window.sendBtn) window.sendBtn.disabled = true;
+    window.isStreaming = true;
+    if (window.updateStopAllBtn) window.updateStopAllBtn();
+  }
 
   try {
     const payload = {
       message: fullMessage, 
       history: window.chatHistory, 
       images: attachImgs,
-      session_id: window.chatHistoryState?.activeSessionId,
+      session_id: pendingSid,
       tab_id: window.hecosTabId
     };
     const res = await fetch('/api/chat', {
@@ -258,6 +445,11 @@ window.sendMessage = async function() {
     });
     const data = await res.json();
     if(!data.ok) throw new Error(data.error||'Server error');
+
+    const streamSessionId = data.session_id || pendingSid;
+    if (pendingSid && streamSessionId && streamSessionId !== pendingSid && window.HecosChatStatus) {
+      window.HecosChatStatus.markStreamEnd(pendingSid, 'done');
+    }
 
     if (data.session_id && window.chatHistoryState && !window.chatHistoryState.activeSessionId) {
         window.chatHistoryState.activeSessionId = data.session_id;
@@ -268,8 +460,12 @@ window.sendMessage = async function() {
       cursor.remove();
       const msg = window.I18N?.flows_input_sent || "Response sent to flow.";
       aiBubble.innerHTML = window.renderMarkdown(`✅ *${msg}*`);
-      window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn();
-      if (window.sendBtn) window.sendBtn.disabled = false;
+      if (window.HecosChatStatus && streamSessionId) {
+        window.HecosChatStatus.markStreamEnd(streamSessionId, 'done');
+      } else {
+        window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn();
+        if (window.sendBtn) window.sendBtn.disabled = false;
+      }
       return;
     }
 
@@ -280,141 +476,15 @@ window.sendMessage = async function() {
     }
 
     const evtSrc = new EventSource(`/api/stream/${data.session_id}`);
-    evtSrc.onmessage = (e) => {
-      const ev = JSON.parse(e.data);
-      if(ev.type === 'agent_trace') {
-        if (window.AgentUI) window.AgentUI.handleEvent(ev, aiBubble.closest('.msg') || aiBubble.parentElement);
-      } else if(ev.type === 'think') {
-        if (window.renderThinkBlock) window.renderThinkBlock(ev.text, aiBubble);
-      } else if(ev.type === 'token') {
-        const tokenText = (ev.text !== undefined && ev.text !== null) ? ev.text : (ev.token || '');
-        aiText += tokenText;
-        _renderBubbleWithHSearch(aiBubble, aiText, cursor, false, null);
-        if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
-      } else if(ev.type === 'camera_request') {
-        if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
-      } else if(ev.type === 'trace_done') {
-        if (window.AgentUI) window.AgentUI.finalize(ev.trace_summary || null);
-        // Prompt unlock as soon as TEXT is fully rendered (does not wait for TTS audio generation)
-        if (window.chatHistory.length > 0) {
-          window.chatHistory[window.chatHistory.length - 1].content = aiText;
-        }
-        
-        if (ev.model_info && typeof window.attachModelInfoTooltip === 'function') {
-          window.attachModelInfoTooltip(aiBubble, ev.model_info);
-        }
-        
-        // Dynamically update the bubble's avatar and name if the persona changed during the run
-        if (ev.persona_name) {
-          const personaTitle = ev.persona_name.replace(/_/g, ' ').replace(/\.yaml$/i, '');
-          const msgContainer = aiBubble.closest('.msg');
-          if (msgContainer) {
-            const nameEl = msgContainer.querySelector('.msg-name');
-            if (nameEl) {
-              const existingBadge = nameEl.querySelector('.think-badge');
-              nameEl.textContent = personaTitle;
-              if (existingBadge) nameEl.appendChild(existingBadge);
-            }
-            const avatarEl = msgContainer.querySelector('.msg-avatar');
-            if (avatarEl) {
-              fetch(`/api/persona/avatar?persona=${encodeURIComponent(ev.persona_name)}`)
-                .then(r => r.json())
-                .then(d => {
-                  if (d.ok && d.avatar_path) {
-                    if (d.avatar_type === 'video') {
-                      avatarEl.innerHTML = `
-                        <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openSoulGallery) window.openSoulGallery('${d.avatar_path}'); else window.openAvatarFull('${d.avatar_path}', 'video')">
-                          <video src="${d.avatar_path}" autoplay loop muted playsinline style="width:100%; height:100%; object-fit:cover; border-radius:50%;"></video>
-                          <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
-                        </div>`;
-                    } else {
-                      const imgStyle = d.avatar_path !== "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png"
-                        ? "object-fit:cover; border-radius:50%;"
-                        : "filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));";
-                      avatarEl.innerHTML = `
-                        <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openSoulGallery) window.openSoulGallery('${d.avatar_path}'); else window.openAvatarFull('${d.avatar_path}', 'image')">
-                          <img src="${d.avatar_path}" onerror="this.src='/assets/Hecos_Logo_SQR_NBG_LogoOnly.png';" style="${imgStyle}">
-                          <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
-                        </div>`;
-                    }
-                  }
-                }).catch(() => {});
-            }
-          }
-        }
-        
-        window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn();
-        if (window.sendBtn) window.sendBtn.disabled = false;
-        
-      } else if(ev.type === 'audio_chunk') {
-        // Ignored: single consolidated audio player used per message
-      } else if(ev.type === 'audio_ready') {
-        if (ev.audio_id) aiBubble.dataset.audioId = ev.audio_id;
-        if (window.tryLoadAudio) window.tryLoadAudio(aiBubble, true);
-      } else if(ev.type === 'system_audio_playing') {
-        if (window.showStopVoiceBtn) window.showStopVoiceBtn(true);
-        if (window._stopTimeout) clearTimeout(window._stopTimeout);
-        window._stopTimeout = setTimeout(() => { if (window.showStopVoiceBtn) window.showStopVoiceBtn(false); }, 60000);
-      } else if(ev.type === 'done' || ev.type === 'error') {
-        if (window.AgentUI) window.AgentUI.finalize();
-        cursor.remove();
-        const existingBadge = aiBubble.querySelector('.audio-badge');
-        _renderBubbleWithHSearch(aiBubble, aiText, null, true, ev.type === 'error' ? ev.text : null);
-        if (existingBadge && !aiBubble.contains(existingBadge)) {
-          aiBubble.appendChild(existingBadge);
-        }
-        evtSrc.close();
-        
-        if (window.loadChatSessions) window.loadChatSessions();
-      }
-    };
-    evtSrc.onerror = () => {
-      if (window.AgentUI) window.AgentUI.finalize();
-      cursor.remove();
-      if (!window.isStreaming && aiText) {
-        evtSrc.close();
-        return;
-      }
-      evtSrc.close();
-      window.isStreaming = false;
-      if (window.updateStopAllBtn) window.updateStopAllBtn();
-      if (window.sendBtn) window.sendBtn.disabled = false;
-
-      const existingBadge = aiBubble.querySelector('.audio-badge');
-      if (!aiText) {
-        aiBubble.textContent = '❌ ' + (window.I18N?.err_connected || 'Connection error') + ' - Reconnecting...';
-      } else {
-        if (!aiBubble._chunksFinished && (!aiBubble._audioChunks || aiBubble._audioChunks.length === 0) && !aiBubble._isCurrentlyPlaying) {
-          aiBubble.innerHTML = window.renderMarkdown(aiText) + '<br><br><span style="color:#f39c12;font-size:0.9em;opacity:0.8;">⚠️ Connection lost. Waiting for Hecos to restart...</span>';
-          if (existingBadge) aiBubble.appendChild(existingBadge);
-        }
-      }
-
-      if (!window.isReconnectingAuto) {
-        window.isReconnectingAuto = true;
-        let sawDown = false;
-        const poller = setInterval(async () => {
-            try {
-                const r = await fetch('/hecos/status');
-                if (!r.ok) {
-                    sawDown = true;
-                } else if (sawDown) {
-                    clearInterval(poller);
-                    window.location.reload();
-                } else {
-                    clearInterval(poller);
-                    window.isReconnectingAuto = false;
-                }
-            } catch(e) {
-                sawDown = true;
-            }
-        }, 2000);
-      }
-    };
+    _attachChatStreamListeners({ evtSrc, sessionId: streamSessionId, aiBubble, cursor });
   } catch(err) {
     cursor.remove();
     aiBubble.textContent = '❌ ' + (window.I18N?.err_general || 'Error') + ': ' + err.message;
-    window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn(); if (window.sendBtn) window.sendBtn.disabled = false;
+    if (window.HecosChatStatus && pendingSid) {
+      window.HecosChatStatus.markStreamEnd(pendingSid, 'error');
+    } else {
+      window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn(); if (window.sendBtn) window.sendBtn.disabled = false;
+    }
   }
 };
 
@@ -437,21 +507,26 @@ window.sendInternalMessage = async function(text) {
   if (window.hideWelcome) window.hideWelcome();
   
   window.chatHistory.push({role:'assistant', content:''});
+  const pendingSid = window.chatHistoryState?.activeSessionId || null;
   const { bubble: aiBubble } = window.addBubble('ai', '', 'ai-'+Date.now(), { persona_name: window.HecosPersonaName || null });
   const cursor = document.createElement('span');
   cursor.className = 'cursor';
   aiBubble.appendChild(cursor);
   
-  if (window.sendBtn) window.sendBtn.disabled = true; 
-  window.isStreaming = true; if (window.updateStopAllBtn) window.updateStopAllBtn();
-  let aiText = '';
+  if (window.HecosChatStatus && pendingSid) {
+    window.HecosChatStatus.markStreamStart(pendingSid, { personaName: window.HecosPersonaName || null });
+  } else {
+    if (window.sendBtn) window.sendBtn.disabled = true;
+    window.isStreaming = true;
+    if (window.updateStopAllBtn) window.updateStopAllBtn();
+  }
 
   try {
     const payload = {
       message: text, 
       history: window.chatHistory, 
       images: [],
-      session_id: window.chatHistoryState?.activeSessionId,
+      session_id: pendingSid,
       tab_id: window.hecosTabId
     };
     const res = await fetch('/api/chat', {
@@ -460,6 +535,11 @@ window.sendInternalMessage = async function(text) {
     });
     const data = await res.json();
     if(!data.ok) throw new Error(data.error||'Server error');
+
+    const streamSessionId = data.session_id || pendingSid;
+    if (pendingSid && streamSessionId && streamSessionId !== pendingSid && window.HecosChatStatus) {
+      window.HecosChatStatus.markStreamEnd(pendingSid, 'done');
+    }
 
     if (data.session_id && window.chatHistoryState && !window.chatHistoryState.activeSessionId) {
         window.chatHistoryState.activeSessionId = data.session_id;
@@ -470,8 +550,12 @@ window.sendInternalMessage = async function(text) {
       cursor.remove();
       const msg = window.I18N?.flows_input_sent || "Response sent to flow.";
       aiBubble.innerHTML = window.renderMarkdown(`✅ *${msg}*`);
-      window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn();
-      if (window.sendBtn) window.sendBtn.disabled = false;
+      if (window.HecosChatStatus && streamSessionId) {
+        window.HecosChatStatus.markStreamEnd(streamSessionId, 'done');
+      } else {
+        window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn();
+        if (window.sendBtn) window.sendBtn.disabled = false;
+      }
       return;
     }
 
@@ -481,137 +565,14 @@ window.sendInternalMessage = async function(text) {
     }
 
     const evtSrc = new EventSource(`/api/stream/${data.session_id}`);
-    evtSrc.onmessage = (e) => {
-      const ev = JSON.parse(e.data);
-      if(ev.type === 'agent_trace') {
-        if (window.AgentUI) window.AgentUI.handleEvent(ev, aiBubble.closest('.msg') || aiBubble.parentElement);
-      } else if(ev.type === 'think') {
-        if (window.renderThinkBlock) window.renderThinkBlock(ev.text, aiBubble);
-      } else if(ev.type === 'token') {
-        const tokenText = (ev.text !== undefined && ev.text !== null) ? ev.text : (ev.token || '');
-        aiText += tokenText;
-        _renderBubbleWithHSearch(aiBubble, aiText, cursor, false, null);
-        if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
-      } else if(ev.type === 'camera_request') {
-        if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
-      } else if(ev.type === 'trace_done') {
-        if (window.AgentUI) window.AgentUI.finalize(ev.trace_summary || null);
-        if (window.chatHistory.length > 0) {
-          window.chatHistory[window.chatHistory.length - 1].content = aiText;
-        }
-        
-        if (ev.model_info && typeof window.attachModelInfoTooltip === 'function') {
-          window.attachModelInfoTooltip(aiBubble, ev.model_info);
-        }
-
-        if (ev.persona_name) {
-          const personaTitle = ev.persona_name.replace(/_/g, ' ').replace(/\.yaml$/i, '');
-          const msgContainer = aiBubble.closest('.msg');
-          if (msgContainer) {
-            const nameEl = msgContainer.querySelector('.msg-name');
-            if (nameEl) {
-              const existingBadge = nameEl.querySelector('.think-badge');
-              nameEl.textContent = personaTitle;
-              if (existingBadge) nameEl.appendChild(existingBadge);
-            }
-            const avatarEl = msgContainer.querySelector('.msg-avatar');
-            if (avatarEl) {
-              fetch(`/api/persona/avatar?persona=${encodeURIComponent(ev.persona_name)}`)
-                .then(r => r.json())
-                .then(d => {
-                  if (d.ok && d.avatar_path) {
-                    if (d.avatar_type === 'video') {
-                      avatarEl.innerHTML = `
-                        <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openSoulGallery) window.openSoulGallery('${d.avatar_path}'); else window.openAvatarFull('${d.avatar_path}', 'video')">
-                          <video src="${d.avatar_path}" autoplay loop muted playsinline style="width:100%; height:100%; object-fit:cover; border-radius:50%;"></video>
-                          <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
-                        </div>`;
-                    } else {
-                      const imgStyle = d.avatar_path !== "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png"
-                        ? "object-fit:cover; border-radius:50%;"
-                        : "filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));";
-                      avatarEl.innerHTML = `
-                        <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openSoulGallery) window.openSoulGallery('${d.avatar_path}'); else window.openAvatarFull('${d.avatar_path}', 'image')">
-                          <img src="${d.avatar_path}" onerror="this.src='/assets/Hecos_Logo_SQR_NBG_LogoOnly.png';" style="${imgStyle}">
-                          <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
-                        </div>`;
-                    }
-                  }
-                }).catch(() => {});
-            }
-          }
-        }
-
-        window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn();
-        if (window.sendBtn) window.sendBtn.disabled = false;
-
-      } else if(ev.type === 'audio_chunk') {
-      } else if(ev.type === 'audio_ready') {
-        if (ev.audio_id) aiBubble.dataset.audioId = ev.audio_id;
-        if (window.tryLoadAudio) window.tryLoadAudio(aiBubble, true);
-      } else if(ev.type === 'system_audio_playing') {
-        if (window.showStopVoiceBtn) window.showStopVoiceBtn(true);
-        if (window._stopTimeout) clearTimeout(window._stopTimeout);
-        window._stopTimeout = setTimeout(() => { if (window.showStopVoiceBtn) window.showStopVoiceBtn(false); }, 60000);
-      } else if(ev.type === 'done' || ev.type === 'error') {
-        if (window.AgentUI) window.AgentUI.finalize();
-        cursor.remove();
-        const existingBadge = aiBubble.querySelector('.audio-badge');
-        _renderBubbleWithHSearch(aiBubble, aiText, null, true, ev.type === 'error' ? ev.text : null);
-        if (existingBadge && !aiBubble.contains(existingBadge)) {
-          aiBubble.appendChild(existingBadge);
-        }
-        evtSrc.close();
-
-        if (window.loadChatSessions) window.loadChatSessions();
-      }
-    };
-    evtSrc.onerror = () => {
-      if (window.AgentUI) window.AgentUI.finalize();
-      cursor.remove();
-      if (!window.isStreaming && aiText) {
-        evtSrc.close();
-        return;
-      }
-      evtSrc.close(); 
-      window.isStreaming = false; 
-      if (window.updateStopAllBtn) window.updateStopAllBtn(); 
-      if (window.sendBtn) window.sendBtn.disabled = false;
-
-      const existingBadge = aiBubble.querySelector('.audio-badge');
-      if (!aiText) {
-        aiBubble.textContent = '❌ ' + (window.I18N?.err_connected || 'Connection error') + ' - Reconnecting...';
-      } else {
-        if (!aiBubble._chunksFinished && (!aiBubble._audioChunks || aiBubble._audioChunks.length === 0) && !aiBubble._isCurrentlyPlaying) {
-          aiBubble.innerHTML = window.renderMarkdown(aiText) + '<br><br><span style="color:#f39c12;font-size:0.9em;opacity:0.8;">⚠️ Connection lost. Waiting for Hecos to restart...</span>';
-          if (existingBadge) aiBubble.appendChild(existingBadge);
-        }
-      }
-
-      if (!window.isReconnectingAuto) {
-        window.isReconnectingAuto = true;
-        let sawDown = false;
-        const poller = setInterval(async () => {
-            try {
-                const r = await fetch('/hecos/status');
-                if (!r.ok) {
-                    sawDown = true;
-                } else if (sawDown) {
-                    clearInterval(poller);
-                    window.location.reload();
-                } else {
-                    clearInterval(poller);
-                    window.isReconnectingAuto = false;
-                }
-            } catch(e) {
-                sawDown = true;
-            }
-        }, 2000);
-      }
-    };
+    _attachChatStreamListeners({ evtSrc, sessionId: streamSessionId, aiBubble, cursor });
   } catch(err) {
     cursor.remove();
     aiBubble.textContent = '❌ ' + (window.I18N?.err_general || 'Error') + ': ' + err.message;
-    window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn(); if (window.sendBtn) window.sendBtn.disabled = false;
+    if (window.HecosChatStatus && pendingSid) {
+      window.HecosChatStatus.markStreamEnd(pendingSid, 'error');
+    } else {
+      window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn(); if (window.sendBtn) window.sendBtn.disabled = false;
+    }
   }
 };

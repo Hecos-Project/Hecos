@@ -55,6 +55,22 @@ class PluginWebUI(BaseModel):
     key_file: str = "certs/key.pem"
 
 
+DEFAULT_EXECUTOR_ANTI_HALLUCINATION_DIRECTIVE = (
+    "CRITICAL EXECUTOR ANTI-HALLUCINATION DIRECTIVE:\n"
+    "1. NEVER claim, imply, or announce that files or apps were created, edited, fixed, verified, "
+    "or started unless you ACTUALLY called an EXECUTOR tool (`EXECUTOR__read_file`, `EXECUTOR__run_aider_task`, "
+    "`EXECUTOR__patch_file`, `EXECUTOR__write_file`, `EXECUTOR__start_app`, `EXECUTOR__run_project_test`) "
+    "and observed its real output in this turn.\n"
+    "2. When asked to inspect, fix, or build a project, DO NOT paste full updated files in chat claiming "
+    "the fix is applied: invoke `EXECUTOR__read_file` first or `EXECUTOR__run_aider_task` / "
+    "`EXECUTOR__patch_file` directly on disk, then verify with `EXECUTOR__start_app` or "
+    "`EXECUTOR__run_project_test`.\n"
+    "3. If your model is in text-only tool mode, emit explicit `EXECUTOR__tool_name(arg=\"...\")` calls "
+    "and always use forward slashes `/` in Windows paths (e.g. `C:/Hecos/hecos/media/workspace/...`).\n"
+    "4. Execute step by step: write 1-2 concise files per turn via `EXECUTOR__write_file` (or delegate multi-file generation to `EXECUTOR__run_aider_task`) and wait for disk confirmation BEFORE calling `check_syntax`, `run_project_test`, `start_app`, or `probe_url`."
+)
+
+
 class PluginExecutor(BaseModel):
     enabled: bool = True
     lazy_load: bool = False  # EXECUTOR is eager: must be callable via function-calling from turn-1
@@ -68,7 +84,16 @@ class PluginExecutor(BaseModel):
     auto_run_existing_tests_on_write: bool = True
     auto_generate_unit_tests: bool = False
     default_run_timeout_seconds: int = 30
-    allow_ui_script_execution: bool = True
+    allow_ui_script_execution: bool = True
+    aider_enabled: bool = True
+    aider_global_preset: str = "hecos_coder"
+    aider_model: str = ""
+    aider_num_ctx: int = 0
+    aider_edit_format: str = ""
+    aider_auto_lint: bool = True
+    enable_anti_hallucination_guard: bool = True
+    anti_hallucination_directive: str = DEFAULT_EXECUTOR_ANTI_HALLUCINATION_DIRECTIVE
+    model_directive_override: str = ""
 
 
 # PluginDrive removed — Drive is now an HPM system_app (type='app').

@@ -106,6 +106,7 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         user_msg = data.get("message", "").strip()
         history  = data.get("history", [])
         images   = data.get("images", [])
+        tab_id   = data.get("tab_id") or ""
 
         if not user_msg and not images:
             return jsonify({"ok": False, "error": "Empty message"}), 400
@@ -230,7 +231,13 @@ def init_chat_api_routes(app, cfg_mgr, logger):
                     _chat_log.info(f"[Chat] Direct TTS finished: status={audio_status} audio_id={audio_id}")
 
                     if audio_status == "web":
-                        sess["queue"].put({"type": "audio_ready", "text": "", "audio_id": audio_id or ""})
+                        sess["queue"].put({
+                            "type": "audio_ready",
+                            "text": "",
+                            "audio_id": audio_id or "",
+                            "session_id": sid,
+                            "tab_id": tab_id,
+                        })
                         if audio_id:
                             try:
                                 from hecos.memory.brain_interface import _db_path
@@ -248,7 +255,12 @@ def init_chat_api_routes(app, cfg_mgr, logger):
                             except Exception as _ae:
                                 _chat_log.warning(f"[Chat] Direct TTS could not save audio_id to DB: {_ae}")
                     elif audio_status == "system":
-                        sess["queue"].put({"type": "system_audio_playing", "text": ""})
+                        sess["queue"].put({
+                            "type": "system_audio_playing",
+                            "text": "",
+                            "session_id": sid,
+                            "tab_id": tab_id,
+                        })
 
                     sess["history"].append({"role": "user", "content": user_msg})
                     sess["history"].append({"role": "assistant", "content": bubble_text})
@@ -360,7 +372,6 @@ def init_chat_api_routes(app, cfg_mgr, logger):
             sm.webui_stop_requested = False  # Clear any stale cancellation flag
 
         sid  = data.get("session_id") or privacy_manager.get_session_id() or str(uuid.uuid4())
-        tab_id = data.get("tab_id")
 
         # ── Playbook keyword trigger auto-start ──────────────────────────────
         try:

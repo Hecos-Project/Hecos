@@ -12,6 +12,8 @@ Delegates limit checks to tool_limits.py and execution to tool_invoker.py.
 
 import json
 
+import re
+
 import time
 
 from typing import Any, Dict, List, Optional, Tuple
@@ -330,17 +332,16 @@ def extract_and_execute_tools(
 
 
     # 5. Fallback JSON Parsing & Legacy Tag Parsing if no native calls were present
-
+    malformed_inline_calls: List[str] = []
     if not is_tool_call_object:
-
-        base_text, think_block = JsonFallbackParser.parse(base_text, tags_found, think_block)
-
+        base_text, think_block, malformed_inline_calls = JsonFallbackParser.parse_with_diagnostics(
+            base_text, tags_found, think_block
+        )
         LegacyTagParser.parse(base_text, raw_response, tags_found)
+        # Strip any echoed <tool_response>...</tool_response> blocks from user-visible text
+        base_text = re.sub(r"<tool_response>[\s\S]*?(?:</tool_response>|$)", "", base_text, flags=re.IGNORECASE).strip()
 
-
-
-    if not tags_found:
-
+    if not tags_found and not malformed_inline_calls:
         return False, [], base_text, think_block
 
 
@@ -644,6 +645,20 @@ def extract_and_execute_tools(
                     logger.debug(f"[PROCESSOR] Trace finish_step error: {_fin_err}")
 
 
+
+    # Route G: Report dropped/malformed inline <tool_call> JSON explicitly so LLM retries concisely
+    if malformed_inline_calls:
+        tool_results.append({
+            "id": f"malformed_{int(time.time())}",
+            "output": (
+                f"[PROCESSOR ERROR] Malformed or truncated inline <tool_call> JSON dropped: "
+                f"{', '.join(malformed_inline_calls)}. "
+                "Your JSON broke on unescaped characters or exceeded output token budget. "
+                "Write ONE concise file per turn with EXECUTOR__write_file, or delegate multi-file generation to EXECUTOR__run_aider_task."
+            ),
+            "tag": "EXECUTOR",
+            "action": "malformed_tool_call",
+        })
 
     return bool(tool_results), tool_results, base_text, think_block
 
