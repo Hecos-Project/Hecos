@@ -140,6 +140,7 @@ async function populateBackendUI() {
     setVal('ollama-top-p',        c.backend?.ollama?.top_p          ?? 0.95);
     setVal('ollama-repeat',       c.backend?.ollama?.repeat_penalty ?? 1.1);
     setVal('ollama-probe-timeout',c.backend?.ollama?.probe_timeout_sec ?? 3);
+    setVal('ollama-request-timeout', c.backend?.ollama?.request_timeout_sec ?? 900);
     setVal('ollama-url',          c.backend?.ollama?.url            || 'http://localhost:11434');
     setVal('ollama-bin-path',     c.backend?.ollama?.binary_path    || '');
     setCheck('ollama-auto-start', c.backend?.ollama?.auto_start_server ?? false);
@@ -267,6 +268,7 @@ function buildBackendPayload(out) {
     out.backend.ollama.top_p          = parseFloatNum(getV('ollama-top-p',   window.cfg.backend?.ollama?.top_p),          0.95);
     out.backend.ollama.repeat_penalty = parseFloatNum(getV('ollama-repeat',  window.cfg.backend?.ollama?.repeat_penalty), 1.1);
     out.backend.ollama.probe_timeout_sec = parseNum(getV('ollama-probe-timeout', window.cfg.backend?.ollama?.probe_timeout_sec), 3);
+    out.backend.ollama.request_timeout_sec = parseNum(getV('ollama-request-timeout', window.cfg.backend?.ollama?.request_timeout_sec), 900);
     out.backend.ollama.url            = getV('ollama-url', window.cfg.backend?.ollama?.url || 'http://localhost:11434');
     out.backend.ollama.binary_path    = getV('ollama-bin-path', window.cfg.backend?.ollama?.binary_path || '');
     out.backend.ollama.auto_start_server = getC('ollama-auto-start', window.cfg.backend?.ollama?.auto_start_server ?? false);

@@ -41,6 +41,9 @@ window.newChatSession = async function (mode = null) {
     if (window.HecosChatStatus && typeof window.HecosChatStatus.syncActiveViewControls === 'function') {
         window.HecosChatStatus.syncActiveViewControls();
     }
+    if (window.ActionPlanChat && typeof window.ActionPlanChat.clear === 'function') {
+        window.ActionPlanChat.clear();
+    }
 };
 
 
@@ -78,6 +81,12 @@ window.activateChatSession = async function (sessionId) {
     if (window.loadChatSessions) await window.loadChatSessions();
     if (window.HecosChatStatus && typeof window.HecosChatStatus.syncActiveViewControls === 'function') {
         window.HecosChatStatus.syncActiveViewControls();
+    }
+    if (window.AgentResume && typeof window.AgentResume.refreshBanner === 'function') {
+        window.AgentResume.refreshBanner(sessionId);
+    }
+    if (window.ActionPlanChat && typeof window.ActionPlanChat.refreshForSession === 'function') {
+        window.ActionPlanChat.refreshForSession(sessionId);
     }
 
     const overlay = document.getElementById('mobile-overlay');
@@ -152,6 +161,9 @@ window.toggleShowArchived = async function() {
     await window.loadChatSessions();
     if (window.HecosChatStatus && typeof window.HecosChatStatus.syncActiveViewControls === 'function') {
         window.HecosChatStatus.syncActiveViewControls();
+    }
+    if (window.ActionPlanChat && typeof window.ActionPlanChat.clear === 'function') {
+        window.ActionPlanChat.clear();
     }
 };
 

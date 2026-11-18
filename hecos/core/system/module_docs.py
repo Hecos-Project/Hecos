@@ -751,6 +751,30 @@ def get_tools_schema(payload_control=None, config=None):
     if mode == "custom" and not tools_list:
         return None
 
+    # Auto-expose ACTION_PLANS tools to multi-step custom presets when configured in Core System
+    if mode == "custom" and "ACTION_PLANS" in _loaded_plugins and _plugins_cfg.get("ACTION_PLANS", {}).get("llm_callable", True):
+        try:
+            from hecos.core.action_plans import get_action_plans_config
+            ap_cfg = get_action_plans_config(raw_config=config)
+            if (
+                ap_cfg.get("enabled", True)
+                and ap_cfg.get("plan_mode") in ("auto", "confirm")
+                and ap_cfg.get("expose_tools_in_custom_presets", True)
+            ):
+                existing_names = {(t.get("function") or t).get("name", "") for t in tools_list}
+                has_actionable_tools = any(
+                    n.startswith(("EXECUTOR__", "DRIVE__", "FLOWS__", "BROWSER__", "PC_AUTOMATION__"))
+                    for n in existing_names
+                )
+                if has_actionable_tools:
+                    for ap_tool in _sanitize_tool_schema(_extract_module_tools("ACTION_PLANS", _loaded_plugins["ACTION_PLANS"])):
+                        ap_name = (ap_tool.get("function") or ap_tool).get("name", "")
+                        if ap_name and ap_name not in existing_names:
+                            tools_list.append(ap_tool)
+                            existing_names.add(ap_name)
+        except Exception:
+            pass
+
     # --- RUNTIME AI BEHAVIOR OVERRIDES (from Document Maker config) ---
     _apply_docs_overrides(tools_list)
 

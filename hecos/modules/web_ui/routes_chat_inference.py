@@ -24,10 +24,10 @@ _CAMERA_TOKEN = "[CAMERA_SNAPSHOT_REQUEST]"
 
 # ── Default WebUI inference timeout (seconds) ────────────────────────────────
 # Overridden at runtime by /hecos/api/keymanager/settings (webui_timeout field)
-_WEBUI_INFERENCE_TIMEOUT = 300  # seconds
+_WEBUI_INFERENCE_TIMEOUT = 900  # seconds
 
 
-def _run_inference(sess: dict, session_id: str, user_message: str, history: list, cfg_mgr, images=None, user_id="admin", user_role="admin", sender_tab_id=None):
+def _run_inference(sess: dict, session_id: str, user_message: str, history: list, cfg_mgr, images=None, user_id="admin", user_role="admin", sender_tab_id=None, resume_checkpoint=None):
     if not sess:
         return
 
@@ -51,7 +51,7 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
 
     _timed_out = threading.Event()
     _last_activity = [time.monotonic()]
-    max_turn_timeout = max(webui_timeout * 2, 900)  # 15 mins absolute hard cap
+    max_turn_timeout = max(webui_timeout * 4, 3600)  # 60 mins hard cap for multi-step local loops
 
     def _watchdog():
         while not _timed_out.is_set():
@@ -102,6 +102,15 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         # ── PER-SESSION CONFIGURATION OVERRIDE ──────────────────────────────
         from hecos.config.session_config_manager import merge_session_config
         merged_config_dict = merge_session_config(cfg_mgr.config, session_id)
+
+        try:
+            from hecos.core.global_presets.manager import get_active_soul_id
+            from hecos.core.global_presets.usage_stats import record_preset_usage
+            eff_preset_id = get_active_soul_id(session_id)
+            if eff_preset_id:
+                record_preset_usage(eff_preset_id)
+        except Exception:
+            pass
         
         class MergedConfigManager:
             def __init__(self, base_mgr, merged_dict):
@@ -156,7 +165,9 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         except Exception as e:
             _chat_log.warning(f"[INFERENCE] Could not emit user_message_sent: {e}")
 
-        full_text, clean_voice = agent.run_agentic_loop(user_message, voice_status=True, images=images)
+        full_text, clean_voice = agent.run_agentic_loop(
+            user_message, voice_status=True, images=images, resume_checkpoint=resume_checkpoint
+        )
 
         t_llm_end = time.monotonic()
         _chat_log.info(f"[INFERENCE] AgentExecutor returned in {t_llm_end - t_llm_start:.2f}s | response_len={len(full_text or '')} chars")
@@ -230,138 +241,42 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         if current_persona.endswith(".yaml"):
             current_persona = current_persona[:-5]
             
+        _trace_summary = getattr(agent, "last_trace_summary", None)
+        _trace_persist = bool(getattr(agent, "agent_config", {}).get("trace_persist_history", True))
         try:
             from hecos.core.llm.client import LAST_PAYLOAD_INFO
-            _m_info = LAST_PAYLOAD_INFO.get("model_info")
-            import json
-            if _m_info:
-                _m_info_dict = json.loads(_m_info)
-                
-                # Global Preset
-                from hecos.core.global_presets.manager import get_active_soul_id
-                _gp_global = get_active_soul_id("global")
-                _gp_session = get_active_soul_id(session_id)
-                _m_info_dict["global_preset"] = _gp_global
-                _m_info_dict["session_preset"] = _gp_session
-                
-                # Token usage
-                _m_info_dict["prompt_tokens"] = LAST_PAYLOAD_INFO.get("prompt_tokens", 0)
-                _m_info_dict["completion_tokens"] = LAST_PAYLOAD_INFO.get("completion_tokens", 0)
-                
-                # Always ensure tts_engine/tts_voice/backend/persona from merged config
-                ai_cfg = active_cfg_mgr.config.get("ai", {})
-                voice_cfg = active_cfg_mgr.config.get("voice", {})
-                if not _m_info_dict.get("tts_engine"):
-                    _m_info_dict["tts_engine"] = voice_cfg.get("tts_engine", ai_cfg.get("tts_engine"))
-                if not _m_info_dict.get("tts_voice"):
-                    _m_info_dict["tts_voice"] = voice_cfg.get("tts_voice", ai_cfg.get("tts_voice"))
-                if not _m_info_dict.get("persona"):
-                    _m_info_dict["persona"] = current_persona
-                if not _m_info_dict.get("backend") or _m_info_dict["backend"] == "unknown":
-                    btype = active_cfg_mgr.config.get("backend", {}).get("type")
-                    if btype:
-                        _m_info_dict["backend"] = btype
-                
-                # Check for XTTS / Fish Speech presets and voice clones overriding the default voice
-                _eng = (_m_info_dict.get("tts_engine") or "").lower()
-                voice_cfg = active_cfg_mgr.config.get("voice", {})
-                voice_overrides = ai_cfg.get("voice_overrides", {})
-                if _eng in ("xtts", "xtts2"):
-                    try:
-                        preset = voice_overrides.get("xtts_preset") or voice_cfg.get("xtts_preset") or ai_cfg.get("xtts_preset")
-                        if not preset:
-                            from hecos.core.audio.device_manager import get_audio_config
-                            aud_cfg = get_audio_config().get("xtts", {})
-                            curr = aud_cfg.get("current_preset", "").strip()
-                            if curr and curr != "default":
-                                preset = curr
-                        if preset and preset != "default":
-                            _m_info_dict["tts_voice"] = preset
-                        else:
-                            speaker_wav = voice_overrides.get("xtts_speaker_wav") or voice_cfg.get("xtts_speaker_wav")
-                            if not speaker_wav:
-                                from hecos.core.audio.device_manager import get_audio_config
-                                aud_cfg = get_audio_config().get("xtts", {})
-                                speaker_wav = aud_cfg.get("speaker_wav", "").strip()
-                            if speaker_wav:
-                                import os
-                                bname = os.path.basename(speaker_wav)
-                                name = os.path.splitext(bname)[0]
-                                _m_info_dict["tts_voice"] = f"Clone: {name}"
-                    except Exception:
-                        pass
-                elif _eng in ("fish_speech", "fish"):
-                    try:
-                        preset = voice_overrides.get("fish_preset") or voice_cfg.get("fish_preset") or ai_cfg.get("fish_preset")
-                        if not preset:
-                            from hecos.core.audio.device_manager import get_audio_config
-                            aud_cfg = get_audio_config().get("fish_speech", {})
-                            preset = aud_cfg.get("current_preset", "").strip()
-                        if preset and preset != "default":
-                            _m_info_dict["tts_voice"] = preset
-                        else:
-                            ref_audio = voice_overrides.get("fish_reference_audio") or voice_cfg.get("fish_reference_audio") or _m_info_dict.get("tts_voice")
-                            if not ref_audio:
-                                from hecos.core.audio.device_manager import get_audio_config
-                                aud_cfg = get_audio_config().get("fish_speech", {})
-                                ref_audio = aud_cfg.get("reference_audio", "").strip()
-                            if ref_audio and ref_audio != "default":
-                                import os
-                                bname = os.path.basename(ref_audio)
-                                name = os.path.splitext(bname)[0]
-                                _m_info_dict["tts_voice"] = f"Clone: {name}"
-                            elif not ref_audio or ref_audio == "default":
-                                _m_info_dict["tts_voice"] = "Default Voice (Base)"
-                    except Exception:
-                        pass
-                elif _eng == "kokoro":
-                    try:
-                        preset = voice_overrides.get("kokoro_preset") or voice_cfg.get("kokoro_preset") or ai_cfg.get("kokoro_preset")
-                        if not preset:
-                            from hecos.core.audio.device_manager import get_audio_config
-                            aud_cfg = get_audio_config().get("kokoro", {})
-                            curr = aud_cfg.get("current_preset", "").strip()
-                            if curr and curr != "default":
-                                preset = curr
-                        if preset and preset != "default":
-                            _m_info_dict["tts_voice"] = preset
-                        else:
-                            k_voice = voice_overrides.get("kokoro_voice") or voice_cfg.get("kokoro_voice") or _m_info_dict.get("tts_voice")
-                            if k_voice:
-                                import os
-                                bname = os.path.basename(k_voice)
-                                name = os.path.splitext(bname)[0]
-                                _m_info_dict["tts_voice"] = name
-                    except Exception:
-                        pass
-                
-                _m_info = json.dumps(_m_info_dict)
+            from hecos.core.llm.history_manager import HistoryManager
+
+            _raw_m_info = LAST_PAYLOAD_INFO.get("model_info")
+            _persist_trace = _trace_summary if (_trace_summary and _trace_persist) else None
+            _db_m_info, _base_dict = HistoryManager.enrich_model_info(
+                _raw_m_info,
+                config=active_cfg_mgr.config,
+                session_id=session_id,
+                persona_name=current_persona,
+                trace_summary=_persist_trace,
+            )
+            if _trace_summary and not _trace_persist and isinstance(_base_dict, dict):
+                import json as _json
+                _m_info = _json.dumps({**_base_dict, "agent_trace": _trace_summary})
+            else:
+                _m_info = _db_m_info
+            if _db_m_info:
+                from hecos.memory.brain_interface import _db_path
+                import sqlite3
+
+                _db = _db_path(user_id)
+                with sqlite3.connect(_db, timeout=10) as _conn:
+                    _conn.execute(
+                        "UPDATE history SET model_info = ? WHERE id = ("
+                        "  SELECT MAX(id) FROM history WHERE session_id = ? AND role = 'assistant'"
+                        ")",
+                        (_db_m_info, session_id),
+                    )
+                    _conn.commit()
         except Exception as e:
             _chat_log.error(f"Error enriching model_info: {e}")
             _m_info = None
-
-        _trace_summary = getattr(agent, "last_trace_summary", None)
-        if _trace_summary:
-            try:
-                import json as _json
-                _mi_d = _json.loads(_m_info) if _m_info else {}
-                if getattr(agent, "agent_config", {}).get("trace_persist_history", True):
-                    _mi_d["agent_trace"] = _trace_summary
-                    _m_info = _json.dumps(_mi_d)
-                    # Also persist updated model_info (with agent_trace + TTS + preset) into DB for 1-turn responses
-                    from hecos.memory.brain_interface import _db_path
-                    import sqlite3
-                    _db = _db_path(user_id)
-                    with sqlite3.connect(_db, timeout=10) as _conn:
-                        _conn.execute(
-                            "UPDATE history SET model_info = ? WHERE id = ("
-                            "  SELECT MAX(id) FROM history WHERE session_id = ? AND role = 'assistant'"
-                            ")",
-                            (_m_info, session_id),
-                        )
-                        _conn.commit()
-            except Exception as _tr_db_err:
-                _chat_log.debug(f"[INFERENCE] Could not persist agent_trace in model_info: {_tr_db_err}")
 
         sess["queue"].put({
             "type": "trace_done",
@@ -439,6 +354,16 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
 
     except Exception as exc:
         _timed_out.set()  # stop watchdog
+        try:
+            from hecos.core.agent.checkpointing import mark_checkpoint_status
+            mark_checkpoint_status(session_id, "interrupted", reason=str(exc)[:180])
+            from hecos.core.action_plans import get_action_plan_manager
+            mgr = get_action_plan_manager()
+            active_plan = mgr.resolve_plan(source_id=session_id)
+            if active_plan and active_plan.get("status") == "running":
+                mgr.complete_plan(plan_id=active_plan["plan_id"], status="interrupted", summary=str(exc)[:180])
+        except Exception:
+            pass
         _chat_log.error(f"[INFERENCE] ❌ Exception after {time.monotonic() - t_start:.2f}s: {exc}", exc_info=True)
         if not sess.get("done"):  # don't push if watchdog already sent error
             sess["queue"].put({"type": "error", "text": str(exc)})

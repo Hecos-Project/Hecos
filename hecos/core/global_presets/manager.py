@@ -6,13 +6,13 @@ CRUD operations for SoulProfiles (Global Presets).
 import os
 import re
 import glob
-from typing import Dict, List, Optional
+from typing import List, Optional
 from datetime import datetime
 
 from hecos.core.logging import logger
 from hecos.core.constants import CONFIG_DATA_DIR
 from hecos.config import load_yaml, save_yaml
-from hecos.core.global_presets.schema import SoulProfile, SoulMeta
+from hecos.core.global_presets.schema import SoulProfile
 
 GLOBAL_PRESETS_DIR = os.path.join(CONFIG_DATA_DIR, "global_presets")
 
@@ -98,6 +98,8 @@ def delete_soul(soul_id: str) -> bool:
     if os.path.exists(filepath):
         try:
             os.remove(filepath)
+            from .usage_stats import delete_preset_usage
+            delete_preset_usage(soul_id)
             return True
         except Exception as e:
             logger.error(f"[GlobalPresets] Error deleting soul {soul_id}: {e}")
@@ -145,3 +147,13 @@ def get_active_soul(session_id: str) -> Optional[SoulProfile]:
     if soul_id:
         return get_soul(soul_id)
     return None
+
+
+# Canonical Preset Manager function aliases
+list_presets = list_souls
+get_preset = get_soul
+save_preset = save_soul
+duplicate_preset = duplicate_soul
+delete_preset = delete_soul
+get_active_preset_id = get_active_soul_id
+get_active_preset = get_active_soul

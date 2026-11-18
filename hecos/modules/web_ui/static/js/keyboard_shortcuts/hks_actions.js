@@ -35,10 +35,10 @@
 
         {
             id: 'ui.chat_overrides',
-            label: 'Open Quick Config',
+            label: 'Open Preset Manager',
             icon: 'fas fa-sliders-h',
             category: 'ui',
-            description: 'Open the Unified Quick Config & Soul Forge Panel',
+            description: 'Open the Preset Manager Panel',
             contexts: ['chat'],
             handler: function() {
                 if (window.sfTogglePanel) window.sfTogglePanel();
@@ -81,8 +81,8 @@
 
         {
             id: 'ui.global_defaults',
-            label: 'Quick Config / Global Defaults Panel',
-            description: 'Open the Unified Quick Config & Soul Forge Panel',
+            label: 'Preset Manager Panel',
+            description: 'Open the Preset Manager Panel',
             icon: 'fas fa-globe',
             category: 'ui',
             contexts: ['global', 'chat', 'hub', 'home'],
@@ -90,7 +90,7 @@
                 if (window.sfTogglePanel) {
                     window.sfTogglePanel();
                 } else {
-                    console.log("Quick Config panel not available in this context.");
+                    console.log("Preset Manager panel not available in this context.");
                 }
             }
         },
@@ -113,10 +113,10 @@
 
         {
             id: 'nav.packages',
-            label: 'Package Manager (HPM)',
-            icon: 'fas fa-box-open',
+            label: 'Module Manager',
+            icon: 'fas fa-cube',
             category: 'navigation',
-            description: 'Open the Hecos Package Manager tab',
+            description: 'Open the Hecos Module Manager tab',
             contexts: ['global', 'chat', 'hub', 'home'],
             handler: function() {
                 const ctx = window.HKS ? window.HKS.getContext() : 'global';
@@ -458,6 +458,35 @@
                     }
                 }
 
+                // ── PRIORITY 2.5: Coding Workspace Modals (Monaco / Source / Runner) ─
+                // Handled BEFORE voice/generation stops so Esc closes only the coding modal
+                // without interrupting active TTS playback or background Hecos processing.
+                if (window._HecosWorkspaceShared && typeof window._HecosWorkspaceShared.closeTopWorkspaceModal === 'function') {
+                    if (window._HecosWorkspaceShared.closeTopWorkspaceModal()) {
+                        return;
+                    }
+                } else {
+                    const wrMonaco = document.getElementById('wr-monaco-backdrop');
+                    if (wrMonaco && wrMonaco.classList.contains('open')) {
+                        wrMonaco.classList.remove('open');
+                        return;
+                    }
+                    const wrSource = document.getElementById('wr-source-backdrop');
+                    if (wrSource && wrSource.classList.contains('open')) {
+                        wrSource.classList.remove('open');
+                        return;
+                    }
+                    const wrModal = document.getElementById('wr-modal-backdrop');
+                    if (wrModal && wrModal.classList.contains('open')) {
+                        if (window.WorkspaceRunner && typeof window.WorkspaceRunner.closeModal === 'function') {
+                            window.WorkspaceRunner.closeModal();
+                        } else {
+                            wrModal.classList.remove('open');
+                        }
+                        return;
+                    }
+                }
+
                 // ── PRIORITY 3: Paste Modal ──────────────────────────────────
                 const pasteModal = document.getElementById('paste-modal');
                 if (pasteModal && pasteModal.classList.contains('open')) {
@@ -515,9 +544,19 @@
                     return;
                 }
 
-                // ── PRIORITY 9: Quick Config / Soul Forge & Generic Panels ───
-                const sfPanel = document.getElementById('soul-forge-panel');
+                // ── PRIORITY 9: Quick Config / Preset Manager & Generic Panels ───
+                const sfPanel = document.getElementById('preset-manager-panel') || document.getElementById('soul-forge-panel');
                 if (sfPanel && sfPanel.classList.contains('open')) {
+                    const soulMenu = document.getElementById('sf-soul-picker-menu');
+                    if (soulMenu && soulMenu.style.display !== 'none') {
+                        if (window.sfCloseSoulPicker) window.sfCloseSoulPicker();
+                        return;
+                    }
+                    const modelMenu = document.getElementById('sf-model-picker-menu');
+                    if (modelMenu && modelMenu.style.display !== 'none') {
+                        if (window.sfCloseModelPicker) window.sfCloseModelPicker();
+                        return;
+                    }
                     if (window.sfTogglePanel) window.sfTogglePanel(false);
                     return;
                 }

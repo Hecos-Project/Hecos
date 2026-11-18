@@ -1,0 +1,114 @@
+<!-- ACTION PLANS & CHECKPOINTS CORE SYSTEM PANEL -->
+<div id="tab-action-plans" class="panel">
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div>
+        <div class="card-title"><i class="fas fa-list-check" style="color:var(--accent);"></i> {{ t('ap_hub_title') or 'Action Plans & Execution Recovery (Core)' }}</div>
+        <p style="font-size:12px; color:var(--muted); margin:4px 0 0;">
+          {{ t('ap_hub_desc') or 'Shared core module across Agent, Coder, Plugins, Apps, and Flows: manages multi-step planning, interactive approval, and automatic resume after crash, timeout, or interruption.' }}
+        </p>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn btn-sm btn-outline" id="ap-refresh-btn"><i class="fas fa-sync-alt"></i> {{ t('ap_btn_refresh') or 'Refresh' }}</button>
+        <button type="button" class="btn btn-sm btn-outline" id="ap-purge-btn"><i class="fas fa-broom"></i> {{ t('ap_btn_purge') or 'Purge Expired' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fas fa-sliders-h"></i> {{ t('ap_sec_planning') or 'Multi-Step Planning' }}</div>
+    <div class="toggle-row">
+      <div class="toggle-info">
+        {{ t('ap_enable_label') or 'Enable Action Plans Core Module' }}
+        <div class="toggle-sub">{{ t('ap_enable_desc') or 'Exposes structured Action Plans to LLM tools (ACTION_PLANS__*), plugins, and Hecos Flows.' }}</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="ap-enabled" data-plugin="ACTION_PLANS"><span class="slider"></span></label>
+    </div>
+
+    <div class="field" style="margin-top:14px;">
+      <label for="ap-plan-mode">{{ t('ap_mode_label') or 'Default Planning Mode' }}</label>
+      <select id="ap-plan-mode">
+        <option value="auto">{{ t('ap_mode_auto') or 'Automatic on complex tasks (Recommended)' }}</option>
+        <option value="confirm">{{ t('ap_mode_confirm') or 'Ask user confirmation before executing steps' }}</option>
+        <option value="manual">{{ t('ap_mode_manual') or 'Only on explicit request / direct plugin call' }}</option>
+        <option value="off">{{ t('ap_mode_off') or 'Disabled for LLM (keeps checkpoints active)' }}</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="ap-min-steps">{{ t('ap_min_steps_label') or 'Minimum steps threshold to suggest an automatic plan' }}</label>
+      <input type="number" id="ap-min-steps" min="2" max="20" step="1">
+    </div>
+
+    <div class="field">
+      <label for="ap-approval-timeout">{{ t('ap_approval_timeout_label') or 'User approval wait timeout (seconds)' }}</label>
+      <input type="number" id="ap-approval-timeout" min="30" max="1800" step="10">
+    </div>
+
+    <div class="toggle-row" style="margin-top:10px;">
+      <div class="toggle-info">
+        {{ t('ap_expose_presets_label') or 'Expose Action Plans tools to Custom Global Presets (e.g. Hecos Coder)' }}
+        <div class="toggle-sub">{{ t('ap_expose_presets_desc') or 'Automatically includes ACTION_PLANS__* tools when a preset uses operational tools (Executor, Drive, Flows, Browser).' }}</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="ap-expose-presets"><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fas fa-history"></i> {{ t('ap_sec_checkpoints') or 'Checkpoints & Interruption Recovery' }}</div>
+    <div class="toggle-row">
+      <div class="toggle-info">
+        {{ t('ap_ckpt_enable_label') or 'Step-by-Step Agent Checkpointing' }}
+        <div class="toggle-sub">{{ t('ap_ckpt_enable_desc') or 'Atomically saves agent state, context, and verified workspace files after each chat iteration.' }}</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="ap-ckpt-enabled"><span class="slider"></span></label>
+    </div>
+
+    <div class="toggle-row" style="margin-top:10px;">
+      <div class="toggle-info">
+        {{ t('ap_resume_banner_label') or 'Show "Resume Interrupted Work" Banner in Chat WebUI' }}
+        <div class="toggle-sub">{{ t('ap_resume_banner_desc') or 'Displays a banner in chat with the saved step and real files verified on disk.' }}</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="ap-resume-banner"><span class="slider"></span></label>
+    </div>
+
+    <div class="field" style="margin-top:14px;">
+      <label for="ap-resume-extra-steps">{{ t('ap_resume_extra_steps_label') or 'Extra iterations granted on resume' }}</label>
+      <input type="number" id="ap-resume-extra-steps" min="1" max="50" step="1">
+    </div>
+
+    <div class="field">
+      <label for="ap-retention-days">{{ t('ap_retention_days_label') or 'Checkpoint & Plan retention (days, 0 = never expire)' }}</label>
+      <input type="number" id="ap-retention-days" min="0" max="365" step="1">
+    </div>
+
+    <div class="toggle-row" style="margin-top:10px;">
+      <div class="toggle-info">
+        {{ t('ap_flows_ckpt_label') or 'Per-Node Checkpoints in Hecos Flows' }}
+        <div class="toggle-sub">{{ t('ap_flows_ckpt_desc') or 'Persists completed nodes and context variables between execution waves so interrupted Flows can resume.' }}</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="ap-flows-ckpt"><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fas fa-tasks"></i> {{ t('ap_sec_recent_plans') or 'Recent Action Plans' }}</div>
+    <div id="ap-plans-list" style="display:grid; gap:8px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fas fa-microchip"></i> {{ t('ap_sec_agent_ckpts') or 'Agent Checkpoints (Chat Sessions)' }}</div>
+    <div id="ap-agent-ckpts-list" style="display:grid; gap:8px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fas fa-project-diagram"></i> {{ t('ap_sec_flow_ckpts') or 'Hecos Flows Checkpoints' }}</div>
+    <div id="ap-flow-ckpts-list" style="display:grid; gap:8px;"></div>
+  </div>
+
+</div>
+
+<script src="/static/js/action_plans_hub/aph_api.js?v={{ version }}"></script>
+<script src="/static/js/action_plans_hub/aph_render.js?v={{ version }}"></script>
+<script src="/static/js/action_plans_hub/aph_bootstrap.js?v={{ version }}"></script>

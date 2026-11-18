@@ -1,10 +1,10 @@
-<!-- ⚡ SOUL FORGE: Unified Quick Config & Chat Draft Panel -->
-<div id="soul-forge-overlay" onclick="window.sfTogglePanel(false)"></div>
-<div id="soul-forge-panel" style="display: none;">
+<!-- ⚡ PRESET MANAGER: Global Preset & Chat Draft Panel -->
+<div id="preset-manager-overlay" onclick="window.sfTogglePanel(false)"></div>
+<div id="preset-manager-panel" style="display: none;">
     <div class="sf-header">
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <i class="fas fa-sliders-h" style="color: var(--accent1);"></i>
-            <span id="sf-panel-title">Quick Config · Soul Forge</span>
+            <span id="sf-panel-title">Preset Manager</span>
             <span id="sf-draft-badge" class="sf-draft-badge">✓ Synced</span>
         </div>
         <div style="display: flex; gap: 6px; align-items: center;">
@@ -35,12 +35,34 @@
 
             <div class="sf-controls-row" style="margin-top: 8px;">
                 <div class="sf-control-group" style="flex: 1;">
-                    <label>Global Preset (quick selector)</label>
+                    <label class="sf-preset-selector-label">
+                        <span>Global Preset (quick selector)</span>
+                        <span id="sf-preset-total-badge" class="sf-preset-count-badge" title="Total saved Global Presets">0 presets</span>
+                    </label>
                     <div style="display: flex; gap: 6px; align-items: center;">
-                        <select id="sf-active-soul-select" class="form-control" style="flex: 1;"
-                            onchange="window.sfSelectSessionSoul(this.value)">
+                        <select id="sf-active-soul-select" class="form-control sf-native-model-select-hidden"
+                            onchange="if (window.sfSyncSoulPickerUI) window.sfSyncSoulPickerUI(); window.sfSelectSessionSoul(this.value)">
                             <option value="">-- Base Configuration (No Preset) --</option>
                         </select>
+                        <div id="sf-soul-picker" class="sf-model-picker" style="flex: 1; min-width: 0;">
+                            <button type="button" id="sf-soul-picker-btn" class="sf-model-picker-btn"
+                                aria-haspopup="listbox" aria-expanded="false"
+                                onclick="if (window.sfToggleSoulPicker) window.sfToggleSoulPicker()">
+                                <span class="sf-mp-btn-main" id="sf-soul-picker-label">-- Base Configuration (No Preset) --</span>
+                                <span class="sf-mp-btn-meta" id="sf-soul-picker-meta"></span>
+                                <i class="fas fa-chevron-down sf-mp-chevron"></i>
+                            </button>
+                            <div id="sf-soul-picker-menu" class="sf-model-picker-menu" role="listbox" style="display: none;">
+                                <div class="sf-mp-search-wrap">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="sf-soul-search" class="sf-mp-search"
+                                        placeholder="Filter presets..." oninput="if (window.sfFilterSoulPicker) window.sfFilterSoulPicker(this.value)">
+                                    <span id="sf-soul-search-count" class="sf-sp-search-count" title="Visible / Total presets">0 presets</span>
+                                </div>
+                                <div id="sf-soul-picker-list" class="sf-model-picker-list sf-soul-picker-list"></div>
+                                <div id="sf-soul-hover-card" class="sf-model-hover-card" style="display: none;"></div>
+                            </div>
+                        </div>
                         <button class="btn btn-secondary btn-sm" onclick="window.sfRenameSoul()"
                             title="Rename selected preset" style="padding: 5px 9px;">
                             <i class="fas fa-pencil-alt"></i>
@@ -510,7 +532,7 @@
                                     Function Calling Tools (JSON Schemas)
                                     <span class="sf-toggle-badge" id="sf-payload-tools-badge">Auto</span>
                                 </span>
-                                <span class="sf-toggle-desc">Per-chat/preset LLM prompt exposure. Does not affect system <em>Lazy Load</em> (startup/RAM in Package Manager).</span>
+                                <span class="sf-toggle-desc">Per-chat/preset LLM prompt exposure. Does not affect system <em>Lazy Load</em> (startup/RAM in Module Manager).</span>
                             </div>
                         </div>
                         <div class="sf-switch">

@@ -1,5 +1,5 @@
 ai:
-  active_global_preset: hecos_coder
+  active_global_preset: hecos_coder_pro
   active_personality: Hecos_Coder
   available_personalities:
     '1': Hecos_System_Soul
@@ -47,9 +47,10 @@ backend:
     temperature: 0.7
     top_p: 0.95
     rep_pen: 1.1
+    request_timeout_sec: 900
   ollama:
     url: http://localhost:11434
-    model: huihui_ai/qwen2.5-coder-abliterate:14b
+    model: huihui_ai/qwen3-coder-abliterated:30b
     available_models:
       '1': masska129/gemma-4-abliterated:12b-qat
       '2': sorc/qwen3.5-claude-4.6-opus:latest
@@ -58,6 +59,7 @@ backend:
       '5': srchmnmichael/qwen3.5-9B-uncensored:latest
       '6': huihui_ai/qwen2.5-coder-abliterate:14b
       '7': huihui_ai/qwen3-coder-abliterated:30b
+      '8': mattcapalbo1432/qwen38-obliterated-cyber:latest
     num_ctx: 16384
     num_gpu: 99
     num_predict: 4096
@@ -66,6 +68,7 @@ backend:
     repeat_penalty: 1.05
     keep_alive: 120m
     probe_timeout_sec: 3
+    request_timeout_sec: 900
     binary_path: C:\Users\melon\AppData\Local\Programs\Ollama\ollama.exe
     auto_start_server: false
     auto_stop_server: true
@@ -83,6 +86,7 @@ backend:
     top_p: 0.95
     native_tool_calling: true
     text_commands_enabled: true
+    request_timeout_sec: 900
 cognition:
   memory_enabled: true
   episodic_memory: true

@@ -88,7 +88,7 @@
             WebUI Response Timeout
             <span title="Max time the WebUI will wait for the entire AI response before canceling." style="color:var(--muted);cursor:help;font-size:11px;">ⓘ</span>
           </label>
-          <input type="number" id="km-webui-timeout" min="10" max="600" step="10" value="120"
+          <input type="number" id="km-webui-timeout" min="30" max="3600" step="30" value="900"
                  style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--fg);">
           <small style="color:var(--muted);font-size:10px;">Seconds before auto-canceling the chat request.</small>
         </div>
@@ -413,7 +413,7 @@ function kmSaveAdvanced() {
     cloud_timeout : parseInt(document.getElementById('km-cloud-timeout').value, 10) || 30,
     cooldown      : parseInt(document.getElementById('km-cooldown').value, 10)      || 60,
     max_retries   : parseInt(document.getElementById('km-max-retries').value, 10)   || 5,
-    webui_timeout : parseInt(document.getElementById('km-webui-timeout').value, 10) || 120
+    webui_timeout : parseInt(document.getElementById('km-webui-timeout').value, 10) || 900
   };
   const fb = document.getElementById('km-adv-feedback');
   fetch('/hecos/api/keymanager/settings', {
@@ -439,7 +439,7 @@ function kmResetAdvanced() {
   document.getElementById('km-cloud-timeout').value = 30;
   document.getElementById('km-cooldown').value      = 60;
   document.getElementById('km-max-retries').value   = 5;
-  document.getElementById('km-webui-timeout').value = 120;
+  document.getElementById('km-webui-timeout').value = 900;
   kmSaveAdvanced();
 }
 </script>

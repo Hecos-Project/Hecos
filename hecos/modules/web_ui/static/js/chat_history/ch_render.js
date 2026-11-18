@@ -38,6 +38,12 @@ window.loadChatSessions = async function () {
 
     renderSessionList();
     if (window.updateModeUI) window.updateModeUI();
+    if (window.AgentResume && typeof window.AgentResume.refreshBanner === 'function') {
+        window.AgentResume.refreshBanner(window.chatHistoryState.activeSessionId);
+    }
+    if (window.ActionPlanChat && typeof window.ActionPlanChat.refreshForSession === 'function') {
+        window.ActionPlanChat.refreshForSession(window.chatHistoryState.activeSessionId);
+    }
 };
 
 function _dayKey(dateStr) {

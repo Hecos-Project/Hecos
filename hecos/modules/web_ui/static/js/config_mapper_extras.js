@@ -14,8 +14,8 @@ const DEFAULT_EXECUTOR_ANTI_HALLUCINATION_DIRECTIVE = [
 
 window.populateExecutorUI = async function() {
     const p = (window.cfg?.plugins || {}).EXECUTOR || {};
-    setCheck('executor-enabled',      p.enabled              !== false);
-    setVal('executor-timeout',        p.timeout_seconds      ?? 10);
+    setCheck('executor-coding-enabled',p.coding_enabled       === true);
+    setVal('executor-timeout',         p.timeout_seconds      ?? 10);
     setCheck('executor-shell-enabled',p.enable_shell_commands ?? true);
     setVal('executor-shell-timeout',  p.shell_timeout         ?? 15);
     setVal('executor-max-read-lines', p.max_read_lines        ?? 200);
@@ -321,4 +321,33 @@ window.savePluginKey = function(pluginTag, key, val) {
     if (!window.cfg.plugins[pluginTag]) window.cfg.plugins[pluginTag] = {};
     window.cfg.plugins[pluginTag][key] = val;
     if (typeof window.saveConfig === 'function') window.saveConfig(true);
+};
+
+function _broadcastCodingVisibility() {
+    const execCfg = (window.cfg?.plugins || {}).EXECUTOR || {};
+    const visible = Boolean(execCfg.enabled !== false && execCfg.coding_enabled === true);
+    const payload = {
+        type: 'wr_coding_visibility',
+        enabled: visible,
+        tabId: 'hub_' + Date.now(),
+        seq: Date.now(),
+        ts: Date.now()
+    };
+    try {
+        if (typeof BroadcastChannel !== 'undefined') {
+            const ch = new BroadcastChannel('hecos_workspace_bus');
+            ch.postMessage(payload);
+            ch.close();
+        }
+    } catch (e) {}
+    try {
+        localStorage.setItem('hecos_workspace_bus_event', JSON.stringify(payload));
+    } catch (e) {}
+}
+
+window.broadcastWorkspaceCodingVisibility = _broadcastCodingVisibility;
+
+window.onExecutorCodingToggle = function(checked) {
+    window.savePluginKey('EXECUTOR', 'coding_enabled', Boolean(checked));
+    _broadcastCodingVisibility();
 };

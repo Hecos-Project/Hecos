@@ -60,6 +60,7 @@ class KoboldBackendConfig(BaseModel):
     temperature: float = 0.8
     top_p: float = 0.92
     rep_pen: float = 1.1
+    request_timeout_sec: int = 900
 
 
 class OllamaBackendConfig(BaseModel):
@@ -74,6 +75,7 @@ class OllamaBackendConfig(BaseModel):
     repeat_penalty: float = 1.1
     keep_alive: str = "120m"
     probe_timeout_sec: int = 3
+    request_timeout_sec: int = 900
     # ── Lifecycle / startup flags ─────────────────────────────────────────────
     binary_path: str = ""            # Path to ollama.exe or 'ollama app.exe' (auto-detected if empty)
     auto_start_server: bool = False  # Launch Ollama automatically if not running
@@ -94,6 +96,7 @@ class LlamaCPPBackendConfig(BaseModel):
     top_p: float = 0.95
     native_tool_calling: bool = True   # Pass tools as JSON to llama-server (requires a capable model)
     text_commands_enabled: bool = True  # Inject /img and text-command hints into the system prompt
+    request_timeout_sec: int = 900
 
 
 class BackendConfig(BaseModel):

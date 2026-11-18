@@ -30,7 +30,8 @@ window.CONFIG_HUB = {
         
         { id: 'payload',          label: 'hub_mod_payload',      icon: '<i class="fas fa-box-open"></i>', cat: 'RISORSE', isCore: true },
         { id: 'sysnet',    label: 'Web Server',           icon: '<i class="fas fa-server"></i>', cat: 'SISTEMA', isCore: true },
-        { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
+        { id: 'executor',     label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>',       cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
+        { id: 'action-plans', label: 'hub_mod_action_plans', icon: '<i class="fas fa-list-check"></i>', cat: 'SISTEMA', pluginTag: 'ACTION_PLANS', isCore: true },
         { id: 'hdcs',      label: 'hub_mod_hdcs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', pluginTag: 'HDCS', isCore: true },
         { id: 'shortcuts', label: 'Keyboard Shortcuts',   icon: '<i class="fas fa-keyboard"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'help',      label: 'webui_help_about_title', icon: '<i class="fas fa-question-circle"></i>', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
@@ -38,8 +39,8 @@ window.CONFIG_HUB = {
         { id: 'system',    label: 'hub_mod_system',       icon: '<i class="fas fa-cog"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'logs',      label: 'hub_mod_logs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'privacy',   label: 'hub_mod_privacy',      icon: '<i class="fas fa-user-secret"></i>', cat: 'SISTEMA', isCore: true },
-        { id: 'hpm-settings',label: 'HPM Settings',       icon: '<i class="fas fa-box-open"></i>', cat: 'SISTEMA', isCore: true },
-        { id: 'presenter', label: 'Presenter',            icon: '<i class="fas fa-bullhorn"></i>', cat: 'SISTEMA', isCore: true },
+        { id: 'hpm-settings',label: 'Module Manager Settings', icon: '<i class="fas fa-box-open"></i>', cat: 'SISTEMA', isCore: true },
+        { id: 'presenter', label: 'Presenter',            icon: '<i class="fas fa-tower-broadcast"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'chat_ui',   label: 'Chat Interface',       icon: '<i class="fas fa-comment-dots"></i>', cat: 'SISTEMA', isCore: true }
     ],
 
@@ -103,6 +104,7 @@ window.getIconForModule = function(id, name, metaIcon) {
 window.CONFIG_HUB.tagMap = {
     'DRIVE': 'drive',
     'EXECUTOR': 'executor',
+    'ACTION_PLANS': 'action-plans',
     'WEBCAM': 'webcam',
     'MEMORY': 'memory',
     // SYS_NET removed — sys_net is now an HPM package with its own tab_id

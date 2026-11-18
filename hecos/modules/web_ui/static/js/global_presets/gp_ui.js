@@ -1,8 +1,8 @@
-/* ⚡ SOUL FORGE: gp_ui.js — Unified Panel UI, Diff Engine & Topbar Sync */
+/* ⚡ PRESET MANAGER: gp_ui.js — Unified Panel UI, Diff Engine & Topbar Sync */
 
 window.sfTogglePanel = function(force) {
-    const panel = document.getElementById('soul-forge-panel');
-    const overlay = document.getElementById('soul-forge-overlay');
+    const panel = document.getElementById('preset-manager-panel') || document.getElementById('soul-forge-panel');
+    const overlay = document.getElementById('preset-manager-overlay') || document.getElementById('soul-forge-overlay');
     if (!panel || !overlay) return;
     const isOpen = panel.classList.contains('open');
     
@@ -24,13 +24,15 @@ window.sfTogglePanel = function(force) {
         panel.classList.remove('open');
         panel.style.display = 'none';
         overlay.style.display = 'none';
+        if (window.sfCloseSoulPicker) window.sfCloseSoulPicker();
         if (window.sfCloseModelPicker) window.sfCloseModelPicker();
         if (window.sfStopVoicePreview) window.sfStopVoicePreview();
     }
 };
 
-// Backwards-compatible alias for any callers invoking window.soTogglePanel
+// Backwards-compatible aliases
 window.soTogglePanel = window.sfTogglePanel;
+window.pmTogglePanel = window.sfTogglePanel;
 
 window.sfToggleDrawer = function(drawerId, btnEl) {
     const drawer = document.getElementById(drawerId);
@@ -334,7 +336,12 @@ window.sfPopulateDropdowns = function(optData) {
     const soulSel = document.getElementById('sf-active-soul-select');
     if (soulSel) soulSel.innerHTML = '<option value="">-- Base Configuration (No Preset) --</option>';
     
-    (window.sfState.souls || []).forEach(s => {
+    const sortedSouls = [...(window.sfState.souls || [])].sort((a, b) =>
+        String(a?.meta?.name || a?.meta?.id || '').localeCompare(String(b?.meta?.name || b?.meta?.id || ''), undefined, { sensitivity: 'base' })
+    );
+    window.sfState.sortedSouls = sortedSouls;
+
+    sortedSouls.forEach(s => {
         if (soulSel) {
             const opt = document.createElement('option');
             opt.value = s.meta.id;
@@ -342,6 +349,7 @@ window.sfPopulateDropdowns = function(optData) {
             soulSel.appendChild(opt);
         }
     });
+    if (window.sfSyncSoulPickerUI) window.sfSyncSoulPickerUI();
     
     const infSel = document.getElementById('sf-inference-preset-select');
     if (infSel) {
@@ -592,6 +600,7 @@ window.sfToggleModelPicker = function(force) {
     const isOpen = menu.style.display !== 'none';
     const open = force !== undefined ? force : !isOpen;
     if (open) {
+        if (window.sfCloseSoulPicker) window.sfCloseSoulPicker();
         const searchEl = document.getElementById('sf-model-search');
         if (searchEl) searchEl.value = '';
         window.sfRenderModelPickerList('');
@@ -698,9 +707,18 @@ if (!window._sfModelPickerEventsBound) {
         if (picker && !picker.contains(e.target)) {
             if (window.sfCloseModelPicker) window.sfCloseModelPicker();
         }
+        const soulPicker = document.getElementById('sf-soul-picker');
+        if (soulPicker && !soulPicker.contains(e.target)) {
+            if (window.sfCloseSoulPicker) window.sfCloseSoulPicker();
+        }
     });
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+            const soulMenu = document.getElementById('sf-soul-picker-menu');
+            if (soulMenu && soulMenu.style.display !== 'none') {
+                window.sfCloseSoulPicker();
+                return;
+            }
             const menu = document.getElementById('sf-model-picker-menu');
             if (menu && menu.style.display !== 'none') {
                 window.sfCloseModelPicker();
@@ -708,6 +726,285 @@ if (!window._sfModelPickerEventsBound) {
         }
     });
 }
+
+// ── Global Preset Searchable Picker (matches Model Picker UI) ────────────────
+
+function _sfFormatPresetDate(rawIso, mode = 'date') {
+    const clean = String(rawIso || '').trim();
+    if (!clean) return mode === 'last_short' ? 'Never' : '—';
+    const norm = clean.includes('T') ? clean : clean.replace(' ', 'T');
+    const dt = new Date(norm);
+    if (Number.isNaN(dt.getTime())) {
+        return mode === 'full' ? clean.replace('T', ' ').slice(0, 16) : clean.slice(0, 10);
+    }
+    const pad = (n) => String(n).padStart(2, '0');
+    const yyyy = dt.getFullYear();
+    const yy = String(yyyy).slice(-2);
+    const mm = pad(dt.getMonth() + 1);
+    const dd = pad(dt.getDate());
+    const hh = pad(dt.getHours());
+    const min = pad(dt.getMinutes());
+    if (mode === 'full') return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+    if (mode === 'last_short') return `${dd}/${mm} ${hh}:${min}`;
+    return `${dd}/${mm}/${yy}`;
+}
+
+function _sfGetSoulStats(s) {
+    const createdAt = s?.meta?.created_at || '';
+    const useCount = Math.max(0, Number(s?.usage?.use_count ?? s?.meta?.use_count ?? 0) || 0);
+    const lastUsedAt = s?.usage?.last_used_at || s?.meta?.last_used_at || '';
+    return {
+        createdAt,
+        createdCompact: _sfFormatPresetDate(createdAt, 'date'),
+        createdFull: createdAt ? _sfFormatPresetDate(createdAt, 'full') : 'Unknown',
+        useCount,
+        lastUsedAt,
+        lastCompact: (useCount > 0 && lastUsedAt) ? _sfFormatPresetDate(lastUsedAt, 'last_short') : 'Never',
+        lastFull: (useCount > 0 && lastUsedAt) ? _sfFormatPresetDate(lastUsedAt, 'full') : 'Never used',
+    };
+}
+
+window.sfUpdateSoulHoverCard = function(s) {
+    const card = document.getElementById('sf-soul-hover-card');
+    if (!card) return;
+    if (!s) {
+        card.style.display = 'block';
+        card.innerHTML = `
+            <div class="sf-mhc-title">
+                <span>⚙️ Base Configuration (No Preset)</span>
+                <span style="font-size:10px; color:#94a3b8; font-weight:500;">System Fallback</span>
+            </div>
+            <div class="sf-mhc-specs">Uses Hecos system defaults without applying a Global Preset overlay.</div>
+        `;
+        return;
+    }
+
+    const st = _sfGetSoulStats(s);
+    const sid = s.meta?.id || '';
+    const isGlobalDef = sid && window.sfState?.globalDefaultSoulId === sid;
+    const badgeBits = [];
+    if (s.model?.model_name) badgeBits.push(`<span class="sf-mib-pill">🤖 ${_sfEscHtml(s.model.model_name)}</span>`);
+    if (s.persona?.soul_file) badgeBits.push(`<span class="sf-mib-pill">👤 ${_sfEscHtml(s.persona.soul_file)}</span>`);
+    if (s.voice?.tts_engine) badgeBits.push(`<span class="sf-mib-pill">🔊 ${_sfEscHtml(s.voice.tts_engine)}</span>`);
+    if (s.inference?.preset_name) badgeBits.push(`<span class="sf-mib-pill">⚙️ ${_sfEscHtml(s.inference.preset_name)}</span>`);
+
+    const rightTag = isGlobalDef ? '⭐ Global Default' : sid;
+    const descHtml = s.meta?.description
+        ? `<div class="sf-mhc-specs" style="margin-top:4px;margin-bottom:0;color:#cbd5e1;">${_sfEscHtml(s.meta.description)}</div>`
+        : '';
+
+    card.innerHTML = `
+        <div class="sf-mhc-title">
+            <span>${_sfEscHtml(s.meta?.icon || '⚡')} ${_sfEscHtml(s.meta?.name || sid)}</span>
+            <span style="font-size:10px; color:#94a3b8; font-weight:500;">${_sfEscHtml(rightTag)}</span>
+        </div>
+        <div class="sf-mhc-specs">Created: ${_sfEscHtml(st.createdFull)} · Used: ${st.useCount}× · Last used: ${_sfEscHtml(st.lastFull)}</div>
+        ${badgeBits.length ? `<div class="sf-mhc-caps">${badgeBits.join('')}</div>` : ''}
+        ${descHtml}
+    `;
+    card.style.display = 'block';
+};
+
+window.sfRenderSoulPickerList = function(filterText = '') {
+    const listEl = document.getElementById('sf-soul-picker-list');
+    if (!listEl) return;
+
+    const souls = window.sfState.sortedSouls || window.sfState.souls || [];
+    const curVal = document.getElementById('sf-active-soul-select')?.value || '';
+    const q = (filterText || '').trim().toLowerCase();
+
+    const visible = q
+        ? souls.filter(s => {
+            const m = s.meta || {};
+            const hay = [
+                m.name, m.id, m.description,
+                Array.isArray(m.tags) ? m.tags.join(' ') : '',
+                s.persona?.soul_file,
+                s.model?.model_name,
+            ].filter(Boolean).join(' ').toLowerCase();
+            return hay.includes(q);
+        })
+        : souls;
+
+    const totalSouls = souls.length;
+    const totalWord = totalSouls === 1 ? 'preset' : 'presets';
+    const searchCountEl = document.getElementById('sf-soul-search-count');
+    if (searchCountEl) {
+        searchCountEl.textContent = q ? `${visible.length} / ${totalSouls}` : `${totalSouls} ${totalWord}`;
+        searchCountEl.title = q
+            ? `Showing ${visible.length} of ${totalSouls} Global Presets`
+            : `Total saved Global Presets: ${totalSouls}`;
+    }
+    const totalBadge = document.getElementById('sf-preset-total-badge');
+    if (totalBadge) {
+        totalBadge.textContent = `${totalSouls} ${totalWord}`;
+        totalBadge.title = `Total saved Global Presets: ${totalSouls}`;
+    }
+
+    listEl.innerHTML = '';
+
+    // Always include Base Configuration option when not filtered out or matching "base" / "default"
+    if (!q || 'base configuration default no preset'.includes(q)) {
+        const baseItem = document.createElement('div');
+        baseItem.className = 'sf-mp-item' + (curVal === '' ? ' selected' : '');
+        baseItem.setAttribute('role', 'option');
+        baseItem.setAttribute('aria-selected', curVal === '' ? 'true' : 'false');
+        baseItem.innerHTML = `
+            <div class="sf-mp-item-left">
+                <span>⚙️</span>
+                <span class="sf-mp-item-name">-- Base Configuration (No Preset) --</span>
+            </div>
+            <div class="sf-mp-item-right">
+                <span class="sf-mp-spec-tag sf-sp-stat-pill">System fallback</span>
+            </div>
+        `;
+        baseItem.addEventListener('mouseenter', () => {
+            listEl.querySelectorAll('.sf-mp-item.sf-mp-hovered').forEach(el => el.classList.remove('sf-mp-hovered'));
+            baseItem.classList.add('sf-mp-hovered');
+            window.sfUpdateSoulHoverCard(null);
+        });
+        baseItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const sel = document.getElementById('sf-active-soul-select');
+            if (sel) sel.value = '';
+            window.sfCloseSoulPicker();
+            if (window.sfSyncSoulPickerUI) window.sfSyncSoulPickerUI();
+            if (window.sfSelectSessionSoul) window.sfSelectSessionSoul('');
+        });
+        listEl.appendChild(baseItem);
+    }
+
+    if (!visible.length && q) {
+        const emptyEl = document.createElement('div');
+        emptyEl.style.cssText = 'padding:10px; font-size:11.5px; color:var(--text-muted); text-align:center;';
+        emptyEl.textContent = 'No presets match filter';
+        listEl.appendChild(emptyEl);
+        window.sfUpdateSoulHoverCard(null);
+        return;
+    }
+
+    visible.forEach(s => {
+        const sid = s.meta?.id || '';
+        const st = _sfGetSoulStats(s);
+        const isGlobalDef = sid && window.sfState?.globalDefaultSoulId === sid;
+        const icon = s.meta?.icon || '⚡';
+        const name = s.meta?.name || sid;
+
+        const item = document.createElement('div');
+        item.className = 'sf-mp-item' + (sid === curVal ? ' selected' : '');
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', sid === curVal ? 'true' : 'false');
+        item.dataset.soulId = sid;
+        item.title = `${name} (${sid})\nCreated: ${st.createdFull}\nUsed: ${st.useCount} time(s)\nLast used: ${st.lastFull}`;
+
+        item.innerHTML = `
+            <div class="sf-mp-item-left">
+                <span>${_sfEscHtml(icon)}</span>
+                <span class="sf-mp-item-name">${_sfEscHtml(name)}${isGlobalDef ? ' ⭐' : ''}</span>
+            </div>
+            <div class="sf-mp-item-right">
+                <span class="sf-mp-spec-tag sf-sp-stat-pill" title="Created: ${_sfEscHtml(st.createdFull)}">📅 ${_sfEscHtml(st.createdCompact)}</span>
+                <span class="sf-mp-spec-tag sf-sp-stat-pill${st.useCount > 0 ? ' uses-hot' : ''}" title="Used ${st.useCount} time(s)">⚡ ${st.useCount}×</span>
+                <span class="sf-mp-spec-tag sf-sp-stat-pill" title="Last used: ${_sfEscHtml(st.lastFull)}">🕒 ${_sfEscHtml(st.lastCompact)}</span>
+            </div>
+        `;
+
+        item.addEventListener('mouseenter', () => {
+            listEl.querySelectorAll('.sf-mp-item.sf-mp-hovered').forEach(el => el.classList.remove('sf-mp-hovered'));
+            item.classList.add('sf-mp-hovered');
+            window.sfUpdateSoulHoverCard(s);
+        });
+
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const sel = document.getElementById('sf-active-soul-select');
+            if (sel) sel.value = sid;
+            window.sfCloseSoulPicker();
+            if (window.sfSyncSoulPickerUI) window.sfSyncSoulPickerUI();
+            if (window.sfSelectSessionSoul) window.sfSelectSessionSoul(sid);
+        });
+
+        listEl.appendChild(item);
+    });
+
+    const activeSoul = visible.find(s => s.meta?.id === curVal) || visible[0] || null;
+    window.sfUpdateSoulHoverCard(activeSoul);
+};
+
+window.sfFilterSoulPicker = function(val) {
+    window.sfRenderSoulPickerList(val);
+};
+
+window.sfToggleSoulPicker = function(force) {
+    const menu = document.getElementById('sf-soul-picker-menu');
+    const btn = document.getElementById('sf-soul-picker-btn');
+    if (!menu || !btn) return;
+    const isOpen = menu.style.display !== 'none';
+    const open = force !== undefined ? force : !isOpen;
+    if (open) {
+        if (window.sfCloseModelPicker) window.sfCloseModelPicker();
+        const searchEl = document.getElementById('sf-soul-search');
+        if (searchEl) searchEl.value = '';
+        window.sfRenderSoulPickerList('');
+        menu.style.display = 'block';
+        btn.setAttribute('aria-expanded', 'true');
+        if (searchEl) setTimeout(() => searchEl.focus(), 20);
+    } else {
+        menu.style.display = 'none';
+        btn.setAttribute('aria-expanded', 'false');
+    }
+};
+
+window.sfCloseSoulPicker = function() {
+    window.sfToggleSoulPicker(false);
+};
+
+window.sfSyncSoulPickerUI = function() {
+    const sel = document.getElementById('sf-active-soul-select');
+    const labelEl = document.getElementById('sf-soul-picker-label');
+    const metaEl = document.getElementById('sf-soul-picker-meta');
+    const souls = window.sfState.souls || [];
+    const totalSouls = souls.length;
+    const totalWord = totalSouls === 1 ? 'preset' : 'presets';
+    const totalBadge = document.getElementById('sf-preset-total-badge');
+    if (totalBadge) {
+        totalBadge.textContent = `${totalSouls} ${totalWord}`;
+        totalBadge.title = `Total saved Global Presets: ${totalSouls}`;
+    }
+    const searchCountEl = document.getElementById('sf-soul-search-count');
+    if (searchCountEl) {
+        searchCountEl.textContent = `${totalSouls} ${totalWord}`;
+        searchCountEl.title = `Total saved Global Presets: ${totalSouls}`;
+    }
+    if (!sel || !labelEl) return;
+
+    const val = sel.value || '';
+    if (!val) {
+        labelEl.textContent = '-- Base Configuration (No Preset) --';
+        labelEl.title = 'System Base Configuration (No Preset)';
+        if (metaEl) metaEl.innerHTML = '';
+        return;
+    }
+
+    const s = souls.find(item => item.meta?.id === val);
+    if (s) {
+        const st = _sfGetSoulStats(s);
+        const icon = s.meta?.icon || '⚡';
+        const name = s.meta?.name || val;
+        labelEl.textContent = `${icon} ${name}`;
+        labelEl.title = `${name}\nCreated: ${st.createdFull}\nUsed: ${st.useCount} time(s)\nLast used: ${st.lastFull}`;
+        if (metaEl) {
+            metaEl.innerHTML =
+                `<span class="sf-mp-spec-tag sf-sp-stat-pill" title="Created: ${_sfEscHtml(st.createdFull)}">📅 ${_sfEscHtml(st.createdCompact)}</span>` +
+                `<span class="sf-mp-spec-tag sf-sp-stat-pill${st.useCount > 0 ? ' uses-hot' : ''}" title="Used ${st.useCount} time(s)">⚡ ${st.useCount}×</span>`;
+        }
+    } else {
+        const optTxt = sel.options[sel.selectedIndex]?.textContent || val;
+        labelEl.textContent = optTxt;
+        labelEl.title = optTxt;
+        if (metaEl) metaEl.innerHTML = '';
+    }
+};
 
 window.sfUpdateModelsDropdown = function() {
     const bType = document.getElementById('sf-backend-select')?.value;
@@ -1111,7 +1408,7 @@ window.sfUpdateTooltip = function(soul, explicitSoulId) {
             const raw = window.HKS_BINDINGS.get('ui.global_defaults') || window.HKS_BINDINGS.get('ui.chat_overrides');
             if (raw) shortcutKey = raw.toUpperCase();
         }
-        lines.push(`\n⚡ Click to open Quick Config / Soul Forge (${shortcutKey})`);
+        lines.push(`\n⚡ Click to open Preset Manager (${shortcutKey})`);
         
         const titleText = lines.join('\n');
         const modSuffix = isModified ? ' ●' : '';
@@ -1121,7 +1418,7 @@ window.sfUpdateTooltip = function(soul, explicitSoulId) {
             sbGD.textContent = presetDisplayName + modSuffix;
             if (sbGDBtn) sbGDBtn.title = titleText;
         } else {
-            sbGDLabel.innerHTML = '<i class="fas fa-cog"></i> Quick Config';
+            sbGDLabel.innerHTML = '<i class="fas fa-cog"></i> Preset Manager';
             sbGD.textContent = 'Configure' + modSuffix;
             if (sbGDBtn) sbGDBtn.title = titleText;
         }

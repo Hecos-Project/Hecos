@@ -40,7 +40,7 @@
             progress_milestone:{ icon: 'fas fa-tasks',              color: '#38bdf8', tooltip: 'System Operation' },
             search_milestone:  { icon: 'fas fa-search',             color: '#38bdf8', tooltip: 'Search Milestone' },
             search_commentary: { icon: 'fas fa-comment-dots',       color: '#c084fc', tooltip: 'Search Commentary' },
-            default:         { icon: 'fas fa-bullhorn',             color: '#ff512f', tooltip: 'Notification' }
+            default:         { icon: 'fas fa-tower-broadcast',      color: '#ff512f', tooltip: 'Notification' }
         }
     };
 })();

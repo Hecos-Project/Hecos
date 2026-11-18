@@ -1,4 +1,4 @@
-/* ⚡ SOUL FORGE: gp_fish.js */
+/* ⚡ PRESET MANAGER: gp_fish.js */
 
 window.sfSaveNewFishInferencePreset = function() {
     window.hecosPrompt("Enter the name for the new Fish Speech Inference Preset:", async function(name) {

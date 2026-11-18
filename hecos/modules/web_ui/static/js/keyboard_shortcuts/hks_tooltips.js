@@ -1,4 +1,4 @@
-﻿/**
+/**
  * hks_tooltips.js � Hecos Dynamic Shortcut Tooltips
  * -----------------------------------------------------------------------------
  * Reads current keyboard bindings from HKS_BINDINGS and applies them as
@@ -70,13 +70,13 @@
 
         // Sidebar action buttons
         _setTitle('sidebar-expand-btn',    'Open Control Room',                  'ui.toggle_room');
-        _setTitle('sidebar-hpm-btn',       'Install and manage modules',         'nav.packages');
+        _setTitle('sidebar-hpm-btn',       'Open Module Manager (Core System & Packages)', 'nav.packages');
 
         // History panel
         _setTitle('ch-new-chat-btn',       'Start a new chat session',           'ui.new_chat');
 
-        // Quick Config status pills (no stable IDs, use selector)
-        _setTitleAll('.status-pill.clickable:not(:has(#sb-global-defaults))', 'Open Quick Config / Soul Forge', 'ui.global_defaults');
+        // Preset Manager status pills (no stable IDs, use selector)
+        _setTitleAll('.status-pill.clickable:not(:has(#sb-global-defaults))', 'Open Preset Manager', 'ui.global_defaults');
         if (window.sfUpdateTooltip && window.sfState && window.sfState.globalDefaultSoul) window.sfUpdateTooltip(window.sfState.globalDefaultSoul);
 
         // -- CENTRAL HUB (config_panel & core_header) -------------------------

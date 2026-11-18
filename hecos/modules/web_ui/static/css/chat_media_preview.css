@@ -339,6 +339,28 @@ body.sidebar-collapsed .chat-html-preview.expanded {
   border-color: rgba(168, 85, 247, 0.45);
   color: #d8b4fe;
 }
+.wr-btn-ai:hover {
+  background: rgba(168, 85, 247, 0.34);
+  border-color: rgba(192, 132, 252, 0.72);
+  color: #f3e8ff;
+}
+.wr-probe-alert {
+  margin: 6px 10px 4px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.wr-probe-alert-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 .wr-btn-close {
   background: transparent;
   border-color: transparent;

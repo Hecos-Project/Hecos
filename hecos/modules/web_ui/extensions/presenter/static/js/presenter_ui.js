@@ -60,7 +60,7 @@
         container.innerHTML = `
             <div class="hbs-presenter-header" style="cursor: pointer;">
                 <div class="hbs-presenter-brand">
-                    <div class="hbs-presenter-avatar"><i class="fas fa-bullhorn"></i></div>
+                    <div class="hbs-presenter-avatar"><i class="fas fa-tower-broadcast"></i></div>
                     <div class="hbs-presenter-title">Presenter</div>
                     <button id="hbs-presenter-power-btn" onclick="window.Presenter.togglePower(event)"
                         title="Toggle Presenter (Turn ON/OFF)"
@@ -167,7 +167,7 @@
         notice.id = 'hbs-presenter-disabled-notice';
         notice.style.cssText = 'display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px 16px; gap:10px; text-align:center;';
         notice.innerHTML = `
-            <div style="font-size:28px; opacity:0.25;"><i class="fas fa-bullhorn"></i></div>
+            <div style="font-size:28px; opacity:0.25;"><i class="fas fa-tower-broadcast"></i></div>
             <div style="font-size:13px; font-weight:600; color:var(--text); opacity:0.7;">Presenter is disabled</div>
             <div style="font-size:11px; color:var(--muted); line-height:1.6; max-width:260px;">
                 The Presenter module is currently off. Enable it from the

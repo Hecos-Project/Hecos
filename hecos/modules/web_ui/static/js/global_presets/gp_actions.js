@@ -1,4 +1,4 @@
-/* ⚡ SOUL FORGE: gp_actions.js — Session Draft Sync, Promotion & Quick Test Lab */
+/* ⚡ PRESET MANAGER: gp_actions.js — Session Draft Sync, Promotion & Quick Test Lab */
 
 window.sfSaveDraftToSession = async function() {
     const sessionId = window.sfGetActiveSessionId ? window.sfGetActiveSessionId() : null;
@@ -68,6 +68,7 @@ window.sfSaveAsNewSoul = function() {
 };
 
 window.soSaveAsNewSoul = window.sfSaveAsNewSoul;
+window.pmSaveAsNewPreset = window.sfSaveAsNewSoul;
 
 window.sfDuplicateSoul = function() {
     const soulId = window.sfState.activeSoulId;
@@ -108,6 +109,7 @@ window.sfDuplicateSoul = function() {
 };
 
 window.soDuplicateSoul = window.sfDuplicateSoul;
+window.pmDuplicatePreset = window.sfDuplicateSoul;
 
 window.sfSaveInlineToActive = async function() {
     const soulId = window.sfState.activeSoulId;
@@ -163,6 +165,7 @@ window.sfOverwriteSoul = function() {
 };
 
 window.soOverwriteSoul = window.sfOverwriteSoul;
+window.pmOverwritePreset = window.sfOverwriteSoul;
 
 window.sfSetAsGlobalDefault = function() {
     const soulId = window.sfState.activeSoulId;
@@ -529,6 +532,18 @@ window.sfRunLabTest = async function() {
         if (ttsCheck && ttsCheck.checked && data.response) {
             window.sfPreviewVoice(data.response);
         }
+        fetch('/api/souls', { cache: 'no-store' })
+            .then(r => r.json())
+            .then(d => {
+                if (d && d.ok && Array.isArray(d.souls) && window.sfState) {
+                    window.sfState.souls = d.souls;
+                    if (window.sfPopulateDropdowns) window.sfPopulateDropdowns();
+                    const sel = document.getElementById('sf-active-soul-select');
+                    if (sel) sel.value = window.sfState.activeSoulId || "";
+                    if (window.sfSyncSoulPickerUI) window.sfSyncSoulPickerUI();
+                }
+            })
+            .catch(() => {});
     } catch (e) {
         if (metricsEl) metricsEl.innerHTML = `<span class="sf-lab-chip" style="color:#f87171;">❌ Network error: ${e.message}</span>`;
     } finally {

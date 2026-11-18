@@ -211,6 +211,13 @@ def init_chat_api_routes(app, cfg_mgr, logger):
                     from hecos.config.session_config_manager import merge_session_config
                     from hecos.modules.web_ui.routes_chat_tts import _maybe_generate_tts
                     merged_cfg = merge_session_config(cfg_mgr.config if cfg_mgr else {}, sid)
+                    try:
+                        from hecos.core.global_presets import get_active_soul_id, record_preset_usage
+                        eff_preset_id = get_active_soul_id(sid)
+                        if eff_preset_id:
+                            record_preset_usage(eff_preset_id)
+                    except Exception:
+                        pass
                     
                     class DirectCfgMgr:
                         def __init__(self, base, cfg):

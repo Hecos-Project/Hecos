@@ -12,7 +12,7 @@ import os
 import time
 import threading
 from contextlib import contextmanager
-from typing import Optional, Callable, Dict, List, Any
+from typing import Optional, Callable, Dict, Any
 
 from hecos.core.logging import logger
 from hecos.core.agent.trace_session import (
@@ -456,11 +456,22 @@ class AgentTracer:
         sess = AgentTracer.get_session()
         cfg = sess.config if sess else get_agent_config()
         mode = cfg.get("action_console_mode", "inline")
-        if not cfg.get("action_console_enabled", True) or mode == "off":
-            return
-
         out_str = str(output or "").strip()
         preview = out_str[:500] + ("\n...[truncated]" if len(out_str) > 500 else "")
+
+        try:
+            from hecos.modules.executor.cli_bridge.action_feed import record_action_event
+
+            record_action_event(
+                tool_name=str(tool_name or "SYSTEM"),
+                command=str(command or ""),
+                output=preview,
+            )
+        except Exception:
+            pass
+
+        if not cfg.get("action_console_enabled", True) or mode == "off":
+            return
 
         # 1. Terminal Output
         print_cli_action_box(

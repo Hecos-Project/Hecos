@@ -42,11 +42,12 @@
   <link rel="stylesheet" href="/static/css/hecos_progress.css?v={{ version }}-purple">
   <!-- CRITICAL: inline mobile overrides - cache-proof -->
   <style>
-    /* Default: hide hamburger/mobile elements on desktop, and ensure closed Soul Forge panel is never visible */
+    /* Default: hide hamburger/mobile elements on desktop, and ensure closed Preset Manager panel is never visible */
     .mobile-only {
       display: none !important;
     }
 
+    #preset-manager-panel:not(.open),
     #soul-forge-panel:not(.open),
     #session-overrides-panel:not(.open) {
       display: none !important;
@@ -362,6 +363,8 @@
     {% include 'modules/chat_topbar.html' %}
     <!-- Hecos Presenter Embedded Container — lives outside chat-area to survive SPA navigation -->
     <div id="hbs-presenter-embedded"></div>
+    <div id="agent-resume-slot"></div>
+    <div id="agent-plan-slot"></div>
     {% include 'modules/chat_area.html' %}
     {% include 'modules/chat_input.html' %}
   </div>
@@ -404,7 +407,17 @@
   <script src="/static/vendor/marked.min.js"></script>
   <link rel="stylesheet" href="/static/css/chat_media_preview.css?v={{ version }}&t=20261116_fit2">
   <script src="/static/js/chat_media_zoom.js?v={{ version }}&t=20261116_fit1"></script>
-  <script src="/static/js/workspace_runner.js?v={{ version }}&t=20261116_ws4"></script>
+  <script src="/static/js/workspace_console.js?v={{ version }}&t=20261118_wr3"></script>
+  <script src="/static/js/workspace_modal.js?v={{ version }}&t=20261118_wr3"></script>
+  <script src="/static/js/workspace_runner.js?v={{ version }}&t=20261118_wr3"></script>
+  <link rel="stylesheet" href="/static/css/agent_resume.css?v={{ version }}">
+  <script src="/static/js/agent_resume/ar_api.js?v={{ version }}"></script>
+  <script src="/static/js/agent_resume/ar_banner.js?v={{ version }}"></script>
+  <script src="/static/js/agent_resume/ar_bootstrap.js?v={{ version }}"></script>
+  <link rel="stylesheet" href="/static/css/action_plans.css?v={{ version }}">
+  <script src="/static/js/action_plans_chat/apc_api.js?v={{ version }}"></script>
+  <script src="/static/js/action_plans_chat/apc_widget.js?v={{ version }}"></script>
+  <script src="/static/js/action_plans_chat/apc_bootstrap.js?v={{ version }}"></script>
   <script src="/static/js/chat_media_processor.js?v={{ version }}&t=20261116_fixblink1"></script>
   <script src="/netsearch_static/js/search/search_chat_card.js?v={{ version }}&t=20261031_v2"></script>
   <script>
@@ -483,21 +496,21 @@
   <script src="/ext/emoticons/static/js/emoticons.js?v={{ version }}"></script>
   <!-- WEB_UI HBS & Presenter Extensions -->
   <script src="/ext/hbs_common/static/js/hbs_utils.js?v={{ version }}"></script>
-  <script src="/ext/presenter/static/js/presenter_state.js?v={{ version }}&t=20261107_mob_v2"></script>
+  <script src="/ext/presenter/static/js/presenter_state.js?v={{ version }}&t=20261118_pr1"></script>
   <script src="/ext/presenter/static/js/presenter_stats.js?v={{ version }}&t=20261107_mob_v2"></script>
   <script src="/ext/presenter/static/js/presenter_stats_ui.js?v={{ version }}&t=20261107_mob_v2"></script>
-  <script src="/ext/presenter/static/js/presenter_ui.js?v={{ version }}&t=20261107_mob_v2"></script>
-  <script src="/ext/presenter/static/js/presenter.js?v={{ version }}&t=20261107_mob_v2"></script>
+  <script src="/ext/presenter/static/js/presenter_ui.js?v={{ version }}&t=20261118_pr1"></script>
+  <script src="/ext/presenter/static/js/presenter.js?v={{ version }}&t=20261118_pr2"></script>
   <!-- HDCS Command Palette (self-contained, no ES modules) -->
   <link rel="stylesheet" href="/assets/css/cmd_palette.css?v={{ version }}">
   <script src="/static/js/commands/hecos_cmd_palette.js?v={{ version }}"></script>
 
-  <!-- ⚡ Quick Config / Soul Forge (Unified) -->
-  <link rel="stylesheet" href="/static/css/global_presets.css?v={{ version }}&t=20261114_model_caps">
+  <!-- ⚡ Preset Manager -->
+  <link rel="stylesheet" href="/static/css/global_presets.css?v={{ version }}&t=20261118_pm3">
   {% include 'modules/chat_global_presets.html' %}
-  <script src="/static/js/global_presets/gp_state.js?v={{ version }}&t=20261115_dup1"></script>
-  <script src="/static/js/global_presets/gp_ui.js?v={{ version }}&t=20261115_dup1"></script>
-  <script src="/static/js/global_presets/gp_actions.js?v={{ version }}&t=20261115_dup2"></script>
+  <script src="/static/js/global_presets/gp_state.js?v={{ version }}&t=20261118_pm3"></script>
+  <script src="/static/js/global_presets/gp_ui.js?v={{ version }}&t=20261118_pm3"></script>
+  <script src="/static/js/global_presets/gp_actions.js?v={{ version }}&t=20261118_pm3"></script>
   <script src="/static/js/global_presets/gp_xtts.js?v={{ version }}&t=20261106_mob_sf1"></script>
   <script src="/static/js/global_presets/gp_fish.js?v={{ version }}&t=20261106_mob_sf1"></script>
   <script src="/static/js/global_presets/gp_kokoro.js?v={{ version }}&t=20261106_mob_sf1"></script>
@@ -506,11 +519,11 @@
   <link rel="stylesheet" href="/static/css/keyboard_shortcuts.css?v={{ version }}">
   <script src="/static/js/keyboard_shortcuts/hks_core.js?v={{ version }}"></script>
   <script src="/static/js/keyboard_shortcuts/hks_bindings.js?v={{ version }}"></script>
-  <script src="/static/js/keyboard_shortcuts/hks_actions.js?v={{ version }}"></script>
+  <script src="/static/js/keyboard_shortcuts/hks_actions.js?v={{ version }}&t=20261118_mm1"></script>
   <script src="/static/js/keyboard_shortcuts/hks_overlay.js?v={{ version }}"></script>
   <script src="/static/js/keyboard_shortcuts/hks_recorder.js?v={{ version }}"></script>
   <script src="/static/js/chat_toast_unified/chat_toast_unified.js?v={{ version }}"></script>
-  <script src="/static/js/keyboard_shortcuts/hks_tooltips.js?v={{ version }}"></script>
+  <script src="/static/js/keyboard_shortcuts/hks_tooltips.js?v={{ version }}&t=20261118_mm1"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       if (window.HKS) {

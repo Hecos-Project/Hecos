@@ -142,7 +142,7 @@ def _call_api_chat(ollama_base: str, ollama_body_v1: Dict[str, Any], params: Dic
         native_body["tools"] = ollama_body_v1["tools"]
 
     zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] /api/chat with think={ollama_body_v1.get('think')} model={native_body['model']}")
-    resp = requests.post(api_chat_url, json=native_body, timeout=params.get("timeout", 300))
+    resp = requests.post(api_chat_url, json=native_body, timeout=params.get("timeout", 900))
     if resp.status_code >= 400:
         zlog_error(f"[OLLAMA-DIRECT] /api/chat HTTP {resp.status_code}: {resp.text[:500]}")
     resp.raise_for_status()
@@ -275,7 +275,7 @@ def execute_ollama_direct(params: Dict[str, Any], stream: bool = False) -> Any:
         data = _call_api_chat(ollama_base, ollama_body, params)
     else:
         zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] POST {ollama_url} model={ollama_body['model']}")
-        resp = requests.post(ollama_url, json=ollama_body, timeout=params.get("timeout", 300))
+        resp = requests.post(ollama_url, json=ollama_body, timeout=params.get("timeout", 900))
         resp.raise_for_status()
         data = resp.json()
 

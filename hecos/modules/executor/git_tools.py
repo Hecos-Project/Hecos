@@ -63,11 +63,12 @@ def _is_git_ignored(root: str, target_dir: str) -> bool:
     """Return True if target_dir is ignored by a parent repository's .gitignore or sits inside Hecos media/workspace."""
     if os.path.normcase(root) == os.path.normcase(target_dir):
         return False
-    norm_target = os.path.normcase(target_dir).replace("\\", "/")
-    norm_root = os.path.normcase(root).replace("\\", "/")
-    # Do not let isolated workspace/sandbox projects silently bind to parent Hecos repo
-    if ("/hecos/media/workspace" in norm_target or "/hecos/media/sandbox" in norm_target) and (
-        "/hecos/media/workspace" not in norm_root and "/hecos/media/sandbox" not in norm_root
+    norm_target = os.path.normcase(target_dir).replace("\\", "/").rstrip("/")
+    norm_root = os.path.normcase(root).replace("\\", "/").rstrip("/")
+    # Do not let isolated workspace/sandbox projects silently bind to parent Hecos repo or container root
+    if ("/hecos/media/workspace/" in norm_target or "/hecos/media/sandbox/" in norm_target) and (
+        ("/hecos/media/workspace" not in norm_root and "/hecos/media/sandbox" not in norm_root)
+        or norm_root.endswith(("/hecos/media/workspace", "/hecos/media/sandbox"))
     ):
         return True
     rc, _, _ = _run_git(target_dir, ["check-ignore", "-q", "."])
@@ -91,6 +92,9 @@ def _resolve_repo_root(repo_path: str, auto_init: bool = False) -> Tuple[Optiona
             return root, None
 
     if auto_init:
+        norm_td = os.path.normcase(target_dir).replace("\\", "/").rstrip("/")
+        if norm_td.endswith(("/hecos/media/workspace", "/hecos/media/sandbox")):
+            return None, f"[EXECUTOR] Select a project subfolder rather than initializing Git on workspace root: {target_dir}"
         rc_init, _, err_init = _run_git(target_dir, ["init", "-q"])
         if rc_init != 0:
             return None, f"[EXECUTOR] Failed to initialize Git repository in {target_dir}: {err_init.strip()}"
@@ -281,3 +285,184 @@ def git_restore_tool(
         return f"[EXECUTOR] git restore failed for '{rel_file}' from '{ref}': {err_r.strip()}"
     logger.info(f"[GIT] Restored '{rel_file}' from '{ref}' in {root}")
     return f"[EXECUTOR] Restored '{rel_file}' from '{ref}' in {root}"
+
+
+_SKIP_STATUS_PARTS = {".git", ".aider.tags.cache.v4", "__pycache__", ".pytest_cache", "node_modules", ".venv", "venv"}
+
+
+def _map_porcelain_code(xy: str) -> str:
+    """Maps 2-char `git status --porcelain` XY code to compact IDE letter."""
+    if xy == "??":
+        return "U"
+    if "D" in xy:
+        return "D"
+    if "R" in xy:
+        return "R"
+    if "M" in xy:
+        return "M"
+    if "A" in xy:
+        return "A"
+    return "M"
+
+
+def _parse_porcelain_z(repo_root: str, raw_stdout: str) -> Dict[str, str]:
+    """Parses `git status --porcelain=v1 -uall -z` into {abs_forward_path: code}."""
+    result: Dict[str, str] = {}
+    if not raw_stdout:
+        return result
+    tokens = raw_stdout.split("\0")
+    i = 0
+    while i < len(tokens):
+        entry = tokens[i]
+        i += 1
+        if len(entry) < 4:
+            continue
+        xy = entry[:2]
+        rel_path = entry[3:]
+        # Renamed/copied entries carry an extra NUL-separated source path token
+        if xy and xy[0] in ("R", "C") and i < len(tokens):
+            i += 1
+        parts = rel_path.replace("\\", "/").split("/")
+        if any(p in _SKIP_STATUS_PARTS or p.startswith(".aider.tags") for p in parts):
+            continue
+        abs_p = os.path.abspath(os.path.join(repo_root, rel_path)).replace("\\", "/")
+        result[abs_p] = _map_porcelain_code(xy)
+    return result
+
+
+def collect_git_file_statuses(target_dir: str) -> Dict[str, str]:
+    """
+    Returns {abs_forward_path: 'M'|'U'|'A'|'D'|'R'} for a Git repo directory OR
+    all immediate Git project subdirectories when `target_dir` is a workspace container.
+    """
+    if not target_dir or not os.path.isdir(target_dir) or not _git_binary():
+        return {}
+    if not _is_safe_path(target_dir):
+        return {}
+
+    repos: List[str] = []
+    root, _ = _resolve_repo_root(target_dir, auto_init=False)
+    if root:
+        repos.append(root)
+    else:
+        try:
+            for name in sorted(os.listdir(target_dir)):
+                if name.startswith(".") or name in _SKIP_STATUS_PARTS:
+                    continue
+                sub = os.path.join(target_dir, name)
+                if os.path.isdir(sub) and os.path.isdir(os.path.join(sub, ".git")):
+                    sub_root, _ = _resolve_repo_root(sub, auto_init=False)
+                    if sub_root:
+                        repos.append(sub_root)
+                if len(repos) >= 25:
+                    break
+        except OSError:
+            pass
+
+    statuses: Dict[str, str] = {}
+    for repo in repos:
+        rc, out, _ = _run_git(
+            repo,
+            ["-c", "core.quotePath=false", "status", "--porcelain=v1", "-uall", "-z"],
+            timeout=10,
+        )
+        if rc == 0 and out:
+            statuses.update(_parse_porcelain_z(repo, out))
+    return statuses
+
+
+def get_git_file_baseline(file_path: str, max_bytes: int = 524288) -> Dict[str, object]:
+    """
+    Resolves Git status letter (`M`/`U`/`A`/`D`/`R`/`""`) and baseline content
+    (`HEAD`, staged index `:0:`, or latest Hecos checkpoint) for inline Monaco diff highlighting.
+    """
+    empty: Dict[str, object] = {"has_git": False, "status": "", "base_content": None, "base_label": ""}
+    if not file_path or not os.path.exists(file_path) or not _git_binary():
+        return empty
+    repo_root, err = _resolve_repo_root(file_path, auto_init=False)
+    if err or not repo_root:
+        return empty
+
+    try:
+        rel_git = os.path.relpath(os.path.abspath(file_path), repo_root).replace("\\", "/")
+    except ValueError:
+        return empty
+
+    rc_st, out_st, _ = _run_git(
+        repo_root,
+        ["-c", "core.quotePath=false", "status", "--porcelain=v1", "-uall", "-z", "--", rel_git],
+        timeout=8,
+    )
+    status_code = ""
+    if rc_st == 0 and out_st:
+        parsed = _parse_porcelain_z(repo_root, out_st)
+        norm_self = os.path.abspath(file_path).replace("\\", "/").lower()
+        for k, v in parsed.items():
+            if k.lower() == norm_self:
+                status_code = v
+                break
+
+    candidates: List[Tuple[str, str]] = [
+        (f"HEAD:{rel_git}", "HEAD"),
+        (f":0:{rel_git}", "Staged"),
+    ]
+    cp_ref = _resolve_checkpoint_ref(repo_root, "latest")
+    if cp_ref and cp_ref != "latest":
+        candidates.append((f"{cp_ref}:{rel_git}", "Checkpoint"))
+
+    base_content: Optional[str] = None
+    base_label = ""
+    for spec, label in candidates:
+        rc_b, out_b, _ = _run_git(repo_root, ["show", spec], timeout=8)
+        if rc_b == 0:
+            if len(out_b.encode("utf-8", errors="ignore")) <= max_bytes:
+                base_content = out_b
+                base_label = label
+            break
+
+    return {
+        "has_git": True,
+        "status": status_code,
+        "base_content": base_content,
+        "base_label": base_label,
+    }
+
+
+def git_commit_tool(repo_path: str, message: str = "chore: commit from Hecos IDE") -> Dict[str, object]:
+    """
+    Stages all working-tree changes and creates a clean Git commit inside an existing
+    or newly initialized project repository.
+    """
+    root, err = _resolve_repo_root(repo_path, auto_init=True)
+    if err or not root:
+        return {"ok": False, "message": err or "Git repository unavailable."}
+
+    clean_msg = (message or "").strip()[:200] or "chore: commit from Hecos IDE"
+    rc_add, _, err_add = _run_git(root, ["add", "-A"], timeout=15)
+    if rc_add != 0:
+        return {"ok": False, "message": f"git add failed: {err_add.strip()}"}
+
+    # Check if there is anything staged (or empty repo)
+    rc_diff, _, _ = _run_git(root, ["diff", "--cached", "--quiet"], timeout=8)
+    rc_head, _, _ = _run_git(root, ["rev-parse", "--verify", "HEAD"], timeout=8)
+    if rc_diff == 0 and rc_head == 0:
+        return {"ok": True, "nothing_to_commit": True, "message": "Working tree clean — nothing to commit."}
+
+    commit_env = {}
+    rc_un, un_out, _ = _run_git(root, ["config", "user.name"], timeout=5)
+    if rc_un != 0 or not un_out.strip():
+        commit_env["GIT_AUTHOR_NAME"] = "Hecos Developer"
+        commit_env["GIT_COMMITTER_NAME"] = "Hecos Developer"
+    rc_ue, ue_out, _ = _run_git(root, ["config", "user.email"], timeout=5)
+    if rc_ue != 0 or not ue_out.strip():
+        commit_env["GIT_AUTHOR_EMAIL"] = "developer@hecos.local"
+        commit_env["GIT_COMMITTER_EMAIL"] = "developer@hecos.local"
+
+    rc_cm, out_cm, err_cm = _run_git(root, ["commit", "-m", clean_msg], timeout=15, extra_env=commit_env)
+    if rc_cm != 0:
+        return {"ok": False, "message": f"git commit failed: {(err_cm or out_cm).strip()}"}
+
+    rc_sha, sha_out, _ = _run_git(root, ["rev-parse", "--short", "HEAD"], timeout=5)
+    short_sha = sha_out.strip() if rc_sha == 0 else ""
+    logger.info(f"[GIT] Committed {short_sha or 'HEAD'} in {root}: {clean_msg}")
+    return {"ok": True, "sha": short_sha, "message": f"Committed {short_sha}: {clean_msg}"}

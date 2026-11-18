@@ -310,16 +310,15 @@
   
   <div style="flex: 1;"></div>
   
-  <button class="toolbar-btn" title="Show/Hide Chat Presenter" onclick="
-    if (!window.Presenter) return;
-    if (typeof window.Presenter.toggleCollapse === 'function') {
-        window.Presenter.toggleCollapse(event);
+  <button id="btn-toolbar-presenter" class="toolbar-btn" title="Show/Hide Chat Presenter" onclick="
+    if (window.Presenter && typeof window.Presenter.toggleVisibility === 'function') {
+        window.Presenter.toggleVisibility(event);
     } else {
         const el = document.getElementById('hbs-presenter-embedded');
-        if (el) el.classList.toggle('collapsed');
+        if (el) el.classList.toggle('active');
     }
   ">
-    <span class="tb-icon" style="color: #ff512f;"><i class="fas fa-bullhorn"></i></span> Presenter
+    <span class="tb-icon" style="color: #ff512f;"><i class="fas fa-tower-broadcast"></i></span> Presenter
   </button>
 </div>
 <input type="file" id="file-upload-doc" accept=".pdf,.txt,.docx,.csv,.md" multiple>

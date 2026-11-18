@@ -86,32 +86,63 @@ function _renderBubbleWithHSearch(aiBubble, aiText, cursor, isFinal, fallbackErr
 
 window.formatModelTooltip = function(jsonStr) {
     try {
-        const p = JSON.parse(jsonStr);
-        if (!p.model) return jsonStr;
-        
-        let lines = [];
-        
+        const p = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+        if (!p || typeof p !== 'object') return String(jsonStr || '');
+
+        let modelName = p.model || '';
+        let backendName = p.backend || '';
+        const trace = (p.agent_trace && typeof p.agent_trace === 'object') ? p.agent_trace : null;
+
+        // Recover model/backend from trace LLM step for legacy messages without top-level metadata
+        if (!modelName && trace && Array.isArray(trace.steps)) {
+            const llmStep = trace.steps.find((s) => s && s.kind === 'llm' && s.detail);
+            if (llmStep && llmStep.detail) {
+                const m = String(llmStep.detail).match(/^(.+?)\s+\(([^)]+)\)\s*$/);
+                if (m) {
+                    modelName = m[1].trim();
+                    backendName = backendName || m[2].trim();
+                } else {
+                    modelName = String(llmStep.detail).trim();
+                }
+            }
+        }
+
+        if (!modelName && !trace) {
+            return typeof jsonStr === 'string' ? jsonStr : JSON.stringify(jsonStr);
+        }
+
+        const lines = [];
+
         // Line 1: Model & Backend
-        lines.push(`🤖 Model: ${p.model} (${p.backend || 'unknown'})`);
-        
-        // Line 2: Presets
+        if (modelName) {
+            lines.push(`🤖 Model: ${modelName} (${backendName || 'unknown'})`);
+        }
+
+        // Line 2: Presets (matching sidebar tooltip format)
         if (p.global_preset || p.session_preset) {
             let presetLine = '🎭 Preset: ';
             if (p.session_preset && p.session_preset !== p.global_preset) {
                 presetLine += `${p.session_preset} (override)`;
-            } else if (p.global_preset) {
-                presetLine += p.global_preset;
+            } else {
+                presetLine += (p.global_preset || p.session_preset);
             }
             lines.push(presetLine);
         }
-        
-        // Line 3: Persona
-        if (p.persona) lines.push(`👤 Soul: ${p.persona}`);
-        
-        // Line 4: Inference Params
-        lines.push(`⚙ Temp: ${p.temperature || '?'} | Top P: ${p.top_p || '?'} | Rep Pen: ${p.repeat_penalty || '?'}`);
-        lines.push(`📊 Ctx: ${p.num_ctx || '?'} | Predict: ${p.num_predict || '?'} | GPU: ${p.num_gpu || 0}`);
-        
+
+        // Line 3: Soul / Persona
+        if (p.persona) {
+            const cleanSoul = String(p.persona).replace(/\.yaml$/i, '');
+            lines.push(`👤 Soul: ${cleanSoul}`);
+        }
+
+        // Line 4: Inference Params (nullish coalescing so 0 values display cleanly)
+        if (p.temperature !== undefined || p.top_p !== undefined || p.repeat_penalty !== undefined) {
+            lines.push(`⚙ Temp: ${p.temperature ?? '?'} | Top P: ${p.top_p ?? '?'} | Rep Pen: ${p.repeat_penalty ?? '?'}`);
+        }
+        if (p.num_ctx !== undefined || p.num_predict !== undefined || p.num_gpu !== undefined) {
+            lines.push(`📊 Ctx: ${p.num_ctx ?? '?'} | Predict: ${p.num_predict ?? '?'} | GPU: ${p.num_gpu ?? 0}`);
+        }
+
         // Line 5: TTS
         if (p.tts_engine) {
             let vStr = p.tts_voice || '';
@@ -120,14 +151,28 @@ window.formatModelTooltip = function(jsonStr) {
             }
             lines.push(`🔊 TTS: ${p.tts_engine}${vStr ? ' / ' + vStr : ''}`);
         }
-        
+
         // Line 6: Token Usage
         if (p.prompt_tokens || p.completion_tokens) {
             lines.push(`📈 Tokens: ${p.prompt_tokens || 0} in → ${p.completion_tokens || 0} out`);
         }
-        
+
+        // Line 7: Agent Trace summary (compact summary instead of dumping raw JSON)
+        if (trace) {
+            const parts = [];
+            if (trace.total_steps !== undefined) parts.push(`${trace.total_steps} step(s)`);
+            if (typeof trace.duration_ms === 'number') parts.push(`${(trace.duration_ms / 1000).toFixed(1)}s`);
+            if (trace.status) parts.push(trace.status);
+            const tools = (Array.isArray(trace.tools_used) && trace.tools_used.length)
+                ? ` | Tools: ${trace.tools_used.join(', ')}`
+                : '';
+            lines.push(`🔍 Trace: ${parts.join(' · ') || 'active'}${tools}`);
+        }
+
         return lines.join('\n');
-    } catch(e) { return jsonStr; }
+    } catch (e) {
+        return typeof jsonStr === 'string' ? jsonStr : JSON.stringify(jsonStr);
+    }
 };
 
 function _attachChatStreamListeners({ evtSrc, sessionId, aiBubble, cursor }) {
@@ -146,9 +191,18 @@ function _attachChatStreamListeners({ evtSrc, sessionId, aiBubble, cursor }) {
 
   evtSrc.onmessage = (e) => {
     const ev = JSON.parse(e.data);
-    if (ev.type === 'agent_trace') {
+    if (ev.type === 'action_plan') {
+      if (window.ActionPlanChat && isCurrentView()) {
+        window.ActionPlanChat.handleSseEvent(ev);
+      }
+    } else if (ev.type === 'agent_trace') {
       if (window.AgentUI && isCurrentView()) {
         window.AgentUI.handleEvent(ev, aiBubble.closest('.msg') || aiBubble.parentElement);
+      }
+      const trStep = ev.step || {};
+      const trText = `${trStep.module_name || ''} ${trStep.label || ''} ${trStep.result_preview || ''} ${ev.message || ''}`;
+      if (/Executor|verified on disk|Directory created|patched|write_file|patch_file|create_dir|delete_file|move_path|run_aider|start_app|stop_app/i.test(trText)) {
+        window._HecosWorkspaceShared?.notifyFilesChanged?.('chat_trace');
       }
     } else if (ev.type === 'think') {
       if (window.renderThinkBlock) window.renderThinkBlock(ev.text, aiBubble);
@@ -160,6 +214,7 @@ function _attachChatStreamListeners({ evtSrc, sessionId, aiBubble, cursor }) {
     } else if (ev.type === 'camera_request') {
       if (isCurrentView() && window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
     } else if (ev.type === 'trace_done') {
+      window._HecosWorkspaceShared?.notifyFilesChanged?.('trace_done');
       if (window.AgentUI && isCurrentView()) window.AgentUI.finalize(ev.trace_summary || null);
       if (isCurrentView() && window.chatHistory.length > 0) {
         window.chatHistory[window.chatHistory.length - 1].content = aiText;
@@ -256,6 +311,12 @@ function _attachChatStreamListeners({ evtSrc, sessionId, aiBubble, cursor }) {
         if (window.sendBtn) window.sendBtn.disabled = false;
       }
       if (window.loadChatSessions) window.loadChatSessions();
+      if (window.AgentResume && typeof window.AgentResume.refreshBanner === 'function') {
+        window.AgentResume.refreshBanner(sessionId);
+      }
+      if (window.ActionPlanChat && typeof window.ActionPlanChat.refreshForSession === 'function') {
+        window.ActionPlanChat.refreshForSession(sessionId);
+      }
     }
   };
 
@@ -311,6 +372,8 @@ function _attachChatStreamListeners({ evtSrc, sessionId, aiBubble, cursor }) {
     }
   };
 }
+
+window._attachChatStreamListeners = _attachChatStreamListeners;
 
 window.sendMessage = async function() {
   if (typeof window.unlockAudioContext === 'function') {

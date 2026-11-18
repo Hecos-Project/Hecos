@@ -34,7 +34,8 @@ echo.
 echo  1. Install / Setup
 echo  2. Start Hecos (Web UI)
 echo  3. Start Hecos (Console)
-echo  4. Exit
+echo  4. Start Hecos Coding Studio CLI (Interactive Aider ^& Dev Shell)
+echo  5. Exit
 echo.
 echo  ------------------------------------------------------------------------------
 echo  [INFO] All advanced scripts are located in the 'scripts' folder.
@@ -42,13 +43,25 @@ echo  [TIP]  For the best experience, we recommend using the standalone
 echo         "Hecos Tray" application to install, manage, and update Hecos.
 echo  ------------------------------------------------------------------------------
 echo.
-set /p CH="Select an option (1-4): "
+set /p CH="Select an option (1-5): "
 
 if "%CH%"=="1" goto SETUP
 if "%CH%"=="2" goto START_WEB
 if "%CH%"=="3" goto START_CONSOLE
-if "%CH%"=="4" exit
+if "%CH%"=="4" goto START_CODING_CLI
+if "%CH%"=="5" exit
 
+goto MENU
+
+:START_CODING_CLI
+echo.
+echo [*] Starting Hecos Coding Studio CLI...
+if exist "scripts\windows\run\HECOS_CODING_CLI_WIN.bat" (
+    call "scripts\windows\run\HECOS_CODING_CLI_WIN.bat"
+) else (
+    echo [!] Coding CLI script not found.
+    pause
+)
 goto MENU
 
 :START_WEB

@@ -95,9 +95,9 @@ def generate(
     except Exception:
         _max_key_retries = 5
 
-    # Local backends have no API key pool to fail over; limit to at most 1 retry on timeout
+    # Local backends have no API key pool to fail over; avoid restarting an expensive timed-out run from scratch
     if backend_type in ("ollama", "kobold", "local", "llama_cpp", "llamacpp"):
-        _max_key_retries = min(_max_key_retries, 2)
+        _max_key_retries = 1
 
     _tried_keys: List[str] = []
 
@@ -185,8 +185,8 @@ def generate(
                     if backend_type in ("ollama", "kobold", "local", "llama_cpp", "llamacpp"):
                         return (
                             f"⚠️ Timeout: Local model '{model_name}' ({provider}) did not respond within "
-                            f"{params.get('timeout', 300)}s. Consider reducing selected tools, lowering num_ctx, "
-                            f"or disabling thinking for faster execution."
+                            f"{params.get('timeout', 900)}s. Consider reducing selected tools, lowering num_ctx, "
+                            f"or raising request_timeout_sec for heavy local models."
                         )
                     return f"⚠️ Timeout: The provider '{provider}' did not respond in {params.get('timeout', 30)}s after multiple attempts. Please try again later."
                 continue

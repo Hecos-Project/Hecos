@@ -1,4 +1,4 @@
-active_engine: kokoro
+active_engine: piper
 voice_status: true
 piper_autostart: true
 piper_path: C:\Hecos\bin\piper\piper.exe
@@ -138,7 +138,7 @@ kokoro_presets:
     normalize: true
     sentence_silence: 0.1
     speed: 1
-    voice: if_goblin_folletto
+    voice: af_heart
     volume: 1
 kokoro_inference_presets:
   Dynamic Prosody:

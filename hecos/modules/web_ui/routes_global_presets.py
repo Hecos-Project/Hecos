@@ -2,7 +2,7 @@
 
 hecos/modules/web_ui/routes_global_presets.py
 
-REST API for Soul Forge (Global Presets), Session Drafts, Quick Test Lab, and Inference Presets.
+REST API for Preset Manager (Global Presets), Session Drafts, Quick Test Lab, and Inference Presets.
 
 """
 
@@ -17,12 +17,24 @@ from flask import request, jsonify
 from hecos.core.logging import logger
 
 from hecos.core.global_presets import (
-
     list_souls, get_soul, save_soul, duplicate_soul, delete_soul, SoulProfile,
-
-    list_inference_presets, get_inference_preset, save_inference_preset, delete_inference_preset, InferencePreset
-
+    list_inference_presets, get_inference_preset, save_inference_preset, delete_inference_preset, InferencePreset,
+    get_all_preset_usage, get_preset_usage, record_preset_usage, resolve_soul_created_at,
+    get_active_soul_id,
 )
+
+
+def _serialize_soul_with_stats(soul: SoulProfile, usage_map=None) -> dict:
+    data = soul.model_dump()
+    meta = data.setdefault("meta", {})
+    sid = str(meta.get("id") or "")
+    meta["created_at"] = resolve_soul_created_at(sid, str(meta.get("created_at") or ""))
+    usage = (usage_map.get(sid) if isinstance(usage_map, dict) else None) or get_preset_usage(sid)
+    data["usage"] = {
+        "use_count": int(usage.get("use_count") or 0),
+        "last_used_at": str(usage.get("last_used_at") or ""),
+    }
+    return data
 
 
 
@@ -30,10 +42,11 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
 
 
 
-    # ── Souls (Global Presets) ──
+    # ── Global Presets (Preset Manager) ──
 
 
 
+    @app.route("/api/presets", methods=["GET"])
     @app.route("/api/souls", methods=["GET"])
 
     def api_get_souls():
@@ -41,8 +54,10 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
         try:
 
             souls = list_souls()
+            usage_map = get_all_preset_usage()
+            serialized = [_serialize_soul_with_stats(s, usage_map) for s in souls]
 
-            return jsonify({"ok": True, "souls": [s.model_dump() for s in souls]})
+            return jsonify({"ok": True, "souls": serialized, "presets": serialized})
 
         except Exception as e:
 
@@ -52,6 +67,7 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
 
 
 
+    @app.route("/api/presets/<soul_id>", methods=["GET"])
     @app.route("/api/souls/<soul_id>", methods=["GET"])
 
     def api_get_soul(soul_id):
@@ -61,8 +77,8 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
             soul = get_soul(soul_id)
 
             if soul:
-
-                return jsonify({"ok": True, "soul": soul.model_dump()})
+                serialized = _serialize_soul_with_stats(soul)
+                return jsonify({"ok": True, "soul": serialized, "preset": serialized})
 
             return jsonify({"ok": False, "error": "Not found"}), 404
 
@@ -74,6 +90,7 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
 
 
 
+    @app.route("/api/presets", methods=["POST"])
     @app.route("/api/souls", methods=["POST"])
 
     def api_save_soul():
@@ -86,7 +103,7 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
 
             if save_soul(soul):
 
-                return jsonify({"ok": True, "soul_id": soul.meta.id})
+                return jsonify({"ok": True, "soul_id": soul.meta.id, "preset_id": soul.meta.id})
 
             return jsonify({"ok": False, "error": "Save failed"}), 500
 
@@ -98,6 +115,7 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
 
 
 
+    @app.route("/api/presets/<soul_id>/duplicate", methods=["POST"])
     @app.route("/api/souls/<soul_id>/duplicate", methods=["POST"])
 
     def api_duplicate_soul(soul_id):
@@ -113,14 +131,16 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
             cloned = duplicate_soul(soul_id, new_name=new_name, new_id=new_id)
 
             if cloned:
-
+                serialized = _serialize_soul_with_stats(cloned)
                 return jsonify({
 
                     "ok": True,
 
                     "soul_id": cloned.meta.id,
+                    "preset_id": cloned.meta.id,
 
-                    "soul": cloned.model_dump()
+                    "soul": serialized,
+                    "preset": serialized,
 
                 })
 
@@ -134,6 +154,7 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
 
 
 
+    @app.route("/api/presets/<soul_id>", methods=["DELETE"])
     @app.route("/api/souls/<soul_id>", methods=["DELETE"])
 
     def api_delete_soul(soul_id):
@@ -154,6 +175,7 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
 
             
 
+    @app.route("/api/presets/activate", methods=["POST"])
     @app.route("/api/souls/activate", methods=["POST"])
 
     def api_activate_soul():
@@ -622,7 +644,7 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
 
 
 
-            return jsonify({"ok": True, "soul": soul.model_dump() if soul else None})
+            return jsonify({"ok": True, "soul": _serialize_soul_with_stats(soul) if soul else None})
 
         except Exception as e:
 
@@ -636,6 +658,7 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
 
 
 
+    @app.route("/api/presets/test", methods=["POST"])
     @app.route("/api/souls/test", methods=["POST"])
 
     def api_test_soul_config():
@@ -675,6 +698,13 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
             from hecos.config.session_config_manager import merge_session_config
 
             merged_cfg = merge_session_config(base_config, session_id=session_id, extra_draft=draft)
+
+            try:
+                eff_pid = (draft.get("active_global_preset") if isinstance(draft, dict) else None) or get_active_soul_id(session_id)
+                if eff_pid:
+                    record_preset_usage(eff_pid)
+            except Exception:
+                pass
 
 
 

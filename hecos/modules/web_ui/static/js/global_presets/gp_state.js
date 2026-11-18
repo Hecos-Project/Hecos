@@ -1,4 +1,4 @@
-/* ⚡ SOUL FORGE: gp_state.js — Unified State & Session/Global Loader */
+/* ⚡ PRESET MANAGER: gp_state.js — Unified State & Session/Global Loader */
 
 window.sfState = {
     souls: [],
@@ -14,7 +14,8 @@ window.sfState = {
     selectedTools: []
 };
 
-// Backwards-compatible alias for any external callers checking window.soState
+// Canonical Preset Manager & backwards-compatible aliases
+window.pmState = window.sfState;
 window.soState = window.sfState;
 
 window.sfGetActiveSessionId = function() {
@@ -207,6 +208,7 @@ window.sfLoadData = async function() {
 };
 
 window.soLoadData = window.sfLoadData;
+window.pmLoadData = window.sfLoadData;
 
 window.sfLoadGlobalState = async function() {
     try {
@@ -273,6 +275,7 @@ window.sfLoadActiveSessionState = async function() {
 
     const sel = document.getElementById('sf-active-soul-select');
     if (sel) sel.value = effectiveSoulId || "";
+    if (window.sfSyncSoulPickerUI) window.sfSyncSoulPickerUI();
 
     // Load the clean base Soul for this session (either the preset or the system base config)
     let baseSoul = null;
@@ -333,6 +336,7 @@ window.sfSelectSessionSoul = async function(soulId) {
 };
 
 window.soActivateSoul = window.sfSelectSessionSoul;
+window.pmSelectSessionPreset = window.sfSelectSessionSoul;
 
 window.sfActivateSoul = async function(soulId, extraSoulPayload = null) {
     if (soulId === undefined || soulId === null) soulId = "";

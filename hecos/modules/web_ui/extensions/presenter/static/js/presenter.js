@@ -285,9 +285,11 @@
         const el = UI.getEmbedded();
         if (el) {
             UI.ensureBuilt(el);
-            // Always active so it is visible immediately
-            el.classList.add('active');
-            localStorage.setItem('hecos_presenter_active', 'true');
+            const isVisible = localStorage.getItem('hecos_presenter_active') !== 'false';
+            el.classList.toggle('active', isVisible);
+            if (localStorage.getItem('hecos_presenter_active') === null) {
+                localStorage.setItem('hecos_presenter_active', 'true');
+            }
             // Flush any counts that were already in memory before DOM was built
             if (window.HBSPresenterStatsUI && typeof window.HBSPresenterStatsUI.render === 'function') {
                 window.HBSPresenterStatsUI.render();
@@ -395,6 +397,22 @@
             } else if (mode === 'hidden') {
                 _hide();
                 if (emb) emb.classList.remove('active');
+            }
+        },
+
+        toggleVisibility: function(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const emb = UI.getEmbedded();
+            if (!emb) return;
+            const nextVisible = !emb.classList.contains('active');
+            emb.classList.toggle('active', nextVisible);
+            localStorage.setItem('hecos_presenter_active', nextVisible ? 'true' : 'false');
+            if (!nextVisible) {
+                const ov = UI.getOverlay();
+                if (ov) ov.classList.remove('active');
             }
         },
 

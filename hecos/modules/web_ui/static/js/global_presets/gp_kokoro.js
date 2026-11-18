@@ -1,4 +1,4 @@
-/* ⚡ SOUL FORGE: gp_kokoro.js */
+/* ⚡ PRESET MANAGER: gp_kokoro.js */
 
 window.sfApplyKokoroPreset = function(presetName) {
     if (!presetName || !window.sfState.kokoroPresets || !window.sfState.kokoroPresets[presetName]) {

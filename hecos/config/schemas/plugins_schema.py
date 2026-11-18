@@ -80,6 +80,7 @@ class PluginExecutor(BaseModel):
     max_read_lines: int = 200
     workspace_dir: str = "media/sandbox"
     important_paths: Dict[str, str] = {}
+    coding_enabled: bool = False
     auto_verify_syntax_on_write: bool = True
     auto_run_existing_tests_on_write: bool = True
     auto_generate_unit_tests: bool = False
@@ -166,13 +167,30 @@ class PluginBrowser(BaseModel):
 
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────
 
+class PluginActionPlans(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    enabled: bool = True
+    lazy_load: bool = False
+    llm_callable: bool = True
+    plan_mode: str = "auto"
+    auto_plan_min_steps_hint: int = 3
+    expose_tools_in_custom_presets: bool = True
+    checkpoint_enabled: bool = True
+    resume_banner_enabled: bool = True
+    resume_extra_steps: int = 10
+    retention_days: int = 14
+    flows_checkpoint_enabled: bool = True
+    approval_timeout_seconds: int = 300
+
+
 class PluginsConfig(BaseModel):
     model_config = ConfigDict(extra='allow')
     DASHBOARD: PluginDashboard = Field(default_factory=PluginDashboard)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
-    EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
+    EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
+    ACTION_PLANS: PluginActionPlans = Field(default_factory=PluginActionPlans)
     BROWSER: Optional[PluginBrowser] = Field(default_factory=PluginBrowser)
     AUTOMATION: Optional[PluginAutomation] = Field(default_factory=PluginAutomation)
     extra_dirs: List[str] = []

@@ -24,6 +24,7 @@ LAST_PAYLOAD_INFO: Dict[str, Any] = {
     "messages_count": 0,
     "messages_preview": [],
     "plugins_cost": {},
+    "model_info": None,
     "payload_control": {
         "send_tools": True,
         "tools_count": 0,
@@ -88,6 +89,7 @@ def analyze_and_record_payload(
         LAST_PAYLOAD_INFO.update({
             "model": model_name,
             "provider": backend_type,
+            "model_info": None,
             "system_chars": sys_chars,
             "user_chars": usr_chars,
             "tools_chars": tls_chars,

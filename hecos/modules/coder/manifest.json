@@ -1,0 +1,418 @@
+{
+    "id": "coder",
+    "tag": "CODER",
+    "name": "Coder",
+    "version": "1.0.0",
+    "type": "system_app",
+    "category": "SYSTEM",
+    "description": "Software Development, AI Coding & Workspace Runner Suite for Hecos. Provides multi-file code generation and refactoring via Aider Sidecar, AST & Tree-sitter Repository Map, Git version control checkpoints, automated Project Test Runner, Workspace process watchdog, and native Windows CLI bridge.",
+    "icon": "fas fa-code",
+    "lazy_load": false,
+    "llm_callable": true,
+    "is_class_based": true,
+    "status": "ONLINE (Coder Suite Active)",
+    "commands": {
+        "repo_map": "Generates a compact multi-language AST map (files, classes, functions, line numbers) for a codebase.",
+        "project_tree": "Generates a compact project folder tree (skipping .git, __pycache__, python_env, node_modules).",
+        "search_code": "Searches text/code recursively inside a project or module directory.",
+        "check_syntax": "Checks syntax of a Python (.py), JSON (.json), YAML (.yaml/.yml), JS/TS, CSS, or HTML file on disk.",
+        "run_project_test": "Runs a real Python script, unittest, or pytest suite inside an authorized workspace/project.",
+        "run_aider_task": "Delegates a multi-file refactor/generation task to isolated Aider CLI.",
+        "git_status": "Inspects Git branch and modified/untracked files inside a project repository.",
+        "git_diff": "Shows unified Git diff for the repository or a specific file.",
+        "git_checkpoint": "Saves a non-destructive Git checkpoint snapshot without mutating HEAD.",
+        "git_restore": "Restores a file or tree from HEAD or a saved Git checkpoint.",
+        "start_app": "Starts a persistent workspace script, local web server, or desktop GUI app.",
+        "probe_url": "Tests a local running web server URL and referenced static CSS/JS assets.",
+        "get_app_logs": "Reads live status and log output of a managed workspace application.",
+        "list_running_apps": "Lists all active and recent workspace runs, including orphaned OS processes.",
+        "stop_app": "Stops a running workspace application by run_id, OS PID, project folder/name, or all.",
+        "stop_project_processes": "Stops all managed and orphaned OS processes locking a workspace project.",
+        "open_coding_cli": "Opens a native Windows coding CLI window for a workspace project (aider, shell, or trace)."
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__repo_map",
+                "description": "Generates a compact multi-language AST map (files, classes, functions, line numbers) for a codebase.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "Project root directory (defaults to projects workspace)."
+                        },
+                        "max_files": {
+                            "type": "integer",
+                            "description": "Maximum files to inspect (default 60)."
+                        },
+                        "max_lines": {
+                            "type": "integer",
+                            "description": "Maximum output lines (default 160)."
+                        }
+                    },
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__project_tree",
+                "description": "Generates a compact project folder tree (skipping .git, __pycache__, python_env, node_modules).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "Root directory to inspect."
+                        },
+                        "max_depth": {
+                            "type": "integer",
+                            "description": "Maximum folder depth (1 to 6, default 3)."
+                        }
+                    },
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__search_code",
+                "description": "Searches text/code recursively inside a project or module directory.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Substring to find in files."
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "Root directory or file to search."
+                        },
+                        "file_glob": {
+                            "type": "string",
+                            "description": "Optional filename filter such as *.py or *.js."
+                        }
+                    },
+                    "required": [
+                        "query"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__check_syntax",
+                "description": "Checks syntax of a Python (.py), JSON (.json), YAML (.yaml/.yml), JS/TS, CSS, or HTML file on disk.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "file_path": {
+                            "type": "string",
+                            "description": "Path to the file to validate."
+                        }
+                    },
+                    "required": [
+                        "file_path"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__run_project_test",
+                "description": "Runs a real Python script, unittest, or pytest suite inside an authorized workspace/project.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "target_path_or_command": {
+                            "type": "string",
+                            "description": "Script path or test command."
+                        },
+                        "cwd": {
+                            "type": "string",
+                            "description": "Working directory for execution."
+                        },
+                        "timeout_seconds": {
+                            "type": "integer",
+                            "description": "Execution timeout in seconds (default 30)."
+                        }
+                    },
+                    "required": [
+                        "target_path_or_command"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__run_aider_task",
+                "description": "Delegates a multi-file refactor/generation task to isolated Aider CLI.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "repo_path": {
+                            "type": "string",
+                            "description": "Target Git project directory."
+                        },
+                        "instruction": {
+                            "type": "string",
+                            "description": "Detailed coding task prompt for Aider."
+                        },
+                        "files": {
+                            "type": "string",
+                            "description": "Optional comma-separated list of target file paths."
+                        },
+                        "model": {
+                            "type": "string",
+                            "description": "Optional LiteLLM/Ollama model override."
+                        }
+                    },
+                    "required": [
+                        "repo_path",
+                        "instruction"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__git_status",
+                "description": "Inspects Git branch and modified/untracked files inside a project repository.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "repo_path": {
+                            "type": "string",
+                            "description": "Repository path."
+                        }
+                    },
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__git_diff",
+                "description": "Shows unified Git diff for the repository or a specific file.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "repo_path": {
+                            "type": "string",
+                            "description": "Repository path."
+                        },
+                        "file_path": {
+                            "type": "string",
+                            "description": "Optional file path filter."
+                        },
+                        "staged": {
+                            "type": "boolean",
+                            "description": "Inspect staged changes."
+                        }
+                    },
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__git_checkpoint",
+                "description": "Saves a non-destructive Git checkpoint snapshot without mutating HEAD.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "repo_path": {
+                            "type": "string",
+                            "description": "Project or repository directory."
+                        },
+                        "message": {
+                            "type": "string",
+                            "description": "Short label describing the checkpoint."
+                        }
+                    },
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__git_restore",
+                "description": "Restores a file or tree from HEAD or a saved Git checkpoint.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "repo_path": {
+                            "type": "string",
+                            "description": "Project directory."
+                        },
+                        "file_path": {
+                            "type": "string",
+                            "description": "File path to restore."
+                        },
+                        "target_ref": {
+                            "type": "string",
+                            "description": "Git ref, SHA, or latest."
+                        },
+                        "confirm_all": {
+                            "type": "boolean",
+                            "description": "Must be true if restoring all tracked files."
+                        }
+                    },
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__start_app",
+                "description": "Starts a persistent workspace script, local web server, or desktop GUI app.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "target_path": {
+                            "type": "string",
+                            "description": "Workspace script path."
+                        },
+                        "args": {
+                            "type": "string",
+                            "description": "Optional CLI arguments."
+                        },
+                        "wait_seconds": {
+                            "type": "number",
+                            "description": "Startup wait window in seconds."
+                        }
+                    },
+                    "required": [
+                        "target_path"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__probe_url",
+                "description": "Tests a local running web server URL and referenced static CSS/JS assets.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "url": {
+                            "type": "string",
+                            "description": "Local URL to probe."
+                        }
+                    },
+                    "required": [
+                        "url"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__get_app_logs",
+                "description": "Reads live status and log output of a managed workspace application.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "run_id": {
+                            "type": "string",
+                            "description": "Run ID."
+                        },
+                        "tail_lines": {
+                            "type": "integer",
+                            "description": "Lines to tail (default 80)."
+                        }
+                    },
+                    "required": [
+                        "run_id"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__list_running_apps",
+                "description": "Lists all active and recent workspace runs, including orphaned OS processes.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__stop_app",
+                "description": "Stops a running workspace application by run_id, OS PID, project folder/name, or all.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "run_id": {
+                            "type": "string",
+                            "description": "Run ID, PID, project name, or all."
+                        }
+                    },
+                    "required": [
+                        "run_id"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__stop_project_processes",
+                "description": "Stops all managed and orphaned OS processes locking a workspace project.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "target_path": {
+                            "type": "string",
+                            "description": "Workspace project path or folder name."
+                        }
+                    },
+                    "required": [
+                        "target_path"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CODER__open_coding_cli",
+                "description": "Opens a native Windows coding CLI window for a workspace project (aider, shell, or trace).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "target_path": {
+                            "type": "string",
+                            "description": "Optional project path."
+                        },
+                        "mode": {
+                            "type": "string",
+                            "description": "aider, shell, or trace."
+                        }
+                    },
+                    "required": []
+                }
+            }
+        }
+    ]
+}

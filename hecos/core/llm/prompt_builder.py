@@ -1147,6 +1147,35 @@ class PromptBuilder:
             except Exception as e:
                 logger.debug(f"PromptBuilder: Executor directive injection skipped: {e}")
 
+            try:
+                from hecos.core.action_plans import get_action_plans_config
+                ap_cfg = get_action_plans_config(raw_config=config)
+                ap_mode = str(ap_cfg.get("plan_mode") or "auto").lower()
+                if (
+                    send_tools
+                    and ap_cfg.get("enabled", True)
+                    and ap_mode in ("auto", "confirm")
+                    and (
+                        _is_tag_allowed_in_prompt("ACTION_PLANS")
+                        or ap_cfg.get("expose_tools_in_custom_presets", True)
+                    )
+                ):
+                    min_hint = int(ap_cfg.get("auto_plan_min_steps_hint", 3) or 3)
+                    file_manager_rules += (
+                        "\n### ACTION PLANS (SHARED CORE) ###\n"
+                        f"For multi-step tasks (>= {min_hint} steps: projects, refactors, audits, workflows): "
+                        "create a concise checklist FIRST via `ACTION_PLANS__create_plan(title=..., steps=[...])`, "
+                        "update progress with `ACTION_PLANS__update_step(step_index=..., status='done'|'running'|'failed', notes=...)`, "
+                        "and finalize with `ACTION_PLANS__complete_plan(...)`. Skip planning for simple 1-turn questions.\n"
+                    )
+                    if ap_mode == "confirm":
+                        file_manager_rules += (
+                            "- CONFIRM MODE ACTIVE: `ACTION_PLANS__create_plan` waits for user approval; "
+                            "if rejected, stop without editing files.\n"
+                        )
+            except Exception as e:
+                logger.debug(f"PromptBuilder: Action Plan directive skipped: {e}")
+
             
 
         force_clause = (

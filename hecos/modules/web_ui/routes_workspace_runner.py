@@ -127,6 +127,8 @@ def init_workspace_runner_routes(app, cfg_mgr, logger):
     def _is_ui_execution_enabled() -> bool:
         try:
             if cfg_mgr:
+                if not bool(cfg_mgr.get_plugin_config("EXECUTOR", "enabled", True)):
+                    return False
                 return bool(cfg_mgr.get_plugin_config("EXECUTOR", "allow_ui_script_execution", True))
         except Exception:
             pass
@@ -213,7 +215,13 @@ def init_workspace_runner_routes(app, cfg_mgr, logger):
     @app.route("/api/workspace/runs", methods=["GET"])
     def workspace_list_runs():
         try:
-            runs = get_process_registry().list_runs()
+            ws_dir = executor_tools._resolve_workspace_dir()
+            reg = get_process_registry()
+            runs = (
+                reg.list_all_processes(workspace_dir=ws_dir)
+                if hasattr(reg, "list_all_processes")
+                else reg.list_runs()
+            )
             active_count = sum(1 for r in runs if r.get("status") == "running")
             return jsonify({"ok": True, "runs": runs, "active_count": active_count})
         except Exception as exc:
@@ -311,11 +319,72 @@ def init_workspace_runner_routes(app, cfg_mgr, logger):
 
     @app.route("/api/workspace/runs/<run_id>/stop", methods=["POST"])
     def workspace_stop_run(run_id: str):
+        if run_id and run_id.startswith("os_") and run_id[3:].isdigit():
+            ws_dir = executor_tools._resolve_workspace_dir()
+            res = get_process_registry().stop_pid(int(run_id[3:]), workspace_dir=ws_dir)
+            return jsonify(res), (200 if res.get("ok") else 404)
         if not _RUN_ID_RE.match(run_id or ""):
             return jsonify({"ok": False, "error": "Invalid run_id."}), 400
         logger.info(f"[WORKSPACE_UI] Stop requested run_id={run_id}")
         res = get_process_registry().stop_run(run_id)
         return jsonify(res), (200 if res.get("ok") else 404)
+
+    @app.route("/api/workspace/processes/stop", methods=["POST"])
+    def workspace_stop_processes():
+        """Stop tracked or orphaned workspace processes by run_id, pid, project path, or stop_all."""
+        data = request.get_json(silent=True) or {}
+        ws_dir = executor_tools._resolve_workspace_dir()
+        reg = get_process_registry()
+
+        if data.get("stop_all"):
+            res = reg.stop_all_runs(include_orphans=True, workspace_dir=ws_dir)
+            return jsonify(res), 200
+
+        req_pid = data.get("pid")
+        if req_pid is not None and str(req_pid).strip().isdigit():
+            res = reg.stop_pid(int(str(req_pid).strip()), workspace_dir=ws_dir)
+            return jsonify(res), (200 if res.get("ok") else 404)
+
+        req_rid = str(data.get("run_id") or "").strip()
+        if req_rid:
+            if req_rid.startswith("os_") and req_rid[3:].isdigit():
+                res = reg.stop_pid(int(req_rid[3:]), workspace_dir=ws_dir)
+            elif _RUN_ID_RE.match(req_rid):
+                res = reg.stop_run(req_rid)
+            else:
+                return jsonify({"ok": False, "error": "Invalid run_id."}), 400
+            return jsonify(res), (200 if res.get("ok") else 404)
+
+        raw_path = _normalize_client_path(data.get("path", ""))
+        if not raw_path:
+            return jsonify({"ok": False, "error": "Provide run_id, pid, path, or stop_all."}), 400
+
+        abs_target, err = resolve_authorized_target(raw_path, ws_dir, strict_workspace_only=True)
+        if err or not abs_target:
+            return jsonify({"ok": False, "error": err or "Invalid workspace path."}), 403
+
+        res = reg.stop_by_path(abs_target, workspace_dir=ws_dir)
+        return jsonify(res), 200
+
+    @app.route("/api/workspace/projects/delete", methods=["POST"])
+    def workspace_delete_project():
+        """Stop any running/orphaned processes locking a project and delete it cleanly."""
+        from hecos.modules.executor.process_runner import safe_remove_path
+
+        data = request.get_json(silent=True) or {}
+        raw_path = _normalize_client_path(data.get("path", ""))
+        if not raw_path:
+            return jsonify({"ok": False, "error": "Missing target path."}), 400
+
+        ws_dir = executor_tools._resolve_workspace_dir()
+        abs_target, err = resolve_authorized_target(raw_path, ws_dir, strict_workspace_only=True)
+        if err or not abs_target:
+            return jsonify({"ok": False, "error": err or "Access denied."}), 403
+        if os.path.normcase(os.path.abspath(abs_target)) == os.path.normcase(os.path.abspath(ws_dir)):
+            return jsonify({"ok": False, "error": "Cannot delete the workspace root directory."}), 403
+
+        res = safe_remove_path(abs_target, registry=get_process_registry(), workspace_dir=ws_dir)
+        return jsonify(res), (200 if res.get("ok") else 500)
 
     @app.route("/api/workspace/aider/status", methods=["GET"])
     def workspace_aider_status():
@@ -417,3 +486,7 @@ def init_workspace_runner_routes(app, cfg_mgr, logger):
     @app.route("/api/workspace/preview_proxy/<run_id>/<path:subpath>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
     def workspace_preview_proxy(run_id: str, subpath: str):
         return proxy_workspace_run_request(run_id, subpath)
+
+    from hecos.modules.executor.cli_bridge.routes_cli_bridge import register_cli_bridge_routes
+
+    register_cli_bridge_routes(app, executor_tools, _is_ui_execution_enabled, logger)

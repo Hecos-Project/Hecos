@@ -5,6 +5,7 @@
     "description": "Safe Python execution (AST Sandbox), system control, and file management. Absorbs AutoCoder.",
     "icon": "⚙️",
     "lazy_load": false,
+    "llm_callable": true,
     "is_class_based": true,
     "status": "ONLINE (Core Tools Active)",
     "commands": {

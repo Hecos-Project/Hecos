@@ -75,6 +75,8 @@ def register_manage_status_routes(app, _hecos_src: str, cfg_mgr, log):
             ok = registry.set_status(pkg_id, status)
             if ok:
                 cfg_mgr.set(status == "installed", "plugins", pkg_tag, "enabled")
+                if pkg_id == "coder":
+                    cfg_mgr.set(status == "installed", "plugins", "EXECUTOR", "coding_enabled")
                 if status == "disabled":
                     # ── Call on_unload() on the plugin if it defines one ───────────
                     try:

@@ -22,6 +22,7 @@ _PANEL_MAP = {
     'media':           'modules/config_media.html',
     'webui':           'modules/config_utils.html',
     'executor':        'modules/config_utils.html',
+    'action-plans':    'modules/config_action_plans.html',
     'sysnet':          'modules/config_sysnet.html',
     'users':           'modules/config_users.html',
     'payload':         'modules/config_payload.html',

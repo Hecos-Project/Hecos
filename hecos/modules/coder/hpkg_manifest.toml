@@ -1,0 +1,453 @@
+id = "coder"
+manifest_version = "1"
+name = "Coder"
+version = "1.0.0"
+author = "Antonio Meloni"
+license = "GPL-3.0"
+description = "Software Development, AI Coding & Workspace Runner Suite for Hecos. Provides multi-file code generation and refactoring via Aider Sidecar, AST & Tree-sitter Repository Map, Git version control checkpoints, automated Project Test Runner, Workspace process watchdog, and native Windows CLI bridge."
+icon = "fas fa-code"
+icon_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview_square.png"
+screenshots = []
+category = "SYSTEM"
+tag = "CODER"
+plugin_tag = "CODER"
+is_class_based = true
+type = "system_app"
+target_dir = "modules"
+pip_isolation = "shared"
+plugin_dir = "coder"
+lazy_load = false
+llm_callable = true
+readme = "README.md"
+readme_url = ""
+dependencies = []
+pip_requirements = []
+python_requires = ">=3.11"
+signature = "/lRfkGTlEXd8NXGuvbMQrgtpLHUCWgrD7gdTkrxXZgMtQzZ+yoR0c7o1y0JLPoFxGfrIdFCys6OEiVuAE8KRBQ=="
+
+[ui]
+pill_label = "Workspace"
+pill_icon = "fas fa-terminal"
+pill_route = "/workspace"
+pill_order = 44
+
+[config_panel]
+tab_id = "coder"
+tab_label = "Coder (Development)"
+tab_icon = "fas fa-code"
+category = "SISTEMA"
+template_file = "coder/web/templates/config_coder.html"
+js_file = "coder/web/static/js/coder_panel.js"
+js_files = [
+    "coder/web/static/js/coder_panel.js",
+]
+api_routes_file = "coder/routes.py"
+config_api_get = "/hecos/api/plugins/coder/config"
+config_api_post = "/hecos/api/plugins/coder/config"
+
+[capabilities]
+llm_tools = [
+    "repo_map",
+    "project_tree",
+    "search_code",
+    "check_syntax",
+    "run_project_test",
+    "run_aider_task",
+    "git_status",
+    "git_diff",
+    "git_checkpoint",
+    "git_restore",
+    "start_app",
+    "probe_url",
+    "get_app_logs",
+    "list_running_apps",
+    "stop_app",
+    "stop_project_processes",
+    "open_coding_cli",
+]
+slash_commands = []
+has_widget = false
+has_config_panel = true
+has_api_routes = true
+has_system_calls = true
+syscall_notes = "Runs workspace scripts, unit tests, Git checkpoints, Aider sidecar, and Windows CLI terminals."
+notes = "Complete software development and coding environment for Hecos."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__repo_map"
+description = "Generates a compact multi-language AST map (files, classes, functions, line numbers) for a codebase."
+
+[tool_schema.function.parameters]
+type = "object"
+required = []
+
+[tool_schema.function.parameters.properties.path]
+type = "string"
+description = "Project root directory (defaults to projects workspace)."
+
+[tool_schema.function.parameters.properties.max_files]
+type = "integer"
+description = "Maximum files to inspect (default 60)."
+
+[tool_schema.function.parameters.properties.max_lines]
+type = "integer"
+description = "Maximum output lines (default 160)."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__project_tree"
+description = "Generates a compact project folder tree (skipping .git, __pycache__, python_env, node_modules)."
+
+[tool_schema.function.parameters]
+type = "object"
+required = []
+
+[tool_schema.function.parameters.properties.path]
+type = "string"
+description = "Root directory to inspect."
+
+[tool_schema.function.parameters.properties.max_depth]
+type = "integer"
+description = "Maximum folder depth (1 to 6, default 3)."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__search_code"
+description = "Searches text/code recursively inside a project or module directory."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "query",
+]
+
+[tool_schema.function.parameters.properties.query]
+type = "string"
+description = "Substring to find in files."
+
+[tool_schema.function.parameters.properties.path]
+type = "string"
+description = "Root directory or file to search."
+
+[tool_schema.function.parameters.properties.file_glob]
+type = "string"
+description = "Optional filename filter such as *.py or *.js."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__check_syntax"
+description = "Checks syntax of a Python (.py), JSON (.json), YAML (.yaml/.yml), JS/TS, CSS, or HTML file on disk."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "file_path",
+]
+
+[tool_schema.function.parameters.properties.file_path]
+type = "string"
+description = "Path to the file to validate."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__run_project_test"
+description = "Runs a real Python script, unittest, or pytest suite inside an authorized workspace/project."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "target_path_or_command",
+]
+
+[tool_schema.function.parameters.properties.target_path_or_command]
+type = "string"
+description = "Script path or test command."
+
+[tool_schema.function.parameters.properties.cwd]
+type = "string"
+description = "Working directory for execution."
+
+[tool_schema.function.parameters.properties.timeout_seconds]
+type = "integer"
+description = "Execution timeout in seconds (default 30)."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__run_aider_task"
+description = "Delegates a multi-file refactor/generation task to isolated Aider CLI."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "repo_path",
+    "instruction",
+]
+
+[tool_schema.function.parameters.properties.repo_path]
+type = "string"
+description = "Target Git project directory."
+
+[tool_schema.function.parameters.properties.instruction]
+type = "string"
+description = "Detailed coding task prompt for Aider."
+
+[tool_schema.function.parameters.properties.files]
+type = "string"
+description = "Optional comma-separated list of target file paths."
+
+[tool_schema.function.parameters.properties.model]
+type = "string"
+description = "Optional LiteLLM/Ollama model override."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__git_status"
+description = "Inspects Git branch and modified/untracked files inside a project repository."
+
+[tool_schema.function.parameters]
+type = "object"
+required = []
+
+[tool_schema.function.parameters.properties.repo_path]
+type = "string"
+description = "Repository path."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__git_diff"
+description = "Shows unified Git diff for the repository or a specific file."
+
+[tool_schema.function.parameters]
+type = "object"
+required = []
+
+[tool_schema.function.parameters.properties.repo_path]
+type = "string"
+description = "Repository path."
+
+[tool_schema.function.parameters.properties.file_path]
+type = "string"
+description = "Optional file path filter."
+
+[tool_schema.function.parameters.properties.staged]
+type = "boolean"
+description = "Inspect staged changes."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__git_checkpoint"
+description = "Saves a non-destructive Git checkpoint snapshot without mutating HEAD."
+
+[tool_schema.function.parameters]
+type = "object"
+required = []
+
+[tool_schema.function.parameters.properties.repo_path]
+type = "string"
+description = "Project or repository directory."
+
+[tool_schema.function.parameters.properties.message]
+type = "string"
+description = "Short label describing the checkpoint."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__git_restore"
+description = "Restores a file or tree from HEAD or a saved Git checkpoint."
+
+[tool_schema.function.parameters]
+type = "object"
+required = []
+
+[tool_schema.function.parameters.properties.repo_path]
+type = "string"
+description = "Project directory."
+
+[tool_schema.function.parameters.properties.file_path]
+type = "string"
+description = "File path to restore."
+
+[tool_schema.function.parameters.properties.target_ref]
+type = "string"
+description = "Git ref, SHA, or latest."
+
+[tool_schema.function.parameters.properties.confirm_all]
+type = "boolean"
+description = "Must be true if restoring all tracked files."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__start_app"
+description = "Starts a persistent workspace script, local web server, or desktop GUI app."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "target_path",
+]
+
+[tool_schema.function.parameters.properties.target_path]
+type = "string"
+description = "Workspace script path."
+
+[tool_schema.function.parameters.properties.args]
+type = "string"
+description = "Optional CLI arguments."
+
+[tool_schema.function.parameters.properties.wait_seconds]
+type = "number"
+description = "Startup wait window in seconds."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__probe_url"
+description = "Tests a local running web server URL and referenced static CSS/JS assets."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "url",
+]
+
+[tool_schema.function.parameters.properties.url]
+type = "string"
+description = "Local URL to probe."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__get_app_logs"
+description = "Reads live status and log output of a managed workspace application."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "run_id",
+]
+
+[tool_schema.function.parameters.properties.run_id]
+type = "string"
+description = "Run ID."
+
+[tool_schema.function.parameters.properties.tail_lines]
+type = "integer"
+description = "Lines to tail (default 80)."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__list_running_apps"
+description = "Lists all active and recent workspace runs, including orphaned OS processes."
+
+[tool_schema.function.parameters]
+type = "object"
+required = []
+
+[tool_schema.function.parameters.properties]
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__stop_app"
+description = "Stops a running workspace application by run_id, OS PID, project folder/name, or all."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "run_id",
+]
+
+[tool_schema.function.parameters.properties.run_id]
+type = "string"
+description = "Run ID, PID, project name, or all."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__stop_project_processes"
+description = "Stops all managed and orphaned OS processes locking a workspace project."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "target_path",
+]
+
+[tool_schema.function.parameters.properties.target_path]
+type = "string"
+description = "Workspace project path or folder name."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "CODER__open_coding_cli"
+description = "Opens a native Windows coding CLI window for a workspace project (aider, shell, or trace)."
+
+[tool_schema.function.parameters]
+type = "object"
+required = []
+
+[tool_schema.function.parameters.properties.target_path]
+type = "string"
+description = "Optional project path."
+
+[tool_schema.function.parameters.properties.mode]
+type = "string"
+description = "aider, shell, or trace."
+
+[file_hashes]
+"README.md" = "5ca33b9cff470d7db1cc6b7bf3f7885f1e14857d260e7c76801c907702ffe767"
+"__init__.py" = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+"coder/aider_bridge.py" = "165f7655dda9eb6137fac876795668d2f6645c2b7a905e9e38cc0a4ff8774d72"
+"coder/code_intel.py" = "30c578c7fa74cda527ddd85f53271e83dd3b38505f685b251af6f186effca486"
+"coder/dev_tools.py" = "688dd2bff4dcd896856be13fd02269da28e3ebd99f8deb52f88bc9019ffd48f7"
+"coder/file_manager.py" = "86bb43ea1ddd68203b10be868ad58a97ba5e44572a051edd6a23b0de00276e40"
+"coder/git_tools.py" = "d2a1822af9942ac40a71ce78c186bf677a77ce49c590dc5af83df7019cac63d5"
+"coder/http_probe.py" = "f6fc9f57b9ea94f921246ce4434812b39fb05e7e79c6bc4136551eb6ed25f3b8"
+"coder/main.py" = "eea8ef5dcbb4ceb1c7876d7139a325ca1a7e01e32f44dcb5fd828228c297b600"
+"coder/manifest.json" = "85b47e26eb7e93ce4f21b54cf393060565432ec77c99bcc425e5ee10432501a6"
+"coder/process_registry.py" = "7e2c309e47569be14896660a03333b592951f57086537607d20c2d8ec825a056"
+"coder/process_runner.py" = "30a1d0bd6a7d7a00b3f80b32eebcd24548afa59d8209ea373c0ca23fe0fdad0b"
+"coder/process_watchdog.py" = "3bbe6ed1dca4ab4bbd0e2e02c623744a7ac08e186451ca0b3c28bfc77919330a"
+"coder/README.md" = "5ca33b9cff470d7db1cc6b7bf3f7885f1e14857d260e7c76801c907702ffe767"
+"coder/routes.py" = "82a3e38321b889a5e02141efece6cb702bf04fccd2313cbf24d3a3e3536f79ad"
+"coder/test_runner.py" = "6000d5f5e2865773ad5a8dcd564e30b705f4c7fd344159360eb97e96049c28fc"
+"coder/__init__.py" = "8d651b0423de97edd1f85294e0cee846e329caf06d4fa45a777cba26345fc0a9"
+"coder/cli_bridge/action_feed.py" = "04138a5a1138efdf8c7db60dcaffe3ef21305adf96a613d24d04e9e5de8b7229"
+"coder/cli_bridge/coding_cli_app.py" = "52cac8bedcb42711733400f6fee56baf44baf04ab52f5933e84bc1363f4e5513"
+"coder/cli_bridge/direct_aider_runner.py" = "053927e10b5915ad15eb79da35092ef826d4a0e151077483d935e7c9f1c64c8d"
+"coder/cli_bridge/routes_cli_bridge.py" = "5aa4df7211e5d78166dcdd5086bbd70a06e74ae109363f3d8c640129eadad698"
+"coder/cli_bridge/terminal_launcher.py" = "130049fbb1506eba41e857854442868d96ad448fbc3d1d5d8807810e1d47e511"
+"coder/cli_bridge/__init__.py" = "792a7ded948e1768d24210694b57e7fec940a118f8737439c133d50def361115"
+"coder/web/static/js/coder_panel.js" = "e03e8377b1df251bec37ec3d68e6c03397d8f6199013efcd85cecde1ec5f0889"
+"coder/web/templates/config_coder.html" = "cfba0c08fd355025b1c764bb81a55b026b4697bcb876fdaaa51585b1044590fc"

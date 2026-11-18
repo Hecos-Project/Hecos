@@ -315,6 +315,11 @@ if __name__ == "__main__":
                         OllamaLifecycleManager.get_instance().on_application_exit(cfg.config)
                     except Exception:
                         pass
+                    try:
+                        from hecos.modules.executor.process_registry import get_process_registry
+                        get_process_registry().stop_all_runs(include_orphans=False)
+                    except Exception:
+                        pass
                 return False
             ctypes.windll.kernel32.SetConsoleCtrlHandler(_web_ctrl_handler, True)
         except Exception:
@@ -351,5 +356,10 @@ if __name__ == "__main__":
             from hecos.core.audio import ptt_bus
             ptt_bus.stop()
         except:
+            pass
+        try:
+            from hecos.modules.executor.process_registry import get_process_registry
+            get_process_registry().stop_all_runs(include_orphans=False)
+        except Exception:
             pass
 

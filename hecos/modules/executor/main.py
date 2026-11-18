@@ -35,7 +35,12 @@ from .git_tools import (
     git_status_tool, git_diff_tool, git_checkpoint_tool, git_restore_tool
 )
 from .aider_bridge import run_aider_task_tool
-from .process_runner import get_process_registry, probe_local_http_url, run_tests_for_target
+from .process_runner import (
+    get_process_registry,
+    probe_local_http_url,
+    resolve_authorized_target,
+    run_tests_for_target,
+)
 
 class ExecutorTools:
     """
@@ -49,6 +54,11 @@ class ExecutorTools:
         self.status = "ONLINE (Core Tools Active)"
 
         self.config_schema = {
+            "coding_enabled": {
+                "type": "bool",
+                "default": False,
+                "description": "Enable the Coding Environment & Workspace Runner button in the Chat topbar (disabled by default)."
+            },
             "timeout_seconds": {
                 "type": "int",
                 "default": 10,
@@ -578,24 +588,87 @@ class ExecutorTools:
         return f"{header}\n{chunk}"
 
     def list_running_apps(self) -> str:
-        """Lists all active and recent managed workspace runs."""
-        runs = get_process_registry().list_runs()
+        """Lists all active and recent workspace runs, including orphaned OS processes."""
+        ws_dir = self._resolve_workspace_dir()
+        runs = get_process_registry().list_all_processes(workspace_dir=ws_dir)
         if not runs:
-            return "[EXECUTOR] No managed workspace processes recorded."
-        lines = ["Managed Workspace Processes:"]
-        for r in runs[:15]:
+            return "[EXECUTOR] No managed or orphaned workspace processes running."
+        lines = ["Workspace Processes (managed + OS):"]
+        for r in runs[:25]:
             urls = f" | URLs: {', '.join(r['detected_urls'])}" if r.get("detected_urls") else ""
+            src_tag = "ORPHAN_OS" if r.get("source") == "orphan_os" else "managed"
             lines.append(
-                f"- {r['run_id']} | {r['name']} | status={r['status']} | PID={r['pid']} | exit={r.get('exit_code')}{urls}"
+                f"- {r['run_id']} | {r['name']} | {src_tag} | status={r['status']} | PID={r['pid']} | exit={r.get('exit_code')}{urls}"
             )
         return "\n".join(lines)
 
     def stop_app(self, run_id: str) -> str:
-        """Stops a running managed workspace application cleanly by run_id."""
-        res = get_process_registry().stop_run(run_id.strip())
+        """
+        Stops a running workspace application by run_id, OS PID (e.g. '38300' or 'os_38300'),
+        project folder/name (e.g. 'task_studio'), or 'all'.
+        """
+        token = (run_id or "").strip()
+        if not token:
+            return "[EXECUTOR] Provide a run_id, PID, project path/name, or 'all'."
+        ws_dir = self._resolve_workspace_dir()
+        reg = get_process_registry()
+
+        if token.lower() == "all":
+            res = reg.stop_all_runs(include_orphans=True, workspace_dir=ws_dir)
+            return f"[EXECUTOR] Stopped all workspace processes (count={res.get('stopped_count', 0)})."
+
+        if token.lower().startswith(("pid:", "os_")):
+            raw_pid = token.split(":", 1)[1] if ":" in token else token[3:]
+            if raw_pid.isdigit():
+                res = reg.stop_pid(int(raw_pid), workspace_dir=ws_dir)
+                return f"[EXECUTOR] {res.get('message') or res.get('error', 'Failed.')}"
+
+        if token.isdigit():
+            res = reg.stop_pid(int(token), workspace_dir=ws_dir)
+            return f"[EXECUTOR] {res.get('message') or res.get('error', 'Failed.')}"
+
+        # Try run_id first; fall back to stopping by workspace path/project folder name
+        if any(r.get("run_id") == token for r in reg.list_runs()):
+            res = reg.stop_run(token)
+            if not res.get("ok"):
+                return f"[EXECUTOR] {res.get('error', 'Failed to stop process.')}"
+            return f"[EXECUTOR] {res.get('message', 'Stopped.')} (status={res.get('status')})"
+
+        return self.stop_project_processes(token)
+
+    def stop_project_processes(self, target_path: str) -> str:
+        """Stops all managed and orphaned OS processes locking a workspace project or file."""
+        ws_dir = self._resolve_workspace_dir()
+        raw = (target_path or "").strip()
+        if not raw:
+            return "[EXECUTOR] Missing target_path."
+        abs_target, _ = resolve_authorized_target(raw, ws_dir, strict_workspace_only=False)
+        target = abs_target or (raw if os.path.isabs(raw) else os.path.join(ws_dir, raw))
+        res = get_process_registry().stop_by_path(target, workspace_dir=ws_dir)
+        return (
+            f"[EXECUTOR] Stopped {res.get('stopped_count', 0)} process(es) for {target} "
+            f"(PIDs={res.get('stopped_pids') or []})."
+        )
+
+    def open_coding_cli(self, target_path: str = "", mode: str = "aider") -> str:
+        """
+        Opens a native Windows coding CLI window for a workspace project:
+        - mode='aider': Interactive Aider CLI connected to Hecos's active LLM/Ollama settings
+        - mode='shell': PowerShell in the project folder with python_env & aider_env on PATH
+        - mode='trace': Live Coding Action Trace console
+        """
+        from .cli_bridge.terminal_launcher import launch_native_terminal
+
+        ws_dir = self._resolve_workspace_dir()
+        raw = (target_path or "").strip()
+        resolved = ws_dir
+        if raw:
+            abs_t, _ = resolve_authorized_target(raw, ws_dir, strict_workspace_only=False)
+            resolved = abs_t or (raw if os.path.isabs(raw) else os.path.join(ws_dir, raw))
+        res = launch_native_terminal(mode=mode, target_path=resolved, workspace_dir=ws_dir)
         if not res.get("ok"):
-            return f"[EXECUTOR] {res.get('error', 'Failed to stop process.')}"
-        return f"[EXECUTOR] {res.get('message', 'Stopped.')} (status={res.get('status')})"
+            return f"[EXECUTOR] {res.get('error', 'Failed to open coding CLI.')}"
+        return f"[EXECUTOR] Opened {res.get('title')} in {res.get('cwd')}."
 
     def set_important_path(self, name: str, path: str) -> str:
         """

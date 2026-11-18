@@ -468,6 +468,22 @@ def inject_local_tool_hints(
 
 
 
+def _resolve_local_llm_timeout(specific_config: Dict[str, Any]) -> int:
+    """Resolve HTTP timeout (seconds) for local backends from backend config or Key Manager UI override."""
+    default_local = 900
+    raw_cfg = specific_config.get("request_timeout_sec") or specific_config.get("timeout")
+    try:
+        cfg_val = int(raw_cfg) if raw_cfg is not None else default_local
+    except (TypeError, ValueError):
+        cfg_val = default_local
+    try:
+        import hecos.core.keys.key_manager as _km_mod
+        km_webui = int(getattr(_km_mod, "_KM_WEBUI_INFERENCE_TIMEOUT", 0) or 0)
+    except Exception:
+        km_webui = 0
+    return max(60, min(3600, max(cfg_val, km_webui)))
+
+
 def build_llm_params(
 
 
@@ -640,7 +656,7 @@ def build_llm_params(
 
 
 
-        "timeout": 300 if backend_type in ("ollama", "kobold", "llama_cpp") else cloud_timeout,
+        "timeout": _resolve_local_llm_timeout(specific_config) if backend_type in ("ollama", "kobold", "llama_cpp") else cloud_timeout,
 
 
 

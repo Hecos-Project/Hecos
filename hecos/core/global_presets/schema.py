@@ -5,7 +5,6 @@ Pydantic v2 models for the Global Preset (Soul) and Inference Presets.
 
 from typing import Optional, List, Dict
 from pydantic import BaseModel, ConfigDict, Field
-from datetime import datetime
 
 # ── Inference Presets ──
 
@@ -119,3 +118,13 @@ class SoulProfile(BaseModel):
     voice: SoulVoice = Field(default_factory=SoulVoice)
     model: SoulModel = Field(default_factory=SoulModel)
     payload: SoulPayload = Field(default_factory=SoulPayload)
+
+
+# Canonical Preset Manager aliases (leaving Soul* free for Persona/Soul modules)
+GlobalPresetMeta = SoulMeta
+GlobalPresetPersona = SoulPersona
+GlobalPresetInference = SoulInference
+GlobalPresetVoice = SoulVoice
+GlobalPresetModel = SoulModel
+GlobalPresetPayload = SoulPayload
+GlobalPresetProfile = SoulProfile

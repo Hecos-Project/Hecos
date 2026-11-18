@@ -1,6 +1,6 @@
-/* ⚡ SOUL FORGE: Unified Quick Config & Chat Draft Panel Styles */
+/* ⚡ PRESET MANAGER: Unified Quick Config & Chat Draft Panel Styles */
 
-#soul-forge-overlay, #session-overrides-overlay {
+#preset-manager-overlay, #soul-forge-overlay, #session-overrides-overlay {
     display: none;
     position: fixed;
     top: 0;
@@ -14,7 +14,7 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-#soul-forge-panel, #session-overrides-panel {
+#preset-manager-panel, #soul-forge-panel, #session-overrides-panel {
     display: none;
     flex-direction: column;
     position: fixed;
@@ -37,7 +37,7 @@
     pointer-events: none;
 }
 
-#soul-forge-panel.open, #session-overrides-panel.open {
+#preset-manager-panel.open, #soul-forge-panel.open, #session-overrides-panel.open {
     display: flex !important;
     top: 0;
     transform: translateX(-50%);
@@ -120,6 +120,8 @@
 
 /* 0. ACTIVE SOUL CONTEXT BAR */
 .sf-active-soul {
+    position: relative;
+    z-index: 30;
     background: linear-gradient(180deg, rgba(var(--accent1-rgb, 0, 210, 255), 0.06) 0%, rgba(13, 15, 24, 0.35) 100%);
     border-color: rgba(var(--accent1-rgb, 0, 210, 255), 0.28);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 0 14px rgba(var(--accent1-rgb, 0, 210, 255), 0.02);
@@ -130,6 +132,8 @@
 
 /* 1. MODEL & BACKEND (Cyber Blue / Tech) */
 .sf-model-section {
+    position: relative;
+    z-index: 25;
     background: linear-gradient(180deg, rgba(56, 189, 248, 0.05) 0%, rgba(13, 15, 24, 0.35) 100%);
     border-color: rgba(56, 189, 248, 0.25);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 0 14px rgba(56, 189, 248, 0.02);
@@ -745,6 +749,60 @@
     padding: 4px;
 }
 
+.sf-soul-picker-list {
+    max-height: 235px;
+}
+
+.sf-preset-selector-label {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sf-preset-count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-transform: none;
+    letter-spacing: 0.2px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+}
+
+.sf-sp-search-count {
+    font-size: 10.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    padding: 1px 7px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sf-sp-stat-pill {
+    font-variant-numeric: tabular-nums;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+}
+
+.sf-sp-stat-pill.uses-hot {
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.32);
+    background: rgba(56, 189, 248, 0.08);
+}
+
 .sf-mp-item {
     display: flex;
     align-items: center;
@@ -922,7 +980,7 @@
 
 /* ── Mobile Adaptation (<= 768px) ────────────────────────────────── */
 @media (max-width: 768px) {
-    #soul-forge-panel, #session-overrides-panel {
+    #preset-manager-panel, #soul-forge-panel, #session-overrides-panel {
         left: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
@@ -935,12 +993,12 @@
         transform: translateY(-150%) !important;
     }
 
-    #soul-forge-panel.open, #session-overrides-panel.open {
+    #preset-manager-panel.open, #soul-forge-panel.open, #session-overrides-panel.open {
         top: 0 !important;
         transform: translateY(0) !important;
     }
 
-    #soul-forge-overlay, #session-overrides-overlay {
+    #preset-manager-overlay, #soul-forge-overlay, #session-overrides-overlay {
         z-index: 2999 !important;
     }
 
