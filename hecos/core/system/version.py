@@ -21,7 +21,7 @@ PROJECT_NAME = "Hecos"
 PROJECT_CODENAME = "Ghost Fire"
 
 # Data di rilascio (aggiorna quando fai una release)
-RELEASE_DATE = "2026-07-08"
+RELEASE_DATE = "2026-11-18"
 
 # Autore e copyright
 AUTHOR = "Antonio Meloni"
