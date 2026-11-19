@@ -43,6 +43,7 @@ Now fully migrated to a **Phase II: Ghost Fire stable architecture**, Hecos 0.55
 * 📦 **HPM SemVer Engine & Visual Badges** — Strict semantic versioning comparison eliminating downgrade warnings, enriched with visual badges displaying installed vs. store version on cards and modals.
 * 📡 **Presenter & Playbook (Training, Coach, Roleplay)** — Interactive engine natively built into the Core for system announcements, active notifications, and real-time voice narration (with dedicated toolbar Show/Hide, collapse, and context ON/OFF controls). Combined with the packaged **Playbook** module, Hecos transforms into a versatile interactive training and simulation platform.
 * 🎚️ **Preset Manager & Global Presets (`F3`)** — Unified searchable preset drawer with total counter, creation date and usage statistics, instant live drafts, **Enable Thinking** toggle, and **Granular Tool Selection** (with real-time token-budget estimation) to assemble and switch complete AI, Persona, Voice, and Payload snapshots.
+* 📋 **Multimodal Action Plans** — Domain-agnostic **Architect First (`Plan First` / `/plan`) & Execution Recovery** engine for **software engineering** (`Hecos Coder`), **sequential photo shoots & storyboards** (`Hecos Storyboard & Photo Director` + `IMAGE_GEN`), **travel itineraries, research, and workflows** (`Hecos Action Planner` + `NETSEARCH`). Features interactive Blueprint versioning (`v1`, `v2`…), **`Execute Plan`** / **`Next Step`** / manual check-off, **`Run with Preset`** selector, **`AgentResume`** checkpoints, Presenter-style resize, draggable Float & multi-monitor **Pop-out** viewer, auto-save Markdown mirroring in `hecos/media/action_plans/`, and native OS Export/Import (`.md`, printable lossless `.html`, `.yaml`, `.json`).
 * 💻 **Hecos Coder & Workspace Runner (Modular `system_app`)** — Optional software development package (`coder`) with interactive **Workspace Runner**, embedded **Monaco Workspace Explorer**, isolated **Aider Sidecar**, Tree-Sitter AST Repo Map, non-destructive Git checkpoints, OS process watchdog, and native Windows CLI terminals (hidden automatically for non-developers when disabled).
 * 📦 **HPM 0.40 Architecture** — Fully migrated to Pydantic+TOML configurations, introducing dependency version constraints and locked `pip_requirements`.
 * 🛠️ **External Dependency Manager (EDM)** — New system that auto-detects missing core dependencies (Node, Tesseract, VC++), enabling one-click downloads directly from the WebUI.
@@ -118,6 +119,16 @@ Combined with the packaged **Playbook** module, Hecos evolves beyond a tradition
 * 🎓 **Interactive Training & Coaching System** — Provides step-by-step guidance through operating procedures, complex technical tasks, or structured personal study.
 * 🗣️ **Language Learning** — Practice conversational skills in foreign languages with live feedback, grammatical insights, and guided pronunciation.
 * 🎭 **Dynamic Roleplay & Scenarios** — Simulate job interviews, business negotiations, or rich narrative storylines powered by AI characters with structured directives and trigger conditions.
+
+---
+
+### 📋 Multimodal Action Plans: Code, Storyboards & Workflows
+
+The **Multimodal Action Plans** subsystem bridges **structured planning** and **step-by-step autonomous execution** across any creative, technical, or operational task:
+* 📐 **Architect Mode (`Plan First` / `/plan`):** Draft and interactively revise rich Markdown Blueprints (`title`, `goal`, technical specs or shot Continuity Bibles, and numbered steps) *before* touching workspace files or generating images.
+* 🎯 **Domain-Agnostic + Dedicated Presets:** Pair any plan with specialized **Global Presets** via **`Run with Preset`** — `Hecos Coder` for apps, `Hecos Storyboard & Photo Director` for multi-shot `IMAGE_GEN` sequences, or `Hecos Action Planner` for travel, research, and real-world checklists.
+* ⏭️ **Granular Control & Continuity:** Execute everything end-to-end (**`Execute Plan`**), generate/run one frame or milestone at a time (**`Next Step`**), or manually check off steps — backed by live **`AgentResume`** crash/timeout recovery.
+* 🪟 **Detachable Workspace & Auto-Save:** Resize using Presenter-style row controls, float anywhere on screen, open a live-synced multi-monitor **Pop-out** (`/action-plan-viewer`), find every plan auto-saved in `hecos/media/action_plans/`, and export/import natively as **Markdown (`.md`)**, standalone printable **`.html`**, **`.yaml`**, or **`.json`**.
 
 ---
 

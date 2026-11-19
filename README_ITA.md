@@ -45,6 +45,7 @@ Ora completamente migrato a una **architettura stabile Fase II: Ghost Fire**, He
 * 📦 **Motore HPM SemVer & Badge Visivi** — Confronto semantico delle versioni per evitare falsi aggiornamenti e downgrade, arricchito da badge chiari che mostrano la versione installata rispetto a quella dello store.
 * 📡 **Presenter & Playbook (Training, Coach, Roleplay)** — Motore interattivo integrato nel Core per annunci di sistema, notifiche e narrazione vocale in tempo reale (con controlli separati di Show/Hide dalla toolbar, apertura header e ON/OFF contesto). Insieme al modulo pacchettizzato **Playbook**, trasforma Hecos in una piattaforma interattiva di coaching, simulazione e apprendimento.
 * 🎚️ **Preset Manager & Global Presets (`F3`)** — Pannello unificato ricercabile con contatore totale preset, statistiche di creazione e utilizzo, bozze live immediate, toggle **Enable Thinking** e **Selezione Granulare dei Tool** (con stima token in tempo reale) per combinare modelli IA, Persona, voci TTS e payload.
+* 📋 **Multimodal Action Plans** — Motore agnostico di **Pianificazione Architect First (`Plan First` / `/plan`) & Ripresa Esecuzione** per **sviluppo software** (`Hecos Coder`), **shooting fotografici & storyboard sequenziali** (`Hecos Storyboard & Photo Director` + `IMAGE_GEN`), **itinerari di viaggio, ricerche e workflow** (`Hecos Action Planner` + `NETSEARCH`). Include revisione interattiva con versioning (`v1`, `v2`…), **`Esegui Piano`** / **`Prossimo Step`** / spunta manuale, selettore **`Esegui con Preset`**, checkpoint automatici (**`AgentResume`**), pannello ridimensionabile stile Presenter, finestra flottante (**Float**) & **Pop-out** multi-monitor live, salvataggio automatico Markdown in `hecos/media/action_plans/` ed export/import nativo (`.md`, `.html` stampabile lossless, `.yaml`, `.json`).
 * 💻 **Hecos Coder & Workspace Runner (`system_app` modulare)** — Pacchetto opzionale per lo sviluppo software (`coder`) con **Workspace Runner** interattivo, **Monaco Workspace Explorer** integrato, **Aider Sidecar** isolato, AST Repo Map (Tree-Sitter), checkpoint Git non distruttivi, Watchdog dei processi OS e CLI Windows native (automaticamente nascosto ai non sviluppatori quando disabilitato).
 * 📦 **Architettura HPM 0.40** — Migrazione completa a configurazioni Pydantic+TOML, introducendo vincoli di versione per le dipendenze e `pip_requirements` bloccati.
 * 🛠️ **External Dependency Manager (EDM)** — Nuovo sistema che rileva automaticamente le dipendenze principali mancanti (Node, Tesseract, VC++), consentendo download con un clic direttamente dalla WebUI.
@@ -120,6 +121,16 @@ Grazie all'integrazione con il modulo pacchettizzato **Playbook**, Hecos va oltr
 * 🎓 **Sistema di Training & Coaching Interattivo** — Guida l'utente passo-passo attraverso procedure operative, task tecnici complessi o percorsi di studio strutturati.
 * 🗣️ **Apprendimento Linguistico** — Esercitati in conversazioni in lingua straniera con correzioni dal vivo, feedback grammaticali e pronuncia guidata.
 * 🎭 **Roleplay & Scenari Dinamici** — Simula colloqui di lavoro, negoziazioni commerciali o avventure narrative con personaggi IA governati da direttive e condizioni d'innesco precise.
+
+---
+
+### 📋 Multimodal Action Plans: Codice, Storyboard & Workflow
+
+Il sottosistema **Multimodal Action Plans** collega la **progettazione strutturata** all'**esecuzione autonoma step-by-step** in qualunque dominio creativo, tecnico o operativo:
+* 📐 **Modalità Architetto (`Plan First` / `/plan`):** Progetta e revisiona Blueprint Markdown ricchi (`title`, `goal`, specifiche tecniche o *Continuity Bible* fotografiche e step numerati) *prima* di scrivere file o generare immagini.
+* 🎯 **Agnostico per Natura + Preset Dedicati:** Abbina qualsiasi piano al Global Preset ideale tramite **`Esegui con Preset`** — `Hecos Coder` per il codice, `Hecos Storyboard & Photo Director` per sequenze `IMAGE_GEN`, o `Hecos Action Planner` per viaggi, ricerche e scalette operative.
+* ⏭️ **Controllo Granulare & Ripresa:** Esegui tutto il piano in sequenza (**`Esegui Piano`**), uno scatto/step alla volta (**`Prossimo Step`**) oppure spunta a mano gli step — con protezione anti-interruzioni e ripresa **`AgentResume`**.
+* 🪟 **Workspace Staccabile & Salvataggio Automatico:** Ridimensiona con controlli righe stile Presenter, stacca la finestra (**Float**) o aprila su un secondo monitor (**Pop-out** su `/action-plan-viewer`), ritrova tutti i piani salvati in `hecos/media/action_plans/` ed esporta/importa nativamente in **Markdown (`.md`)**, **`.html`** standalone stampabile, **`.yaml`** o **`.json`**.
 
 ---
 
