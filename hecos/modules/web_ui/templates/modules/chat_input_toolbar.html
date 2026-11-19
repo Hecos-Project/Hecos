@@ -306,7 +306,7 @@
   <button class="toolbar-btn" title="Open and read document directly with Document Reader" onclick="if(window.docReaderOpenFilePicker) window.docReaderOpenFilePicker(); else if(window.DocReader) window.DocReader.open();">
     <span class="tb-icon" style="color: #a78bfa;"><i class="fas fa-book-reader"></i></span> Reader
   </button>
-  <button class="toolbar-btn" id="btn-open-media-folder" title="Open Media folder (audio, documents, images, video)" onclick="openMediaFolder(this)">
+  <button class="toolbar-btn" id="btn-open-media-folder" title="Open Media folder (audio, documents, images, action_plans, video, workspace)" onclick="openMediaFolder(this)">
     <span class="tb-icon" style="color: #38bdf8;"><i class="fas fa-folder-open"></i></span> Media
   </button>
   <button class="toolbar-btn emoji-trigger-btn" title="Insert Emoji" onclick="toggleEmoticonPicker(event)">
@@ -315,7 +315,7 @@
   <button class="toolbar-btn" title="Paste long text or context (Ctrl+Shift+V)" onclick="openPasteModal()">
     <span class="tb-icon"><i class="fas fa-paste"></i></span> {{ t('webui_chat_toolbar_paste') }}
   </button>
-  <button id="btn-toolbar-plan" type="button" class="toolbar-btn" title="Architect Mode (Plan First): generate a structured Action Plan without writing code yet, then execute with Coder (or type /plan and /code)" onclick="window.togglePlanFirstMode && window.togglePlanFirstMode(this)">
+  <button id="btn-toolbar-plan" type="button" class="toolbar-btn" title="Plan First Mode: design a structured Action Plan (code, storyboard, travel, workflow) before executing it with any Global Preset" onclick="window.togglePlanFirstMode && window.togglePlanFirstMode(this)">
     <span class="tb-icon" style="color: #f59e0b;"><i class="fas fa-list-check"></i></span> <span id="btn-toolbar-plan-label">Plan First</span>
   </button>
   
@@ -382,7 +382,7 @@ window.setPlanFirstMode = function(enabled, silent) {
   if (input) {
     if (window.hecosPlanFirstMode) {
       if (!input.dataset.origPlaceholder) input.dataset.origPlaceholder = input.placeholder || '';
-      input.placeholder = '📋 Plan First (Architect Mode): describe the project to plan without writing code yet...';
+      input.placeholder = '📋 Plan First: describe the plan to design (project, storyboard, travel itinerary, workflow) before executing...';
     } else if (input.dataset.origPlaceholder !== undefined) {
       input.placeholder = input.dataset.origPlaceholder;
     }
@@ -390,7 +390,7 @@ window.setPlanFirstMode = function(enabled, silent) {
   if (!silent && typeof window.showToast === 'function') {
     window.showToast(
       window.hecosPlanFirstMode
-        ? '📋 Plan First Mode ON — Messages will create/revise an Implementation Plan without editing files (until toggled OFF or Execute Plan)'
+        ? '📋 Plan First Mode ON — Messages will design/revise a structured Action Plan first (until toggled OFF or Execute Plan)'
         : '📋 Plan First Mode OFF'
     );
   }

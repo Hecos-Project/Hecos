@@ -29,58 +29,85 @@ def _parse_num_val(val: Optional[str]) -> Optional[int]:
     return NUMBER_WORDS.get(v)
 
 
-def get_requested_image_limit(user_text: str) -> int:
+def get_requested_image_limit(
+    user_text: str,
+    active_plan: Optional[Dict[str, Any]] = None,
+    single_step_index: int = 0,
+) -> int:
     """
-    Parses user_text to check how many images/photos the user asked for.
-    Supports numbers (digits or Italian/English words), parenthesized counts,
-    and document requests with illustrations.
-    Defaults to 1, with a safe ceiling of 20.
+    Parses user_text (and an optional active Action Plan being executed) to check
+    how many images/photos the workflow needs in this turn.
+    Defaults to 1 (capped at 20 for chat text, 30 when executing multi-step Action Plans).
     """
-    if not user_text or not isinstance(user_text, str):
-        return 1
-    t = user_text.lower()
+    t = user_text.lower() if isinstance(user_text, str) else ""
+    counts: List[int] = []
 
-    counts = []
+    if t:
+        # 1. Explicit parentheses with number or word: e.g. (6), ( 6 ), (sei), (six)
+        m_paren = re.search(
+            r'\(\s*' + _WORD_OR_DIGIT_PATTERN + r'\s*(?:foto|fotografie|immagini|photos?|images?|pics?|shots?|scatti)?\s*\)',
+            t,
+        )
+        if m_paren:
+            n = _parse_num_val(m_paren.group(1))
+            if n and n >= 1:
+                counts.append(n)
 
-    # 1. Explicit parentheses with number or word: e.g. (6), ( 6 ), (sei), (six)
-    m_paren = re.search(r'\(\s*' + _WORD_OR_DIGIT_PATTERN + r'\s*(?:foto|fotografie|immagini|photos?|images?|pics?)?\s*\)', t)
-    if m_paren:
-        n = _parse_num_val(m_paren.group(1))
-        if n and n >= 1:
-            counts.append(n)
+        # 2. Pattern: <verb> [ne/mi/ci] <number> e.g. 'devi farne 6', 'fanne 6', 'fammi 6', 'generane 6'
+        m_verb = re.findall(
+            r'\b(?:fai|fammi|fanne|farne|fare|faccene|facci|crea|creami|creane|creare|genera|generami|generane|generi|generare|manda|mandami|mandane|mandare|invia|inviami|inviane|mostra|mostrami|mostrane|produci|producimi|producine|disegna|disegnami|disegnane|scatta|scattami|scattane|voglio|vorrei|desidero|metti|inserisci|includi|allega|aggiungi|prepara|preparami|make|generate|create|produce|draw|take|want)\s+(?:almeno\s+|circa\s+)?' + _WORD_OR_DIGIT_PATTERN + r'\b',
+            t,
+        )
+        for match in m_verb:
+            n = _parse_num_val(match)
+            if n:
+                counts.append(n)
 
-    # 2. Pattern: <verb> [ne/mi/ci] <number> e.g. 'devi farne 6', 'fanne 6', 'fammi 6', 'generane 6', 'generi 6', 'creane 6'
-    m_verb = re.findall(
-        r'\b(?:fai|fammi|fanne|farne|fare|faccene|facci|crea|creami|creane|creare|genera|generami|generane|generi|generare|manda|mandami|mandane|mandare|invia|inviami|inviane|mostra|mostrami|mostrane|produci|producimi|producine|disegna|disegnami|disegnane|scatta|scattami|scattane|voglio|vorrei|desidero|metti|inserisci|includi|allega|aggiungi|prepara|preparami|make|generate|create|produce|draw|take|want)\s+(?:almeno\s+|circa\s+)?' + _WORD_OR_DIGIT_PATTERN + r'\b',
-        t
-    )
-    for match in m_verb:
-        n = _parse_num_val(match)
-        if n:
-            counts.append(n)
+        # 3. Pattern: <number>[-\s][di] <foto/immagini/images/photos/shot/scatti> (e.g. "10-shot", "10 scatti")
+        m_noun = re.findall(
+            r'\b' + _WORD_OR_DIGIT_PATTERN + r'(?:\s*-\s*|\s+)(?:di\s+)?(?:foto|fotografie|immagini|immagine|photos?|pictures?|images?|pics?|illustrazioni|scatti|shots?|frames?|fotogrammi)\b',
+            t,
+        )
+        for match in m_noun:
+            n = _parse_num_val(match)
+            if n:
+                counts.append(n)
 
-    # 3. Pattern: <number> [di] <foto/immagini/images/photos>
-    m_noun = re.findall(
-        r'\b' + _WORD_OR_DIGIT_PATTERN + r'\s*(?:di\s+)?(?:foto|fotografie|immagini|immagine|photos?|pictures?|images?|pics?|illustrazioni|scatti)\b',
-        t
-    )
-    for match in m_noun:
-        n = _parse_num_val(match)
-        if n:
-            counts.append(n)
+        # 4. Pattern: explicit count after separator: "<foto/immagini> sono 5" / "foto: 5" (never match ordinal "Foto 2" / "Shot 2" / "Frame 2")
+        m_after = re.findall(
+            r'\b(?:foto|fotografie|immagini|immagine|photos?|pictures?|images?|pics?|scatti|shots?)\s*(?:sono|:|=|per\s+un\s+totale\s+di)\s*' + _WORD_OR_DIGIT_PATTERN + r'\b',
+            t,
+        )
+        for match in m_after:
+            n = _parse_num_val(match)
+            if n:
+                counts.append(n)
 
-    # 4. Pattern: <foto/immagini> [:] [(] <number>
-    m_after = re.findall(
-        r'\b(?:foto|fotografie|immagini|immagine|photos?|pictures?|images?|pics?)\s*(?:sono|:|per\s+un\s+totale\s+di)?\s*' + _WORD_OR_DIGIT_PATTERN + r'\b',
-        t
-    )
-    for match in m_after:
-        n = _parse_num_val(match)
-        if n:
-            counts.append(n)
+    text_limit = min(max(1, max(counts)), 20) if counts else 1
+
+    # Single-step execution (Next Step): allow only 1 image (or count explicitly mentioned on that step)
+    if isinstance(active_plan, dict):
+        steps = active_plan.get("steps") or []
+        if int(single_step_index or 0) > 0:
+            target = next(
+                (s for s in steps if int(s.get("index") or 0) == int(single_step_index)),
+                None,
+            )
+            if isinstance(target, dict):
+                step_txt = f"{target.get('title', '')} {target.get('details', '')}".strip()
+                step_count = get_requested_image_limit(step_txt, active_plan=None, single_step_index=0) if step_txt else 1
+                return max(1, min(step_count, 5))
+            return 1
+        # Full Action Plan execution: never throttle multi-shot storyboards/workflows to 1 image
+        remaining_steps = sum(
+            1 for s in steps if str(s.get("status") or "").lower() not in ("done", "skipped")
+        )
+        plan_need = remaining_steps if remaining_steps > 0 else len(steps)
+        if plan_need > 1:
+            return min(max(plan_need, text_limit), 30)
 
     if counts:
-        return min(max(1, max(counts)), 20)
+        return text_limit
 
     # 5. If user asked for an illustrated document without explicit count, allow up to 6
     has_doc_intent = bool(re.search(r'\b(?:documento|doc|pdf|html|scheda)\b', t))
@@ -129,7 +156,11 @@ def build_image_limit_exceeded_result(
     logger.warning(f"[PROCESSOR] Image generation limit reached ({image_limit}). Skipping duplicate/extra generation.")
     return {
         "id": call_id,
-        "output": f"[IMAGE_GEN: Limit of {image_limit} image(s) per turn already reached. The requested image has already been generated successfully. Conclude your response now.]",
+        "output": (
+            f"[IMAGE_GEN: Per-turn limit of {image_limit} image(s) reached. "
+            "THIS prompt was skipped and NO image file was generated for it. "
+            "Do NOT invent fake file paths or claim ungenerated images exist; report only the actual [[IMG:...]] files already generated above.]"
+        ),
         "tag": tag_name,
     }
 

@@ -1,6 +1,6 @@
 ai:
-  active_global_preset: hecos_coder_pro
-  active_personality: Hecos_Coder
+  active_global_preset: hecos_storyboard_director
+  active_personality: Urania_9800
   available_personalities:
     '1': Hecos_System_Soul
     '2': Hecos_Coder
@@ -50,7 +50,7 @@ backend:
     request_timeout_sec: 900
   ollama:
     url: http://localhost:11434
-    model: mattcapalbo1432/qwen38-obliterated-cyber:latest
+    model: masska129/gemma-4-abliterated:12b-qat
     available_models:
       '1': masska129/gemma-4-abliterated:12b-qat
       '2': sorc/qwen3.5-claude-4.6-opus:latest
@@ -63,8 +63,8 @@ backend:
     num_ctx: 16384
     num_gpu: 99
     num_predict: 4096
-    temperature: 0.15
-    top_p: 0.9
+    temperature: 0.7
+    top_p: 0.94
     repeat_penalty: 1.05
     keep_alive: 120m
     probe_timeout_sec: 3

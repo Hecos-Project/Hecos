@@ -329,8 +329,13 @@ window.sfSelectSessionSoul = async function(soulId) {
         if (res.ok) {
             const msgEl = document.getElementById('sf-status-msg');
             if (msgEl) {
-                msgEl.textContent = soulId ? "Preset applied to this chat." : "Chat reset to system defaults.";
+                msgEl.textContent = soulId
+                    ? "Preset applied to this chat."
+                    : "⚙️ Base Configuration (No Preset) active for this chat.";
                 setTimeout(() => { if (msgEl) msgEl.textContent = ""; }, 3000);
+            }
+            if (!soulId) {
+                await window.sfLoadGlobalState();
             }
             await window.sfLoadActiveSessionState();
             if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show();

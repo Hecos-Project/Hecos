@@ -208,7 +208,7 @@ function _attachChatStreamListeners({ evtSrc, sessionId, aiBubble, cursor }) {
       if (!aiText && ev.text) {
         const ackEl = document.createElement('div');
         ackEl.className = 'ap-live-status-ack';
-        ackEl.innerHTML = `<i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> <span>${String(ev.text).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>`;
+        ackEl.textContent = String(ev.text);
         aiBubble.innerHTML = '';
         aiBubble.appendChild(ackEl);
         aiBubble.appendChild(cursor);
@@ -655,6 +655,7 @@ window.sendInternalMessage = async function(text, opts = {}) {
       plan_only: effectivePlanOnly,
       revise_plan_id: (opts && opts.revisePlanId) || '',
       execute_plan_id: (opts && opts.executePlanId) || '',
+      execute_step_index: Number((opts && opts.executeStepIndex) || 0),
       coder_preset_id: (opts && opts.coderPresetId) || '',
       fast_code: !!(opts && opts.fastCode)
     };

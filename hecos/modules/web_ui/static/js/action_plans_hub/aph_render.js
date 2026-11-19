@@ -94,9 +94,16 @@
     if (plansEl) {
       const plans = data.plans || [];
       const delTitle = _tr('ap_btn_delete_plan', 'Delete plan');
+      const viewTitle = _tr('ap_btn_view_plan', 'Open in Plan Viewer');
+      const expTitle = _tr('ap_btn_export_plan', 'Download Markdown (.md)');
       plansEl.innerHTML = plans.length ? plans.map((p) => {
         const steps = p.steps || [];
         const done = steps.filter((s) => s.status === 'done' || s.status === 'skipped').length;
+        const pidEsc = _esc(p.plan_id);
+        const sidEsc = _esc(p.source_id || '');
+        const viewerHref = `/action-plan-viewer?plan_id=${encodeURIComponent(p.plan_id || '')}&sid=${encodeURIComponent(p.source_id || '')}`;
+        const exportHref = `/api/action-plans/${encodeURIComponent(p.plan_id || '')}/export?format=md`;
+        const mediaTag = p.media_file ? ` · <code>media/action_plans/${_esc(p.media_file)}</code>` : '';
         return `
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg3, rgba(255,255,255,0.02));">
             <div style="min-width:0;flex:1;">
@@ -105,9 +112,13 @@
                 <strong style="font-size:13px;">${_esc(p.title)}</strong>
                 <span style="font-size:11px;color:var(--muted);">${done}/${steps.length} ${_esc(stepsUnit)} · ${_esc(p.scope || 'agent')}</span>
               </div>
-              <div style="font-size:11px;color:var(--muted);margin-top:3px;">ID: ${_esc(p.plan_id)} · ${_fmtDate(p.updated_at)}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:3px;word-break:break-word;">ID: ${pidEsc} · ${_fmtDate(p.updated_at)}${mediaTag}</div>
             </div>
-            <button type="button" class="btn btn-xs btn-outline" data-ap-del-plan="${_esc(p.plan_id)}" title="${_esc(delTitle)}"><i class="fas fa-trash"></i></button>
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              <a href="${viewerHref}" target="_blank" rel="noopener" class="btn btn-xs btn-outline" data-ap-view-plan="${pidEsc}" data-ap-view-sid="${sidEsc}" title="${_esc(viewTitle)}"><i class="fas fa-up-right-from-square"></i></a>
+              <a href="${exportHref}" class="btn btn-xs btn-outline" title="${_esc(expTitle)}"><i class="fas fa-file-export"></i></a>
+              <button type="button" class="btn btn-xs btn-outline" data-ap-del-plan="${pidEsc}" title="${_esc(delTitle)}"><i class="fas fa-trash"></i></button>
+            </div>
           </div>
         `;
       }).join('') : `<div style="font-size:12px;color:var(--muted);">${_esc(_tr('ap_empty_plans', 'No Action Plans recorded.'))}</div>`;

@@ -66,8 +66,18 @@ def classify_tool_result_for_loop(res: Dict[str, Any]) -> Tuple[str, bool, str]:
             diag_line = _DYNAMIC_TRACE_NOISE_RE.sub("", out.strip().splitlines()[-1])[:200]
         return bucket, False, diag_line
 
-    if clean_disk_write or aider_ok or any(m in low for m in _LOOP_SUCCESS_MARKERS):
+    if (
+        clean_disk_write
+        or aider_ok
+        or "[[img:" in low
+        or "[action_plan updated]" in low
+        or "[action_plan finalized]" in low
+        or any(m in low for m in _LOOP_SUCCESS_MARKERS)
+    ):
         return "OK", True, ""
+
+    if "[action_plan completion blocked]" in low or "[image_gen: per-turn limit" in low:
+        return "FAIL:blocked", False, out.strip().splitlines()[0][:200] if out.strip() else ""
 
     if is_write:
         return "WRITE_OTHER", False, ""

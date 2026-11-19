@@ -129,6 +129,8 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
             merged_config_dict.setdefault("payload_control", {})["send_tools"] = True
         if t_opts.get("execute_plan_id"):
             merged_config_dict["_turn_execute_plan"] = str(t_opts["execute_plan_id"])
+            if int(t_opts.get("execute_step_index") or 0) > 0:
+                merged_config_dict["_turn_single_step_index"] = int(t_opts["execute_step_index"])
             merged_config_dict.setdefault("payload_control", {})["send_tools"] = True
         if t_opts.get("fast_code"):
             merged_config_dict["_turn_fast_code"] = True
@@ -223,26 +225,39 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
                 )
             elif merged_config_dict.get("_turn_plan_only") or _is_plan_slash:
                 _ack_visual = (
-                    "📋 Modalità Architetto (Plan First) attiva — Sto analizzando la richiesta per preparare il Piano di Implementazione (nessun file verrà modificato)..."
+                    "📋 Modalità Plan First attiva — Sto progettando l'Action Plan strutturato (nessuna esecuzione in questo turno)..."
                     if _is_it
-                    else "📋 Architect Mode (Plan First) active — Analyzing your request to prepare the Implementation Plan (no files will be edited)..."
+                    else "📋 Plan First Mode active — Designing the structured Action Plan (no execution in this turn)..."
                 )
                 _ack_spoken = (
-                    "Ricevuto! Modalità Architetto attiva: preparo prima il piano di implementazione senza modificare file."
+                    "Ricevuto! Modalità Plan First attiva: preparo prima il piano d'azione strutturato."
                     if _is_it
-                    else "Got it! Architect Mode active: preparing the implementation plan first without editing files."
+                    else "Got it! Plan First Mode active: preparing the structured action plan first."
                 )
             elif merged_config_dict.get("_turn_execute_plan") or _is_code_slash:
-                _ack_visual = (
-                    "▶️ Esecuzione Piano avviata — Sto implementando il progetto passo dopo passo secondo il blueprint..."
-                    if _is_it
-                    else "▶️ Plan Execution started — Implementing the project step by step according to the blueprint..."
-                )
-                _ack_spoken = (
-                    "Perfetto! Avvio subito l'esecuzione del piano passo dopo passo."
-                    if _is_it
-                    else "Starting execution of the implementation plan step by step."
-                )
+                _single_step = int(merged_config_dict.get("_turn_single_step_index") or 0)
+                if _single_step > 0:
+                    _ack_visual = (
+                        f"⏭️ Esecuzione Step {_single_step} avviata — Eseguo solo questo step del piano..."
+                        if _is_it
+                        else f"⏭️ Step {_single_step} execution started — Running only this step of the plan..."
+                    )
+                    _ack_spoken = (
+                        f"Avvio subito lo step {_single_step} del piano."
+                        if _is_it
+                        else f"Starting step {_single_step} of the plan."
+                    )
+                else:
+                    _ack_visual = (
+                        "▶️ Esecuzione Piano avviata — Eseguo gli step in sequenza secondo il piano attivo..."
+                        if _is_it
+                        else "▶️ Plan Execution started — Running steps sequentially according to the active plan..."
+                    )
+                    _ack_spoken = (
+                        "Perfetto! Avvio subito l'esecuzione del piano passo dopo passo."
+                        if _is_it
+                        else "Starting execution of the action plan step by step."
+                    )
             elif not _um_low.startswith("/") and len(_um_low) >= 120 and merged_config_dict.get("payload_control", {}).get("send_tools", True):
                 _ack_visual = (
                     "⚙️ Richiesta ricevuta — Sto analizzando il task e preparando i passaggi..."

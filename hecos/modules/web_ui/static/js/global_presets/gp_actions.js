@@ -5,6 +5,7 @@ window.sfSaveDraftToSession = async function() {
     if (!sessionId) return;
 
     const newData = window.sfCollectUIState();
+    newData.active_global_preset = window.sfState.activeSoulId || "";
     try {
         const res = await fetch('/api/chat/session/config', {
             method: 'POST',
@@ -183,15 +184,25 @@ window.sfSetAsGlobalDefault = function() {
             if (window.showToast) window.showToast(`⭐ "${pName}" set as Global Default!`, "success");
         });
     } else {
-        window.hecosConfirm(
-            "Save current configuration (Backend, Model, Soul, Inference, Payload, Voice) directly as System Global Default without using a preset?",
-            async function() {
-                const data = window.sfCollectUIState();
-                data.meta = { id: "", name: "Base Defaults", icon: "⚙️" };
-                await window.sfActivateSoul("", data);
-                if (window.showToast) window.showToast("⭐ Base Configuration saved as Global Default!", "success");
-            }
-        );
+        if (!window.sfState.isDirty) {
+            window.hecosConfirm(
+                "Set Base Configuration (No Preset — uses Central Hub system.yaml directly) as Global Default for all new chats?",
+                async function() {
+                    await window.sfActivateSoul("", null);
+                    if (window.showToast) window.showToast("⭐ Base Configuration (No Preset) set as Global Default!", "success");
+                }
+            );
+        } else {
+            window.hecosConfirm(
+                "Save current configuration (Backend, Model, Soul, Inference, Payload, Voice) directly as System Global Default without using a preset?",
+                async function() {
+                    const data = window.sfCollectUIState();
+                    data.meta = { id: "", name: "Base Defaults", icon: "⚙️" };
+                    await window.sfActivateSoul("", data);
+                    if (window.showToast) window.showToast("⭐ Base Configuration saved as Global Default!", "success");
+                }
+            );
+        }
     }
 };
 
@@ -202,7 +213,7 @@ window.sfRevertSessionDraft = function() {
             await fetch('/api/souls/activate', {
                 method: 'POST',
                 headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ soul_id: "", session_id: sessionId })
+                body: JSON.stringify({ soul_id: "", session_id: sessionId, reset_to_global_default: true })
             });
         }
         await window.sfLoadActiveSessionState();

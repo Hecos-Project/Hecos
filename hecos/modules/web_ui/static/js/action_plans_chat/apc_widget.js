@@ -7,8 +7,14 @@
 
 (function () {
   const ns = (window._HecosActionPlanChat = window._HecosActionPlanChat || {});
+  const UI_STATE_KEY = 'hecos_action_plan_ui_state';
+  const MIN_STEPS_HEIGHT = 48;
+  const DEFAULT_ROWS = 5;
+
+  const DISMISSED_PLANS_KEY = 'hecos_ap_dismissed_ids';
   let _collapsed = false;
   let _lastPlan = null;
+  let _prevPlanStatus = '';
   let _lastHandlers = null;
   let _launchingPlanId = '';
   let _launchingMode = 'execute';
@@ -16,6 +22,196 @@
   let _modalOpen = false;
   let _modalEditMode = false;
   let _escBound = false;
+  let _stepsResizeObserver = null;
+  let _isDraggingResize = false;
+
+  function _readDismissedIds() {
+    try {
+      const raw = JSON.parse(sessionStorage.getItem(DISMISSED_PLANS_KEY) || '[]');
+      return Array.isArray(raw) ? raw.map((x) => String(x)) : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function isPlanDismissed(planId) {
+    const clean = String(planId || '').trim();
+    return Boolean(clean && _readDismissedIds().includes(clean));
+  }
+
+  function setPlanDismissed(planId, dismissed = true) {
+    const clean = String(planId || '').trim();
+    if (!clean) return;
+    let cur = _readDismissedIds();
+    if (dismissed) {
+      if (!cur.includes(clean)) cur.push(clean);
+      cur = cur.slice(-30);
+    } else {
+      cur = cur.filter((id) => id !== clean);
+    }
+    try {
+      sessionStorage.setItem(DISMISSED_PLANS_KEY, JSON.stringify(cur));
+    } catch (_) {}
+  }
+
+  function _clampRows(val) {
+    const n = parseInt(val, 10);
+    if (!Number.isFinite(n)) return DEFAULT_ROWS;
+    return Math.max(1, Math.min(50, n));
+  }
+
+  function _maxStepsHeightPx() {
+    const vh = Number(window.innerHeight) || 900;
+    return Math.max(260, Math.round(vh * 0.70));
+  }
+
+  function _clampHeightPx(px) {
+    const n = Math.round(Number(px) || 0);
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return Math.max(MIN_STEPS_HEIGHT, Math.min(_maxStepsHeightPx(), n));
+  }
+
+  function _loadUiState() {
+    let raw = {};
+    try {
+      raw = JSON.parse(localStorage.getItem(UI_STATE_KEY) || '{}') || {};
+    } catch (_) {
+      raw = {};
+    }
+    const save = Boolean(raw.save);
+    const rows = _clampRows(raw.rows !== undefined ? raw.rows : DEFAULT_ROWS);
+    const height = save ? _clampHeightPx(raw.height) : 0;
+    return { save, rows, height };
+  }
+
+  let _uiState = _loadUiState();
+  let _sessionHeightPx = _uiState.save ? _uiState.height : 0;
+
+  function _getDetachMode() {
+    return (ns.detach && typeof ns.detach.getMode === 'function') ? ns.detach.getMode() : 'docked';
+  }
+
+  function _getCardRoot() {
+    if (_getDetachMode() === 'floating') {
+      const host = document.getElementById('ap-floating-host');
+      if (host) return host;
+    }
+    return document.getElementById('agent-plan-slot');
+  }
+
+  function _saveUiState() {
+    let prev = {};
+    try {
+      prev = JSON.parse(localStorage.getItem(UI_STATE_KEY) || '{}') || {};
+    } catch (_) {
+      prev = {};
+    }
+    const payload = {
+      save: Boolean(_uiState.save),
+      rows: _clampRows(_uiState.rows),
+      height: _uiState.save ? _clampHeightPx(_sessionHeightPx) : 0,
+    };
+    if (payload.save && prev.floatRect && typeof prev.floatRect === 'object') {
+      payload.floatRect = prev.floatRect;
+    }
+    _uiState = payload;
+    try {
+      localStorage.setItem(UI_STATE_KEY, JSON.stringify(payload));
+    } catch (_) {
+      // Ignore storage quota / privacy mode errors
+    }
+    if (payload.save && ns.detach && typeof ns.detach.saveCurrentFloatRect === 'function') {
+      ns.detach.saveCurrentFloatRect();
+    }
+  }
+
+  function _disconnectStepsObserver() {
+    if (_stepsResizeObserver) {
+      try { _stepsResizeObserver.disconnect(); } catch (_) {}
+      _stepsResizeObserver = null;
+    }
+  }
+
+  function _applyStepsHeightPx(px, persist = true) {
+    const root = _getCardRoot();
+    const stepsEl = root ? root.querySelector('.agent-plan-steps') : null;
+    const clamped = _clampHeightPx(px);
+    if (!clamped) return 0;
+    _sessionHeightPx = clamped;
+    if (stepsEl) {
+      stepsEl.classList.add('is-sized');
+      stepsEl.style.height = `${clamped}px`;
+    }
+    if (persist) _saveUiState();
+    return clamped;
+  }
+
+  function _ensureExpanded() {
+    if (!_collapsed) return;
+    _collapsed = false;
+    const root = _getCardRoot();
+    if (!root) return;
+    const card = root.querySelector('#agent-plan-active-card');
+    if (card) card.classList.remove('is-collapsed');
+    const chev = root.querySelector('#ap-chat-chevron');
+    if (chev) {
+      chev.classList.remove('fa-chevron-right');
+      chev.classList.add('fa-chevron-down');
+    }
+  }
+
+  function adaptStepsHeight(explicitRows) {
+    const root = _getCardRoot();
+    if (!root) return 0;
+    _ensureExpanded();
+    const stepsEl = root.querySelector('.agent-plan-steps');
+    const rowsInput = root.querySelector('#ap-chat-max-rows');
+    const targetRows = _clampRows(
+      explicitRows !== undefined
+        ? explicitRows
+        : (rowsInput ? rowsInput.value : _uiState.rows)
+    );
+    _uiState.rows = targetRows;
+    if (rowsInput && String(rowsInput.value) !== String(targetRows)) {
+      rowsInput.value = String(targetRows);
+    }
+
+    let targetPx = 0;
+    if (stepsEl) {
+      const stepEls = Array.from(stepsEl.querySelectorAll('.agent-plan-step'));
+      const count = Math.min(targetRows, stepEls.length);
+      if (count > 0) {
+        let sum = 0;
+        for (let i = 0; i < count; i++) {
+          sum += stepEls[i].offsetHeight || 0;
+        }
+        if (sum > 0) {
+          // 4px flex gap between items + 10px breathing room/padding
+          targetPx = sum + Math.max(0, count - 1) * 4 + 10;
+        }
+      }
+    }
+    if (!targetPx) {
+      targetPx = targetRows * 34 + 10;
+    }
+    return _applyStepsHeightPx(targetPx, true);
+  }
+
+  function fitAllSteps() {
+    const root = _getCardRoot();
+    if (!root) return 0;
+    _ensureExpanded();
+    const stepsEl = root.querySelector('.agent-plan-steps');
+    if (!stepsEl) return 0;
+    const stepCount = stepsEl.querySelectorAll('.agent-plan-step').length;
+    if (!stepCount) return 0;
+    let sum = 0;
+    stepsEl.querySelectorAll('.agent-plan-step').forEach((el) => {
+      sum += el.offsetHeight || 0;
+    });
+    const targetPx = sum > 0 ? (sum + Math.max(0, stepCount - 1) * 4 + 10) : (stepCount * 34 + 10);
+    return _applyStepsHeightPx(targetPx, true);
+  }
 
   function _tr(key, fallbackEn) {
     const val = (window.I18N && window.I18N[key]) || (typeof window.t === 'function' ? window.t(key) : '');
@@ -63,6 +259,7 @@
 
   function _buildCoderPresetOptionsHtml() {
     const allSouls = Array.isArray(window.sfState?.souls) ? window.sfState.souls : [];
+    const planningSouls = [];
     const coderSouls = [];
     const otherSouls = [];
 
@@ -73,21 +270,35 @@
       const rawModel = String(s?.model?.model_name || '').trim();
       const shortModel = _shortModelName(rawModel);
       const tags = Array.isArray(s?.meta?.tags) ? s.meta.tags.map((t) => String(t).toLowerCase()) : [];
+      const icon = String(s?.meta?.icon || '').trim();
       const isCoder = id.toLowerCase().includes('coder') || tags.includes('coding') || tags.includes('coder');
-      const entry = { id, name, rawModel, shortModel };
-      if (isCoder) {
+      const isPlanning = !isCoder && (
+        id.toLowerCase().includes('plan') ||
+        id.toLowerCase().includes('storyboard') ||
+        tags.includes('planning') ||
+        tags.includes('storyboard') ||
+        tags.includes('image_gen')
+      );
+      const entry = { id, name, rawModel, shortModel, icon };
+      if (isPlanning) {
+        planningSouls.push(entry);
+      } else if (isCoder) {
         coderSouls.push(entry);
       } else {
         otherSouls.push(entry);
       }
     }
 
-    if (coderSouls.length === 0 && otherSouls.length === 0) {
-      coderSouls.push({ id: 'hecos_coder', name: 'Hecos Coder', rawModel: '', shortModel: '' });
+    if (planningSouls.length === 0 && coderSouls.length === 0 && otherSouls.length === 0) {
+      coderSouls.push({ id: 'hecos_coder', name: 'Hecos Coder', rawModel: '', shortModel: '', icon: '💻' });
     }
 
     const activeId = String(window.sfState?.activeSoulId || '').trim();
-    const allIds = new Set([...coderSouls.map((c) => c.id), ...otherSouls.map((o) => o.id)]);
+    const allIds = new Set([
+      ...planningSouls.map((p) => p.id),
+      ...coderSouls.map((c) => c.id),
+      ...otherSouls.map((o) => o.id),
+    ]);
     const selectedId = (activeId && allIds.has(activeId)) ? activeId : '';
 
     const fmtLabel = (item, prefix = '') =>
@@ -96,9 +307,10 @@
     const fmtFullTitle = (item, prefix = '') =>
       `${prefix}${item.name}${item.rawModel ? ` — ${item.rawModel}` : ''}`;
 
-    const renderOpt = (item, prefix = '') => {
-      const disp = fmtLabel(item, prefix);
-      const tip = fmtFullTitle(item, prefix);
+    const renderOpt = (item, fallbackPrefix = '') => {
+      const pfx = item.icon ? `${item.icon} ` : fallbackPrefix;
+      const disp = fmtLabel(item, pfx);
+      const tip = fmtFullTitle(item, pfx);
       return `<option value="${_esc(item.id)}" data-display-label="${_esc(disp)}" data-full-title="${_esc(tip)}" title="${_esc(tip)}"${item.id === selectedId ? ' selected' : ''}>${_esc(disp)}</option>`;
     };
 
@@ -107,6 +319,9 @@
     const defaultOpt = `<option value="" data-display-label="${_esc(defaultDisp)}" data-full-title="${_esc(defaultTip)}" title="${_esc(defaultTip)}"${!selectedId ? ' selected' : ''}>${_esc(defaultDisp)}</option>`;
 
     let groupsHtml = '';
+    if (planningSouls.length > 0) {
+      groupsHtml += `<optgroup label="Planning &amp; Creative Presets">${planningSouls.map((p) => renderOpt(p, '🗺️ ')).join('')}</optgroup>`;
+    }
     if (coderSouls.length > 0) {
       groupsHtml += `<optgroup label="Coder Presets">${coderSouls.map((c) => renderOpt(c, '💻 ')).join('')}</optgroup>`;
     }
@@ -145,21 +360,23 @@
   }
 
   function _applyLaunchingDom(active) {
-    const slot = document.getElementById('agent-plan-slot');
-    if (!slot) return;
-    const card = slot.querySelector('#agent-plan-active-card');
-    const approveBtn = slot.querySelector('#ap-chat-approve-btn');
-    const rejectBtn = slot.querySelector('#ap-chat-reject-btn');
-    const reviseToggle = slot.querySelector('#ap-chat-revise-toggle-btn');
-    const reviseSend = slot.querySelector('#ap-chat-revise-send-btn');
-    const coderGroup = slot.querySelector('#ap-chat-coder-group');
-    const coderSelect = slot.querySelector('#ap-chat-coder-preset-select');
-    const statusPill = slot.querySelector('.agent-plan-status-pill');
+    const root = _getCardRoot();
+    if (!root) return;
+    const card = root.querySelector('#agent-plan-active-card');
+    const approveBtn = root.querySelector('#ap-chat-approve-btn');
+    const nextStepBtn = root.querySelector('#ap-chat-next-step-btn');
+    const rejectBtn = root.querySelector('#ap-chat-reject-btn');
+    const reviseToggle = root.querySelector('#ap-chat-revise-toggle-btn');
+    const reviseSend = root.querySelector('#ap-chat-revise-send-btn');
+    const coderGroup = root.querySelector('#ap-chat-coder-group');
+    const coderSelect = root.querySelector('#ap-chat-coder-preset-select');
+    const statusPill = root.querySelector('.agent-plan-status-pill');
 
     if (active) {
       if (card) card.classList.add('is-running');
       if (coderGroup) coderGroup.classList.add('is-locked');
       if (coderSelect) coderSelect.disabled = true;
+      if (nextStepBtn) nextStepBtn.disabled = true;
       if (rejectBtn) rejectBtn.disabled = true;
       if (reviseToggle) reviseToggle.disabled = true;
       if (reviseSend) reviseSend.disabled = true;
@@ -353,6 +570,9 @@
             <span class="ap-modal-meta">(${doneCount}/${steps.length} · ${pct}%)</span>
           </div>
           <div class="ap-modal-header-actions">
+            <button type="button" class="agent-plan-btn-secondary" id="ap-modal-export-btn" title="${_esc(_tr('ap_chat_btn_export_title', 'Export / Save plan to disk (.md default, .html report, .yaml, or .json via native OS dialog · Shift+Click for HTML)'))}">
+              <i class="fas fa-file-export"></i> ${_esc(_tr('ap_chat_btn_export', 'Export'))}
+            </button>
             ${canModify ? `
               <button type="button" class="agent-plan-btn-secondary" id="ap-modal-toggle-edit-btn">
                 <i class="fas ${_modalEditMode ? 'fa-eye' : 'fa-code'}"></i> ${_modalEditMode ? previewLbl : editLbl}
@@ -374,6 +594,18 @@
 
     const closeBtn = overlay.querySelector('#ap-modal-close-btn');
     if (closeBtn) closeBtn.addEventListener('click', closePlanModal);
+
+    const modalExportBtn = overlay.querySelector('#ap-modal-export-btn');
+    if (modalExportBtn) {
+      modalExportBtn.addEventListener('click', (e) => {
+        const fmt = e && e.shiftKey ? 'html' : 'md';
+        if (_lastHandlers?.onExport) {
+          _lastHandlers.onExport(_lastPlan || target, { format: fmt });
+        } else if (ns.api?.exportPlanNativeDialog) {
+          ns.api.exportPlanNativeDialog(_lastPlan || target, { format: fmt });
+        }
+      });
+    }
 
     const toggleEditBtn = overlay.querySelector('#ap-modal-toggle-edit-btn');
     if (toggleEditBtn) {
@@ -438,29 +670,137 @@
     }
   }
 
+  function _renderDetachedMiniBar(slot, plan, opts) {
+    const {
+      mode,
+      pillHtml,
+      revBadgeHtml,
+      doneCount,
+      totalSteps,
+      pct,
+      isConfirm,
+      isRunningActive,
+      isCompleted,
+    } = opts;
+
+    const modeBadgeLbl = mode === 'popout'
+      ? _esc(_tr('ap_chat_detached_popout', 'External Window'))
+      : _esc(_tr('ap_chat_detached_floating', 'Floating'));
+    const modeIcon = mode === 'popout' ? 'fa-up-right-from-square' : 'fa-up-down-left-right';
+    const focusLbl = _esc(_tr('ap_chat_btn_focus', 'Focus'));
+    const focusTitle = _esc(_tr('ap_chat_btn_focus_title', 'Bring detached plan window to front'));
+    const dockLbl = _esc(_tr('ap_chat_btn_dock', 'Dock'));
+    const dockTitle = _esc(_tr('ap_chat_btn_dock_title', 'Return plan window back into chat'));
+    const popoutLbl = _esc(_tr('ap_chat_btn_popout', 'Pop-out'));
+    const popoutTitle = _esc(_tr('ap_chat_btn_popout_title', 'Open plan in a separate window (Shift+Click for new tab)'));
+
+    const barCls = [
+      'ap-detached-bar',
+      isConfirm ? 'is-confirm' : '',
+      isRunningActive ? 'is-running' : '',
+      isCompleted ? 'is-completed' : '',
+      mode === 'popout' ? 'is-popout' : 'is-floating',
+    ].filter(Boolean).join(' ');
+
+    slot.innerHTML = `
+      <div class="${barCls}" id="ap-chat-detached-bar" data-plan-id="${_esc(plan.plan_id)}" data-detach-mode="${_esc(mode)}">
+        <div class="ap-detached-left">
+          <span class="agent-plan-status-pill">${pillHtml}</span>
+          ${revBadgeHtml}
+          <span class="ap-detached-title" title="${_esc(plan.title)}">${_esc(plan.title)}</span>
+          <span class="ap-detached-meta">(${doneCount}/${totalSteps} · ${pct}%)</span>
+          <div class="ap-detached-progress" aria-hidden="true">
+            <div class="ap-detached-progress-fill" style="width:${pct}%"></div>
+          </div>
+          <span class="ap-detached-mode-badge">
+            <i class="fas ${modeIcon}" aria-hidden="true"></i> ${modeBadgeLbl}
+          </span>
+        </div>
+        <div class="ap-detached-actions">
+          <button type="button" class="ap-detached-btn" id="ap-detached-focus-btn" title="${focusTitle}">
+            <i class="fas fa-arrow-up-right-from-square"></i> ${focusLbl}
+          </button>
+          ${mode === 'floating' ? `
+            <button type="button" class="ap-detached-btn" id="ap-detached-popout-btn" title="${popoutTitle}">
+              <i class="fas fa-up-right-from-square"></i> ${popoutLbl}
+            </button>` : ''}
+          <button type="button" class="ap-detached-btn is-primary" id="ap-detached-dock-btn" title="${dockTitle}">
+            <i class="fas fa-compress"></i> ${dockLbl}
+          </button>
+        </div>
+      </div>
+    `;
+
+    const focusBtn = slot.querySelector('#ap-detached-focus-btn');
+    if (focusBtn && ns.detach) {
+      focusBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ns.detach.focusDetached();
+      });
+    }
+
+    const popoutBtn = slot.querySelector('#ap-detached-popout-btn');
+    if (popoutBtn && ns.detach) {
+      popoutBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const sid = ns.api ? ns.api.resolveSid() : (plan.source_id || '');
+        ns.detach.openPopout(plan, sid, { asTab: Boolean(e.shiftKey) });
+      });
+    }
+
+    const dockBtn = slot.querySelector('#ap-detached-dock-btn');
+    if (dockBtn && ns.detach) {
+      dockBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ns.detach.dockBack({ closePopout: true });
+      });
+    }
+  }
+
   function renderPlanCard(plan, handlers) {
     const slot = document.getElementById('agent-plan-slot');
     if (!slot) return;
+    _disconnectStepsObserver();
     if (!plan || !Array.isArray(plan.steps) || !plan.steps.length) {
       _lastPlan = null;
+      _prevPlanStatus = '';
       _lastHandlers = null;
       _launchingPlanId = '';
       _reviseOpen = false;
       if (_modalOpen) closePlanModal();
+      if (ns.detach && typeof ns.detach.removeFloatingHost === 'function') {
+        ns.detach.removeFloatingHost();
+      }
       slot.innerHTML = '';
       return;
     }
 
+    const wasEmpty = !_lastPlan;
     const prevPlanId = _lastPlan?.plan_id || '';
+    const prevStatus = _prevPlanStatus;
     _lastPlan = plan;
     _lastHandlers = handlers || _lastHandlers;
     if (prevPlanId && prevPlanId !== plan.plan_id) {
       _reviseOpen = false;
     }
+    if (wasEmpty) {
+      _uiState = _loadUiState();
+      if (_uiState.save && _uiState.height >= MIN_STEPS_HEIGHT) {
+        _sessionHeightPx = _uiState.height;
+      }
+    }
 
+    const detachMode = _getDetachMode();
     const st = String(plan.status || 'running').toLowerCase();
     const isConfirm = st === 'awaiting_approval' || st === 'draft';
     const isCompleted = st === 'completed';
+    if (prevPlanId !== plan.plan_id) {
+      // Collapse already-completed plans into a compact header bar by default so they remain accessible
+      _collapsed = isCompleted;
+    } else if (isCompleted && prevStatus !== 'completed') {
+      _collapsed = true;
+    }
+    _prevPlanStatus = st;
     const isLaunching = Boolean(_launchingPlanId && _launchingPlanId === plan.plan_id);
     const streamingNow = _isChatStreamingNow();
     const isRunningActive = isLaunching || (st === 'running' && streamingNow);
@@ -472,18 +812,62 @@
     const rev = Number(plan.revision || 1);
     const hasBlueprint = Boolean(String(plan.plan_markdown || '').trim() || String(plan.goal || '').trim());
 
+    const busyLbl = _launchingMode === 'revise'
+      ? _esc(_tr('ap_chat_btn_revising', 'Revising...'))
+      : _esc(_tr('ap_chat_btn_starting', 'Starting...'));
+    const pillHtml = isRunningActive
+      ? `<i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> ${_launchingMode === 'revise' ? busyLbl : _esc(_statusLabel('running', plan.plan_mode))}`
+      : _esc(_statusLabel(st, plan.plan_mode));
+    const revBadgeHtml = (rev > 1 || hasBlueprint)
+      ? `<span class="ap-rev-pill" id="ap-chat-rev-badge" title="Implementation Plan revision v${rev}">v${rev}</span>`
+      : '';
+
+    let mountRoot = slot;
+    if (detachMode === 'popout' || detachMode === 'floating') {
+      _renderDetachedMiniBar(slot, plan, {
+        mode: detachMode,
+        pillHtml,
+        revBadgeHtml,
+        doneCount,
+        totalSteps: plan.steps.length,
+        pct,
+        isConfirm,
+        isRunningActive,
+        isCompleted,
+      });
+      if (detachMode === 'popout') {
+        if (ns.detach && typeof ns.detach.removeFloatingHost === 'function') {
+          ns.detach.removeFloatingHost();
+        }
+        if (_modalOpen && !_modalEditMode) {
+          openPlanModal(plan);
+        }
+        return;
+      }
+      mountRoot = ns.detach.ensureFloatingHost();
+    } else if (ns.detach && typeof ns.detach.removeFloatingHost === 'function') {
+      ns.detach.removeFloatingHost();
+    }
+
     const cardCls = [
       'agent-plan-card',
       isConfirm ? 'is-confirm' : '',
       isRunningActive ? 'is-running' : '',
       isCompleted ? 'is-completed' : '',
+      detachMode === 'floating' ? 'is-floating-card' : '',
       _collapsed ? 'is-collapsed' : '',
     ].filter(Boolean).join(' ');
 
+    const stepToggleTitle = _esc(_tr('ap_chat_step_toggle_title', 'Click to mark step done or pending manually'));
     const stepsHtml = plan.steps.map((s, idx) => {
+      const stepNum = Number(s.index || idx + 1);
+      const isStepDone = String(s.status || '').toLowerCase() === 'done';
       const checkControl = isConfirm
         ? `<input type="checkbox" class="ap-confirm-step-cb" data-idx="${idx}" checked style="margin-top:2px;accent-color:#10b981;">`
-        : _stepIcon(s.status);
+        : `<button type="button" class="ap-step-toggle-btn" data-step-index="${stepNum}" title="${stepToggleTitle}">${_stepIcon(s.status)}</button>`;
+      const manualDoneBtn = isConfirm
+        ? `<button type="button" class="ap-step-manual-done-btn${isStepDone ? ' is-done' : ''}" data-step-index="${stepNum}" title="${stepToggleTitle}" aria-label="${stepToggleTitle}">${isStepDone ? '✓' : '○'}</button>`
+        : '';
       const note = s.notes ? `<span style="color:var(--muted);margin-left:6px;">— ${_esc(s.notes)}</span>` : '';
       const filesChips = (Array.isArray(s.files) && s.files.length)
         ? `<div class="ap-step-files">${s.files.slice(0, 5).map(_renderFileChip).join('')}</div>`
@@ -493,12 +877,13 @@
         : '';
       return `
         <div class="agent-plan-step st-${_esc(s.status || 'pending')}">
-          <span style="min-width:16px;text-align:center;">${checkControl}</span>
+          <span style="min-width:18px;text-align:center;">${checkControl}</span>
           <div class="ap-step-body">
-            <div><strong>${Number(s.index || idx + 1)}.</strong> ${_esc(s.title)}${note}</div>
+            <div><strong>${stepNum}.</strong> ${_esc(s.title)}${note}</div>
             ${filesChips}
             ${detailLine}
           </div>
+          ${manualDoneBtn}
         </div>
       `;
     }).join('');
@@ -506,26 +891,55 @@
     const actionLbl = isConfirm
       ? _esc(_tr('ap_chat_btn_execute', 'Execute Plan'))
       : _esc(_tr('ap_chat_btn_continue', 'Continue Plan'));
-    const busyLbl = _launchingMode === 'revise'
-      ? _esc(_tr('ap_chat_btn_revising', 'Revising...'))
-      : _esc(_tr('ap_chat_btn_starting', 'Starting...'));
+    const nextStepLbl = _esc(_tr('ap_chat_btn_next_step', 'Next Step'));
+    const nextStepTitle = _esc(_tr('ap_chat_btn_next_step_title', 'Execute only the next pending step and pause for review'));
     const approveBtnInner = isLaunching
       ? `<i class="fas fa-circle-notch fa-spin"></i> ${busyLbl}`
       : `<i class="fas fa-play"></i> ${actionLbl}`;
-    const runCoderTitle = _esc(_tr('ap_chat_lbl_run_with_coder', 'Run with Coder'));
+    const runCoderTitle = _esc(_tr('ap_chat_lbl_run_with_coder', 'Run with Preset'));
     const viewPlanLbl = _esc(_tr('ap_chat_btn_view_plan', 'View Plan'));
     const reviseLbl = _esc(_tr('ap_chat_btn_revise', 'Revise'));
     const sendRevLbl = _esc(_tr('ap_chat_btn_send_revision', 'Send Revision'));
     const revisePlaceholder = _esc(_tr('ap_chat_revise_placeholder', 'Ask Architect to revise this plan (e.g. add auth, switch DB, change UI)...'));
     const cancelLbl = _esc(_tr('ap_chat_btn_cancel', 'Cancel'));
     const hideTitle = _esc(_tr('ap_chat_btn_hide', 'Hide'));
+    const saveUiLbl = _esc(_tr('ap_chat_save_ui', 'Save UI'));
+    const saveUiTitle = _esc(_tr('ap_chat_save_ui_title', 'Remember plan panel height and visible rows across sessions'));
+    const maxRowsLbl = _esc(_tr('ap_chat_max_rows', 'Rows:'));
+    const adaptLbl = _esc(_tr('ap_chat_btn_adapt', 'Adapt'));
+    const adaptTitle = _esc(_tr('ap_chat_btn_adapt_title', 'Adapt plan height to the configured number of step rows'));
+    const resizeTitle = _esc(_tr('ap_chat_resize_title', 'Drag to resize plan height · Double-click to fit all steps'));
+    const floatTitle = _esc(_tr('ap_chat_btn_float_title', 'Detach plan into a draggable floating window inside chat'));
+    const popoutTitle = _esc(_tr('ap_chat_btn_popout_title', 'Open plan in a separate window (Shift+Click for new tab)'));
+    const dockTitle = _esc(_tr('ap_chat_btn_dock_title', 'Return plan window back into chat'));
     const coderPresetOptions = _buildCoderPresetOptionsHtml();
-    const pillHtml = isRunningActive
-      ? `<i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> ${_launchingMode === 'revise' ? busyLbl : _esc(_statusLabel('running', plan.plan_mode))}`
-      : _esc(_statusLabel(st, plan.plan_mode));
-    const revBadgeHtml = (rev > 1 || hasBlueprint)
-      ? `<span class="ap-rev-pill" id="ap-chat-rev-badge" title="Implementation Plan revision v${rev}">v${rev}</span>`
-      : '';
+    const appliedHeight = _clampHeightPx(_sessionHeightPx);
+    const stepsCls = appliedHeight ? 'agent-plan-steps is-sized' : 'agent-plan-steps';
+    const stepsStyleAttr = appliedHeight ? ` style="height:${appliedHeight}px;"` : '';
+
+    const exportTitle = _esc(_tr('ap_chat_btn_export_title', 'Export / Save plan to disk (.md default, .html report, .yaml, or .json via native OS dialog · Shift+Click for HTML)'));
+    const importTitle = _esc(_tr('ap_chat_btn_import_title', 'Import a saved Action Plan (.md, .html, .yaml, .yml, or .json via native OS dialog)'));
+    const ioButtonsHtml = `
+      <button type="button" class="ap-icon-action-btn" id="ap-chat-export-btn" title="${exportTitle}" aria-label="${exportTitle}">
+        <i class="fas fa-file-export"></i>
+      </button>
+      <button type="button" class="ap-icon-action-btn" id="ap-chat-import-btn" title="${importTitle}" aria-label="${importTitle}">
+        <i class="fas fa-file-import"></i>
+      </button>
+    `;
+
+    const detachButtonsHtml = ns.detach ? `
+      ${detachMode === 'floating' ? `
+        <button type="button" class="ap-icon-action-btn is-dock" id="ap-chat-dock-btn" title="${dockTitle}" aria-label="${dockTitle}">
+          <i class="fas fa-compress"></i>
+        </button>` : `
+        <button type="button" class="ap-icon-action-btn" id="ap-chat-float-btn" title="${floatTitle}" aria-label="${floatTitle}">
+          <i class="fas fa-up-down-left-right"></i>
+        </button>`}
+      <button type="button" class="ap-icon-action-btn" id="ap-chat-popout-btn" title="${popoutTitle}" aria-label="${popoutTitle}">
+        <i class="fas fa-up-right-from-square"></i>
+      </button>
+    ` : '';
 
     const reviseBarHtml = (_reviseOpen && canRevise) ? `
       <div class="agent-plan-revise-bar" id="ap-chat-revise-bar">
@@ -544,9 +958,12 @@
         <button type="button" class="agent-plan-btn-approve${isLaunching ? ' is-launching' : ''}" id="ap-chat-approve-btn" title="Execute or continue the active plan using the selected model/preset"${isLaunching ? ' disabled' : ''}>
           ${approveBtnInner}
         </button>
-        <div class="agent-plan-coder-group${isLaunching ? ' is-locked' : ''}" id="ap-chat-coder-group" title="Select which Coder / Global Preset executes this Action Plan">
-          <label for="ap-chat-coder-preset-select" class="agent-plan-coder-label" title="Run with Coder — Select which Coder or Global Preset will execute this Action Plan">
-            <i class="fas fa-laptop-code"></i> ${runCoderTitle}
+        <button type="button" class="agent-plan-btn-next-step" id="ap-chat-next-step-btn" title="${nextStepTitle}"${isLaunching ? ' disabled' : ''}>
+          <i class="fas fa-forward-step"></i> ${nextStepLbl}
+        </button>
+        <div class="agent-plan-coder-group${isLaunching ? ' is-locked' : ''}" id="ap-chat-coder-group" title="Select which Global Preset executes this Action Plan">
+          <label for="ap-chat-coder-preset-select" class="agent-plan-coder-label" title="${runCoderTitle} — Select which Global Preset will execute this Action Plan">
+            <i class="fas fa-sliders"></i> ${runCoderTitle}
           </label>
           <div class="agent-plan-coder-select-wrap" id="ap-chat-coder-select-wrap" title="">
             <span class="agent-plan-coder-display" id="ap-chat-coder-display"></span>
@@ -566,31 +983,219 @@
       </div>
     ` : '';
 
-    slot.innerHTML = `
+    const cornerResizeHtml = detachMode === 'floating'
+      ? `<span class="ap-float-corner-resize" id="ap-float-corner-resize" title="${resizeTitle}" aria-hidden="true"></span>`
+      : '';
+
+    mountRoot.innerHTML = `
       <div class="${cardCls}" id="agent-plan-active-card" data-plan-id="${_esc(plan.plan_id)}">
-        <div class="agent-plan-header" id="ap-chat-toggle-header" title="Click to collapse or expand plan details">
+        <div class="agent-plan-header" id="ap-chat-toggle-header" title="${detachMode === 'floating' ? 'Drag to move · Click to collapse or expand' : 'Click to collapse or expand plan details'}">
           <div class="agent-plan-title-row">
             <span class="agent-plan-status-pill">${pillHtml}</span>
             ${revBadgeHtml}
             <span>${_esc(plan.title)}</span>
             <span style="font-size:11px;color:var(--muted);">(${doneCount}/${plan.steps.length} · ${pct}%)</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <div class="ap-header-right-controls">
+            <div class="ap-header-size-controls">
+              <label class="ap-ctrl-label" title="${saveUiTitle}">
+                <input type="checkbox" id="ap-chat-remember-size"${_uiState.save ? ' checked' : ''}> ${saveUiLbl}
+              </label>
+              <div class="ap-max-rows-box">
+                <span>${maxRowsLbl}</span>
+                <input type="number" id="ap-chat-max-rows" class="ap-dark-input" min="1" max="50" value="${_clampRows(_uiState.rows)}" aria-label="${maxRowsLbl}" title="${adaptTitle}">
+                <button type="button" id="ap-chat-adapt-btn" title="${adaptTitle}">${adaptLbl}</button>
+              </div>
+            </div>
             <button type="button" class="agent-plan-btn-view" id="ap-chat-view-plan-btn" title="Open full Implementation Plan blueprint (Markdown)">
               <i class="fas fa-file-lines"></i> ${viewPlanLbl}
             </button>
+            ${ioButtonsHtml}
+            ${detachButtonsHtml}
             <i id="ap-chat-chevron" class="fas fa-chevron-${_collapsed ? 'right' : 'down'}" style="font-size:11px;color:var(--muted);"></i>
             ${!isConfirm ? `<button type="button" id="ap-chat-hide-btn" title="${hideTitle}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;"><i class="fas fa-times"></i></button>` : ''}
           </div>
         </div>
         <div class="agent-plan-progress-bar"><div class="agent-plan-progress-fill" style="width:${pct}%"></div></div>
-        <div class="agent-plan-steps">${stepsHtml}</div>
+        <div class="${stepsCls}"${stepsStyleAttr}>${stepsHtml}</div>
         ${reviseBarHtml}
         ${actionsHtml}
+        <div class="ap-resize-handle" id="ap-chat-resize-handle" role="separator" aria-orientation="horizontal" title="${resizeTitle}">
+          <span class="ap-resize-grip" aria-hidden="true"></span>
+        </div>
+        ${cornerResizeHtml}
       </div>
     `;
 
-    const viewBtn = slot.querySelector('#ap-chat-view-plan-btn');
+    const sizeControls = mountRoot.querySelector('.ap-header-size-controls');
+    if (sizeControls) {
+      sizeControls.addEventListener('click', (e) => e.stopPropagation());
+    }
+
+    const rememberCb = mountRoot.querySelector('#ap-chat-remember-size');
+    if (rememberCb) {
+      rememberCb.addEventListener('change', (e) => {
+        e.stopPropagation();
+        _uiState.save = Boolean(rememberCb.checked);
+        if (_uiState.save && !_sessionHeightPx) {
+          const stepsElNow = mountRoot.querySelector('.agent-plan-steps');
+          const curH = stepsElNow ? Math.round(stepsElNow.getBoundingClientRect().height || stepsElNow.offsetHeight || 0) : 0;
+          if (curH >= MIN_STEPS_HEIGHT) {
+            _sessionHeightPx = _clampHeightPx(curH);
+          }
+        }
+        _saveUiState();
+      });
+    }
+
+    const rowsInput = mountRoot.querySelector('#ap-chat-max-rows');
+    if (rowsInput) {
+      rowsInput.addEventListener('change', (e) => {
+        e.stopPropagation();
+        adaptStepsHeight(rowsInput.value);
+      });
+      rowsInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          adaptStepsHeight(rowsInput.value);
+        }
+      });
+    }
+
+    const adaptBtn = mountRoot.querySelector('#ap-chat-adapt-btn');
+    if (adaptBtn) {
+      adaptBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        adaptStepsHeight(rowsInput ? rowsInput.value : _uiState.rows);
+      });
+    }
+
+    const exportBtn = mountRoot.querySelector('#ap-chat-export-btn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const fmt = e.shiftKey ? 'html' : 'md';
+        if (_lastHandlers?.onExport) {
+          _lastHandlers.onExport(plan, { format: fmt });
+        } else if (ns.api?.exportPlanNativeDialog) {
+          ns.api.exportPlanNativeDialog(plan, { format: fmt });
+        }
+      });
+    }
+
+    const importBtn = mountRoot.querySelector('#ap-chat-import-btn');
+    if (importBtn) {
+      importBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (_lastHandlers?.onImport) {
+          _lastHandlers.onImport({});
+        } else if (ns.api?.importPlanNativeDialog) {
+          ns.api.importPlanNativeDialog({}).then((res) => {
+            if (res && res.ok && !res.cancelled && res.plan) {
+              renderPlanCard(res.plan, _lastHandlers);
+            }
+          });
+        }
+      });
+    }
+
+    const floatBtn = mountRoot.querySelector('#ap-chat-float-btn');
+    if (floatBtn && ns.detach) {
+      floatBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ns.detach.setFloating();
+      });
+    }
+
+    const dockHeaderBtn = mountRoot.querySelector('#ap-chat-dock-btn');
+    if (dockHeaderBtn && ns.detach) {
+      dockHeaderBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ns.detach.dockBack({ closePopout: false });
+      });
+    }
+
+    const popoutHeaderBtn = mountRoot.querySelector('#ap-chat-popout-btn');
+    if (popoutHeaderBtn && ns.detach) {
+      popoutHeaderBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const sid = ns.api ? ns.api.resolveSid() : (plan.source_id || '');
+        ns.detach.openPopout(plan, sid, { asTab: Boolean(e.shiftKey) });
+      });
+    }
+
+    const cardEl = mountRoot.querySelector('#agent-plan-active-card');
+    const stepsEl = mountRoot.querySelector('.agent-plan-steps');
+    const resizeHandle = mountRoot.querySelector('#ap-chat-resize-handle');
+    if (resizeHandle && stepsEl) {
+      resizeHandle.addEventListener('pointerdown', (e) => {
+        if (e.button !== undefined && e.button !== 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+        _ensureExpanded();
+        const startY = e.clientY;
+        const startH = Math.round(stepsEl.getBoundingClientRect().height || stepsEl.offsetHeight || 140);
+        _isDraggingResize = true;
+        if (cardEl) cardEl.classList.add('is-resizing');
+        resizeHandle.classList.add('is-active');
+        const prevUserSelect = document.body.style.userSelect;
+        const prevCursor = document.body.style.cursor;
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'ns-resize';
+
+        const onMove = (ev) => {
+          const deltaY = ev.clientY - startY;
+          const nextH = _clampHeightPx(startH + deltaY) || MIN_STEPS_HEIGHT;
+          _sessionHeightPx = nextH;
+          stepsEl.classList.add('is-sized');
+          stepsEl.style.height = `${nextH}px`;
+        };
+        const onUp = () => {
+          _isDraggingResize = false;
+          document.removeEventListener('pointermove', onMove);
+          document.removeEventListener('pointerup', onUp);
+          document.removeEventListener('pointercancel', onUp);
+          if (cardEl) cardEl.classList.remove('is-resizing');
+          resizeHandle.classList.remove('is-active');
+          document.body.style.userSelect = prevUserSelect;
+          document.body.style.cursor = prevCursor;
+          _saveUiState();
+        };
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', onUp);
+        document.addEventListener('pointercancel', onUp);
+      });
+
+      resizeHandle.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fitAllSteps();
+      });
+    }
+
+    if (detachMode === 'floating' && ns.detach && cardEl) {
+      ns.detach.attachFloatingInteractions(mountRoot, cardEl, stepsEl, (nextH, persist) => {
+        _applyStepsHeightPx(nextH, persist);
+      });
+    }
+
+    if (stepsEl && typeof ResizeObserver !== 'undefined') {
+      _stepsResizeObserver = new ResizeObserver(() => {
+        if (_isDraggingResize || _collapsed) return;
+        const inlineH = parseFloat(stepsEl.style.height);
+        if (!Number.isFinite(inlineH) || inlineH < MIN_STEPS_HEIGHT) return;
+        const clamped = _clampHeightPx(inlineH);
+        if (clamped && clamped !== _sessionHeightPx) {
+          _sessionHeightPx = clamped;
+          stepsEl.classList.add('is-sized');
+          _saveUiState();
+        }
+      });
+      _stepsResizeObserver.observe(stepsEl);
+    }
+
+    const viewBtn = mountRoot.querySelector('#ap-chat-view-plan-btn');
     if (viewBtn) {
       viewBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -599,14 +1204,19 @@
       });
     }
 
-    const hdr = slot.querySelector('#ap-chat-toggle-header');
+    const hdr = mountRoot.querySelector('#ap-chat-toggle-header');
     if (hdr) {
       hdr.addEventListener('click', (e) => {
-        if (e.target.closest('#ap-chat-hide-btn') || e.target.closest('#ap-chat-view-plan-btn')) return;
+        if (mountRoot.dataset && mountRoot.dataset.justDragged === '1') return;
+        if (
+          e.target.closest('#ap-chat-hide-btn') ||
+          e.target.closest('#ap-chat-view-plan-btn') ||
+          e.target.closest('.ap-header-size-controls') ||
+          e.target.closest('.ap-icon-action-btn')
+        ) return;
         _collapsed = !_collapsed;
-        const card = slot.querySelector('#agent-plan-active-card');
-        if (card) card.classList.toggle('is-collapsed', _collapsed);
-        const chev = slot.querySelector('#ap-chat-chevron');
+        if (cardEl) cardEl.classList.toggle('is-collapsed', _collapsed);
+        const chev = mountRoot.querySelector('#ap-chat-chevron');
         if (chev) {
           chev.classList.toggle('fa-chevron-right', _collapsed);
           chev.classList.toggle('fa-chevron-down', !_collapsed);
@@ -614,16 +1224,21 @@
       });
     }
 
-    const hideBtn = slot.querySelector('#ap-chat-hide-btn');
+    const hideBtn = mountRoot.querySelector('#ap-chat-hide-btn');
     if (hideBtn) {
       hideBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+        setPlanDismissed(plan.plan_id, true);
+        _disconnectStepsObserver();
+        if (ns.detach && typeof ns.detach.removeFloatingHost === 'function') {
+          ns.detach.removeFloatingHost();
+        }
         slot.innerHTML = '';
       });
     }
 
     const collectSelectedSteps = () => {
-      const cbs = Array.from(slot.querySelectorAll('.ap-confirm-step-cb'));
+      const cbs = Array.from(mountRoot.querySelectorAll('.ap-confirm-step-cb'));
       if (!cbs.length) return plan.steps;
       const checked = cbs
         .filter((cb) => cb.checked)
@@ -632,7 +1247,7 @@
       return checked.length ? checked : plan.steps;
     };
 
-    const coderSelect = slot.querySelector('#ap-chat-coder-preset-select');
+    const coderSelect = mountRoot.querySelector('#ap-chat-coder-preset-select');
     if (coderSelect) {
       _syncSelectVisualDisplay();
       coderSelect.addEventListener('change', async (e) => {
@@ -645,7 +1260,7 @@
       });
     }
 
-    const reviseToggleBtn = slot.querySelector('#ap-chat-revise-toggle-btn');
+    const reviseToggleBtn = mountRoot.querySelector('#ap-chat-revise-toggle-btn');
     if (reviseToggleBtn) {
       reviseToggleBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -658,7 +1273,7 @@
       });
     }
 
-    const reviseCloseBtn = slot.querySelector('#ap-chat-revise-close-btn');
+    const reviseCloseBtn = mountRoot.querySelector('#ap-chat-revise-close-btn');
     if (reviseCloseBtn) {
       reviseCloseBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -667,8 +1282,8 @@
       });
     }
 
-    const reviseInput = slot.querySelector('#ap-chat-revise-input');
-    const reviseSendBtn = slot.querySelector('#ap-chat-revise-send-btn');
+    const reviseInput = mountRoot.querySelector('#ap-chat-revise-input');
+    const reviseSendBtn = mountRoot.querySelector('#ap-chat-revise-send-btn');
     const triggerInlineRevise = () => {
       const fb = (reviseInput?.value || '').trim();
       if (!fb || !_lastHandlers?.onRevise) return;
@@ -695,7 +1310,7 @@
       });
     }
 
-    const approveBtn = slot.querySelector('#ap-chat-approve-btn');
+    const approveBtn = mountRoot.querySelector('#ap-chat-approve-btn');
     if (approveBtn && _lastHandlers?.onExecute) {
       approveBtn.addEventListener('click', () => {
         if (approveBtn.disabled) return;
@@ -705,7 +1320,32 @@
       });
     }
 
-    const rejectBtn = slot.querySelector('#ap-chat-reject-btn');
+    const nextStepBtn = mountRoot.querySelector('#ap-chat-next-step-btn');
+    if (nextStepBtn && _lastHandlers?.onExecuteNextStep) {
+      nextStepBtn.addEventListener('click', () => {
+        if (nextStepBtn.disabled) return;
+        setLaunching(plan.plan_id, true, 'execute');
+        const chosenPreset = coderSelect?.value || '';
+        _lastHandlers.onExecuteNextStep(plan, collectSelectedSteps(), chosenPreset);
+      });
+    }
+
+    mountRoot.querySelectorAll('.ap-step-toggle-btn, .ap-step-manual-done-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const stepIdx = Number(btn.dataset.stepIndex || 0);
+        if (!stepIdx) return;
+        if (_lastHandlers?.onToggleStep) {
+          _lastHandlers.onToggleStep(plan, stepIdx);
+        } else if (ns.api?.togglePlanStep) {
+          ns.api.togglePlanStep(plan.plan_id, stepIdx).then((res) => {
+            if (res && res.ok && res.plan) renderPlanCard(res.plan, _lastHandlers);
+          });
+        }
+      });
+    });
+
+    const rejectBtn = mountRoot.querySelector('#ap-chat-reject-btn');
     if (rejectBtn && _lastHandlers?.onReject) {
       rejectBtn.addEventListener('click', () => {
         if (rejectBtn.disabled) return;
@@ -719,5 +1359,31 @@
     }
   }
 
-  ns.widget = { renderPlanCard, syncPresetOptions, setLaunching, openPlanModal, closePlanModal };
+  function rerenderCurrent() {
+    if (_lastPlan) {
+      renderPlanCard(_lastPlan, _lastHandlers);
+    }
+  }
+
+  function getStateSnapshot() {
+    return {
+      plan: _lastPlan,
+      launchingPlanId: _launchingPlanId,
+      launchingMode: _launchingMode,
+    };
+  }
+
+  ns.widget = {
+    renderPlanCard,
+    rerenderCurrent,
+    getStateSnapshot,
+    syncPresetOptions,
+    setLaunching,
+    openPlanModal,
+    closePlanModal,
+    adaptHeight: adaptStepsHeight,
+    fitAllSteps,
+    isPlanDismissed,
+    setPlanDismissed,
+  };
 })();

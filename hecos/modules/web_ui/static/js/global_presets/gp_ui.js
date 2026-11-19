@@ -241,7 +241,7 @@ window.sfRefreshUIVisibilityAndSummaries = function() {
             badge.textContent = `● Live draft (${diff.total} mod.)`;
             badge.classList.add('dirty');
         } else if (presetDiffersFromGlobal) {
-            badge.textContent = `● Session Preset`;
+            badge.textContent = window.sfState.activeSoulId ? `● Session Preset` : `● Base Configuration (No Preset)`;
             badge.classList.add('dirty');
         } else {
             badge.textContent = `✓ Synced with Defaults`;

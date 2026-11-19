@@ -462,6 +462,55 @@ class AgentExecutor:
             agent_context.append({"role": "user", "content": guard_prompt})
             return None, effective_notice
 
+        # Plan-execution guard: if full Execute Plan is running and tools were already invoked
+        # (or fake image links appeared) while pending steps remain, nudge model to finish all steps.
+        if (
+            isinstance(current_cfg, dict)
+            and current_cfg.get("_turn_execute_plan")
+            and int(current_cfg.get("_turn_single_step_index") or 0) <= 0
+            and retries_state.get("plan_exec", 0) < 2
+            and iteration < self.max_iterations
+            and not (self.state_manager and getattr(self.state_manager, "image_gen_failed", False))
+            and (
+                bool(accumulated_tool_results)
+                or "![" in (extracted_text or "")
+                or "file:///" in (extracted_text or "").lower()
+            )
+        ):
+            try:
+                from hecos.core.action_plans import get_action_plan_manager, compute_plan_progress
+                ap_mgr = get_action_plan_manager()
+                act_p = ap_mgr.resolve_plan(
+                    plan_id=str(current_cfg.get("_turn_execute_plan") or ""),
+                    source_id=self.session_id or "",
+                )
+                if act_p and act_p.get("status") not in ("completed", "cancelled", "rejected"):
+                    prog = compute_plan_progress(act_p)
+                    rem_steps = [
+                        s for s in (act_p.get("steps") or [])
+                        if s.get("status") not in ("done", "skipped")
+                    ]
+                    if prog.get("total", 0) > 0 and rem_steps:
+                        retries_state["plan_exec"] = retries_state.get("plan_exec", 0) + 1
+                        nxt = rem_steps[0]
+                        rem_preview = ", ".join(f"Step {s.get('index')} ({s.get('title')})" for s in rem_steps[:5])
+                        logger.warning(
+                            f"[AGENT] Action Plan '{act_p.get('plan_id')}' still has {len(rem_steps)} remaining step(s) — prompting continuation."
+                        )
+                        agent_context.append({"role": "assistant", "content": str(raw_response or extracted_text or "")})
+                        agent_context.append({
+                            "role": "user",
+                            "content": (
+                                f"[SYSTEM PLAN GUARD]: Only {prog['done']}/{prog['total']} steps of '{act_p.get('title')}' are marked done. "
+                                f"Remaining unexecuted steps: {rem_preview}. "
+                                f"Do NOT stop early or invent ungenerated files/links! Execute Step {nxt.get('index')} ('{nxt.get('title')}') NOW using your real tools, "
+                                f"and call `ACTION_PLANS__update_step(step_index={nxt.get('index')}, status='done', notes='...')` after each finished step."
+                            ),
+                        })
+                        return None, effective_notice
+            except Exception as _pg_err:
+                logger.debug(f"[AGENT] Plan continuation guard skipped: {_pg_err}")
+
         done_msg = tr("Risposta formulata", "Response formulated")
         llm_step["result_preview"] = done_msg
 
@@ -702,12 +751,35 @@ class AgentExecutor:
             logger.info("[AGENT] Agentic Loop is disabled in config. Running single iteration.")
             self.max_iterations = 1
 
+        boot_cfg = self._resolve_current_cfg()
+        _exec_plan_id = str(boot_cfg.get("_turn_execute_plan") or "").strip() if isinstance(boot_cfg, dict) else ""
+        try:
+            _single_step_idx = int(boot_cfg.get("_turn_single_step_index") or 0) if isinstance(boot_cfg, dict) else 0
+        except (TypeError, ValueError):
+            _single_step_idx = 0
+        _exec_plan = None
+        if _exec_plan_id:
+            try:
+                from hecos.core.action_plans import get_action_plan_manager
+                _exec_plan = get_action_plan_manager().resolve_plan(
+                    plan_id=_exec_plan_id,
+                    source_id=self.session_id or "",
+                )
+            except Exception:
+                _exec_plan = None
+
         try:
             from hecos.core.processing.tool_dispatcher import get_requested_image_limit
             if self.state_manager:
-                self.state_manager.requested_image_limit = get_requested_image_limit(user_text)
+                self.state_manager.requested_image_limit = get_requested_image_limit(
+                    user_text,
+                    active_plan=_exec_plan,
+                    single_step_index=_single_step_idx,
+                )
                 self.state_manager.total_images_in_turn = 0
                 self.state_manager.image_gen_failed = False
+                self.state_manager.active_execute_plan_id = str((_exec_plan or {}).get("plan_id") or _exec_plan_id or "")
+                self.state_manager.active_execute_single_step = _single_step_idx
         except Exception as _e:
             logger.debug(f"[AGENT] Failed to set image limit: {_e}")
 
@@ -734,8 +806,12 @@ class AgentExecutor:
             logger.info(f"[AGENT] Resuming session from checkpoint at step {iteration}/{self.max_iterations}")
 
         boot_cfg = self._resolve_current_cfg()
-        if not self._explicit_max_iterations and _is_coding_loop_active(boot_cfg):
-            self.max_iterations = max(self.max_iterations, 25)
+        if not self._explicit_max_iterations:
+            if _is_coding_loop_active(boot_cfg):
+                self.max_iterations = max(self.max_iterations, 25)
+            if _exec_plan_id and _single_step_idx == 0:
+                step_count = len((_exec_plan or {}).get("steps") or [])
+                self.max_iterations = max(self.max_iterations, min(45, max(25, step_count * 2 + 6)))
 
         self._persist_checkpoint(
             user_text=user_text,

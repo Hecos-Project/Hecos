@@ -568,9 +568,23 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
 
                 else:
 
-                    # The user selected "No active global preset" or clicked Reset, so we clear all overrides
+                    reset_to_global = bool(data.get("reset_to_global_default"))
 
-                    overrides = {}
+                    if reset_to_global:
+
+                        # Reset Chat: clear all session overrides so the chat inherits the system Global Default
+
+                        overrides = {}
+
+                    else:
+
+                        # User explicitly chose "Base Configuration (No Preset)":
+
+                        # Clear previous preset/draft overrides AND pin active_global_preset="" so this chat
+
+                        # uses Central Hub system.yaml directly without snapping back to any Global Default preset.
+
+                        overrides = {"active_global_preset": ""}
 
                 
 
@@ -614,7 +628,23 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
 
             else:
 
-                logger.info("[GlobalPresets] No soul, skipping emit")
+                logger.info("[GlobalPresets] Base Configuration (No Preset) activated — syncing base persona")
+
+                try:
+
+                    active_cfg_mgr = cfg_mgr or getattr(__import__("sys"), "hecos_config_manager", None)
+
+                    base_p = (active_cfg_mgr.config if active_cfg_mgr else {}).get("ai", {}).get("active_personality")
+
+                    if base_p:
+
+                        from hecos.core.events import emit
+
+                        emit("persona_switched", {"new_persona": base_p})
+
+                except Exception:
+
+                    pass
 
 
 

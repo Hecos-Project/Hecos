@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="{{ (zconfig.language if zconfig else 'en') or 'en' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hecos — Action Plan Viewer</title>
+  <link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/action_plans.css?v={{ version }}&t=20261119_agnostic1">
+  <script src="/static/vendor/marked.min.js"></script>
+</head>
+<body class="ap-viewer-body">
+  <div id="ap-viewer-root" class="ap-viewer-shell"></div>
+
+  <script>
+    window.I18N = {{ translations | tojson }};
+    window.HECOS_VIEWER_PARAMS = {
+      planId: {{ plan_id | tojson }},
+      sessionId: {{ sid | tojson }},
+      version: {{ version | tojson }}
+    };
+  </script>
+  <script src="/static/js/action_plans_chat/apc_api.js?v={{ version }}&t=20261119_mdexport1"></script>
+  <script src="/static/js/action_plans_chat/apc_popout_viewer.js?v={{ version }}&t=20261119_mdexport2"></script>
+</body>
+</html>

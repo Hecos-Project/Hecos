@@ -168,7 +168,29 @@ def eval_early_termination(
     wants_synthesis = bool(_NETSEARCH_SYNTHESIS_INTENT_RE.search(user_text or ""))
 
     if has_generated_img and all_images_done and doc_satisfied:
-        return True, tr("Immagine generata e risposta formulata", "Image generated and response formulated")
+        exec_plan_id = str(getattr(state_manager, "active_execute_plan_id", "") or "").strip() if state_manager else ""
+        single_step_idx = int(getattr(state_manager, "active_execute_single_step", 0) or 0) if state_manager else 0
+        img_failed = bool(getattr(state_manager, "image_gen_failed", False)) if state_manager else False
+        plan_allows_early_stop = True
+        if exec_plan_id and not img_failed:
+            try:
+                from hecos.core.action_plans import get_action_plan_manager
+                plan = get_action_plan_manager().resolve_plan(plan_id=exec_plan_id)
+                if plan:
+                    steps = plan.get("steps") or []
+                    if single_step_idx > 0:
+                        target_step = next(
+                            (s for s in steps if int(s.get("index") or 0) == single_step_idx),
+                            None,
+                        )
+                        if target_step and target_step.get("status") not in ("done", "skipped"):
+                            plan_allows_early_stop = False
+                    elif any(s.get("status") not in ("done", "skipped") for s in steps):
+                        plan_allows_early_stop = False
+            except Exception:
+                pass
+        if plan_allows_early_stop:
+            return True, tr("Immagine generata e risposta formulata", "Image generated and response formulated")
 
     if has_search_card and not has_pending_vision_review and doc_satisfied and has_text:
         if iteration == 1 and wants_synthesis:

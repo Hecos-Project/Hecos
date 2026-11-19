@@ -9,7 +9,8 @@
           {{ t('ap_hub_desc') or 'Shared core module across Agent, Coder, Plugins, Apps, and Flows: manages multi-step planning, interactive approval, and automatic resume after crash, timeout, or interruption.' }}
         </p>
       </div>
-      <div style="display:flex; gap:8px;">
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-sm btn-outline" id="ap-open-folder-btn" title="media/action_plans"><i class="fas fa-folder-open"></i> {{ t('ap_btn_open_folder') or 'Plans Folder' }}</button>
         <button type="button" class="btn btn-sm btn-outline" id="ap-refresh-btn"><i class="fas fa-sync-alt"></i> {{ t('ap_btn_refresh') or 'Refresh' }}</button>
         <button type="button" class="btn btn-sm btn-outline" id="ap-purge-btn"><i class="fas fa-broom"></i> {{ t('ap_btn_purge') or 'Purge Expired' }}</button>
       </div>
@@ -110,6 +111,6 @@
 
 </div>
 
-<script src="/static/js/action_plans_hub/aph_api.js?v={{ version }}"></script>
-<script src="/static/js/action_plans_hub/aph_render.js?v={{ version }}"></script>
-<script src="/static/js/action_plans_hub/aph_bootstrap.js?v={{ version }}"></script>
+<script src="/static/js/action_plans_hub/aph_api.js?v={{ version }}&t=20261119_mdexport2"></script>
+<script src="/static/js/action_plans_hub/aph_render.js?v={{ version }}&t=20261119_mdexport2"></script>
+<script src="/static/js/action_plans_hub/aph_bootstrap.js?v={{ version }}&t=20261119_mdexport2"></script>

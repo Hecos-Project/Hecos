@@ -151,11 +151,25 @@ class ActionPlansTools:
         return mgr.format_plan_summary(plan)
 
     def complete_plan(self, summary: str = "", status: str = "completed", plan_id: str = "") -> str:
-        """Finalize the active Action Plan once work and verification are complete."""
+        """Finalize the active Action Plan once ALL steps have been executed and verified."""
         mgr = get_action_plan_manager()
-        done_plan = mgr.complete_plan(plan_id=plan_id, status=status, summary=summary)
+        done_plan = mgr.complete_plan(
+            plan_id=plan_id,
+            status=status,
+            summary=summary,
+            allow_incomplete=False,
+        )
         if not done_plan:
             return "[ACTION_PLAN] No active action plan found to complete."
+        if done_plan.get("_completion_blocked"):
+            rem = ", ".join(done_plan.get("_incomplete_steps") or [])
+            return (
+                "[ACTION_PLAN COMPLETION BLOCKED] Cannot finalize plan as 'completed' yet because "
+                f"remaining steps have NOT been executed: {rem}.\n"
+                "Continue executing the remaining steps in order using your tools, call "
+                "`ACTION_PLANS__update_step(step_index=<N>, status=\"done\", notes=\"...\")` after EACH step, "
+                "and call `complete_plan` ONLY when all steps are done."
+            )
         return f"[ACTION_PLAN FINALIZED]\n{mgr.format_plan_summary(done_plan)}"
 
 

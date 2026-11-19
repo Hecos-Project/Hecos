@@ -24,6 +24,15 @@ from hecos.core.action_plans.flow_checkpoints import (
     mark_flow_checkpoint_status,
     save_flow_checkpoint,
 )
+from hecos.core.action_plans.io_codec import (
+    EXPORT_SCHEMA_VERSION,
+    SUPPORTED_EXPORT_FORMATS,
+    format_from_filename,
+    normalize_export_format,
+    parse_imported_plan_content,
+    serialize_plan_for_export,
+    suggest_plan_filename,
+)
 from hecos.core.action_plans.manager import ActionPlanManager, get_action_plan_manager
 from hecos.core.action_plans.models import (
     ACTIVE_PLAN_STATUSES,
@@ -39,7 +48,10 @@ from hecos.core.action_plans.store import (
     find_latest_plan_for_source,
     list_plans,
     load_plan,
+    resolve_media_plans_dir,
     save_plan,
+    sync_all_plans_to_media_dir,
+    sync_plan_media_mirror,
 )
 
 __all__ = [
@@ -51,6 +63,13 @@ __all__ = [
     "RESUMABLE_FLOW_STATUSES",
     "ActionPlanManager",
     "get_action_plan_manager",
+    "EXPORT_SCHEMA_VERSION",
+    "SUPPORTED_EXPORT_FORMATS",
+    "format_from_filename",
+    "normalize_export_format",
+    "serialize_plan_for_export",
+    "parse_imported_plan_content",
+    "suggest_plan_filename",
     "build_plan_markdown_document",
     "compute_plan_progress",
     "get_action_plans_config",
@@ -62,6 +81,9 @@ __all__ = [
     "find_latest_plan_for_source",
     "delete_plan",
     "cleanup_expired_plans",
+    "resolve_media_plans_dir",
+    "sync_plan_media_mirror",
+    "sync_all_plans_to_media_dir",
     "await_plan_approval",
     "cancel_pending_approval",
     "has_pending_approval",

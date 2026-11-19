@@ -111,6 +111,7 @@ def init_chat_api_routes(app, cfg_mgr, logger):
             "plan_only": bool(data.get("plan_only")),
             "revise_plan_id": str(data.get("revise_plan_id") or "").strip(),
             "execute_plan_id": str(data.get("execute_plan_id") or "").strip(),
+            "execute_step_index": int(data.get("execute_step_index") or 0),
             "coder_preset_id": str(data.get("coder_preset_id") or "").strip(),
             "fast_code": bool(data.get("fast_code")),
         }
@@ -473,8 +474,15 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         if request.method == "POST":
             data = request.get_json(force=True) or {}
             overrides = data.get("config", {})
+            if not isinstance(overrides, dict):
+                overrides = {}
             
             old_overrides = get_session_config(session_id) or {}
+            # Preserve explicit preset choice (including active_global_preset == "" for Base Configuration / No Preset)
+            # whenever normal per-chat overrides/drafts are saved without specifying active_global_preset.
+            if "active_global_preset" not in overrides and "active_global_preset" in old_overrides:
+                overrides["active_global_preset"] = old_overrides["active_global_preset"]
+
             old_p = old_overrides.get("ai", {}).get("active_personality")
             new_p = overrides.get("ai", {}).get("active_personality")
             

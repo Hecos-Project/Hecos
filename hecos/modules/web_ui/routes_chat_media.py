@@ -289,7 +289,12 @@ def init_chat_media_routes(app, logger):
     def api_open_media_folder():
         """Opens the centralized media folder (or subfolder) in the native OS file manager."""
         target = request.args.get("target") or (request.get_json(silent=True) or {}).get("target")
-        folder = IMAGES_DIR if target == "images" else MEDIA_DIR
+        if target == "images":
+            folder = IMAGES_DIR
+        elif target in ("action_plans", "plans"):
+            folder = os.path.join(MEDIA_DIR, "action_plans")
+        else:
+            folder = MEDIA_DIR
         os.makedirs(folder, exist_ok=True)
         try:
             from hecos.core.system.os_adapter import OSAdapter
@@ -364,13 +369,17 @@ def init_chat_media_routes(app, logger):
         if not path or not os.path.exists(path):
             docs_dir = os.path.join(MEDIA_DIR, "documents")
             workspace_dir = os.path.join(MEDIA_DIR, "workspace")
+            plans_dir = os.path.join(MEDIA_DIR, "action_plans")
             basename = os.path.basename(path)
             candidate_doc = os.path.join(docs_dir, basename)
             candidate_ws = os.path.join(workspace_dir, basename)
+            candidate_plan = os.path.join(plans_dir, basename)
             if os.path.exists(candidate_doc):
                 path = candidate_doc
             elif os.path.exists(candidate_ws):
                 path = candidate_ws
+            elif os.path.exists(candidate_plan):
+                path = candidate_plan
             else:
                 # Match if filename was concatenated without slashes (e.g. C:Hecos...file.pdf)
                 matched = False

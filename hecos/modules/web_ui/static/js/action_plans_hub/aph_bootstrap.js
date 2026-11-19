@@ -88,6 +88,17 @@
     if (refBtn) refBtn.addEventListener('click', refresh);
     const purgeBtn = document.getElementById('ap-purge-btn');
     if (purgeBtn) purgeBtn.addEventListener('click', purgeExpired);
+    const openFolderBtn = document.getElementById('ap-open-folder-btn');
+    if (openFolderBtn) {
+      openFolderBtn.addEventListener('click', async () => {
+        try {
+          const res = await ns.api.openFolder();
+          _toast(`${_tr('ap_toast_folder_opened', 'Opened plans folder:')} ${res.path || 'media/action_plans'}`, false);
+        } catch (err) {
+          _toast(`Action Plans: ${err.message || err}`, true);
+        }
+      });
+    }
   }
 
   window.ActionPlansHub = { refresh, save, purgeExpired, bindEvents };

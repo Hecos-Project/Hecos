@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "session_id": "99d6e6b7-88a0-4400-aea7-c1cc0fd3bb5d",
+  "user_id": "admin",
+  "user_text": "procedi con tutti gli step.",
+  "iteration": 0,
+  "max_iterations": 24,
+  "status": "completed",
+  "reason": "ok",
+  "model_label": "gemma-4-abliterated:12b-qat (ollama)",
+  "plan_id": "plan_27bcd86d6fcb",
+  "retries_state": {
+    "stream": 0,
+    "file": 0,
+    "netsearch": 0
+  },
+  "agent_context": [],
+  "accumulated_tool_results": [],
+  "created_at": 1795079556.4128249,
+  "updated_at": 1795081087.677014,
+  "final_preview": "Ottimo, Antonio. Procedo immediatamente con la generazione di tutta la serie \"L'Evoluzione della Grazia\". Attiverò il motore grafico per creare tutti e 10 gli scatti sequenzialmente, catturando ogni m"
+}

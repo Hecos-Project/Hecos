@@ -23,6 +23,9 @@
       body: JSON.stringify(cfg),
     }),
     deletePlan: (planId) => _jsonFetch(`/api/action-plans/${encodeURIComponent(planId)}`, { method: 'DELETE' }),
+    openFolder: () => _jsonFetch('/api/action-plans/open-folder', { method: 'POST' }),
+    exportPlanUrl: (planId, fmt = 'md') => `/api/action-plans/${encodeURIComponent(planId)}/export?format=${encodeURIComponent(fmt)}`,
+    viewerUrl: (planId, sid = '') => `/action-plan-viewer?plan_id=${encodeURIComponent(planId)}&sid=${encodeURIComponent(sid || '')}`,
     purge: (payload) => _jsonFetch('/api/action-plans/checkpoints/purge', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

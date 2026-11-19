@@ -1103,7 +1103,8 @@ class PromptBuilder:
                     or "EXECUTOR__*" in sel_list
                     or "EXECUTOR__run_aider_task" in sel_list
                 )
-                if pname_low and pname_low != "hecos_coder" and aider_tool_allowed:
+                _skip_aider_in_plan_only = bool(isinstance(config, dict) and (config.get("_turn_plan_only") or config.get("_turn_revise_plan_id")))
+                if pname_low and pname_low != "hecos_coder" and aider_tool_allowed and not _skip_aider_in_plan_only:
                     from hecos.modules.executor.aider_bridge import resolve_aider_command, _read_executor_cfg
                     if _read_executor_cfg("aider_enabled", True) and resolve_aider_command() is not None:
                         file_manager_rules += (
@@ -1161,7 +1162,12 @@ class PromptBuilder:
                 active_plan = None
                 try:
                     ap_mgr = get_action_plan_manager()
-                    active_plan = ap_mgr.resolve_plan(plan_id=revise_plan_id) if revise_plan_id else ap_mgr.resolve_plan()
+                    _exec_plan_id = str(config.get("_turn_execute_plan") or "").strip() if isinstance(config, dict) else ""
+                    _target_pid = revise_plan_id or _exec_plan_id
+                    if _target_pid:
+                        active_plan = ap_mgr.resolve_plan(plan_id=_target_pid)
+                    else:
+                        active_plan = ap_mgr.resolve_plan(source_id=str(session_id or ""))
                 except Exception:
                     active_plan = None
 
@@ -1183,20 +1189,20 @@ class PromptBuilder:
                         active_plan, max_chars=_blueprint_budget
                     )
                     file_manager_rules += (
-                        "\n### ✏️ ARCHITECT MODE — IMPLEMENTATION PLAN REVISION (NO CODE EXECUTION YET) ###\n"
-                        f"You are revising the active Implementation Plan (`{active_plan.get('plan_id')}`, current revision v{active_plan.get('revision', 1)}).\n\n"
+                        "\n### ✏️ ARCHITECT MODE — ACTION PLAN REVISION (PLANNING ONLY, NO EXECUTION YET) ###\n"
+                        f"You are revising the active Action Plan (`{active_plan.get('plan_id')}`, current revision v{active_plan.get('revision', 1)}).\n\n"
                         f"CURRENT PLAN:\n{current_doc}\n\n"
                         "REVISION RULES:\n"
-                        "1. You may inspect existing workspace files with read-only tools (`EXECUTOR__project_tree`, `EXECUTOR__read_file`, etc.) if needed.\n"
-                        "2. Incorporate the user's requested changes carefully while preserving all unaffected sections, file paths, schemas, and tests.\n"
+                        "1. You may inspect context using read-only tools available in your active preset (e.g. reading files or searching info) if needed.\n"
+                        "2. Incorporate the user's requested changes carefully while preserving all unaffected sections, specs, shots/phases, file paths, or criteria.\n"
                         "3. Call `ACTION_PLANS__revise_plan(plan_id='"
                         f"{active_plan.get('plan_id')}"
                         "', revision_note='<what changed>', title='<updated title>', goal='<concise goal>', "
-                        "plan_markdown='<full updated Implementation Plan Markdown>', "
-                        "steps=[{\"title\": \"...\", \"files\": [\"[NEW] path/file.py\"], \"details\": \"...\"}, ...], "
-                        "verification_plan='<concrete tests & checks>')`.\n"
-                        "4. Write the Implementation Plan in the SAME language as the user's message and STOP immediately after calling `revise_plan`. "
-                        "Do NOT create directories, write/patch/delete files, or run commands in this turn.\n"
+                        "plan_markdown='<full updated Plan Blueprint Markdown>', "
+                        "steps=[{\"title\": \"...\", \"files\": [\"optional paths or assets\"], \"details\": \"...\"}, ...], "
+                        "verification_plan='<concrete completion/verification criteria>')`.\n"
+                        "4. Write the Plan in the SAME language as the user's message and STOP immediately after calling `revise_plan`. "
+                        "Do NOT execute mutating actions, generate final assets, or edit workspace files in this turn.\n"
                     )
                 elif is_plan_only_turn:
                     existing_note = ""
@@ -1207,37 +1213,56 @@ class PromptBuilder:
                             "If the user is requesting a brand-new unrelated project/task, call `ACTION_PLANS__create_plan(...)`.\n"
                         )
                     file_manager_rules += (
-                        "\n### 📋 ARCHITECT MODE — IMPLEMENTATION PLAN (NO CODE EXECUTION YET) ###\n"
-                        "The user requested a detailed **Implementation Plan** FIRST — NOT a bare to-do list and NOT code execution yet.\n"
-                        "1. You may optionally use read-only inspection tools (`EXECUTOR__project_tree`, `EXECUTOR__read_file`, `EXECUTOR__list_dir`) to inspect existing project files.\n"
+                        "\n### 📋 ARCHITECT MODE — ACTION PLAN FIRST (NO EXECUTION YET) ###\n"
+                        "The user requested a detailed, structured **Action Plan / Blueprint** FIRST — NOT a bare to-do list and NOT execution yet.\n"
+                        "Adapt the blueprint naturally to the user's domain AND your active Global Preset instructions (software/coding, storyboard/photo shoot, travel/event itinerary, research, or general multi-step workflow).\n"
+                        "1. You may optionally use read-only inspection/research tools available in your active preset if helpful before planning.\n"
                         "2. Call `ACTION_PLANS__create_plan(...)` (NEVER pass `require_approval=False`) populating ALL key fields:\n"
-                        "   - `title`: Concise project/feature title.\n"
-                        "   - `goal`: 1-3 sentence technical objective & scope.\n"
-                        "   - `plan_markdown`: A rich, concrete engineering Implementation Plan in Markdown (written in the SAME language as the user) using these sections:\n"
-                        "     * `## Goal & Context` — Problem statement, scope, and key constraints.\n"
-                        "     * `## Architecture & Technical Decisions` — Stack, folder layout, data model / DB tables & columns, API endpoints & payloads, state flow, and trade-offs.\n"
-                        "     * `## Proposed Changes` — Grouped by component/layer (`### Backend`, `### Frontend`, `### Tests`, etc.). For EACH file use `[NEW]`, `[MODIFY]`, or `[DELETE]` + exact relative path, and specify classes, functions, routes, UI components, and edge cases.\n"
-                        "     * `## Verification Plan` — Exact automated tests (test file, test cases, assertions), command to run, and runtime/endpoint verification steps.\n"
-                        "     * `## Open Questions` — Optional, only if an ambiguity genuinely requires user input before coding.\n"
-                        "   - `steps`: Ordered JSON array of 4 to 9 actionable execution steps aligned 1:1 with Proposed Changes & Verification Plan, using rich objects:\n"
-                        "     `[{\"title\": \"Implement SQLite ledger module\", \"files\": [\"[NEW] expense_radar/ledger.py\"], \"details\": \"Tables expenses & budgets, CRUD + summary + CSV export\"}, ...]`\n"
-                        "   - `verification_plan`: Concrete test commands and acceptance criteria.\n"
+                        "   - `title`: Concise plan/project title.\n"
+                        "   - `goal`: 1-3 sentence objective & scope.\n"
+                        "   - `plan_markdown`: A rich, concrete Blueprint in Markdown (written in the SAME language as the user) using clear structured sections:\n"
+                        "     * `## Goal & Context` — Objective, scope, audience/constraints, and key guidelines.\n"
+                        "     * `## Architecture & Decisions` (or domain-appropriate design/style/logistics section: e.g. stack & data model for software; visual style, subject & lighting continuity for storyboards/photo shoots; dates, transport & budget for travel/events).\n"
+                        "     * `## Proposed Changes` (or detailed step/shot/phase breakdown): concrete specs for each component, file (`[NEW]`/`[MODIFY]`/`[DELETE]` when coding), shot prompt & framing (for storyboards), or stage/action (for itineraries & workflows).\n"
+                        "     * `## Verification Plan` — Concrete acceptance criteria, tests/checks (for software), visual continuity checks (for storyboards), or checklist milestones.\n"
+                        "     * `## Open Questions` — Optional, only if an ambiguity genuinely requires user input before executing.\n"
+                        "   - `steps`: Ordered JSON array of actionable steps aligned 1:1 with the Blueprint, using rich objects:\n"
+                        "     `[{\"title\": \"Concise step title\", \"details\": \"Concrete execution details, prompt, or deliverable\", \"files\": [\"optional [NEW] path/file or target asset\"]}, ...]`\n"
+                        "   - `verification_plan`: Concrete completion/verification criteria.\n"
                         f"{existing_note}"
-                        "3. STOP immediately after calling `ACTION_PLANS__create_plan` (or `revise_plan`). Do NOT create directories, write/patch/delete files, or run mutating commands in this turn.\n"
+                        "3. STOP immediately after calling `ACTION_PLANS__create_plan` (or `revise_plan`). Do NOT execute the plan steps, edit workspace files, or generate final images in this planning turn.\n"
                     )
                 elif active_plan and (is_execute_turn or active_plan.get("status") == "running"):
                     plan_blueprint = get_action_plan_manager().format_plan_blueprint_for_coder(
                         active_plan, max_chars=_blueprint_budget
                     )
+                    single_step_idx = 0
+                    if isinstance(config, dict) and config.get("_turn_single_step_index"):
+                        try:
+                            single_step_idx = int(config.get("_turn_single_step_index") or 0)
+                        except Exception:
+                            single_step_idx = 0
+                    if single_step_idx > 0:
+                        step_scope_rules = (
+                            f"- **SINGLE-STEP MODE ACTIVE:** Execute **ONLY Step {single_step_idx}** of this plan.\n"
+                            f"- Use the tools and instructions provided by your active preset (e.g., `EXECUTOR__*` for code, `IMAGE_GEN__generate_image` for storyboard shots, `NETSEARCH__*` for research, or rich structured output).\n"
+                            f"- As soon as Step {single_step_idx} is completed, call `ACTION_PLANS__update_step(step_index={single_step_idx}, status='done', notes='<brief result note>')` and STOP immediately so the user can review before proceeding to the next step.\n"
+                            "- Do NOT execute later steps and do NOT call `ACTION_PLANS__complete_plan` unless this was the final remaining step.\n"
+                        )
+                    else:
+                        step_scope_rules = (
+                            "- Follow the Plan Blueprint specifications above and the instructions/tools of your active Global Preset.\n"
+                            "- Execute EVERY pending/running step sequentially using your real tools (e.g., `EXECUTOR__*` for software projects, `IMAGE_GEN__generate_image` for storyboard/photo sequences, `NETSEARCH__*` for research/travel, or detailed deliverables).\n"
+                            "- After finishing EACH step, immediately call `ACTION_PLANS__update_step(step_index=<N>, status='done', notes='<brief result / generated [[IMG:...]] or file path>')` BEFORE moving to the next step.\n"
+                            "- NEVER invent or summarize ungenerated files/images, and NEVER call `ACTION_PLANS__complete_plan` until ALL steps in the checklist are genuinely executed and marked `done`.\n"
+                            "- Once every step is completed and verified, call `ACTION_PLANS__complete_plan(summary='<final summary>')` and present a clear summary (referencing only real created files/images).\n"
+                        )
                     file_manager_rules += (
-                        "\n### ▶️ ACTIVE IMPLEMENTATION PLAN TO EXECUTE ###\n"
+                        "\n### ▶️ ACTIVE ACTION PLAN TO EXECUTE ###\n"
                         f"{plan_blueprint}\n\n"
                         f"EXECUTION RULES FOR ACTIVE PLAN (`{active_plan.get('plan_id')}`):\n"
                         "- Do NOT call `ACTION_PLANS__create_plan` again — the plan above is already active.\n"
-                        "- Follow the Architectural Blueprint specs above (exact file paths, DB schemas, routes, UI requirements, and tests).\n"
-                        "- Execute each pending/running step sequentially using real tools (`EXECUTOR__write_file`, `EXECUTOR__patch_file`, `EXECUTOR__run_project_test`, etc.).\n"
-                        "- After finishing EACH step, call `ACTION_PLANS__update_step(step_index=<N>, status='done', notes='<brief verification note>')` before moving to the next step.\n"
-                        "- When all steps are completed and verified on disk, call `ACTION_PLANS__complete_plan(summary='<final summary>')` and present the `[📄 filename](file:///...)` links.\n"
+                        f"{step_scope_rules}"
                     )
                 elif (
                     not is_fast_code_turn
@@ -1247,11 +1272,11 @@ class PromptBuilder:
                 ):
                     pending_summary = get_action_plan_manager().format_plan_summary(active_plan)
                     file_manager_rules += (
-                        "\n### 📋 PENDING IMPLEMENTATION PLAN AWAITING USER APPROVAL ###\n"
+                        "\n### 📋 PENDING ACTION PLAN AWAITING USER APPROVAL ###\n"
                         f"{pending_summary}\n"
-                        "- If the user is requesting modifications, additions, or architectural feedback on this pending plan, "
-                        "do NOT edit workspace files yet: call `ACTION_PLANS__revise_plan(...)` with the updated `plan_markdown`, `steps`, and `revision_note` and stop.\n"
-                        "- If the user wants to start implementing the approved plan, tell them they can click **Execute Plan** (or send `/code` / `/coder`), unless they explicitly asked a separate unrelated question.\n"
+                        "- If the user is requesting modifications, additions, or feedback on this pending plan, "
+                        "do NOT execute it yet: call `ACTION_PLANS__revise_plan(...)` with the updated `plan_markdown`, `steps`, and `revision_note` and stop.\n"
+                        "- If the user wants to start executing the approved plan, tell them they can select a Global Preset and click **Execute Plan** or **Next Step** (or send `/code`), unless they explicitly asked a separate unrelated question.\n"
                     )
                 elif (
                     not is_fast_code_turn
@@ -1309,7 +1334,11 @@ class PromptBuilder:
 
 
 
-        is_image_gen_active = _is_image_gen_plugin_active() if _is_tag_allowed_in_prompt("IMAGE_GEN") else False
+        is_image_gen_active = (
+            _is_image_gen_plugin_active()
+            if _is_tag_allowed_in_prompt("IMAGE_GEN")
+            else False
+        )
 
         if _is_tag_allowed_in_prompt("IMAGE_GEN") and is_image_gen_active:
 

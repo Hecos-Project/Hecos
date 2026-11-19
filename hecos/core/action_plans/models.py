@@ -79,7 +79,10 @@ def _normalize_step_files(raw_files: Any) -> List[str]:
 
 
 def normalize_steps(raw_steps: Any) -> List[Dict[str, Any]]:
-    """Coerce list[str|dict] or JSON/newline string into structured numbered step dicts."""
+    """Coerce list[str|dict] or JSON/Python/newline string into structured numbered step dicts."""
+    import ast
+    import re
+
     items: List[Any] = []
     if isinstance(raw_steps, list):
         items = raw_steps
@@ -92,11 +95,26 @@ def normalize_steps(raw_steps: Any) -> List[Dict[str, Any]]:
                     items = parsed
             except Exception:
                 pass
+            if not items:
+                try:
+                    parsed = ast.literal_eval(stripped)
+                    if isinstance(parsed, list):
+                        items = parsed
+                except Exception:
+                    pass
+            # Recover valid step titles/details from truncated JSON array strings instead of turning "[" into a step
+            if not items:
+                recovered_titles = re.findall(r'"title"\s*:\s*"((?:[^"\\]|\\.)+)"', stripped)
+                if not recovered_titles:
+                    recovered_titles = re.findall(r"'title'\s*:\s*'((?:[^'\\]|\\.)+)'", stripped)
+                if recovered_titles:
+                    items = [{"title": t.replace('\\"', '"').replace("\\'", "'")} for t in recovered_titles]
         if not items and stripped:
+            _junk = {"[", "]", "{", "}", "```", "```json", ","}
             items = [
                 line.lstrip("-*• ").strip()
                 for line in stripped.splitlines()
-                if line.lstrip("-*• ").strip()
+                if line.lstrip("-*• ").strip() and line.lstrip("-*• ").strip() not in _junk
             ]
     elif raw_steps is not None:
         items = [str(raw_steps)]

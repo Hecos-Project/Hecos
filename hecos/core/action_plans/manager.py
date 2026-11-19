@@ -332,6 +332,46 @@ class ActionPlanManager:
         emit_plan_event("step_updated", plan)
         return plan
 
+    def toggle_step_manual(
+        self,
+        *,
+        plan_id: str,
+        step_ref: Any,
+        status: str = "",
+        notes: str = "",
+    ) -> Dict[str, Any]:
+        """Manually toggle or set a step's status (done <-> pending) without spinning up the next step."""
+        with self._lock:
+            plan = self.resolve_plan(plan_id=plan_id)
+            if not plan:
+                return {"ok": False, "error": f"Plan '{plan_id}' not found"}
+
+            idx = resolve_step_index(plan, step_ref)
+            if idx is None:
+                return {"ok": False, "error": f"Step {step_ref} out of range"}
+
+            step = plan["steps"][idx]
+            cur_st = str(step.get("status") or "pending").lower()
+            desired = normalize_step_status(status) if str(status or "").strip() else (
+                "pending" if cur_st == "done" else "done"
+            )
+            step["status"] = desired
+            if notes:
+                step["notes"] = str(notes)[:500]
+            step["updated_at"] = time.time()
+
+            prog = compute_plan_progress(plan)
+            if prog["total"] > 0 and prog["done"] >= prog["total"] and prog["failed"] == 0:
+                plan["status"] = "completed"
+            elif plan.get("status") == "completed" and prog["done"] < prog["total"]:
+                plan["status"] = "awaiting_approval" if plan.get("plan_mode") == "plan_only" else "paused"
+
+            plan["updated_at"] = time.time()
+            save_plan(plan, base_dir=self.base_dir)
+
+        emit_plan_event("step_updated", plan)
+        return {"ok": True, "plan": plan}
+
     def complete_plan(
         self,
         *,
@@ -339,8 +379,13 @@ class ActionPlanManager:
         status: str = "completed",
         summary: str = "",
         source_id: str = "",
+        allow_incomplete: bool = True,
     ) -> Optional[Dict[str, Any]]:
-        """Finalize an Action Plan and emit completion notification."""
+        """
+        Finalize an Action Plan and emit completion notification.
+        When `allow_incomplete=False` (used by LLM tools) and pending/failed steps still
+        remain, refuses premature 'completed' transition so remaining steps aren't skipped.
+        """
         target_status = str(status or "completed").strip().lower()
         if target_status not in PLAN_STATUSES:
             target_status = "completed"
@@ -350,7 +395,26 @@ class ActionPlanManager:
             if not plan:
                 return None
             if target_status == "completed":
-                for st in plan.get("steps") or []:
+                steps = plan.get("steps") or []
+                if not allow_incomplete and steps:
+                    pending_or_failed = [s for s in steps if s.get("status") in ("pending", "failed")]
+                    running_steps = [s for s in steps if s.get("status") == "running"]
+                    # Block premature completion whenever any step wasn't even started, or >1 running step remains
+                    if pending_or_failed or len(running_steps) > 1:
+                        plan["status"] = "running"
+                        if not running_steps and pending_or_failed:
+                            pending_or_failed[0]["status"] = "running"
+                            pending_or_failed[0]["updated_at"] = time.time()
+                        save_plan(plan, base_dir=self.base_dir)
+                        emit_plan_event("step_updated", plan)
+                        blocked = dict(plan)
+                        blocked["_completion_blocked"] = True
+                        blocked["_incomplete_steps"] = [
+                            f"Step {s.get('index')}: {s.get('title')}"
+                            for s in (running_steps + pending_or_failed)[:8]
+                        ]
+                        return blocked
+                for st in steps:
                     if st.get("status") == "running":
                         st["status"] = "done"
                         st["updated_at"] = time.time()
@@ -556,6 +620,106 @@ class ActionPlanManager:
             metadata={"plan_only": True, "auto_extracted": True},
         )
         return res.get("plan") if isinstance(res, dict) else None
+
+    def export_plan(self, plan_id: str, fmt: str = "md") -> Dict[str, Any]:
+        """Serialize an existing plan for export as Markdown (.md), HTML (.html), YAML (.yaml), or JSON (.json)."""
+        from hecos.core.action_plans.io_codec import normalize_export_format, serialize_plan_for_export
+
+        plan = self.get_plan(plan_id=plan_id)
+        if not plan:
+            return {"ok": False, "error": f"Plan '{plan_id}' not found"}
+        clean_fmt = normalize_export_format(fmt)
+        content, mime, filename = serialize_plan_for_export(plan, fmt=clean_fmt)
+        return {
+            "ok": True,
+            "plan_id": plan["plan_id"],
+            "format": clean_fmt,
+            "mime": mime,
+            "filename": filename,
+            "content": content,
+        }
+
+    def import_plan(
+        self,
+        *,
+        content: Optional[str] = None,
+        file_path: Optional[str] = None,
+        filename: str = "",
+        source_id: str = "",
+        scope: str = "agent",
+        reset_progress: bool = False,
+    ) -> Dict[str, Any]:
+        """Import a saved JSON (.hecos-plan.json / .json) or Markdown (.md) plan into the session."""
+        import os
+        from hecos.core.action_plans.io_codec import parse_imported_plan_content
+
+        raw_text = content
+        eff_filename = str(filename or "").strip()
+        if file_path:
+            if not os.path.isfile(file_path):
+                return {"ok": False, "error": f"File not found: {file_path}"}
+            if not eff_filename:
+                eff_filename = os.path.basename(file_path)
+            with open(file_path, "r", encoding="utf-8-sig") as fh:
+                raw_text = fh.read()
+
+        if not raw_text or not str(raw_text).strip():
+            return {"ok": False, "error": "Empty plan content"}
+
+        try:
+            parsed = parse_imported_plan_content(
+                str(raw_text),
+                filename=eff_filename,
+                reset_progress=bool(reset_progress),
+            )
+        except ValueError as exc:
+            return {"ok": False, "error": str(exc)}
+
+        ctx = resolve_active_session_context()
+        eff_source = str(source_id or ctx["session_id"] or "").strip()
+
+        meta = dict(parsed.get("metadata") or {})
+        meta["plan_only"] = True
+        if eff_filename:
+            meta["imported_from"] = eff_filename
+        if file_path:
+            meta["imported_path"] = os.path.abspath(file_path)
+
+        plan = new_plan_dict(
+            title=parsed["title"],
+            steps=parsed["steps"],
+            scope=scope,
+            source_id=eff_source,
+            plan_mode="plan_only",
+            status="awaiting_approval",
+            goal=parsed.get("goal", ""),
+            plan_markdown=parsed.get("plan_markdown", ""),
+            verification_plan=parsed.get("verification_plan", ""),
+            metadata=meta,
+        )
+        plan["revision"] = max(1, int(parsed.get("revision") or 1))
+        history = list(parsed.get("revision_history") or [])
+        history.append({
+            "revision": plan["revision"],
+            "note": f"Imported from {eff_filename or 'file'}",
+            "timestamp": time.time(),
+        })
+        plan["revision_history"] = history[-20:]
+
+        with self._lock:
+            if eff_source:
+                prev = find_latest_plan_for_source(
+                    eff_source, scope=scope, statuses=ACTIVE_PLAN_STATUSES, base_dir=self.base_dir
+                )
+                if prev and prev.get("plan_id") != plan["plan_id"]:
+                    prev["status"] = "cancelled"
+                    prev["summary"] = f"Superseded by imported plan {plan['plan_id']}"
+                    prev["updated_at"] = time.time()
+                    save_plan(prev, base_dir=self.base_dir)
+            save_plan(plan, base_dir=self.base_dir)
+
+        emit_plan_event("imported", plan)
+        return {"ok": True, "plan": plan, "filename": eff_filename}
 
 
 _MANAGER_SINGLETON: Optional[ActionPlanManager] = None

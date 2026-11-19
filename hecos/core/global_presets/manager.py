@@ -109,15 +109,16 @@ def get_active_soul_id(session_id: str) -> Optional[str]:
     """
     Returns the ID of the active Global Preset (Soul) for the given session.
     Reads from the session_config_db, falling back to the global system config.
+    If the session explicitly sets `active_global_preset: ""`, returns None
+    (Base Configuration / No Preset — reads Central Hub system.yaml directly).
     """
     try:
         if session_id and session_id != "global":
             from hecos.memory.session_config_db import get_session_config
             config_override = get_session_config(session_id)
-            if config_override and isinstance(config_override, dict):
-                sid = config_override.get('active_global_preset')
-                if sid:
-                    return sid
+            if config_override and isinstance(config_override, dict) and "active_global_preset" in config_override:
+                sid = config_override.get("active_global_preset")
+                return sid if sid else None
         
         # Fallback to global
         import sys
@@ -126,6 +127,8 @@ def get_active_soul_id(session_id: str) -> Optional[str]:
             val = cfg.get("active_global_preset")
             if val:
                 return val
+            if "active_global_preset" in cfg:
+                return None
         
         # Direct file fallback if config manager is not in sys
         try:
@@ -134,7 +137,8 @@ def get_active_soul_id(session_id: str) -> Optional[str]:
                 import yaml
                 with open(sys_yaml, "r", encoding="utf-8") as _f:
                     data = yaml.safe_load(_f) or {}
-                return data.get("ai", {}).get("active_global_preset")
+                val = data.get("ai", {}).get("active_global_preset")
+                return val if val else None
         except Exception:
             pass
     except Exception as e:

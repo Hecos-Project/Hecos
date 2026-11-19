@@ -16,6 +16,7 @@ IMAGES_DIR = os.path.join(MEDIA_DIR, "images")        # AI-generated images
 SNAPSHOTS_DIR = os.path.join(MEDIA_DIR, "screenshots") # Webcam snapshots
 AUDIO_DIR = os.path.join(MEDIA_DIR, "audio")           # TTS audio files
 VIDEO_DIR = os.path.join(MEDIA_DIR, "video")           # Future: video recordings
+PLANS_DIR = os.path.join(MEDIA_DIR, "action_plans")    # Saved Action Plans (.md)
 WORKSPACE_DIR = os.path.join(MEDIA_DIR, "workspace")   # AI & user code projects
 SANDBOX_DIR = os.path.join(MEDIA_DIR, "sandbox")       # Ephemeral script execution & logs
 
@@ -24,7 +25,7 @@ def ensure_directories():
     """Ensure that all core directories exist."""
     dirs = [LOGS_DIR, MEMORY_DIR, CONFIG_DATA_DIR,
             MEDIA_DIR, IMAGES_DIR, SNAPSHOTS_DIR, AUDIO_DIR, VIDEO_DIR,
-            WORKSPACE_DIR, SANDBOX_DIR]
+            PLANS_DIR, WORKSPACE_DIR, SANDBOX_DIR]
     for d in dirs:
         if not os.path.exists(d):
             os.makedirs(d, exist_ok=True)
