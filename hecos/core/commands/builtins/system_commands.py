@@ -28,6 +28,11 @@ from hecos.core.commands.builtins.payload_commands import (
     _cmd_nomemory,
     _cmd_payload,
 )
+from hecos.core.commands.builtins.plan_commands import (
+    PLAN_COMMANDS,
+    _cmd_plan,
+    _cmd_code,
+)
 
 _log = logging.getLogger("HecosSystemCommands")
 
@@ -366,4 +371,5 @@ SYSTEM_COMMANDS: List[Dict[str, Any]] = [
     *DOC_COMMANDS,
     *PERSONA_COMMANDS,
     *PAYLOAD_COMMANDS,
+    *PLAN_COMMANDS,
 ]

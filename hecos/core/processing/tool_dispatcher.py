@@ -356,11 +356,24 @@ def extract_and_execute_tools(
 
 
 
+    def _is_aborted() -> bool:
+        if sm and getattr(sm, "webui_stop_requested", False):
+            return True
+        try:
+            from hecos.core.agent.trace_session import get_active_session
+            _ts = get_active_session()
+            _ev = getattr(_ts, "cancel_event", None) if _ts is not None else None
+            if _ev is not None and _ev.is_set():
+                return True
+        except Exception:
+            pass
+        return False
+
     for tag_info in tags_found:
 
-        if sm and getattr(sm, "webui_stop_requested", False):
+        if _is_aborted():
 
-            logger.warning("[PROCESSOR] Tool execution aborted by user via ESC.")
+            logger.warning("[PROCESSOR] Tool execution aborted by user / newer turn.")
 
             break
 
@@ -397,6 +410,56 @@ def extract_and_execute_tools(
         if module_to_call in BLACKLIST:
 
             continue
+
+        # Runtime safety guard: enforce Architect / Plan-Only boundaries even if a model
+        # hallucinates a mutating tool name that was stripped from its JSON schemas.
+        _plan_only_blocked_actions = {
+            "write_file",
+            "patch_file",
+            "run_aider_task",
+            "delete_file",
+            "move_path",
+            "create_dir",
+            "start_app",
+            "stop_app",
+            "git_restore",
+            "execute_shell_command",
+            "run_python_code",
+        }
+        try:
+            from hecos.core.agent.trace_session import get_active_session as _gas
+
+            _sess = _gas()
+            _scfg = getattr(_sess, "config", None) if _sess is not None else None
+            _is_plan_only_runtime = bool(
+                (isinstance(_scfg, dict) and _scfg.get("_turn_plan_only"))
+                or (isinstance(current_config, dict) and current_config.get("_turn_plan_only"))
+            ) and not bool(
+                (isinstance(_scfg, dict) and (_scfg.get("_turn_execute_plan") or _scfg.get("_turn_fast_code")))
+                or (isinstance(current_config, dict) and (current_config.get("_turn_execute_plan") or current_config.get("_turn_fast_code")))
+            )
+            _mod_low = str(module_to_call or "").lower()
+            _act_low = str(method_name or "").lower()
+            if _is_plan_only_runtime and (
+                (_mod_low == "executor" and _act_low in _plan_only_blocked_actions)
+                or (_mod_low == "action_plans" and _act_low in {"update_step", "complete_plan"})
+            ):
+                _mod_tag = str(module_to_call or "").upper()
+                logger.warning(
+                    f"[PROCESSOR] Blocked mutating tool {_mod_tag}__{method_name} during Plan-Only turn."
+                )
+                tool_results.append({
+                    "id": call_id,
+                    "tag": _mod_tag,
+                    "action": method_name,
+                    "output": (
+                        f"[PLAN-ONLY GUARD]: Blocked `{_mod_tag}__{method_name}` because Plan-First (Architect) mode is active. "
+                        "Only read-only inspection, `ACTION_PLANS__create_plan`, and `ACTION_PLANS__revise_plan` are permitted until the user clicks Execute Plan."
+                    ),
+                })
+                continue
+        except Exception:
+            pass
 
 
 

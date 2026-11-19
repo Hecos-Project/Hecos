@@ -43,5 +43,14 @@
     return await resp.json();
   }
 
-  ns.api = { resolveSid: _resolveSid, fetchActivePlan, approvePlan, rejectPlan };
+  async function savePlanRevision(planId, payload = {}) {
+    const resp = await fetch(`/api/action-plans/${encodeURIComponent(planId)}/revise`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload || {}),
+    });
+    return await resp.json();
+  }
+
+  ns.api = { resolveSid: _resolveSid, fetchActivePlan, approvePlan, rejectPlan, savePlanRevision };
 })();

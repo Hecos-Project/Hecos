@@ -10,9 +10,15 @@ NOTE on think parameter:
   - When think=False is requested, we use /api/chat and adapt the response format
 """
 
+import http.client
 import json
 import re
+import select
+import socket
+import struct
+import threading
 import time
+import urllib.parse
 from typing import Any, Dict, List, Optional, Union
 import requests
 
@@ -22,6 +28,385 @@ from hecos.core.logging.logger import (
     error as zlog_error,
 )
 from hecos.core.llm.payload_tracker import update_usage_telemetry, LAST_PAYLOAD_INFO
+
+
+class _OllamaAbortedError(RuntimeError):
+    """Raised internally when the active turn's cancel_event interrupts an Ollama HTTP call."""
+
+
+def _resolve_active_cancel_event() -> Optional[threading.Event]:
+    try:
+        from hecos.core.agent.trace_session import get_active_session
+        sess = get_active_session()
+        if sess is not None:
+            return getattr(sess, "cancel_event", None)
+    except Exception:
+        pass
+    return None
+
+
+def _post_json_cancellable(
+    url: str,
+    payload: Dict[str, Any],
+    *,
+    timeout: float = 900.0,
+    cancel_event: Optional[threading.Event] = None,
+) -> Dict[str, Any]:
+    """
+    POST JSON to Ollama using a cancellable socket so clicking Stop or starting a new turn
+    immediately terminates both the blocked Python wait and the Ollama server context.
+    """
+    eff_event = cancel_event or _resolve_active_cancel_event()
+    if eff_event is not None and eff_event.is_set():
+        raise _OllamaAbortedError("Turn cancelled before sending Ollama request")
+
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        resp = requests.post(url, json=payload, timeout=timeout)
+        resp.raise_for_status()
+        return resp.json()
+
+    host = parsed.hostname
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    path = parsed.path or "/"
+    if parsed.query:
+        path = f"{path}?{parsed.query}"
+
+    conn_cls = http.client.HTTPSConnection if parsed.scheme == "https" else http.client.HTTPConnection
+    conn = conn_cls(host, port, timeout=timeout)
+    hook_registered = False
+
+    def _abort_conn() -> None:
+        sock = getattr(conn, "sock", None)
+        if sock is not None:
+            try:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+            except Exception:
+                pass
+            try:
+                sock.shutdown(socket.SHUT_RDWR)
+            except Exception:
+                pass
+            try:
+                sock.close()
+            except Exception:
+                pass
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    try:
+        conn.connect()
+        if eff_event is not None:
+            from hecos.core.agent.turn_control import register_abort_hook
+            hook_registered = register_abort_hook(eff_event, _abort_conn)
+            if eff_event.is_set():
+                raise _OllamaAbortedError("Turn cancelled during Ollama connect")
+
+        body_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Content-Length": str(len(body_bytes)),
+        }
+        conn.request("POST", path, body=body_bytes, headers=headers)
+
+        # Wait interruptibly BEFORE HTTPResponse creates a buffered socket reader (_io_refs += 1),
+        # so Windows closesocket() executes immediately without blocking in C recv().
+        if eff_event is not None:
+            deadline = time.monotonic() + float(timeout or 900.0)
+            while True:
+                if eff_event.is_set():
+                    _abort_conn()
+                    raise _OllamaAbortedError("Turn cancelled while awaiting Ollama response")
+                sock = getattr(conn, "sock", None)
+                if sock is None:
+                    break
+                if hasattr(sock, "pending") and sock.pending() > 0:
+                    break
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise requests.Timeout(f"Read timed out after {timeout}s")
+                wait_slice = min(0.15, remaining)
+                try:
+                    readable, _, _ = select.select([sock], [], [], wait_slice)
+                except (ValueError, OSError):
+                    if eff_event.is_set():
+                        raise _OllamaAbortedError("Ollama socket aborted")
+                    break
+                if readable:
+                    break
+
+        resp = conn.getresponse()
+        raw_bytes = resp.read()
+        raw_text = raw_bytes.decode("utf-8", errors="replace")
+
+        if eff_event is not None and eff_event.is_set():
+            raise _OllamaAbortedError("Turn cancelled while awaiting Ollama response")
+
+        if resp.status >= 400:
+            zlog_error(f"[OLLAMA-DIRECT] HTTP {resp.status} for {path}: {raw_text[:500]}")
+            err = requests.HTTPError(
+                f"{resp.status} Server Error: {resp.reason} for url: {url}"
+            )
+            raise err
+
+        return json.loads(raw_text) if raw_text.strip() else {}
+    except _OllamaAbortedError:
+        raise
+    except (TimeoutError, socket.timeout, requests.Timeout) as exc:
+        if eff_event is not None and eff_event.is_set():
+            raise _OllamaAbortedError("Ollama request aborted by user/new turn") from exc
+        if isinstance(exc, requests.Timeout):
+            raise
+        raise requests.Timeout(str(exc)) from exc
+    except (OSError, http.client.HTTPException) as exc:
+        if eff_event is not None and eff_event.is_set():
+            raise _OllamaAbortedError("Ollama request aborted by user/new turn") from exc
+        if "timed out" in str(exc).lower() or "timeout" in str(exc).lower():
+            raise requests.Timeout(str(exc)) from exc
+        raise requests.ConnectionError(str(exc)) from exc
+    finally:
+        if hook_registered and eff_event is not None:
+            try:
+                from hecos.core.agent.turn_control import unregister_abort_hook
+                unregister_abort_hook(eff_event, _abort_conn)
+            except Exception:
+                pass
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def _emit_streaming_heartbeat() -> None:
+    """Keep WebUI inference watchdog alive while tokens stream from slow local models."""
+    try:
+        from hecos.core.agent.trace_session import get_active_session
+        sess = get_active_session()
+        if sess is not None and sess.trace_callback is not None:
+            sess.trace_callback({"type": "heartbeat"}, "debug")
+    except Exception:
+        pass
+
+
+def _post_ollama_chat_stream_cancellable(
+    url: str,
+    payload: Dict[str, Any],
+    *,
+    timeout: float = 900.0,
+    cancel_event: Optional[threading.Event] = None,
+) -> Dict[str, Any]:
+    """
+    POST JSON to Ollama `/api/chat` with `stream=True` (NDJSON) and cancellable sockets.
+    Streaming avoids premature read timeouts during long CPU/GPU generations while letting
+    the Stop button abort active requests within ~0.15s and resetting the inference watchdog.
+    """
+    eff_event = cancel_event or _resolve_active_cancel_event()
+    if eff_event is not None and eff_event.is_set():
+        raise _OllamaAbortedError("Turn cancelled before sending Ollama request")
+
+    stream_payload = dict(payload)
+    stream_payload["stream"] = True
+
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        return _post_json_cancellable(url, {**stream_payload, "stream": False}, timeout=timeout, cancel_event=eff_event)
+
+    host = parsed.hostname
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    path = parsed.path or "/"
+    if parsed.query:
+        path = f"{path}?{parsed.query}"
+
+    base_timeout = float(timeout or 900.0)
+    conn_cls = http.client.HTTPSConnection if parsed.scheme == "https" else http.client.HTTPConnection
+    conn = conn_cls(host, port, timeout=base_timeout)
+    hook_registered = False
+
+    def _abort_conn() -> None:
+        sock = getattr(conn, "sock", None)
+        if sock is not None:
+            try:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+            except Exception:
+                pass
+            try:
+                sock.shutdown(socket.SHUT_RDWR)
+            except Exception:
+                pass
+            try:
+                sock.close()
+            except Exception:
+                pass
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    def _await_sock_readable(sock, deadline_ts: float) -> None:
+        while True:
+            if eff_event is not None and eff_event.is_set():
+                _abort_conn()
+                raise _OllamaAbortedError("Turn cancelled while awaiting Ollama stream")
+            if sock is None:
+                return
+            if hasattr(sock, "pending") and sock.pending() > 0:
+                return
+            remaining = deadline_ts - time.monotonic()
+            if remaining <= 0:
+                raise requests.Timeout(f"Read timed out after {base_timeout}s")
+            wait_slice = min(0.15, remaining) if eff_event is not None else min(1.0, remaining)
+            try:
+                readable, _, _ = select.select([sock], [], [], wait_slice)
+            except (ValueError, OSError):
+                if eff_event is not None and eff_event.is_set():
+                    raise _OllamaAbortedError("Ollama socket aborted")
+                return
+            if readable:
+                return
+
+    try:
+        conn.connect()
+        if eff_event is not None:
+            from hecos.core.agent.turn_control import register_abort_hook
+            hook_registered = register_abort_hook(eff_event, _abort_conn)
+            if eff_event.is_set():
+                raise _OllamaAbortedError("Turn cancelled during Ollama connect")
+
+        body_bytes = json.dumps(stream_payload, ensure_ascii=False).encode("utf-8")
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/x-ndjson, application/json",
+            "Content-Length": str(len(body_bytes)),
+        }
+        conn.request("POST", path, body=body_bytes, headers=headers)
+
+        t_start = time.monotonic()
+        prefill_deadline = t_start + base_timeout
+        _await_sock_readable(getattr(conn, "sock", None), prefill_deadline)
+
+        resp = conn.getresponse()
+        if resp.status >= 400:
+            raw_err = resp.read().decode("utf-8", errors="replace")
+            zlog_error(f"[OLLAMA-DIRECT] HTTP {resp.status} for {path}: {raw_err[:500]}")
+            raise requests.HTTPError(f"{resp.status} Server Error: {resp.reason} for url: {url}")
+
+        _emit_streaming_heartbeat()
+        last_hb = time.monotonic()
+
+        chunk_timeout = base_timeout
+        overall_deadline = t_start + max(base_timeout * 3.0, 2700.0) if base_timeout >= 120.0 else t_start + base_timeout * 2.0
+        sock_after = getattr(conn, "sock", None)
+        if sock_after is not None:
+            try:
+                sock_after.settimeout(chunk_timeout)
+            except Exception:
+                pass
+
+        role = "assistant"
+        content_parts: List[str] = []
+        thinking_parts: List[str] = []
+        tool_calls: List[Any] = []
+        done = False
+        done_reason: Optional[str] = None
+        prompt_eval_count = 0
+        eval_count = 0
+
+        while True:
+            if eff_event is not None and eff_event.is_set():
+                _abort_conn()
+                raise _OllamaAbortedError("Turn cancelled during Ollama stream")
+
+            fp = getattr(resp, "fp", None)
+            has_buf = bool(fp is not None and hasattr(fp, "peek") and fp.peek(1))
+            if not has_buf:
+                now = time.monotonic()
+                chunk_deadline = min(now + chunk_timeout, overall_deadline)
+                _await_sock_readable(getattr(conn, "sock", None), chunk_deadline)
+
+            raw_line = resp.readline()
+            if not raw_line:
+                break
+            line_str = raw_line.decode("utf-8", errors="replace").strip()
+            if not line_str:
+                continue
+
+            chunk = json.loads(line_str)
+            if isinstance(chunk, dict) and chunk.get("error"):
+                raise RuntimeError(f"Ollama API error: {chunk.get('error')}")
+
+            msg = chunk.get("message") or {}
+            if isinstance(msg, dict):
+                if msg.get("role"):
+                    role = str(msg["role"])
+                c_piece = msg.get("content")
+                if c_piece:
+                    content_parts.append(str(c_piece))
+                t_piece = msg.get("thinking") or msg.get("reasoning") or msg.get("reasoning_content")
+                if t_piece:
+                    thinking_parts.append(str(t_piece))
+                tcs = msg.get("tool_calls")
+                if isinstance(tcs, list) and tcs:
+                    tool_calls.extend(tcs)
+
+            if chunk.get("prompt_eval_count"):
+                prompt_eval_count = int(chunk.get("prompt_eval_count") or 0)
+            if chunk.get("eval_count"):
+                eval_count = int(chunk.get("eval_count") or 0)
+
+            now = time.monotonic()
+            if now - last_hb >= 4.0:
+                _emit_streaming_heartbeat()
+                last_hb = now
+
+            if chunk.get("done"):
+                done = True
+                done_reason = chunk.get("done_reason")
+                break
+
+        msg_out: Dict[str, Any] = {
+            "role": role,
+            "content": "".join(content_parts),
+        }
+        if thinking_parts:
+            msg_out["thinking"] = "".join(thinking_parts)
+        if tool_calls:
+            msg_out["tool_calls"] = tool_calls
+
+        return {
+            "message": msg_out,
+            "done": done,
+            "done_reason": done_reason,
+            "prompt_eval_count": prompt_eval_count,
+            "eval_count": eval_count,
+        }
+    except _OllamaAbortedError:
+        raise
+    except (TimeoutError, socket.timeout, requests.Timeout) as exc:
+        if eff_event is not None and eff_event.is_set():
+            raise _OllamaAbortedError("Ollama stream aborted by user/new turn") from exc
+        if isinstance(exc, requests.Timeout):
+            raise
+        raise requests.Timeout(str(exc)) from exc
+    except (OSError, http.client.HTTPException) as exc:
+        if eff_event is not None and eff_event.is_set():
+            raise _OllamaAbortedError("Ollama stream aborted by user/new turn") from exc
+        if "timed out" in str(exc).lower() or "timeout" in str(exc).lower():
+            raise requests.Timeout(str(exc)) from exc
+        raise requests.ConnectionError(str(exc)) from exc
+    finally:
+        if hook_registered and eff_event is not None:
+            try:
+                from hecos.core.agent.turn_control import unregister_abort_hook
+                unregister_abort_hook(eff_event, _abort_conn)
+            except Exception:
+                pass
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 class _SyntheticCall:
@@ -122,31 +507,31 @@ def _call_api_chat(ollama_base: str, ollama_body_v1: Dict[str, Any], params: Dic
         "model": ollama_body_v1.get("model", ""),
         "messages": _to_native_ollama_messages(ollama_body_v1.get("messages", [])),
         "stream": False,
-        "think": ollama_body_v1.get("think", False),
     }
+    if "think" in ollama_body_v1 and ollama_body_v1.get("think") is not None:
+        native_body["think"] = ollama_body_v1["think"]
 
-    # Pass options if present
-    if "options" in ollama_body_v1:
-        native_body["options"] = ollama_body_v1["options"]
-    else:
-        native_opts = {}
-        if "temperature" in ollama_body_v1:
-            native_opts["temperature"] = ollama_body_v1["temperature"]
-        if "top_p" in ollama_body_v1:
-            native_opts["top_p"] = ollama_body_v1["top_p"]
-        if native_opts:
-            native_body["options"] = native_opts
+    # Pass options (num_ctx, num_gpu, num_predict, repeat_penalty, temperature, top_p) and promote keep_alive
+    native_opts = dict(ollama_body_v1.get("options") or {})
+    if "temperature" in ollama_body_v1 and "temperature" not in native_opts:
+        native_opts["temperature"] = ollama_body_v1["temperature"]
+    if "top_p" in ollama_body_v1 and "top_p" not in native_opts:
+        native_opts["top_p"] = ollama_body_v1["top_p"]
+    if "keep_alive" in native_opts:
+        native_body["keep_alive"] = native_opts.pop("keep_alive")
+    if native_opts:
+        native_body["options"] = native_opts
 
     # Tools are not passed since think=False is for fast/no-reasoning responses
     if ollama_body_v1.get("tools"):
         native_body["tools"] = ollama_body_v1["tools"]
 
-    zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] /api/chat with think={ollama_body_v1.get('think')} model={native_body['model']}")
-    resp = requests.post(api_chat_url, json=native_body, timeout=params.get("timeout", 900))
-    if resp.status_code >= 400:
-        zlog_error(f"[OLLAMA-DIRECT] /api/chat HTTP {resp.status_code}: {resp.text[:500]}")
-    resp.raise_for_status()
-    native_data = resp.json()
+    zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] /api/chat (streaming NDJSON) with think={ollama_body_v1.get('think')} model={native_body['model']}")
+    native_data = _post_ollama_chat_stream_cancellable(
+        api_chat_url,
+        native_body,
+        timeout=float(params.get("timeout", 900) or 900),
+    )
 
     # Normalize to OpenAI-compat format for uniform downstream parsing
     native_msg = native_data.get("message", {})
@@ -237,6 +622,47 @@ def _normalize_messages_for_ollama(messages: List[Dict[str, Any]], has_tools: bo
     return out
 
 
+def _evict_other_resident_models(ollama_base: str, target_model: str) -> List[str]:
+    """
+    Unload any OTHER Ollama model currently pinned in VRAM (e.g. from keep_alive=120m)
+    before running inference with `target_model`. Prevents Ollama's scheduler from
+    deadlocking behind a 17+ GB model when switching presets.
+    """
+    evicted: List[str] = []
+    base = ollama_base.replace("localhost", "127.0.0.1") if "localhost" in ollama_base else ollama_base
+    target_clean = str(target_model or "").replace("ollama/", "", 1).strip()
+    target_with_latest = f"{target_clean}:latest" if target_clean and ":" not in target_clean else target_clean
+    if not target_clean:
+        return evicted
+
+    try:
+        ps_resp = requests.get(f"{base}/api/ps", timeout=1.5)
+        if ps_resp.status_code != 200:
+            return evicted
+        models = ps_resp.json().get("models", []) or []
+    except Exception:
+        return evicted
+
+    for pm in models:
+        pm_name = str(pm.get("name") or pm.get("model") or "").strip()
+        if not pm_name:
+            continue
+        pm_with_latest = f"{pm_name}:latest" if ":" not in pm_name else pm_name
+        if pm_name in (target_clean, target_with_latest) or pm_with_latest in (target_clean, target_with_latest):
+            continue
+        try:
+            zlog_info("LiteLLM", f"[OLLAMA-DIRECT] Swapping model: unloading '{pm_name}' before '{target_clean}'...")
+            requests.post(
+                f"{base}/api/generate",
+                json={"model": pm_name, "prompt": "", "keep_alive": 0, "stream": False},
+                timeout=3.0,
+            )
+            evicted.append(pm_name)
+        except Exception as _ue:
+            zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] Non-fatal unload error for '{pm_name}': {_ue}")
+    return evicted
+
+
 def execute_ollama_direct(params: Dict[str, Any], stream: bool = False) -> Any:
     """
     Directly invokes Ollama's /v1/chat/completions endpoint (or /api/chat when think=False).
@@ -244,17 +670,22 @@ def execute_ollama_direct(params: Dict[str, Any], stream: bool = False) -> Any:
     and accurately record GPU residency metrics.
     """
     ollama_base = params.get("api_base", "http://localhost:11434").rstrip("/")
+    if "localhost" in ollama_base:
+        ollama_base = ollama_base.replace("localhost", "127.0.0.1")
     ollama_url = f"{ollama_base}/v1/chat/completions"
 
     has_native_tools = bool(params.get("tools"))
     # Translate LiteLLM params to OpenAI format for Ollama
+    target_model = params["model"].replace("ollama/", "", 1)
     ollama_body: Dict[str, Any] = {
-        "model": params["model"].replace("ollama/", "", 1),
+        "model": target_model,
         "messages": _normalize_messages_for_ollama(params["messages"], has_native_tools),
         "temperature": params.get("temperature", 0.7),
         "top_p": params.get("top_p", 0.9),
         "stream": False,
     }
+
+    _evict_other_resident_models(ollama_base, target_model)
 
     if params.get("tools"):
         ollama_body["tools"] = params["tools"]
@@ -268,16 +699,25 @@ def execute_ollama_direct(params: Dict[str, Any], stream: bool = False) -> Any:
         # Also: /v1/chat/completions ignores think=False; we route to /api/chat in that case
         ollama_body["think"] = extra_body["think"]
 
-    # Route to /api/chat when think=False (only endpoint that honors this for Gemma4)
-    use_api_chat = ollama_body.get("think") is False
-    if use_api_chat:
-        zlog_info("LiteLLM", "[OLLAMA-DIRECT] think=False requested -> routing to /api/chat (OpenAI compat ignores think param)")
-        data = _call_api_chat(ollama_base, ollama_body, params)
-    else:
-        zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] POST {ollama_url} model={ollama_body['model']}")
-        resp = requests.post(ollama_url, json=ollama_body, timeout=params.get("timeout", 900))
-        resp.raise_for_status()
-        data = resp.json()
+    # Route to /api/chat when think=False OR when runner options (num_ctx, num_gpu, etc.) are present:
+    # Ollama's OpenAI-compat /v1/chat/completions ignores `options` (like num_ctx=12288), causing
+    # models with large default GGUF context (e.g. Qwen 3.8 262144 ctx) to evict the pre-warmed
+    # runner and crash CUDA with a 16+ GB KV cache allocation.
+    use_api_chat = (ollama_body.get("think") is False) or bool(ollama_body.get("options"))
+    try:
+        if use_api_chat:
+            zlog_info("LiteLLM", f"[OLLAMA-DIRECT] Routing to native /api/chat (options={list((ollama_body.get('options') or {}).keys())}, think={ollama_body.get('think')})")
+            data = _call_api_chat(ollama_base, ollama_body, params)
+        else:
+            zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] POST {ollama_url} model={ollama_body['model']}")
+            data = _post_json_cancellable(
+                ollama_url,
+                ollama_body,
+                timeout=float(params.get("timeout", 900) or 900),
+            )
+    except _OllamaAbortedError as abort_exc:
+        zlog_info("LiteLLM", f"[OLLAMA-DIRECT] {abort_exc}")
+        return "⛔ Generation aborted."
 
     msg = data.get("choices", [{}])[0].get("message", {})
     content = (msg.get("content") or "").strip()
@@ -346,6 +786,9 @@ def execute_ollama_direct(params: Dict[str, Any], stream: bool = False) -> Any:
                     return f"<think>\n{reasoning}\n</think>\n\n{c2}"
                 else:
                     zlog_info("LiteLLM", "[REASONING] Retry also empty — returning thinking-only block")
+            except _OllamaAbortedError as _abort_err2:
+                zlog_info("LiteLLM", f"[OLLAMA-DIRECT] Retry aborted: {_abort_err2}")
+                return "⛔ Generation aborted."
             except Exception as _retry_err:
                 zlog_error(f"LiteLLM: [REASONING] Retry failed: {_retry_err}")
 

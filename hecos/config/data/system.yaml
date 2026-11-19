@@ -50,7 +50,7 @@ backend:
     request_timeout_sec: 900
   ollama:
     url: http://localhost:11434
-    model: huihui_ai/qwen3-coder-abliterated:30b
+    model: mattcapalbo1432/qwen38-obliterated-cyber:latest
     available_models:
       '1': masska129/gemma-4-abliterated:12b-qat
       '2': sorc/qwen3.5-claude-4.6-opus:latest

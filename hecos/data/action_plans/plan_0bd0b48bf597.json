@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "plan_id": "plan_0bd0b48bf597",
+  "title": "Expense Radar Flask web app",
+  "scope": "agent",
+  "source_id": "6e2d2926-6e0f-4f0d-9d23-d2b4cc51c430",
+  "plan_mode": "plan_only",
+  "status": "completed",
+  "summary": "Expense Radar Flask web app created and verified.",
+  "steps": [
+    {
+      "index": 1,
+      "id": "step_1",
+      "title": "Create expense_radar folder in workspace",
+      "status": "done",
+      "notes": "",
+      "output_preview": "",
+      "updated_at": 1795001772.7323923
+    },
+    {
+      "index": 2,
+      "id": "step_2",
+      "title": "Write ledger.py (SQLite persistence, summary, CSV export)",
+      "status": "pending",
+      "notes": "",
+      "output_preview": "",
+      "updated_at": 1795001655.0717778
+    },
+    {
+      "index": 3,
+      "id": "step_3",
+      "title": "Write app.py (Flask server + API routes)",
+      "status": "pending",
+      "notes": "",
+      "output_preview": "",
+      "updated_at": 1795001655.0717778
+    },
+    {
+      "index": 4,
+      "id": "step_4",
+      "title": "Write templates/index.html, static/style.css, static/app.js",
+      "status": "pending",
+      "notes": "",
+      "output_preview": "",
+      "updated_at": 1795001655.0717778
+    },
+    {
+      "index": 5,
+      "id": "step_5",
+      "title": "Write test_expense_radar.py unittest suite",
+      "status": "pending",
+      "notes": "",
+      "output_preview": "",
+      "updated_at": 1795001655.0717778
+    },
+    {
+      "index": 6,
+      "id": "step_6",
+      "title": "Run tests with EXECUTOR__run_project_test",
+      "status": "pending",
+      "notes": "",
+      "output_preview": "",
+      "updated_at": 1795001655.0717778
+    },
+    {
+      "index": 7,
+      "id": "step_7",
+      "title": "Start app with EXECUTOR__start_app and verify with EXECUTOR__probe_url",
+      "status": "pending",
+      "notes": "",
+      "output_preview": "",
+      "updated_at": 1795001655.0717778
+    }
+  ],
+  "metadata": {},
+  "created_at": 1794997724.2209835,
+  "updated_at": 1795002197.1092303
+}

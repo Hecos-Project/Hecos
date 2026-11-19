@@ -52,7 +52,7 @@ def build_resume_state(checkpoint: Dict[str, Any], default_max_iterations: int =
 
     status_reason = str(checkpoint.get("reason") or checkpoint.get("status") or "interrupted").strip()
     lines = [
-        f"[SYSTEM RESUME CHECKPOINT]: Previous execution was interrupted after Step {prev_iter}/{resumed_max} ({status_reason}).",
+        f"[SYSTEM RESUME CHECKPOINT]: Previous execution was interrupted after Iteration {prev_iter}/{resumed_max} ({status_reason}).",
     ]
     if project_dir:
         lines.append(f"Project folder on disk: `{project_dir}`")

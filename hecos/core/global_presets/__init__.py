@@ -13,6 +13,7 @@ from .schema import (
 from .manager import (
     list_souls, get_soul, save_soul, duplicate_soul, delete_soul, get_active_soul, get_active_soul_id,
     list_presets, get_preset, save_preset, duplicate_preset, delete_preset, get_active_preset, get_active_preset_id,
+    activate_soul_for_session, activate_preset_for_session, resolve_coder_preset_id,
 )
 from .inference_presets import list_inference_presets, get_inference_preset, save_inference_preset, delete_inference_preset
 from .merger import merge_soul_into_config

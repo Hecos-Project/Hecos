@@ -37,8 +37,22 @@ def process_exchange(user_text, voice_status, sm=None):
     return video_response, clean_voice
 
 
-# Tokens that must survive tag cleanup (intercepted by the browser JS)
-_PRESERVED_TOKENS = ["[CAMERA_SNAPSHOT_REQUEST]"]
+# Tokens that must survive tag cleanup (intercepted by the browser JS or used as Markdown plan badges)
+_PRESERVED_TOKENS = [
+    "[CAMERA_SNAPSHOT_REQUEST]",
+    "[NEW]",
+    "[MODIFY]",
+    "[DELETE]",
+    "[RENAME]",
+    "[TEST]",
+    "[x]",
+    "[X]",
+    "[NOTE]",
+    "[TIP]",
+    "[IMPORTANT]",
+    "[WARNING]",
+    "[CAUTION]",
+]
 
 # Slash commands emitted by the LLM that should be stripped from visible/voice output once executed
 _EXECUTED_SLASH_CMD_RE = (

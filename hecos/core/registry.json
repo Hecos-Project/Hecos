@@ -1,10 +1,11 @@
 {
     "ACTION_PLANS": {
-        "description": "Shared Core multi-step Action Plans, execution checkpoints, and step approval.",
+        "description": "Shared Core multi-step Action Plans, Antigravity-style Implementation Plans, interactive revision, and execution checkpoints.",
         "commands": {
             "complete_plan": "Finalize the active Action Plan once work and verification are complete.",
-            "create_plan": "Create a structured multi-step action plan for the current task.",
+            "create_plan": "Create a structured Antigravity-style Implementation Plan & executable step checklist.",
             "get_plan": "Return current step checklist and progress of the active Action Plan.",
+            "revise_plan": "Revise the active Implementation Plan in-place according to user feedback without editing code files yet.",
             "update_step": "Update status ('pending'|'running'|'done'|'skipped'|'failed') for a step."
         },
         "status": "ONLINE (Core Module Active)",
@@ -100,19 +101,21 @@
         "slash_commands": []
     },
     "DASHBOARD": {
-        "description": "plugin_dashboard_desc",
+        "description": "Hardware monitoring and AI backend status.",
         "commands": {
             "get_backend_status": "Verifies if the AI backend (Ollama, Kobold, or Cloud) is online and ready.",
             "get_full_dashboard": "Returns a complete report of all hardware resources and AI backend status.",
             "get_gpu_status": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
             "get_system_resources": "Returns a summary of system CPU and RAM usage."
         },
-        "status": "plugin_dashboard_status_online",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "",
         "category": "PLUGINS",
+        "module_type": "core_module",
         "slash_commands": []
     },
     "DRIVE": {
@@ -132,52 +135,35 @@
         "slash_commands": []
     },
     "EXECUTOR": {
-        "description": "Safe Python execution (AST Sandbox), developer tools, system control, and file management.",
+        "description": "Safe Python execution (AST Sandbox), system control, and file management. Absorbs AutoCoder.",
         "commands": {
-            "check_syntax": "Checks syntax of a Python (.py), JSON (.json), YAML (.yaml/.yml), or JS (.js) file on disk.",
-            "create_dir": "Creates a directory and any missing parent folders.",
-            "delete_file": "Method",
-            "execute_background_command": "Method",
-            "execute_shell_command": "Executes a shell command with python_env tools (pytest, ruff, uv, python) on PATH.",
-            "execute_slash_command": "Executes an HDCS direct slash command (e.g. /img, /automation.click).",
-            "get_app_logs": "Reads live status and log output of a managed workspace application.",
-            "get_battery_status": "Method",
-            "get_date": "Method",
-            "get_important_paths": "Returns all the important paths memorized by the user, plus the default sandbox workspace.",
-            "get_time": "Method",
-            "git_checkpoint": "Saves a non-destructive Git checkpoint snapshot (tracked + untracked files) without mutating HEAD.",
-            "git_diff": "Shows unified Git diff (size-capped) for the repository or a specific file.",
-            "git_restore": "Restores a file (or the full tree when confirm_all=True) from HEAD or a saved checkpoint ('latest' or SHA).",
-            "git_status": "Inspects Git branch and modified/untracked files inside a project repository.",
-            "kill_process": "Method",
-            "list_dir": "Method",
-            "list_processes": "Method",
-            "list_running_apps": "Lists all active and recent workspace runs, including orphaned OS processes.",
-            "move_path": "Moves or renames a file or folder inside the authorized workspace.",
-            "open_coding_cli": "Opens a native Windows coding CLI window for a workspace project:",
-            "open_media_file": "Opens a media file (video, audio, image) using VLC if installed, otherwise the OS default player.",
-            "patch_file": "Replaces a unique existing occurrence of old_text with new_text in a file.",
-            "probe_url": "Tests a local running web server URL (http://127.0.0.1:<port> or http://localhost:<port>),",
-            "project_tree": "Generates a compact project folder tree (skipping .git, __pycache__, python_env, node_modules).",
-            "read_file": "Reads the contents of a file. Relative paths resolve inside the projects workspace.",
-            "reboot_system": "Method",
-            "repo_map": "Generates a compact multi-language AST map (files, classes, functions, line numbers) for a codebase.",
-            "run_aider_task": "Delegates a multi-file refactor/generation task to isolated Aider CLI (if installed).",
-            "run_project_test": "Runs a real Python script, unittest, or pytest suite inside an authorized workspace/project using python_env.",
-            "run_python_code": "Method",
-            "search_code": "Searches text/code recursively inside a project or module directory.",
-            "set_important_path": "Memorizes an important directory path for the user (e.g. user_profile, downloads, projects).",
-            "start_app": "Starts a persistent workspace script, local web server (Flask/FastAPI/Streamlit), or desktop GUI app",
-            "stop_app": "Stops a running workspace application by run_id, OS PID (e.g. '38300' or 'os_38300'),",
-            "stop_project_processes": "Stops all managed and orphaned OS processes locking a workspace project or file.",
-            "write_file": "Writes or creates a file and verifies it exists on disk. Relative paths resolve inside the projects workspace."
+            "run_python_code": "Execute Python safely in AST sandbox.",
+            "execute_shell_command": "Run shell commands (cmd/bash).",
+            "execute_background_command": "Run shell commands in background for long tasks.",
+            "execute_slash_command": "Executes an HDCS direct slash command.",
+            "get_time": "Current local time and date.",
+            "get_date": "Current local date.",
+            "get_battery_status": "Device battery level and charging state.",
+            "list_processes": "List top running processes.",
+            "kill_process": "Terminate a process by name.",
+            "reboot_system": "Restart the Hecos system.",
+            "read_file": "Read a file content by line range.",
+            "write_file": "Write or create a file (overwrite or append).",
+            "patch_file": "Surgically replace a text block inside a file.",
+            "delete_file": "Delete a file.",
+            "create_dir": "Create a directory tree.",
+            "list_dir": "List a directory contents.",
+            "set_important_path": "Memorize an important directory path for the user (e.g., user_profile, downloads).",
+            "get_important_paths": "Get all important paths memorized by the user, and the default workspace."
         },
-        "status": "ONLINE (Core Tools Active)",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "icon": "",
+        "is_lazy": true,
+        "icon": "⚙️",
         "category": "PLUGINS",
+        "module_type": "core_module",
         "slash_commands": []
     },
     "HELP": {
@@ -612,14 +598,17 @@
         "description": "Native Web Interface — Chat + Config Panel on localhost:7070",
         "commands": {
             "get_panel_url": "Returns the URL of the chat interface.",
-            "open_browser": "Opens the Hecos web interface in the default browser if not already open."
+            "open_browser": "Opens the Hecos web interface in the default browser if not already open.",
+            "set_state_manager": "Injects the live StateManager from the main application."
         },
-        "status": "ONLINE",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "",
         "category": "PLUGINS",
+        "module_type": "core_module",
         "slash_commands": []
     },
     "CALENDAR": {

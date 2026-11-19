@@ -107,6 +107,8 @@ class AgentTracer:
         state_manager=None,
         trace_callback: Optional[Callable] = None,
         session_id: Optional[str] = None,
+        turn_id: Optional[str] = None,
+        cancel_event=None,
     ) -> TraceSession:
         """Starts and binds a new TraceSession for the current agentic turn."""
         cls._current_state_manager = state_manager
@@ -116,6 +118,8 @@ class AgentTracer:
             trace_callback=trace_callback,
             session_id=session_id,
             config=cfg,
+            turn_id=turn_id,
+            cancel_event=cancel_event,
         )
 
     @classmethod

@@ -16,6 +16,7 @@ Config keys (backend.ollama):
 
 import atexit
 import os
+import socket
 import sys
 import time
 import shutil
@@ -631,7 +632,7 @@ class OllamaLifecycleManager:
             base_4 = _normalize_ollama_base(ollama_url)
             expected_ctx = warmup_options.get("num_ctx")
 
-            # Fast check: if already resident in /api/ps with matching context_length, just refresh keep_alive
+            # Fast check: if already resident in /api/ps with matching context_length, no need to re-warm
             existing = get_loaded_model_status(base_4, model, timeout=2.0)
             if existing and (not expected_ctx or existing.get("context_length") == expected_ctx):
                 sz_mb = (existing.get("size") or 0) / (1024 * 1024)
@@ -639,9 +640,9 @@ class OllamaLifecycleManager:
                 pct = (vr_mb / sz_mb * 100) if sz_mb > 0 else 0
                 logger.info(
                     f"[OllamaLifecycle] ✅ Model '{model}' already resident in memory "
-                    f"(VRAM: {vr_mb:.0f}/{sz_mb:.0f} MB [{pct:.0f}%], ctx={existing.get('context_length')}) "
-                    f"— refreshing keep_alive={keep_alive}."
+                    f"(VRAM: {vr_mb:.0f}/{sz_mb:.0f} MB [{pct:.0f}%], ctx={existing.get('context_length')})."
                 )
+                return
 
             req_body = {
                 "model":      model,
@@ -653,20 +654,59 @@ class OllamaLifecycleManager:
                 req_body["options"] = warmup_options
             payload = json.dumps(req_body).encode("utf-8")
 
-            max_attempts = 3
-            retry_delays = (3.0, 5.0)
+            max_attempts = 2
+            retry_delays = (3.0,)
             for attempt_idx in range(max_attempts):
                 with self._warmup_lock:
                     if gen_id != self._warmup_generation:
                         return
 
+                # Yield immediately if live chat inference is already using or loading Ollama
+                def _should_abort_warmup() -> bool:
+                    with self._warmup_lock:
+                        if gen_id != self._warmup_generation:
+                            return True
+                    try:
+                        from hecos.core.agent.turn_control import has_active_turns
+                        if has_active_turns():
+                            return True
+                    except Exception:
+                        pass
+                    return False
+
+                if _should_abort_warmup():
+                    logger.info(
+                        f"[OllamaLifecycle] Yielding background warm-up for '{model}' (superseded or active chat turn)."
+                    )
+                    return
+
                 reap_orphan_ollama_runners()
-                req = urllib.request.Request(
-                    f"{base_4}{_WARMUP_ENDPOINT}",
-                    data    = payload,
-                    headers = {"Content-Type": "application/json"},
-                    method  = "POST",
-                )
+
+                # Evict any OTHER heavy resident model cleanly before loading `model` so Ollama doesn't deadlock
+                try:
+                    m_clean = model.replace("ollama/", "", 1).strip()
+                    m_latest = f"{m_clean}:latest" if ":" not in m_clean else m_clean
+                    with urllib.request.urlopen(urllib.request.Request(f"{base_4}/api/ps", method="GET"), timeout=2.0) as ps_r:
+                        ps_models = json.loads(ps_r.read().decode("utf-8", errors="replace")).get("models", []) or []
+                    for pm in ps_models:
+                        pm_name = str(pm.get("name") or pm.get("model") or "").strip()
+                        pm_latest = f"{pm_name}:latest" if ":" not in pm_name else pm_name
+                        if pm_name and pm_name not in (m_clean, m_latest) and pm_latest not in (m_clean, m_latest):
+                            logger.info(f"[OllamaLifecycle] Unloading previous model '{pm_name}' before warming '{model}'...")
+                            unload_body = json.dumps({"model": pm_name, "prompt": "", "keep_alive": 0, "stream": False}).encode("utf-8")
+                            u_req = urllib.request.Request(
+                                f"{base_4}{_WARMUP_ENDPOINT}",
+                                data=unload_body,
+                                headers={"Content-Type": "application/json"},
+                                method="POST",
+                            )
+                            try:
+                                with urllib.request.urlopen(u_req, timeout=3.0) as _:
+                                    pass
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
 
                 t_start = time.time()
                 attempt_tag = f" (attempt {attempt_idx + 1}/{max_attempts})" if attempt_idx > 0 else ""
@@ -676,8 +716,60 @@ class OllamaLifecycleManager:
                 )
 
                 try:
-                    with urllib.request.urlopen(req, timeout=_WARMUP_TIMEOUT) as resp:
-                        raw = resp.read().decode("utf-8", errors="replace").strip()
+                    import http.client
+                    import select
+                    import struct
+                    import urllib.parse
+
+                    parsed_w = urllib.parse.urlsplit(f"{base_4}{_WARMUP_ENDPOINT}")
+                    w_conn_cls = http.client.HTTPSConnection if parsed_w.scheme == "https" else http.client.HTTPConnection
+                    w_conn = w_conn_cls(parsed_w.hostname, parsed_w.port or (443 if parsed_w.scheme == "https" else 80), timeout=_WARMUP_TIMEOUT)
+                    try:
+                        w_conn.connect()
+                        w_conn.request(
+                            "POST",
+                            parsed_w.path or "/api/generate",
+                            body=payload,
+                            headers={"Content-Type": "application/json", "Content-Length": str(len(payload))},
+                        )
+                        w_deadline = time.monotonic() + float(_WARMUP_TIMEOUT)
+                        while True:
+                            if _should_abort_warmup():
+                                w_sock = getattr(w_conn, "sock", None)
+                                if w_sock is not None:
+                                    try:
+                                        w_sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+                                    except Exception:
+                                        pass
+                                    try:
+                                        w_sock.shutdown(socket.SHUT_RDWR)
+                                    except Exception:
+                                        pass
+                                w_conn.close()
+                                logger.info(f"[OllamaLifecycle] Warm-up socket closed for '{model}' (superseded/active chat).")
+                                return
+                            w_sock = getattr(w_conn, "sock", None)
+                            if w_sock is None:
+                                break
+                            if hasattr(w_sock, "pending") and w_sock.pending() > 0:
+                                break
+                            rem_w = w_deadline - time.monotonic()
+                            if rem_w <= 0:
+                                raise TimeoutError(f"Warm-up timed out after {_WARMUP_TIMEOUT}s")
+                            rdy_w, _, _ = select.select([w_sock], [], [], min(0.25, rem_w))
+                            if rdy_w:
+                                break
+                        w_resp = w_conn.getresponse()
+                        raw = w_resp.read().decode("utf-8", errors="replace").strip()
+                        if w_resp.status >= 400:
+                            raise urllib.error.HTTPError(
+                                f"{base_4}{_WARMUP_ENDPOINT}", w_resp.status, raw[:200], w_resp.headers, None
+                            )
+                    finally:
+                        try:
+                            w_conn.close()
+                        except Exception:
+                            pass
                     data = json.loads(raw) if raw else {}
                     elapsed = time.time() - t_start
                     load_ns = data.get("load_duration", 0)
@@ -718,6 +810,17 @@ class OllamaLifecycleManager:
                                 err_detail = f"{req_err} — {err_body[:240]}"
                         except Exception:
                             pass
+                    is_timeout_err = (
+                        isinstance(req_err, (TimeoutError, socket.timeout))
+                        or "timed out" in err_detail.lower()
+                        or "timeout" in err_detail.lower()
+                    )
+                    if is_timeout_err:
+                        logger.warning(
+                            f"[OllamaLifecycle] Warm-up timed out for '{model}' ({err_detail}) — "
+                            f"aborting warm-up retries so Ollama stays free for live chat."
+                        )
+                        return
                     if attempt_idx + 1 < max_attempts:
                         wait_s = retry_delays[attempt_idx]
                         logger.warning(

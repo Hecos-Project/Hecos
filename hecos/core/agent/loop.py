@@ -38,6 +38,7 @@ from hecos.core.agent.loop_guards import (
     eval_early_termination,
     finalize_response,
     sync_assistant_history,
+    is_llm_error_response,
 )
 
 _ORIG_SYNC_ASSISTANT_HISTORY = sync_assistant_history
@@ -73,6 +74,8 @@ class AgentExecutor:
         current_user_role: str = "admin",
         session_id: Optional[str] = None,
         sender_tab_id: Optional[str] = None,
+        cancel_event=None,
+        turn_id: Optional[str] = None,
     ):
         self.config = config
         self.config_manager = config_manager
@@ -82,6 +85,8 @@ class AgentExecutor:
         self.session_id = session_id
         self.sender_tab_id = sender_tab_id
         self.trace_callback = trace_callback
+        self.cancel_event = cancel_event
+        self.turn_id = turn_id
         self.last_trace_summary: Optional[dict] = None
 
         self.agent_config = get_agent_config()
@@ -92,6 +97,22 @@ class AgentExecutor:
             else self.agent_config.get("max_iterations", 15)
         )
         self.is_enabled = self.agent_config.get("enabled", True)
+
+    def _is_superseded(self) -> bool:
+        try:
+            from hecos.core.agent.turn_control import is_turn_superseded
+            return is_turn_superseded(self.session_id, self.turn_id)
+        except Exception:
+            return False
+
+    def _is_cancelled(self) -> bool:
+        if self.cancel_event is not None and self.cancel_event.is_set():
+            return True
+        if self._is_superseded():
+            return True
+        if self.cancel_event is None and self.state_manager and getattr(self.state_manager, "webui_stop_requested", False):
+            return True
+        return False
 
     def _emit(self, msg: Any, level: str = "info") -> None:
         """Emits a trace through the unified AgentTracer session."""
@@ -200,6 +221,45 @@ class AgentExecutor:
         )
         AgentTracer.finish_step(mode_step, status="ok", result_preview=m_detail)
 
+        # Emit an unmistakable 0ms Architect Mode badge whenever Plan First or Plan Revision is active
+        try:
+            _is_exec_turn = bool(current_cfg.get("_turn_execute_plan") or current_cfg.get("_turn_fast_code"))
+            _rev_pid = str(current_cfg.get("_turn_revise_plan_id") or "").strip()
+            _ap_cfg_mode = str((current_cfg.get("plugins") or {}).get("ACTION_PLANS", {}).get("plan_mode") or "").lower()
+            _is_plan_first = bool(current_cfg.get("_turn_plan_only")) or (not _is_exec_turn and _ap_cfg_mode == "plan_only")
+            if _rev_pid:
+                _arch_detail = tr(
+                    "Aggiornamento Piano di Implementazione (sola lettura · tool mutanti bloccati)",
+                    "Revising Implementation Plan (read-only · mutating tools blocked)",
+                )
+                _arch_step = AgentTracer.start_step(
+                    kind="system",
+                    label=tr("Modalità Architetto · Revisione Piano", "Architect Mode · Plan Revision"),
+                    detail=_arch_detail,
+                    icon="fa-pen-to-square",
+                    level="info",
+                    module_name=tr("Action Plan", "Action Plan"),
+                    close_previous=False,
+                )
+                AgentTracer.finish_step(_arch_step, status="ok", result_preview=_arch_detail)
+            elif _is_plan_first:
+                _arch_detail = tr(
+                    "Generazione Piano di Implementazione senza modifica file (tool mutanti bloccati)",
+                    "Generating Implementation Plan without file edits (mutating tools blocked)",
+                )
+                _arch_step = AgentTracer.start_step(
+                    kind="system",
+                    label=tr("Modalità Architetto · Plan First", "Architect Mode · Plan First"),
+                    detail=_arch_detail,
+                    icon="fa-list-check",
+                    level="info",
+                    module_name=tr("Action Plan", "Action Plan"),
+                    close_previous=False,
+                )
+                AgentTracer.finish_step(_arch_step, status="ok", result_preview=_arch_detail)
+        except Exception:
+            pass
+
     def _conclude_turn(
         self,
         *,
@@ -243,7 +303,7 @@ class AgentExecutor:
         reason: str = "",
     ) -> None:
         """Persist turn progress safely so crashes/timeouts can resume from the last step."""
-        if not self.session_id:
+        if not self.session_id or self._is_cancelled():
             return
         try:
             from hecos.core.action_plans import get_action_plans_config, get_action_plan_manager
@@ -281,30 +341,68 @@ class AgentExecutor:
         extracted_text: Optional[str],
     ) -> None:
         """Mark session checkpoint completed or interrupted/resumable based on outcome."""
-        if not self.session_id:
+        if not self.session_id or self._is_superseded():
             return
         try:
             raw_txt = str(extracted_text or "")
-            aborted = bool(self.state_manager and getattr(self.state_manager, "webui_stop_requested", False))
-            timed_out = raw_txt.lstrip().startswith("⚠️ Timeout:")
+            raw_low = raw_txt.lower()
+            aborted = self._is_cancelled()
+            timed_out = raw_txt.lstrip().startswith("⚠️ Timeout:") or ("timed out" in raw_low and raw_txt.lstrip().startswith(("⚠️", "❌")))
             loop_broken = "Loop Breaker: Stopped after" in raw_txt
             iter_limit = bool(trace_message and ("Limite iterazioni" in trace_message or "Iteration limit" in trace_message))
-            if aborted or timed_out or loop_broken or iter_limit or trace_status == "error" or trace_message is None:
+            is_llm_err = is_llm_error_response(raw_txt)
+            if aborted or timed_out or loop_broken or iter_limit or is_llm_err or trace_status == "error" or trace_message is None:
                 reason = (
                     "timeout" if timed_out
-                    else ("aborted" if aborted else ("loop_breaker" if loop_broken else ("iteration_limit" if iter_limit else "interrupted")))
+                    else (
+                        "aborted" if aborted
+                        else (
+                            "loop_breaker" if loop_broken
+                            else (
+                                "iteration_limit" if iter_limit
+                                else ("llm_error" if is_llm_err else "interrupted")
+                            )
+                        )
+                    )
                 )
                 mark_checkpoint_status(self.session_id, "interrupted", reason=reason, final_preview=raw_txt[:200])
                 try:
                     from hecos.core.action_plans import get_action_plan_manager
                     mgr = get_action_plan_manager()
                     active_plan = mgr.resolve_plan(source_id=self.session_id)
-                    if active_plan and active_plan.get("status") == "running":
-                        mgr.complete_plan(plan_id=active_plan["plan_id"], status="interrupted", summary=reason)
+                    if active_plan and active_plan.get("status") in ("running", "paused"):
+                        mgr.complete_plan(plan_id=active_plan["plan_id"], status="interrupted", summary="")
                 except Exception:
                     pass
             else:
                 mark_checkpoint_status(self.session_id, "completed", reason="ok", final_preview=raw_txt[:200])
+                try:
+                    cur_cfg = self._resolve_current_cfg()
+                    if isinstance(cur_cfg, dict) and cur_cfg.get("_turn_execute_plan"):
+                        from hecos.core.action_plans import get_action_plan_manager
+                        mgr = get_action_plan_manager()
+                        active_plan = mgr.resolve_plan(source_id=self.session_id)
+                        if active_plan and active_plan.get("status") == "running":
+                            steps = active_plan.get("steps") or []
+                            all_done = bool(steps) and all(
+                                st.get("status") in ("done", "skipped") for st in steps
+                            )
+                            if all_done:
+                                mgr.complete_plan(
+                                    plan_id=active_plan["plan_id"],
+                                    status="completed",
+                                    summary=raw_txt[:200] or "Plan executed in chat.",
+                                    source_id=self.session_id,
+                                )
+                            else:
+                                mgr.complete_plan(
+                                    plan_id=active_plan["plan_id"],
+                                    status="paused",
+                                    summary="",
+                                    source_id=self.session_id,
+                                )
+                except Exception:
+                    pass
         except Exception as _ce:
             logger.debug(f"[AGENT] Checkpoint finalize skipped: {_ce}")
 
@@ -326,6 +424,24 @@ class AgentExecutor:
         prior_notice: Optional[str],
     ) -> Tuple[Optional[Tuple[str, str]], Optional[str]]:
         """Handle a non-tool response: trigger guard retry if hallucinated, otherwise conclude turn."""
+        if is_llm_error_response(extracted_text):
+            err_msg = tr("Errore nella risposta del modello", "Model response error")
+            llm_step["result_preview"] = err_msg
+            AgentTracer.finish_step(llm_step, status="error", result_preview=str(extracted_text or "")[:160])
+            result = self._conclude_turn(
+                trace_message=err_msg,
+                trace_status="error",
+                extracted_text=extracted_text,
+                accumulated_tool_results=accumulated_tool_results,
+                raw_response=raw_response,
+                voice_status=voice_status,
+                think_block=think_block,
+                missing_igen_detected=False,
+                unverified_file_notice=None,
+                user_text=user_text,
+            )
+            return result, prior_notice
+
         guard_prompt, step_preview, file_notice = evaluate_plain_text_guards(
             user_text=user_text,
             raw_response=raw_response,
@@ -348,6 +464,38 @@ class AgentExecutor:
 
         done_msg = tr("Risposta formulata", "Response formulated")
         llm_step["result_preview"] = done_msg
+
+        # In Plan-Only (Architect) mode, if the model wrote a text plan without calling ACTION_PLANS__create_plan,
+        # auto-extract and register the checklist so the interactive #agent-plan-slot widget always appears.
+        try:
+            is_plan_only = bool(
+                isinstance(current_cfg, dict)
+                and (
+                    current_cfg.get("_turn_plan_only")
+                    or (
+                        not current_cfg.get("_turn_execute_plan")
+                        and not current_cfg.get("_turn_fast_code")
+                        and str((current_cfg.get("plugins") or {}).get("ACTION_PLANS", {}).get("plan_mode") or "").lower() == "plan_only"
+                    )
+                )
+            )
+            called_create_plan = any(
+                str(r.get("tag", "")).upper() == "ACTION_PLANS"
+                and str(r.get("action") or "") in ("create_plan", "revise_plan")
+                for r in accumulated_tool_results
+            )
+            clean_ext = (extracted_text or "").strip()
+            is_llm_error_resp = clean_ext.startswith(("⚠️", "❌", "[SYSTEM"))
+            if is_plan_only and not called_create_plan and clean_ext and not is_llm_error_resp:
+                from hecos.core.action_plans import get_action_plan_manager
+                get_action_plan_manager().ensure_fallback_plan_from_text(
+                    user_text=user_text,
+                    assistant_text=clean_ext,
+                    source_id=self.session_id or "",
+                )
+        except Exception as _pe:
+            logger.debug(f"[AGENT] Fallback plan extraction skipped: {_pe}")
+
         result = self._conclude_turn(
             trace_message=done_msg,
             trace_status="ok",
@@ -506,16 +654,49 @@ class AgentExecutor:
         2. Sets up image limits and checks for missing packages.
         3. Iterates: LLM inference -> Tool extraction & execution -> Termination checks.
         """
-        AgentTracer.bind(
+        try:
+            return self._run_agentic_loop_impl(
+                user_text=user_text,
+                voice_status=voice_status,
+                images=images,
+                resume_checkpoint=resume_checkpoint,
+            )
+        finally:
+            try:
+                AgentTracer.unbind()
+            except Exception:
+                pass
+
+    def _run_agentic_loop_impl(
+        self,
+        user_text: str,
+        voice_status: bool = False,
+        images: Optional[List[Any]] = None,
+        resume_checkpoint: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[str, str]:
+        sess = AgentTracer.bind(
             state_manager=self.state_manager,
             trace_callback=self.trace_callback,
             session_id=self.session_id,
+            turn_id=self.turn_id,
+            cancel_event=self.cancel_event,
         )
+        try:
+            init_cfg = self._resolve_current_cfg()
+            if sess is not None and isinstance(getattr(sess, "config", None), dict) and isinstance(init_cfg, dict):
+                if init_cfg.get("_turn_plan_only"):
+                    sess.config["_turn_plan_only"] = True
+                if init_cfg.get("_turn_revise_plan_id"):
+                    sess.config["_turn_revise_plan_id"] = str(init_cfg["_turn_revise_plan_id"])
+        except Exception:
+            pass
 
         intercepted, response_output = CommandInterceptor.intercept(user_text, self)
         if intercepted:
             self._finalize_and_store_trace(tr("Comando diretto completato", "Direct command completed"))
             return processore.clean_final_output(response_output, [], response_output, voice_status)
+        if response_output:
+            user_text = response_output
 
         if not self.is_enabled:
             logger.info("[AGENT] Agentic Loop is disabled in config. Running single iteration.")
@@ -552,24 +733,29 @@ class AgentExecutor:
             retries_state = resumed["retries_state"]
             logger.info(f"[AGENT] Resuming session from checkpoint at step {iteration}/{self.max_iterations}")
 
+        boot_cfg = self._resolve_current_cfg()
+        if not self._explicit_max_iterations and _is_coding_loop_active(boot_cfg):
+            self.max_iterations = max(self.max_iterations, 25)
+
         self._persist_checkpoint(
             user_text=user_text,
             iteration=iteration,
             agent_context=agent_context,
             accumulated_tool_results=accumulated_tool_results,
             retries_state=retries_state,
-            current_cfg=self._resolve_current_cfg(),
+            current_cfg=boot_cfg,
             status="running",
             reason="resumed" if resume_checkpoint else "started",
         )
 
         with LoopWatchdog(self.trace_callback):
             while iteration < self.max_iterations:
-                if self.state_manager and getattr(self.state_manager, "webui_stop_requested", False):
-                    self._finalize_and_store_trace(
-                        tr("Operazione interrotta dall'utente", "Operation aborted by user"),
-                        status="error",
-                    )
+                if self._is_cancelled():
+                    if not self._is_superseded():
+                        self._finalize_and_store_trace(
+                            tr("Operazione interrotta dall'utente", "Operation aborted by user"),
+                            status="error",
+                        )
                     break
 
                 iteration += 1
@@ -616,16 +802,21 @@ class AgentExecutor:
 
                 AgentTracer.finish_step(llm_step, status="ok")
 
-                if self.state_manager and getattr(self.state_manager, "webui_stop_requested", False):
-                    self._finalize_and_store_trace(
-                        tr("Operazione interrotta dall'utente", "Operation aborted by user"),
-                        status="error",
-                    )
+                if self._is_cancelled():
+                    logger.info(f"[AGENT] Turn '{self.turn_id or 'legacy'}' aborted immediately after LLM return.")
+                    if not self._is_superseded():
+                        self._finalize_and_store_trace(
+                            tr("Operazione interrotta dall'utente", "Operation aborted by user"),
+                            status="error",
+                        )
                     break
 
                 tools_called, tool_results, extracted_text, think_block = processore.extract_and_execute_tools(
                     raw_response, self.config, sm=self.state_manager
                 )
+                if self._is_cancelled():
+                    logger.info(f"[AGENT] Turn '{self.turn_id or 'legacy'}' aborted during/after tool dispatch.")
+                    break
                 if think_block:
                     self._emit({"type": "think", "text": think_block}, level="think")
                 self._sync_telemetry()
@@ -683,6 +874,18 @@ class AgentExecutor:
                     retries_state=retries_state,
                     current_cfg=current_cfg,
                 )
+
+        if self._is_superseded():
+            logger.info(f"[AGENT] Superseded turn '{self.turn_id or ''}' exiting silently without mutating history/plan.")
+            return "", ""
+
+        if self._is_cancelled():
+            self._finalize_checkpoint(
+                trace_status="error",
+                trace_message=tr("Operazione interrotta dall'utente", "Operation aborted by user"),
+                extracted_text="⛔ Generation aborted.",
+            )
+            return "⛔ Generation aborted.", ""
 
         return self._conclude_turn(
             trace_message=None,

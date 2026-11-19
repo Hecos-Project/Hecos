@@ -14,7 +14,8 @@
 
   async function refreshBanner(explicitSid = '') {
     if (_checking || !ns.api || !ns.banner) return;
-    if (window.isStreaming) {
+    const activePlanCard = document.querySelector('#agent-plan-active-card:not(.is-completed)');
+    if (window.isStreaming || activePlanCard) {
       ns.banner.renderBanner(null);
       return;
     }

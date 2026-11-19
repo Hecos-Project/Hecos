@@ -107,6 +107,13 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         history  = data.get("history", [])
         images   = data.get("images", [])
         tab_id   = data.get("tab_id") or ""
+        turn_options = {
+            "plan_only": bool(data.get("plan_only")),
+            "revise_plan_id": str(data.get("revise_plan_id") or "").strip(),
+            "execute_plan_id": str(data.get("execute_plan_id") or "").strip(),
+            "coder_preset_id": str(data.get("coder_preset_id") or "").strip(),
+            "fast_code": bool(data.get("fast_code")),
+        }
 
         if not user_msg and not images:
             return jsonify({"ok": False, "error": "Empty message"}), 400
@@ -374,11 +381,14 @@ def init_chat_api_routes(app, cfg_mgr, logger):
 
         # ── End Playbook slash commands ──────────────────────────────────────
 
-        sm = get_state_manager()
-        if sm:
-            sm.webui_stop_requested = False  # Clear any stale cancellation flag
+        from hecos.core.agent.turn_control import register_turn
 
         sid  = data.get("session_id") or privacy_manager.get_session_id() or str(uuid.uuid4())
+        turn_id, cancel_event = register_turn(sid)
+
+        sm = get_state_manager()
+        if sm:
+            sm.webui_stop_requested = False  # Clear global stop flag ONLY after older session turns have been cancelled
 
         # ── Playbook keyword trigger auto-start ──────────────────────────────
         try:
@@ -404,13 +414,20 @@ def init_chat_api_routes(app, cfg_mgr, logger):
             pass
         # ─────────────────────────────────────────────────────────────────────
 
-        sess = {"queue": queue.Queue(), "history": list(history), "done": False, "user_id": uid}
+        sess = {
+            "queue": queue.Queue(),
+            "history": list(history),
+            "done": False,
+            "user_id": uid,
+            "turn_id": turn_id,
+            "cancel_event": cancel_event,
+        }
         with _sessions_lock:
             _sessions[sid] = sess
 
         threading.Thread(
             target=_run_inference,
-            args=(sess, sid, user_msg, history, cfg_mgr, images, uid, urole, tab_id),
+            args=(sess, sid, user_msg, history, cfg_mgr, images, uid, urole, tab_id, None, turn_options),
             daemon=True,
         ).start()
         return jsonify({"ok": True, "session_id": sid})
@@ -493,11 +510,15 @@ def init_chat_api_routes(app, cfg_mgr, logger):
 
         def generate():
             from hecos.modules.web_ui.server import get_state_manager
+            from hecos.core.agent.turn_control import cancel_session_turns
             sm = get_state_manager()
+            ev_cancel = sess.get("cancel_event")
             while True:
-                # ESC / stop interceptor
-                if sm and getattr(sm, "webui_stop_requested", False):
-                    sm.webui_stop_requested = False
+                # ESC / stop interceptor (do NOT clear sm.webui_stop_requested here so backend loop/sockets also abort!)
+                if (ev_cancel is not None and ev_cancel.is_set()) or (sm and getattr(sm, "webui_stop_requested", False)):
+                    if ev_cancel is not None:
+                        ev_cancel.set()
+                    cancel_session_turns(session_id, by_user=True)
                     yield "data: " + json.dumps({"type": "error", "text": "⛔ Generation aborted."}) + "\n\n"
                     break
                 try:
@@ -512,7 +533,8 @@ def init_chat_api_routes(app, cfg_mgr, logger):
                     yield "data: " + json.dumps({"type": "heartbeat"}) + "\n\n"
 
             with _sessions_lock:
-                _sessions.pop(session_id, None)
+                if _sessions.get(session_id) is sess:
+                    _sessions.pop(session_id, None)
 
         return Response(
             stream_with_context(generate()),

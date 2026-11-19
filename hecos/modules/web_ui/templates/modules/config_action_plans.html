@@ -30,6 +30,7 @@
       <label for="ap-plan-mode">{{ t('ap_mode_label') or 'Default Planning Mode' }}</label>
       <select id="ap-plan-mode">
         <option value="auto">{{ t('ap_mode_auto') or 'Automatic on complex tasks (Recommended)' }}</option>
+        <option value="plan_only">{{ t('ap_mode_plan_only') or 'Plan Only (Architect mode — generate plan first and stop before coding)' }}</option>
         <option value="confirm">{{ t('ap_mode_confirm') or 'Ask user confirmation before executing steps' }}</option>
         <option value="manual">{{ t('ap_mode_manual') or 'Only on explicit request / direct plugin call' }}</option>
         <option value="off">{{ t('ap_mode_off') or 'Disabled for LLM (keeps checkpoints active)' }}</option>

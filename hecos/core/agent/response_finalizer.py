@@ -175,7 +175,80 @@ def eval_early_termination(
             return False, ""
         return True, tr("Ricerca completata e risposta formulata", "Search completed and response formulated")
 
+    # Early termination as soon as Plan-Only (Architect) mode created or revised the Action Plan
+    has_plan_only_created = any(
+        str(r.get("tag", "")).upper() == "ACTION_PLANS"
+        and (
+            "[ACTION_PLAN CREATED — PLAN-ONLY MODE]" in str(r.get("output", ""))
+            or "[ACTION_PLAN REVISED — PLAN-ONLY MODE]" in str(r.get("output", ""))
+        )
+        for r in accumulated_tool_results
+    )
+    if has_plan_only_created:
+        is_revised = any(
+            "[ACTION_PLAN REVISED — PLAN-ONLY MODE]" in str(r.get("output", ""))
+            for r in accumulated_tool_results
+        )
+        if is_revised:
+            return True, tr("Piano d'azione aggiornato (Modalità Architetto)", "Action Plan revised (Architect Mode)")
+        return True, tr("Piano d'azione creato (Modalità Architetto)", "Action Plan created (Architect Mode)")
+
     return False, ""
+
+
+def _extract_plan_only_payload(accumulated_tool_results: List[Dict[str, Any]]) -> Tuple[str, Dict[str, Any], bool]:
+    """Extract (markdown_body, meta_dict, is_revised) from Plan-Only create_plan/revise_plan tool results."""
+    import json as _json
+
+    for r in reversed(accumulated_tool_results or []):
+        if str(r.get("tag", "")).upper() != "ACTION_PLANS":
+            continue
+        raw_out = str(r.get("output", ""))
+        marker = ""
+        is_revised = False
+        if "[ACTION_PLAN REVISED — PLAN-ONLY MODE]" in raw_out:
+            marker = "[ACTION_PLAN REVISED — PLAN-ONLY MODE]"
+            is_revised = True
+        elif "[ACTION_PLAN CREATED — PLAN-ONLY MODE]" in raw_out:
+            marker = "[ACTION_PLAN CREATED — PLAN-ONLY MODE]"
+            is_revised = False
+        if not marker:
+            continue
+
+        body = raw_out.split(marker, 1)[1].split("[SYSTEM:", 1)[0].strip()
+        meta: Dict[str, Any] = {}
+        meta_m = re.match(r"^<!--PLAN_META:(\{.*?\})-->\s*", body, flags=re.DOTALL)
+        if meta_m:
+            try:
+                parsed = _json.loads(meta_m.group(1))
+                if isinstance(parsed, dict):
+                    meta = parsed
+            except Exception:
+                meta = {}
+            body = body[meta_m.end():].strip()
+        return body, meta, is_revised
+    return "", {}, False
+
+
+def _build_plan_voice_summary(meta: Dict[str, Any], is_revised: bool) -> str:
+    """Create a concise spoken TTS summary for an Implementation Plan instead of reading markdown/code aloud."""
+    title = str(meta.get("title") or "").strip()
+    steps_count = int(meta.get("steps_count") or 0)
+    rev = int(meta.get("revision") or 1)
+    is_it = str(getattr(translator.get_translator(), "language", "en") or "en").lower().startswith("it")
+
+    if is_it:
+        title_part = f" per {title}" if title else ""
+        steps_part = f", con {steps_count} passaggi" if steps_count else ""
+        if is_revised:
+            return f"Piano di implementazione aggiornato alla revisione {rev}{title_part}{steps_part}. Puoi controllare le modifiche o avviarlo con Esegui Piano."
+        return f"Piano di implementazione pronto{title_part}{steps_part}. Puoi revisionarlo o avviarlo con Esegui Piano."
+    else:
+        title_part = f" for {title}" if title else ""
+        steps_part = f", with {steps_count} steps" if steps_count else ""
+        if is_revised:
+            return f"Implementation plan updated to revision {rev}{title_part}{steps_part}. Review the updates or click Execute Plan."
+        return f"Implementation plan ready{title_part}{steps_part}. You can review, revise, or run it with Execute Plan."
 
 
 def finalize_response(
@@ -189,6 +262,45 @@ def finalize_response(
 ) -> Tuple[str, str]:
     """Standardize final response formatting across all loop termination paths."""
     text = extracted_text or ""
+    plan_only_out, plan_meta, plan_is_revised = _extract_plan_only_payload(accumulated_tool_results)
+    plan_voice_override = ""
+
+    if plan_only_out:
+        is_it = str(getattr(translator.get_translator(), "language", "en") or "en").lower().startswith("it")
+        rev = int(plan_meta.get("revision") or 1)
+        if is_it:
+            badge_hdr = (
+                f"📋 **Piano di Implementazione Aggiornato (v{rev})**"
+                if plan_is_revised
+                else "📋 **Piano di Implementazione Pronto**"
+            )
+            footer = (
+                "> 💡 **Pronto per la revisione:** clicca **📄 Vedi Piano** per la vista completa, "
+                "usa **✏️ Revisiona** (o `/plan revise <modifiche>`) per aggiornare il piano, "
+                "oppure scegli un modello in **Run with Coder** e clicca **▶️ Esegui Piano** (o `/code`)."
+            )
+        else:
+            badge_hdr = (
+                f"📋 **Implementation Plan Updated (v{rev})**"
+                if plan_is_revised
+                else "📋 **Implementation Plan Ready**"
+            )
+            footer = (
+                "> 💡 **Ready for review:** click **📄 View Plan** for the full blueprint, "
+                "use **✏️ Revise** (or `/plan revise <changes>`) to refine it, "
+                "or choose a model in **Run with Coder** and click **▶️ Execute Plan** (or `/code`)."
+            )
+
+        clean_existing = text.strip()
+        # Display full rich Implementation Plan when model emitted only a tool call or brief preamble
+        if not clean_existing or (len(plan_only_out) > len(clean_existing) + 120 and "#" in plan_only_out):
+            preamble = f"{clean_existing}\n\n---\n\n" if (clean_existing and len(clean_existing) <= 280) else ""
+            text = f"{badge_hdr}\n\n{preamble}{plan_only_out}\n\n{footer}"
+        elif footer not in clean_existing:
+            text = f"{clean_existing}\n\n{footer}"
+
+        if voice_status:
+            plan_voice_override = _build_plan_voice_summary(plan_meta, plan_is_revised)
 
     if not text.strip():
         if accumulated_tool_results:
@@ -232,6 +344,8 @@ def finalize_response(
     video_response, clean_voice = processore.clean_final_output(
         text, accumulated_tool_results, raw_response, voice_status
     )
+    if voice_status and plan_voice_override:
+        clean_voice = plan_voice_override
     return video_response, clean_voice
 
 

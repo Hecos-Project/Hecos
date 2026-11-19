@@ -81,6 +81,21 @@ def init_agent_resume_routes(app, cfg_mgr, logger) -> None:
         if running_now:
             return jsonify({"ok": True, "has_resumable": False, "checkpoint": None, "running_now": True})
 
+        # Suppress redundant Resume banner when chat already owns an active Action Plan card
+        try:
+            from hecos.core.action_plans import ACTIVE_PLAN_STATUSES, get_action_plan_manager
+
+            active_plan = get_action_plan_manager().resolve_plan(source_id=sid)
+            if active_plan and str(active_plan.get("status") or "").lower() in ACTIVE_PLAN_STATUSES:
+                return jsonify({
+                    "ok": True,
+                    "has_resumable": False,
+                    "checkpoint": None,
+                    "suppressed_by_plan": active_plan.get("plan_id"),
+                })
+        except Exception:
+            pass
+
         return jsonify({
             "ok": True,
             "has_resumable": True,
@@ -117,9 +132,19 @@ def init_agent_resume_routes(app, cfg_mgr, logger) -> None:
             return jsonify({"ok": False, "error": "No resumable checkpoint found for this session."}), 404
 
         with _sessions_lock:
+            from hecos.core.agent.turn_control import register_turn
+            from hecos.modules.web_ui.server import get_state_manager
+
             existing = _sessions.get(sid)
-            if existing and not existing.get("done"):
+            if existing and not existing.get("done") and not (
+                existing.get("cancel_event") is not None and existing["cancel_event"].is_set()
+            ):
                 return jsonify({"ok": False, "error": "Task is already running in this session."}), 409
+
+            turn_id, cancel_event = register_turn(sid)
+            sm = get_state_manager()
+            if sm:
+                sm.webui_stop_requested = False
 
             uid = current_user.username if current_user.is_authenticated else "admin"
             urole = current_user.role if current_user.is_authenticated else "admin"
@@ -129,7 +154,14 @@ def init_agent_resume_routes(app, cfg_mgr, logger) -> None:
                 for row in (raw_hist or [])
                 if len(row) >= 2
             ]
-            sess = {"queue": queue.Queue(), "history": hist_msgs, "done": False, "user_id": uid}
+            sess = {
+                "queue": queue.Queue(),
+                "history": hist_msgs,
+                "done": False,
+                "user_id": uid,
+                "turn_id": turn_id,
+                "cancel_event": cancel_event,
+            }
             _sessions[sid] = sess
 
         user_text = str(ckpt.get("user_text") or "")

@@ -182,6 +182,10 @@ window.clearInput = function() {
 };
 
 window.stopAudioPlayback = function() {
+  if (window._hecosAckAudio) {
+    try { window._hecosAckAudio.pause(); } catch (_) {}
+    window._hecosAckAudio = null;
+  }
   if (window.currentAudio) {
     window.currentAudio.pause();
     // Only clear src for the global singleton player. Historical players must retain their src to be re-playable.

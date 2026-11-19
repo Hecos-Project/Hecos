@@ -306,6 +306,9 @@ window.sfLoadActiveSessionState = async function() {
 
     window.sfRefreshUIVisibilityAndSummaries();
     if (window.sfSyncActivePersonaAvatar) window.sfSyncActivePersonaAvatar();
+    if (window.ActionPlanChat && typeof window.ActionPlanChat.onPresetStateUpdated === 'function') {
+        window.ActionPlanChat.onPresetStateUpdated(effectiveSoulId);
+    }
 };
 
 window.soLoadActiveSessionState = window.sfLoadActiveSessionState;

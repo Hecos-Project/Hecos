@@ -204,6 +204,41 @@ function _attachChatStreamListeners({ evtSrc, sessionId, aiBubble, cursor }) {
       if (/Executor|verified on disk|Directory created|patched|write_file|patch_file|create_dir|delete_file|move_path|run_aider|start_app|stop_app/i.test(trText)) {
         window._HecosWorkspaceShared?.notifyFilesChanged?.('chat_trace');
       }
+    } else if (ev.type === 'status_ack') {
+      if (!aiText && ev.text) {
+        const ackEl = document.createElement('div');
+        ackEl.className = 'ap-live-status-ack';
+        ackEl.innerHTML = `<i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> <span>${String(ev.text).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>`;
+        aiBubble.innerHTML = '';
+        aiBubble.appendChild(ackEl);
+        aiBubble.appendChild(cursor);
+        if (isCurrentView() && window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
+      }
+    } else if (ev.type === 'ack_audio') {
+      if (ev.audio_id && isCurrentView()) {
+        (async () => {
+          try {
+            if (window._hecosAckAudio) {
+              try { window._hecosAckAudio.pause(); } catch (_) {}
+              window._hecosAckAudio = null;
+            }
+            const resp = await fetch(`/api/audio?id=${encodeURIComponent(ev.audio_id)}`);
+            if (!resp.ok) return;
+            const blob = await resp.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const ackPlayer = new Audio(blobUrl);
+            if (window.globalTTSVolume !== undefined) ackPlayer.volume = window.globalTTSVolume;
+            window._hecosAckAudio = ackPlayer;
+            const cleanup = () => {
+              try { URL.revokeObjectURL(blobUrl); } catch (_) {}
+              if (window._hecosAckAudio === ackPlayer) window._hecosAckAudio = null;
+            };
+            ackPlayer.onended = cleanup;
+            ackPlayer.onerror = cleanup;
+            await ackPlayer.play().catch(cleanup);
+          } catch (_) {}
+        })();
+      }
     } else if (ev.type === 'think') {
       if (window.renderThinkBlock) window.renderThinkBlock(ev.text, aiBubble);
     } else if (ev.type === 'token') {
@@ -274,6 +309,10 @@ function _attachChatStreamListeners({ evtSrc, sessionId, aiBubble, cursor }) {
     } else if (ev.type === 'audio_chunk') {
       // Ignored: single consolidated audio player used per message
     } else if (ev.type === 'audio_ready') {
+      if (window._hecosAckAudio) {
+        try { window._hecosAckAudio.pause(); } catch (_) {}
+        window._hecosAckAudio = null;
+      }
       if (ev.audio_id) aiBubble.dataset.audioId = ev.audio_id;
       const meta = resolveMeta();
       if (window.tryLoadAudio) window.tryLoadAudio(aiBubble, true, null, meta);
@@ -426,13 +465,20 @@ window.sendMessage = async function() {
     imgHtml += '</div>';
   }
   
+  const isExplicitCodeCmd = /^\/(code|coder|sviluppa)\b/i.test(text);
+  if (isExplicitCodeCmd && window.hecosPlanFirstMode && typeof window.setPlanFirstMode === 'function') {
+    window.setPlanFirstMode(false, true);
+  }
+  const isPlanFirstTurn = !!window.hecosPlanFirstMode && !isDepositOnly && !text.startsWith('/');
+
   // Construct the visible user message containing text and attachment markdown links
   let fileLinks = '';
   if (savedFiles && savedFiles.length > 0) {
     fileLinks = savedFiles.map(f => `[${f.name}](file:///${f.path.replace(/\\/g, '/')})`).join('\n\n');
   }
-  const visibleMessage = text 
-    ? (text + (fileLinks ? '\n\n' + fileLinks : '')) 
+  const baseVisibleText = isPlanFirstTurn ? `📋 **[Plan First]** ${text}` : text;
+  const visibleMessage = baseVisibleText 
+    ? (baseVisibleText + (fileLinks ? '\n\n' + fileLinks : '')) 
     : (fileLinks || (attachImgs.length ? '' : '📎 Attachment'));
   
   const fullMessage = (text + attachCtx).trim() || visibleMessage || '[Attachment]';
@@ -500,7 +546,8 @@ window.sendMessage = async function() {
       history: window.chatHistory, 
       images: attachImgs,
       session_id: pendingSid,
-      tab_id: window.hecosTabId
+      tab_id: window.hecosTabId,
+      plan_only: isPlanFirstTurn
     };
     const res = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -551,7 +598,7 @@ window.sendMessage = async function() {
   }
 };
 
-window.sendInternalMessage = async function(text) {
+window.sendInternalMessage = async function(text, opts = {}) {
   if(!text || window.isStreaming) return;
 
   window._lastVoiceCmdText = text;
@@ -568,6 +615,16 @@ window.sendInternalMessage = async function(text) {
 
   if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
   if (window.hideWelcome) window.hideWelcome();
+
+  if (opts && opts.visibleUserBubble && typeof window.addBubble === 'function') {
+    window.chatHistory.push({role:'user', content:text});
+    const { bubble: uBubble, msg: uMsg } = window.addBubble('user', '');
+    if (uMsg) uMsg.dataset.rawContent = text;
+    uBubble.innerHTML = typeof window.renderMarkdown === 'function'
+      ? window.renderMarkdown(opts.visibleUserBubble)
+      : opts.visibleUserBubble;
+    if (typeof window.attachActionsToBubble === 'function') window.attachActionsToBubble(uBubble);
+  }
   
   window.chatHistory.push({role:'assistant', content:''});
   const pendingSid = window.chatHistoryState?.activeSessionId || null;
@@ -585,12 +642,21 @@ window.sendInternalMessage = async function(text) {
   }
 
   try {
+    const isExecOrFast = !!(opts && (opts.executePlanId || opts.fastCode));
+    const effectivePlanOnly = (opts && typeof opts.planOnly === 'boolean')
+      ? opts.planOnly
+      : (!!window.hecosPlanFirstMode && !isExecOrFast && !(opts && opts.revisePlanId) && !text.startsWith('/'));
     const payload = {
       message: text, 
       history: window.chatHistory, 
       images: [],
       session_id: pendingSid,
-      tab_id: window.hecosTabId
+      tab_id: window.hecosTabId,
+      plan_only: effectivePlanOnly,
+      revise_plan_id: (opts && opts.revisePlanId) || '',
+      execute_plan_id: (opts && opts.executePlanId) || '',
+      coder_preset_id: (opts && opts.coderPresetId) || '',
+      fast_code: !!(opts && opts.fastCode)
     };
     const res = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},

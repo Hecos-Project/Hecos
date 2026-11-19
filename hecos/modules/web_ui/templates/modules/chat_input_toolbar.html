@@ -284,6 +284,14 @@
 
 /* Hidden file inputs */
 #file-upload-doc, #file-upload-img { display: none; }
+
+/* Plan First (Architect) Toggle Button */
+#btn-toolbar-plan.plan-first-active {
+  background: rgba(245, 158, 11, 0.22) !important;
+  color: #fde68a !important;
+  border-color: rgba(245, 158, 11, 0.75) !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.32);
+}
 </style>
 
 <!-- ── Input Toolbar HTML ── -->
@@ -306,6 +314,9 @@
   </button>
   <button class="toolbar-btn" title="Paste long text or context (Ctrl+Shift+V)" onclick="openPasteModal()">
     <span class="tb-icon"><i class="fas fa-paste"></i></span> {{ t('webui_chat_toolbar_paste') }}
+  </button>
+  <button id="btn-toolbar-plan" type="button" class="toolbar-btn" title="Architect Mode (Plan First): generate a structured Action Plan without writing code yet, then execute with Coder (or type /plan and /code)" onclick="window.togglePlanFirstMode && window.togglePlanFirstMode(this)">
+    <span class="tb-icon" style="color: #f59e0b;"><i class="fas fa-list-check"></i></span> <span id="btn-toolbar-plan-label">Plan First</span>
   </button>
   
   <div style="flex: 1;"></div>
@@ -354,6 +365,41 @@
 </div>
 
 <script>
+window.hecosPlanFirstMode = false;
+
+window.setPlanFirstMode = function(enabled, silent) {
+  window.hecosPlanFirstMode = !!enabled;
+  const btn = document.getElementById('btn-toolbar-plan');
+  const lbl = document.getElementById('btn-toolbar-plan-label');
+  const input = document.getElementById('user-input');
+  if (btn) {
+    btn.classList.toggle('plan-first-active', window.hecosPlanFirstMode);
+    btn.setAttribute('aria-pressed', window.hecosPlanFirstMode ? 'true' : 'false');
+  }
+  if (lbl) {
+    lbl.textContent = window.hecosPlanFirstMode ? 'Plan First: ON' : 'Plan First';
+  }
+  if (input) {
+    if (window.hecosPlanFirstMode) {
+      if (!input.dataset.origPlaceholder) input.dataset.origPlaceholder = input.placeholder || '';
+      input.placeholder = '📋 Plan First (Architect Mode): describe the project to plan without writing code yet...';
+    } else if (input.dataset.origPlaceholder !== undefined) {
+      input.placeholder = input.dataset.origPlaceholder;
+    }
+  }
+  if (!silent && typeof window.showToast === 'function') {
+    window.showToast(
+      window.hecosPlanFirstMode
+        ? '📋 Plan First Mode ON — Messages will create/revise an Implementation Plan without editing files (until toggled OFF or Execute Plan)'
+        : '📋 Plan First Mode OFF'
+    );
+  }
+};
+
+window.togglePlanFirstMode = function() {
+  window.setPlanFirstMode(!window.hecosPlanFirstMode, false);
+};
+
 window.openMediaFolder = async function(btnEl) {
   const btn = btnEl || document.getElementById('btn-open-media-folder') || (window.event && window.event.currentTarget);
   const icon = btn ? btn.querySelector('i') : null;

@@ -39,13 +39,26 @@ def _infer_project_dir(
             if os.path.isdir(cand):
                 return cand
 
+    here = os.path.dirname(os.path.abspath(__file__))
+    hecos_root = os.path.abspath(os.path.join(here, "..", "..", ".."))
+    ws_root = os.path.join(hecos_root, "media", "workspace")
+
     rel_match = re.search(r"hecos[/\\]media[/\\]workspace[/\\]([A-Za-z0-9_.-]+)", user_text or "", re.IGNORECASE)
     if rel_match:
-        here = os.path.dirname(os.path.abspath(__file__))
-        hecos_root = os.path.abspath(os.path.join(here, "..", "..", ".."))
-        cand = os.path.join(hecos_root, "media", "workspace", rel_match.group(1))
+        cand = os.path.join(ws_root, rel_match.group(1))
         if os.path.isdir(cand):
             return cand
+
+    if os.path.isdir(ws_root) and user_text:
+        mentioned = set(re.findall(r"\b([A-Za-z][A-Za-z0-9_.-]{1,60})\b", user_text))
+        if mentioned:
+            try:
+                for entry in sorted(os.listdir(ws_root)):
+                    cand = os.path.join(ws_root, entry)
+                    if os.path.isdir(cand) and entry in mentioned:
+                        return cand
+            except OSError:
+                pass
 
     if verified_paths:
         return os.path.dirname(verified_paths[0])

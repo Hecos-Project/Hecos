@@ -18,11 +18,15 @@ class TraceSession:
         trace_callback: Optional[Callable] = None,
         session_id: Optional[str] = None,
         config: Optional[Dict[str, Any]] = None,
+        turn_id: Optional[str] = None,
+        cancel_event: Optional[threading.Event] = None,
     ):
         self.state_manager = state_manager
         self.trace_callback = trace_callback
         self.session_id = session_id
         self.config = config or {}
+        self.turn_id = turn_id
+        self.cancel_event = cancel_event
         self.t_turn_start = time.monotonic()
         self.steps: List[Dict[str, Any]] = []
         self.current_step: Optional[Dict[str, Any]] = None
@@ -51,6 +55,8 @@ def bind_session(
     trace_callback: Optional[Callable] = None,
     session_id: Optional[str] = None,
     config: Optional[Dict[str, Any]] = None,
+    turn_id: Optional[str] = None,
+    cancel_event: Optional[threading.Event] = None,
 ) -> TraceSession:
     """Starts and binds a new TraceSession for the current agentic turn."""
     global _ACTIVE_SESSION
@@ -59,6 +65,8 @@ def bind_session(
         trace_callback=trace_callback,
         session_id=session_id,
         config=config,
+        turn_id=turn_id,
+        cancel_event=cancel_event,
     )
     _SESSION_VAR.set(sess)
     with _ACTIVE_SESSION_LOCK:

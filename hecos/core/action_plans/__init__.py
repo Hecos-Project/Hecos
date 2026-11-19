@@ -30,6 +30,7 @@ from hecos.core.action_plans.models import (
     PLAN_MODES,
     PLAN_STATUSES,
     STEP_STATUSES,
+    build_plan_markdown_document,
     compute_plan_progress,
 )
 from hecos.core.action_plans.store import (
@@ -50,6 +51,7 @@ __all__ = [
     "RESUMABLE_FLOW_STATUSES",
     "ActionPlanManager",
     "get_action_plan_manager",
+    "build_plan_markdown_document",
     "compute_plan_progress",
     "get_action_plans_config",
     "normalize_action_plans_config",

@@ -170,7 +170,7 @@ def generate(
             error_type = type(e).__name__
             zlog_error(f"LiteLLM: [{error_type}] Error (attempt {_attempt + 1}/{_max_key_retries}) with model '{model_name}': {error_msg}")
 
-            if "Timeout" in error_type or "timeout" in error_msg.lower():
+            if "Timeout" in error_type or "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
                 zlog_error(f"LiteLLM: TIMEOUT on attempt {_attempt + 1}! Provider='{provider}', Model='{model_name}'.")
                 _timed_out_key = params.get("api_key", None)
                 if _timed_out_key and backend_type == "cloud" and provider:

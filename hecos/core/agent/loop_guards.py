@@ -32,6 +32,7 @@ from hecos.core.agent.hallucination_guards import (
     detect_unexecuted_file_claim,
     append_verified_file_links,
     evaluate_plain_text_guards,
+    is_llm_error_response,
 )
 from hecos.core.agent.response_finalizer import (
     _DOC_INTENT_RE,
@@ -63,6 +64,7 @@ __all__ = [
     "detect_unexecuted_file_claim",
     "append_verified_file_links",
     "evaluate_plain_text_guards",
+    "is_llm_error_response",
     "classify_tool_result_for_loop",
     "build_iteration_stagnation_signature",
 ]

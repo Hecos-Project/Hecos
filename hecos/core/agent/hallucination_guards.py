@@ -290,6 +290,15 @@ def append_verified_file_links(text: str, verified_files: List[Tuple[str, str, s
     return f"{text.rstrip()}\n\n{section}".strip()
 
 
+_LLM_ERROR_PREFIXES = ("⚠️", "❌", "⛔", "🔌", "🔑", "🚫", "[SYSTEM")
+
+
+def is_llm_error_response(text: Optional[str]) -> bool:
+    """Return True if text is a system/LLM error notice rather than a real model completion."""
+    stripped = str(text or "").lstrip()
+    return bool(stripped and stripped.startswith(_LLM_ERROR_PREFIXES))
+
+
 def evaluate_plain_text_guards(
     *,
     user_text: str,
@@ -306,6 +315,9 @@ def evaluate_plain_text_guards(
     Mutates `retries_state` counters in place.
     Returns `(guard_prompt_to_retry, step_trace_preview, unverified_file_notice)`.
     """
+    if is_llm_error_response(extracted_text):
+        return None, None, None
+
     fake_stream_claim = any(
         tok in (extracted_text or "")
         for tok in ("📺 Tuned to", "Launched in VLC Desktop", "⏹️ Live Stream stopped")
@@ -348,8 +360,20 @@ def evaluate_plain_text_guards(
     )
 
     unverified_file_notice: Optional[str] = None
+    is_plan_only_turn = bool(
+        isinstance(current_cfg, dict)
+        and (
+            current_cfg.get("_turn_plan_only")
+            or (
+                not current_cfg.get("_turn_execute_plan")
+                and not current_cfg.get("_turn_fast_code")
+                and str((current_cfg.get("plugins") or {}).get("ACTION_PLANS", {}).get("plan_mode") or "").lower() == "plan_only"
+            )
+        )
+    )
     if (
-        (
+        not is_plan_only_turn
+        and (
             (not executor_mutated_disk and not verified_disk_files and detect_unexecuted_file_claim(extracted_text))
             or (echoed_tool_resp and not verified_disk_files)
             or parroted_loop_breaker

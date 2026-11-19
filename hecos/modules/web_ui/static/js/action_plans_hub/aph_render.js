@@ -125,7 +125,7 @@
           <div style="min-width:0;flex:1;">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               ${_badge(c.status)}
-              <span style="font-size:12.5px;font-weight:600;">Step ${Number(c.iteration || 0)}/${Number(c.max_iterations || 25)}</span>
+              <span style="font-size:12.5px;font-weight:600;">${_esc(_tr('ar_unit_iteration', 'Iteration'))} ${Number(c.iteration || 0)}/${Number(c.max_iterations || 25)}</span>
               ${c.model_label ? `<span style="font-size:11px;color:var(--muted);">· ${_esc(c.model_label)}</span>` : ''}
               ${c.reason ? `<span style="font-size:11px;color:var(--muted);">· ${_esc(c.reason)}</span>` : ''}
             </div>

@@ -509,7 +509,8 @@ async function resendUserMessage(msgEl, historyIndex) {
       _reindexDomMessages();
     }
     if (typeof window.sendInternalMessage === 'function') {
-      await window.sendInternalMessage(textToResend);
+      const resendPlanOnly = !!window.hecosPlanFirstMode && !textToResend.trim().startsWith('/');
+      await window.sendInternalMessage(textToResend, { planOnly: resendPlanOnly });
     }
   } else {
     // Send as a fresh turn at the bottom of the chat
@@ -565,8 +566,9 @@ async function regenerateLastResponse(historyIndex, passedMsgEl) {
   // Trigger regeneration using internal sender
   showToast(`🔁 ${t('chat_regen_toast')}`);
   if (typeof window.sendInternalMessage === 'function') {
+    const regenPlanOnly = !!window.hecosPlanFirstMode && !String(textToResend || '').trim().startsWith('/');
     setTimeout(async () => {
-      await window.sendInternalMessage(textToResend);
+      await window.sendInternalMessage(textToResend, { planOnly: regenPlanOnly });
     }, 260);
   } else {
     showToast(`❌ ${t('chat_regen_err_internal')}`);

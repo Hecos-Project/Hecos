@@ -102,6 +102,27 @@ def init_action_plans_routes(app, cfg_mgr, logger) -> None:
         status_code = 200 if res.get("ok") else 404
         return jsonify(res), status_code
 
+    @app.route("/api/action-plans/<plan_id>/revise", methods=["POST"])
+    def api_revise_action_plan(plan_id: str):
+        body = request.get_json(silent=True) or {}
+        if not isinstance(body, dict):
+            return jsonify({"ok": False, "error": "Invalid JSON object"}), 400
+        mgr = get_action_plan_manager()
+        existing = mgr.get_plan(plan_id=plan_id)
+        if not existing:
+            return jsonify({"ok": False, "error": "Plan not found"}), 404
+        res = mgr.revise_plan(
+            plan_id=plan_id,
+            title=body.get("title") if "title" in body else None,
+            goal=body.get("goal") if "goal" in body else None,
+            plan_markdown=body.get("plan_markdown") if "plan_markdown" in body else None,
+            steps=body.get("steps") if "steps" in body else None,
+            verification_plan=body.get("verification_plan") if "verification_plan" in body else None,
+            revision_note=str(body.get("revision_note") or "Edited directly by user in Plan Viewer"),
+            keep_awaiting_approval=bool(body.get("keep_awaiting_approval", existing.get("status") in ("awaiting_approval", "draft"))),
+        )
+        return jsonify(res), 200
+
     @app.route("/api/action-plans/<plan_id>/reject", methods=["POST"])
     def api_reject_action_plan(plan_id: str):
         body = request.get_json(silent=True) or {}

@@ -19,6 +19,7 @@ from hecos.core.action_plans.events import emit_plan_event
 from hecos.core.action_plans.models import (
     ACTIVE_PLAN_STATUSES,
     PLAN_STATUSES,
+    build_plan_markdown_document,
     compute_plan_progress,
     new_plan_dict,
     normalize_step_status,
@@ -40,14 +41,25 @@ def resolve_active_session_context() -> Dict[str, Any]:
         from hecos.core.agent.trace_session import get_active_session
         sess = get_active_session()
         if sess is not None:
+            t_cfg = getattr(sess, "config", None) or {}
             return {
                 "session_id": str(sess.session_id or ""),
                 "has_trace_callback": sess.trace_callback is not None,
                 "state_manager": sess.state_manager,
+                "turn_plan_only": bool(isinstance(t_cfg, dict) and t_cfg.get("_turn_plan_only")),
+                "turn_revise_plan_id": str(t_cfg.get("_turn_revise_plan_id") or "").strip() if isinstance(t_cfg, dict) else "",
+                "turn_config": t_cfg if isinstance(t_cfg, dict) else {},
             }
     except Exception:
         pass
-    return {"session_id": "", "has_trace_callback": False, "state_manager": None}
+    return {
+        "session_id": "",
+        "has_trace_callback": False,
+        "state_manager": None,
+        "turn_plan_only": False,
+        "turn_revise_plan_id": "",
+        "turn_config": {},
+    }
 
 
 class ActionPlanManager:
@@ -64,6 +76,9 @@ class ActionPlanManager:
         steps: Any,
         scope: str = "agent",
         source_id: str = "",
+        goal: str = "",
+        plan_markdown: str = "",
+        verification_plan: str = "",
         require_approval: Optional[bool] = None,
         wait_for_approval: bool = True,
         metadata: Optional[Dict[str, Any]] = None,
@@ -73,10 +88,48 @@ class ActionPlanManager:
         ctx = resolve_active_session_context()
         eff_source = str(source_id or ctx["session_id"] or "").strip()
 
-        if require_approval is None:
-            needs_approval = (cfg.get("plan_mode") == "confirm")
+        # If this turn explicitly targets an existing plan for revision and the LLM called
+        # create_plan instead of revise_plan, evolve the existing plan in-place to preserve continuity.
+        revise_target = str(ctx.get("turn_revise_plan_id") or "").strip()
+        if revise_target and scope == "agent":
+            existing_target = load_plan(revise_target, base_dir=self.base_dir)
+            if existing_target and existing_target.get("status") not in ("completed", "cancelled"):
+                return self.revise_plan(
+                    plan_id=revise_target,
+                    title=title,
+                    goal=goal or None,
+                    plan_markdown=plan_markdown or None,
+                    steps=steps,
+                    verification_plan=verification_plan or None,
+                    revision_note=str((metadata or {}).get("revision_note") or "Revised in Architect Mode"),
+                    source_id=eff_source,
+                    keep_awaiting_approval=True,
+                )
+
+        meta_dict = dict(metadata or {})
+        is_explicit_plan_only_turn = bool(
+            meta_dict.get("plan_only")
+            or (scope == "agent" and ctx.get("turn_plan_only"))
+        )
+        is_plan_only = bool(
+            is_explicit_plan_only_turn
+            or (
+                require_approval is not False
+                and scope == "agent"
+                and str(cfg.get("plan_mode") or "").lower() == "plan_only"
+            )
+        )
+
+        if is_plan_only:
+            needs_approval = True
+            wait_for_approval = False
+            effective_plan_mode = "plan_only"
         else:
-            needs_approval = bool(require_approval)
+            if require_approval is None:
+                needs_approval = (cfg.get("plan_mode") == "confirm")
+            else:
+                needs_approval = bool(require_approval)
+            effective_plan_mode = cfg.get("plan_mode", "auto")
 
         initial_status = "awaiting_approval" if (needs_approval and wait_for_approval and ctx["has_trace_callback"]) else (
             "awaiting_approval" if (needs_approval and not wait_for_approval) else "running"
@@ -86,9 +139,12 @@ class ActionPlanManager:
             steps=steps,
             scope=scope,
             source_id=eff_source,
-            plan_mode=cfg.get("plan_mode", "auto"),
+            plan_mode=effective_plan_mode,
             status=initial_status,
-            metadata=metadata,
+            goal=goal,
+            plan_markdown=plan_markdown,
+            verification_plan=verification_plan,
+            metadata=meta_dict,
         )
 
         # Auto-mark step 1 running when immediately executable
@@ -134,7 +190,97 @@ class ActionPlanManager:
                     return {"ok": False, "approved": False, "reason": reason, "plan": fresh}
 
         emit_plan_event("plan_created" if plan["status"] == "running" else "approval_required", plan)
-        return {"ok": True, "approved": plan["status"] == "running", "plan": plan}
+        return {
+            "ok": True,
+            "approved": True if is_plan_only else (plan["status"] == "running"),
+            "plan_only": is_plan_only,
+            "plan": plan,
+        }
+
+    def revise_plan(
+        self,
+        *,
+        plan_id: str = "",
+        title: Optional[str] = None,
+        goal: Optional[str] = None,
+        plan_markdown: Optional[str] = None,
+        steps: Optional[Any] = None,
+        verification_plan: Optional[str] = None,
+        revision_note: str = "",
+        source_id: str = "",
+        keep_awaiting_approval: bool = True,
+    ) -> Dict[str, Any]:
+        """Revise an existing Action Plan's blueprint and/or steps, incrementing its revision counter."""
+        ctx = resolve_active_session_context()
+        eff_source = str(source_id or ctx["session_id"] or "").strip()
+        target_id = str(plan_id or ctx.get("turn_revise_plan_id") or "").strip()
+
+        with self._lock:
+            plan = self.resolve_plan(plan_id=target_id, source_id=eff_source)
+            if not plan or plan.get("status") in ("completed", "cancelled"):
+                return self.create_plan(
+                    title=str(title or "Execution Plan"),
+                    steps=steps or ["Analyze requirements and implement requested changes"],
+                    scope="agent",
+                    source_id=eff_source,
+                    goal=str(goal or ""),
+                    plan_markdown=str(plan_markdown or ""),
+                    verification_plan=str(verification_plan or ""),
+                    require_approval=True,
+                    wait_for_approval=False,
+                    metadata={"plan_only": True},
+                )
+
+            if title is not None and str(title).strip():
+                plan["title"] = str(title).strip()[:220]
+            if goal is not None:
+                plan["goal"] = str(goal).strip()[:1500]
+            if plan_markdown is not None:
+                plan["plan_markdown"] = str(plan_markdown).strip()[:24000]
+            if verification_plan is not None:
+                plan["verification_plan"] = str(verification_plan).strip()[:3000]
+            if steps is not None:
+                prev_done_titles = {
+                    str(s.get("title") or "").strip().lower(): s
+                    for s in (plan.get("steps") or [])
+                    if s.get("status") in ("done", "skipped")
+                }
+                new_steps = normalize_steps(steps)
+                if new_steps:
+                    # Preserve already-verified steps if revising an interrupted/paused plan
+                    if plan.get("status") in ("interrupted", "paused", "running"):
+                        for st in new_steps:
+                            prev = prev_done_titles.get(str(st.get("title") or "").strip().lower())
+                            if prev:
+                                st["status"] = prev.get("status", "done")
+                                if not st.get("notes") and prev.get("notes"):
+                                    st["notes"] = prev["notes"]
+                    plan["steps"] = new_steps
+
+            next_rev = int(plan.get("revision") or 1) + 1
+            plan["revision"] = next_rev
+            history = list(plan.get("revision_history") or [])
+            history.append({
+                "revision": next_rev,
+                "note": str(revision_note or "Plan revised").strip()[:400],
+                "timestamp": time.time(),
+            })
+            plan["revision_history"] = history[-15:]
+
+            if keep_awaiting_approval and plan.get("status") not in ("completed", "cancelled"):
+                plan["plan_mode"] = "plan_only"
+                plan["status"] = "awaiting_approval"
+
+            save_plan(plan, base_dir=self.base_dir)
+
+        emit_plan_event("plan_revised", plan)
+        return {
+            "ok": True,
+            "approved": True,
+            "plan_only": True,
+            "revised": True,
+            "plan": plan,
+        }
 
     def update_step(
         self,
@@ -242,8 +388,12 @@ class ActionPlanManager:
             if edited_steps:
                 plan["steps"] = normalize_steps(edited_steps)
             plan["status"] = "running"
-            if plan["steps"] and plan["steps"][0]["status"] == "pending":
-                plan["steps"][0]["status"] = "running"
+            if plan["steps"] and not any(st.get("status") == "running" for st in plan["steps"]):
+                for st in plan["steps"]:
+                    if st.get("status") == "pending":
+                        st["status"] = "running"
+                        st["updated_at"] = time.time()
+                        break
             save_plan(plan, base_dir=self.base_dir)
         emit_plan_event("plan_approved", plan)
         return {"ok": True, "plan_id": plan_id, "resumed_gate": False, "plan": plan}
@@ -278,16 +428,134 @@ class ActionPlanManager:
         if not isinstance(plan, dict):
             return ""
         prog = compute_plan_progress(plan)
+        rev = int(plan.get("revision") or 1)
+        rev_suffix = f", rev=v{rev}" if rev > 1 else ""
         lines = [
             f"Action Plan [{plan.get('plan_id')}] — {plan.get('title')} "
-            f"(status={plan.get('status')}, progress={prog['done']}/{prog['total']} · {prog['percent']}%):"
+            f"(status={plan.get('status')}{rev_suffix}, progress={prog['done']}/{prog['total']} · {prog['percent']}%):"
         ]
         icons = {"done": "[✓]", "running": "[▶]", "failed": "[✗]", "skipped": "[-]", "pending": "[ ]"}
         for s in plan.get("steps") or []:
             mark = icons.get(s.get("status", "pending"), "[ ]")
+            files_list = s.get("files") or []
+            files_part = f" [files: {', '.join(files_list[:4])}]" if files_list else ""
             note = f" — {s['notes']}" if s.get("notes") else ""
-            lines.append(f"  {mark} Step {s['index']}: {s['title']}{note}")
+            lines.append(f"  {mark} Step {s['index']}: {s['title']}{files_part}{note}")
         return "\n".join(lines)
+
+    @staticmethod
+    def format_plan_blueprint_for_coder(plan: Dict[str, Any], max_chars: int = 5500) -> str:
+        """Format both checklist status and architectural blueprint for Coder execution turns."""
+        if not isinstance(plan, dict):
+            return ""
+        summary = ActionPlanManager.format_plan_summary(plan)
+        blueprint_parts = []
+        goal = str(plan.get("goal") or "").strip()
+        md = str(plan.get("plan_markdown") or "").strip()
+        verif = str(plan.get("verification_plan") or "").strip()
+
+        if md:
+            blueprint_parts.append(md)
+        else:
+            if goal:
+                blueprint_parts.append(f"Goal: {goal}")
+            detail_lines = []
+            for s in plan.get("steps") or []:
+                files = s.get("files") or []
+                det = str(s.get("details") or "").strip()
+                if files or det:
+                    line = f"- Step {s.get('index')} ({s.get('title')}):"
+                    if files:
+                        line += f" files={', '.join(files)}"
+                    if det:
+                        line += f" | {det}"
+                    detail_lines.append(line)
+            if detail_lines:
+                blueprint_parts.append("Step Specifications:\n" + "\n".join(detail_lines))
+
+        if verif and verif.lower()[:40] not in "\n".join(blueprint_parts).lower():
+            blueprint_parts.append(f"Verification Plan:\n{verif}")
+
+        blueprint_text = "\n\n".join(p for p in blueprint_parts if p.strip()).strip()
+        if not blueprint_text:
+            return summary
+
+        budget = max(800, int(max_chars or 5500) - len(summary) - 80)
+        if len(blueprint_text) > budget:
+            blueprint_text = blueprint_text[:budget].rstrip() + "\n... [blueprint truncated for context budget]"
+
+        return (
+            f"{summary}\n\n"
+            f"### ARCHITECTURAL BLUEPRINT (FOLLOW THESE SPECS) ###\n"
+            f"{blueprint_text}"
+        )
+
+    def ensure_fallback_plan_from_text(
+        self,
+        *,
+        user_text: str,
+        assistant_text: str,
+        source_id: str = "",
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Extract numbered/bulleted steps from plain assistant text when Plan-Only mode was requested
+        but the model responded in markdown without calling `ACTION_PLANS__create_plan`.
+        Preserves the full markdown blueprint so the UI and Coder keep all architectural detail.
+        """
+        import re
+
+        raw = str(assistant_text or "").strip()
+        if not raw:
+            return None
+
+        extracted_steps = []
+        for line in raw.splitlines():
+            clean = line.strip()
+            if not clean or clean.startswith("```"):
+                continue
+            m = re.match(r"^(?:(?:\d+|[a-zA-Z])[.)]|[-*•]|#{2,4}\s+(?:Step\s+\d+[:.-]?|\d+[.)]))\s+(.+)$", clean, re.IGNORECASE)
+            if m:
+                step_txt = re.sub(r"\*\*([^*]+)\*\*", r"\1", m.group(1)).strip()
+                if len(step_txt) >= 5 and len(extracted_steps) < 12:
+                    extracted_steps.append(step_txt[:220])
+
+        if len(extracted_steps) < 2:
+            # Fallback: construct basic 3-step structure from the user request
+            clean_req = re.sub(r"^/\w+\s*", "", str(user_text or "").strip()).strip()
+            short_req = (clean_req[:120] + "...") if len(clean_req) > 120 else (clean_req or "Requested task")
+            extracted_steps = [
+                f"Analyze requirements and project structure for: {short_req}",
+                "Implement core modules and application files in workspace",
+                "Run syntax/test verification and summarize generated file links",
+            ]
+
+        clean_title = re.sub(r"^/\w+\s*", "", str(user_text or "").strip()).strip()
+        title = (clean_title[:90] if clean_title else "Execution Plan")
+
+        ctx = resolve_active_session_context()
+        revise_target = str(ctx.get("turn_revise_plan_id") or "").strip()
+        if revise_target:
+            res = self.revise_plan(
+                plan_id=revise_target,
+                plan_markdown=raw,
+                steps=extracted_steps,
+                revision_note=clean_title[:240] or "Revised from text response",
+                source_id=source_id,
+                keep_awaiting_approval=True,
+            )
+            return res.get("plan") if isinstance(res, dict) else None
+
+        res = self.create_plan(
+            title=title,
+            steps=extracted_steps,
+            scope="agent",
+            source_id=source_id,
+            plan_markdown=raw,
+            require_approval=True,
+            wait_for_approval=False,
+            metadata={"plan_only": True, "auto_extracted": True},
+        )
+        return res.get("plan") if isinstance(res, dict) else None
 
 
 _MANAGER_SINGLETON: Optional[ActionPlanManager] = None

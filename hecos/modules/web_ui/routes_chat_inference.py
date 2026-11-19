@@ -27,12 +27,20 @@ _CAMERA_TOKEN = "[CAMERA_SNAPSHOT_REQUEST]"
 _WEBUI_INFERENCE_TIMEOUT = 900  # seconds
 
 
-def _run_inference(sess: dict, session_id: str, user_message: str, history: list, cfg_mgr, images=None, user_id="admin", user_role="admin", sender_tab_id=None, resume_checkpoint=None):
+def _run_inference(sess: dict, session_id: str, user_message: str, history: list, cfg_mgr, images=None, user_id="admin", user_role="admin", sender_tab_id=None, resume_checkpoint=None, turn_options=None):
     if not sess:
         return
 
+    turn_id = sess.get("turn_id")
+    cancel_event = sess.get("cancel_event")
+    if not turn_id or cancel_event is None:
+        from hecos.core.agent.turn_control import register_turn
+        turn_id, cancel_event = register_turn(session_id)
+        sess["turn_id"] = turn_id
+        sess["cancel_event"] = cancel_event
+
     t_start = time.monotonic()
-    _chat_log.info(f"[INFERENCE] ══ START sid={session_id[:8]} user={user_id} msg_len={len(user_message)} images={len(images) if images else 0}")
+    _chat_log.info(f"[INFERENCE] ══ START sid={session_id[:8]} turn={turn_id} user={user_id} msg_len={len(user_message)} images={len(images) if images else 0}")
 
     try:
         from hecos.core.llm import brain  # noqa: F401 – ensure core is importable
@@ -100,8 +108,39 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         # ────────────────────────────────────────────────────────────────────
 
         # ── PER-SESSION CONFIGURATION OVERRIDE ──────────────────────────────
+        t_opts = turn_options if isinstance(turn_options, dict) else {}
+        if t_opts.get("coder_preset_id"):
+            try:
+                from hecos.core.global_presets import activate_soul_for_session, resolve_coder_preset_id
+                target_preset = resolve_coder_preset_id(t_opts["coder_preset_id"])
+                activate_soul_for_session(target_preset, session_id)
+            except Exception as _pe:
+                _chat_log.warning(f"[INFERENCE] Could not activate coder preset '{t_opts.get('coder_preset_id')}': {_pe}")
+
         from hecos.config.session_config_manager import merge_session_config
         merged_config_dict = merge_session_config(cfg_mgr.config, session_id)
+
+        if t_opts.get("plan_only"):
+            merged_config_dict["_turn_plan_only"] = True
+            merged_config_dict.setdefault("payload_control", {})["send_tools"] = True
+        if t_opts.get("revise_plan_id"):
+            merged_config_dict["_turn_plan_only"] = True
+            merged_config_dict["_turn_revise_plan_id"] = str(t_opts["revise_plan_id"])
+            merged_config_dict.setdefault("payload_control", {})["send_tools"] = True
+        if t_opts.get("execute_plan_id"):
+            merged_config_dict["_turn_execute_plan"] = str(t_opts["execute_plan_id"])
+            merged_config_dict.setdefault("payload_control", {})["send_tools"] = True
+        if t_opts.get("fast_code"):
+            merged_config_dict["_turn_fast_code"] = True
+            merged_config_dict.setdefault("payload_control", {})["send_tools"] = True
+        if any(t_opts.get(k) for k in ("plan_only", "revise_plan_id", "execute_plan_id", "fast_code")):
+            _chat_log.info(
+                f"[INFERENCE] Turn flags sid={session_id[:8]}: "
+                f"plan_only={bool(merged_config_dict.get('_turn_plan_only'))} "
+                f"revise_plan_id={merged_config_dict.get('_turn_revise_plan_id', '')} "
+                f"execute_plan_id={merged_config_dict.get('_turn_execute_plan', '')} "
+                f"fast_code={bool(merged_config_dict.get('_turn_fast_code'))}"
+            )
 
         try:
             from hecos.core.global_presets.manager import get_active_soul_id
@@ -128,6 +167,8 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         # Inject agent traces directly into the session-specific SSE queue.
         def _session_trace(msg, level: str = "info"):
             _last_activity[0] = time.monotonic()  # Reset watchdog on activity
+            if (cancel_event is not None and cancel_event.is_set()) or sess.get("done"):
+                return
             if isinstance(msg, dict):
                 if msg.get("type") == "heartbeat":
                     return
@@ -144,13 +185,102 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
             current_user_id=user_id,
             current_user_role=user_role,
             session_id=session_id,
-            sender_tab_id=sender_tab_id
+            sender_tab_id=sender_tab_id,
+            cancel_event=cancel_event,
+            turn_id=turn_id,
         )
 
         # ── SSE Connection Buffer ────────────────────────────────────────────
         # Allow the browser to open the SSE stream BEFORE first tokens arrive.
         time.sleep(0.4)
         # ────────────────────────────────────────────────────────────────────
+
+        # ── Immediate Visual + Spoken Turn Acknowledgment (non-blocking) ─────
+        # Gives instant feedback on Plan First / Plan Revision / Plan Execution
+        # and long tool-assisted tasks so the user immediately knows Hecos understood
+        # the active mode before a heavy local model takes minutes to think.
+        try:
+            from hecos.core.i18n import translator as _tr_mod
+            _is_it = str(getattr(_tr_mod.get_translator(), "language", "en") or "en").lower().startswith("it")
+            _um_low = (user_message or "").strip().lower()
+            _is_plan_rev_cmd = _um_low.startswith(("/plan revise", "/plan edit", "/plan update", "/plan modify", "/piano modifica", "/piano aggiorna", "/piano revisiona"))
+            _is_plan_mgmt_cmd = _um_low in ("/plan", "/piano") or _um_low.startswith(("/plan show", "/plan status", "/plan list", "/plan mode", "/plan clear", "/plan cancel", "/plan approve", "/code status", "/code help"))
+            _is_plan_slash = (_um_low.startswith(("/plan ", "/piano ")) and not _is_plan_mgmt_cmd and not _is_plan_rev_cmd and not _um_low.startswith(("/plan run", "/plan execute", "/plan start", "/plan coder", "/plan esegui")))
+            _is_code_slash = (_um_low in ("/code", "/coder", "/sviluppa") or _um_low.startswith(("/code ", "/coder ", "/sviluppa ", "/plan run", "/plan execute", "/plan coder"))) and not _is_plan_mgmt_cmd
+
+            _ack_visual = ""
+            _ack_spoken = ""
+            if merged_config_dict.get("_turn_revise_plan_id") or _is_plan_rev_cmd:
+                _ack_visual = (
+                    "✏️ Modalità Revisione Piano attiva — Sto aggiornando il Piano di Implementazione con le tue modifiche (nessun file verrà toccato)..."
+                    if _is_it
+                    else "✏️ Plan Revision Mode active — Updating the Implementation Plan with your feedback (no files will be edited)..."
+                )
+                _ack_spoken = (
+                    "Ricevuto! Sto aggiornando il piano di implementazione con le tue modifiche."
+                    if _is_it
+                    else "Got it! Updating the implementation plan with your requested changes."
+                )
+            elif merged_config_dict.get("_turn_plan_only") or _is_plan_slash:
+                _ack_visual = (
+                    "📋 Modalità Architetto (Plan First) attiva — Sto analizzando la richiesta per preparare il Piano di Implementazione (nessun file verrà modificato)..."
+                    if _is_it
+                    else "📋 Architect Mode (Plan First) active — Analyzing your request to prepare the Implementation Plan (no files will be edited)..."
+                )
+                _ack_spoken = (
+                    "Ricevuto! Modalità Architetto attiva: preparo prima il piano di implementazione senza modificare file."
+                    if _is_it
+                    else "Got it! Architect Mode active: preparing the implementation plan first without editing files."
+                )
+            elif merged_config_dict.get("_turn_execute_plan") or _is_code_slash:
+                _ack_visual = (
+                    "▶️ Esecuzione Piano avviata — Sto implementando il progetto passo dopo passo secondo il blueprint..."
+                    if _is_it
+                    else "▶️ Plan Execution started — Implementing the project step by step according to the blueprint..."
+                )
+                _ack_spoken = (
+                    "Perfetto! Avvio subito l'esecuzione del piano passo dopo passo."
+                    if _is_it
+                    else "Starting execution of the implementation plan step by step."
+                )
+            elif not _um_low.startswith("/") and len(_um_low) >= 120 and merged_config_dict.get("payload_control", {}).get("send_tools", True):
+                _ack_visual = (
+                    "⚙️ Richiesta ricevuta — Sto analizzando il task e preparando i passaggi..."
+                    if _is_it
+                    else "⚙️ Request received — Analyzing the task and preparing steps..."
+                )
+                _ack_spoken = (
+                    "Ricevuto! Sto analizzando la richiesta."
+                    if _is_it
+                    else "Got it! Analyzing your request."
+                )
+
+            if _ack_visual and not sess.get("done") and not (cancel_event is not None and cancel_event.is_set()):
+                sess["queue"].put({
+                    "type": "status_ack",
+                    "text": _ack_visual,
+                    "session_id": session_id,
+                    "tab_id": sender_tab_id or "",
+                })
+            if _ack_spoken and not sess.get("done") and not (cancel_event is not None and cancel_event.is_set()):
+                def _emit_ack_tts(_spoken=_ack_spoken):
+                    try:
+                        if sess.get("done") or (cancel_event is not None and cancel_event.is_set()):
+                            return
+                        st_ack, ack_aid = _maybe_generate_tts(_spoken, active_cfg_mgr)
+                        if st_ack == "web" and ack_aid and not sess.get("done") and not (cancel_event is not None and cancel_event.is_set()):
+                            sess["queue"].put({
+                                "type": "ack_audio",
+                                "audio_id": ack_aid,
+                                "text": _spoken,
+                                "session_id": session_id,
+                                "tab_id": sender_tab_id or "",
+                            })
+                    except Exception:
+                        pass
+                threading.Thread(target=_emit_ack_tts, daemon=True).start()
+        except Exception as _ack_err:
+            _chat_log.debug(f"[INFERENCE] Status ack skipped: {_ack_err}")
 
         _chat_log.info(f"[INFERENCE] Calling AgentExecutor.run_agentic_loop...")
         t_llm_start = time.monotonic()
@@ -174,6 +304,14 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
 
         # Stop watchdog - we got a response
         _timed_out.set()
+
+        # If this turn was cancelled or superseded, exit immediately without streaming or running TTS
+        from hecos.core.agent.turn_control import is_turn_superseded
+        if (cancel_event is not None and cancel_event.is_set()) or is_turn_superseded(session_id, turn_id):
+            _chat_log.info(f"[INFERENCE] Turn '{turn_id}' cancelled/superseded — stopping output & TTS pipeline.")
+            if not sess.get("done"):
+                sess["queue"].put({"type": "error", "text": "⛔ Generation aborted."})
+            return
 
         # If watchdog already fired (race condition), don't push more tokens but ensure state is synced
         if sess.get("done"):
@@ -308,7 +446,7 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
             _chat_log.warning(f"[INFERENCE] Could not emit message events: {e}")
 
         from hecos.core.processing import filtri
-        voice_text_target = filtri.clean_for_voice(full_text) if full_text else clean_voice
+        voice_text_target = clean_voice if (clean_voice and str(clean_voice).strip()) else (filtri.clean_for_voice(full_text) if full_text else "")
         def _on_chunk_ready(chunk_idx, total_chunks, *args):
             _last_activity[0] = time.monotonic()  # Keep watchdog alive during multi-sentence synthesis
 
@@ -355,13 +493,16 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
     except Exception as exc:
         _timed_out.set()  # stop watchdog
         try:
-            from hecos.core.agent.checkpointing import mark_checkpoint_status
-            mark_checkpoint_status(session_id, "interrupted", reason=str(exc)[:180])
-            from hecos.core.action_plans import get_action_plan_manager
-            mgr = get_action_plan_manager()
-            active_plan = mgr.resolve_plan(source_id=session_id)
-            if active_plan and active_plan.get("status") == "running":
-                mgr.complete_plan(plan_id=active_plan["plan_id"], status="interrupted", summary=str(exc)[:180])
+            from hecos.core.agent.turn_control import is_turn_superseded
+            superseded = is_turn_superseded(session_id, turn_id)
+            if not superseded:
+                from hecos.core.agent.checkpointing import mark_checkpoint_status
+                mark_checkpoint_status(session_id, "interrupted", reason=str(exc)[:180])
+                from hecos.core.action_plans import get_action_plan_manager
+                mgr = get_action_plan_manager()
+                active_plan = mgr.resolve_plan(source_id=session_id)
+                if active_plan and active_plan.get("status") == "running":
+                    mgr.complete_plan(plan_id=active_plan["plan_id"], status="interrupted", summary=str(exc)[:180])
         except Exception:
             pass
         _chat_log.error(f"[INFERENCE] ❌ Exception after {time.monotonic() - t_start:.2f}s: {exc}", exc_info=True)
@@ -369,5 +510,10 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
             sess["queue"].put({"type": "error", "text": str(exc)})
     finally:
         _timed_out.set()  # always stop watchdog
+        try:
+            from hecos.core.agent.turn_control import complete_turn
+            complete_turn(turn_id)
+        except Exception:
+            pass
         sess["done"] = True
-        _chat_log.info(f"[INFERENCE] ══ END sid={session_id[:8]} total={time.monotonic() - t_start:.2f}s")
+        _chat_log.info(f"[INFERENCE] ══ END sid={session_id[:8]} turn={turn_id} total={time.monotonic() - t_start:.2f}s")

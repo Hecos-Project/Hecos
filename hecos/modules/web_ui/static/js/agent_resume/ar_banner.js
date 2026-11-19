@@ -51,7 +51,8 @@
 
     const regionLbl = _esc(_tr('ar_region_label', 'Resume interrupted work'));
     const savedAtLbl = _esc(_tr('ar_saved_at', 'Work saved at'));
-    const resumeBtnLbl = _esc(_tr('ar_btn_resume', 'Resume from Step'));
+    const iterUnitLbl = _esc(_tr('ar_unit_iteration', 'Iteration'));
+    const resumeBtnLbl = _esc(_tr('ar_btn_resume', 'Resume from Turn'));
     const dismissTitle = _esc(_tr('ar_btn_dismiss_title', 'Hide and discard this checkpoint'));
     const dismissLbl = _esc(_tr('ar_btn_dismiss', 'Dismiss'));
 
@@ -60,7 +61,7 @@
         <div class="agent-resume-info">
           <div class="agent-resume-title">
             <span class="agent-resume-badge"><i class="fas fa-history"></i> ${_esc(_formatStatusLabel(checkpoint))}</span>
-            <span>${savedAtLbl} <strong>Step ${stepNum}/${maxStep}</strong>${checkpoint.model_label ? ` · ${_esc(checkpoint.model_label)}` : ''}</span>
+            <span>${savedAtLbl} <strong>${iterUnitLbl} ${stepNum}/${maxStep}</strong>${checkpoint.model_label ? ` · ${_esc(checkpoint.model_label)}` : ''}</span>
           </div>
           ${checkpoint.user_preview ? `<div class="agent-resume-preview" title="${_esc(checkpoint.user_preview)}">${_esc(checkpoint.user_preview)}</div>` : ''}
           ${pillsHtml ? `<div class="agent-resume-files">${pillsHtml}</div>` : ''}

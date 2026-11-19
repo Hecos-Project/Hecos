@@ -706,7 +706,20 @@ def get_tools_schema(payload_control=None, config=None):
     _plugins_cfg = _resolve_plugins_cfg(config)
     mode, selected_set, wildcard_tags = _parse_tool_selection(payload_control)
 
-    if mode == "custom" and not selected_set and not wildcard_tags:
+    is_plan_only_turn = False
+    is_execute_or_fast_code = False
+    try:
+        from hecos.core.action_plans import get_action_plans_config
+        ap_cfg = get_action_plans_config(raw_config=config)
+        if isinstance(config, dict):
+            is_execute_or_fast_code = bool(config.get("_turn_execute_plan") or config.get("_turn_fast_code"))
+            is_plan_only_turn = bool(config.get("_turn_plan_only")) or (
+                not is_execute_or_fast_code and str(ap_cfg.get("plan_mode") or "").lower() == "plan_only"
+            )
+    except Exception:
+        ap_cfg = {}
+
+    if mode == "custom" and not selected_set and not wildcard_tags and not (is_plan_only_turn or is_execute_or_fast_code):
         return None
 
     tools_list = []
@@ -748,30 +761,70 @@ def get_tools_schema(payload_control=None, config=None):
 
     # If custom mode matched zero installed/valid tools (e.g. preset referenced an uninstalled package),
     # return None safely instead of forcing tool mode with only CORE__get_author.
-    if mode == "custom" and not tools_list:
+    if mode == "custom" and not tools_list and not (is_plan_only_turn or is_execute_or_fast_code):
         return None
 
-    # Auto-expose ACTION_PLANS tools to multi-step custom presets when configured in Core System
-    if mode == "custom" and "ACTION_PLANS" in _loaded_plugins and _plugins_cfg.get("ACTION_PLANS", {}).get("llm_callable", True):
+    # In Plan-Only (Architect) turns, strip mutating EXECUTOR tools so the model only inspects & creates the plan
+    if is_plan_only_turn:
+        _mutating_exec = {
+            "EXECUTOR__write_file",
+            "EXECUTOR__patch_file",
+            "EXECUTOR__run_aider_task",
+            "EXECUTOR__delete_file",
+            "EXECUTOR__move_path",
+            "EXECUTOR__create_dir",
+            "EXECUTOR__start_app",
+            "EXECUTOR__stop_app",
+            "EXECUTOR__git_restore",
+            "EXECUTOR__execute_shell_command",
+            "EXECUTOR__run_python_code",
+        }
+        tools_list = [
+            t for t in tools_list
+            if (t.get("function") or t).get("name", "") not in _mutating_exec
+        ]
+
+    # In /code execution turns (`_turn_execute_plan` or `_turn_fast_code`), ensure EXECUTOR tools are present
+    if is_execute_or_fast_code and _plugins_cfg.get("EXECUTOR", {}).get("llm_callable", True):
+        existing_exec = {(t.get("function") or t).get("name", "") for t in tools_list if (t.get("function") or t).get("name", "").startswith("EXECUTOR__")}
+        if not existing_exec:
+            exec_schemas = []
+            if "EXECUTOR" in _loaded_plugins:
+                exec_schemas = _sanitize_tool_schema(_extract_module_tools("EXECUTOR", _loaded_plugins["EXECUTOR"]))
+            elif "EXECUTOR" in _lazy_tool_schemas:
+                exec_schemas = _sanitize_tool_schema(_lazy_tool_schemas.get("EXECUTOR") or [])
+            tools_list.extend(exec_schemas)
+
+    # Auto-expose ACTION_PLANS tools to multi-step custom presets or explicit Plan/Execute turns
+    if "ACTION_PLANS" in _loaded_plugins and _plugins_cfg.get("ACTION_PLANS", {}).get("llm_callable", True):
         try:
-            from hecos.core.action_plans import get_action_plans_config
-            ap_cfg = get_action_plans_config(raw_config=config)
-            if (
-                ap_cfg.get("enabled", True)
-                and ap_cfg.get("plan_mode") in ("auto", "confirm")
-                and ap_cfg.get("expose_tools_in_custom_presets", True)
-            ):
+            should_expose_ap = bool(is_plan_only_turn or is_execute_or_fast_code)
+            if not should_expose_ap:
+                try:
+                    from hecos.core.action_plans import get_action_plan_manager
+                    pending_ap = get_action_plan_manager().resolve_plan()
+                    if pending_ap and str(pending_ap.get("status") or "").lower() in ("awaiting_approval", "draft"):
+                        should_expose_ap = True
+                except Exception:
+                    pass
+            if not should_expose_ap and mode == "custom":
+                if (
+                    ap_cfg.get("enabled", True)
+                    and ap_cfg.get("plan_mode") in ("auto", "confirm", "plan_only")
+                    and ap_cfg.get("expose_tools_in_custom_presets", True)
+                ):
+                    existing_names_check = {(t.get("function") or t).get("name", "") for t in tools_list}
+                    should_expose_ap = any(
+                        n.startswith(("EXECUTOR__", "DRIVE__", "FLOWS__", "BROWSER__", "PC_AUTOMATION__"))
+                        for n in existing_names_check
+                    )
+            if should_expose_ap:
                 existing_names = {(t.get("function") or t).get("name", "") for t in tools_list}
-                has_actionable_tools = any(
-                    n.startswith(("EXECUTOR__", "DRIVE__", "FLOWS__", "BROWSER__", "PC_AUTOMATION__"))
-                    for n in existing_names
-                )
-                if has_actionable_tools:
-                    for ap_tool in _sanitize_tool_schema(_extract_module_tools("ACTION_PLANS", _loaded_plugins["ACTION_PLANS"])):
-                        ap_name = (ap_tool.get("function") or ap_tool).get("name", "")
-                        if ap_name and ap_name not in existing_names:
-                            tools_list.append(ap_tool)
-                            existing_names.add(ap_name)
+                for ap_tool in _sanitize_tool_schema(_extract_module_tools("ACTION_PLANS", _loaded_plugins["ACTION_PLANS"])):
+                    ap_name = (ap_tool.get("function") or ap_tool).get("name", "")
+                    if ap_name and ap_name not in existing_names:
+                        tools_list.append(ap_tool)
+                        existing_names.add(ap_name)
         except Exception:
             pass
 

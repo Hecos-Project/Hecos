@@ -1148,11 +1148,114 @@ class PromptBuilder:
                 logger.debug(f"PromptBuilder: Executor directive injection skipped: {e}")
 
             try:
-                from hecos.core.action_plans import get_action_plans_config
+                from hecos.core.action_plans import get_action_plans_config, get_action_plan_manager
                 ap_cfg = get_action_plans_config(raw_config=config)
                 ap_mode = str(ap_cfg.get("plan_mode") or "auto").lower()
-                if (
-                    send_tools
+                is_execute_turn = bool(isinstance(config, dict) and config.get("_turn_execute_plan"))
+                is_fast_code_turn = bool(isinstance(config, dict) and config.get("_turn_fast_code"))
+                revise_plan_id = str(config.get("_turn_revise_plan_id") or "").strip() if isinstance(config, dict) else ""
+                is_plan_only_turn = bool(revise_plan_id) or bool(isinstance(config, dict) and config.get("_turn_plan_only")) or (
+                    not is_execute_turn and not is_fast_code_turn and ap_mode == "plan_only"
+                )
+
+                active_plan = None
+                try:
+                    ap_mgr = get_action_plan_manager()
+                    active_plan = ap_mgr.resolve_plan(plan_id=revise_plan_id) if revise_plan_id else ap_mgr.resolve_plan()
+                except Exception:
+                    active_plan = None
+
+                # Compute context-safe blueprint budget based on configured num_ctx
+                _ctx_raw = (
+                    (config.get("ai") or {}).get("num_ctx")
+                    or (config.get("llm") or {}).get("num_ctx")
+                    or (config.get("ollama") or {}).get("num_ctx")
+                    or 16384
+                ) if isinstance(config, dict) else 16384
+                try:
+                    _ctx_val = int(_ctx_raw)
+                except Exception:
+                    _ctx_val = 16384
+                _blueprint_budget = 3200 if _ctx_val <= 8192 else (6000 if _ctx_val <= 16384 else 9000)
+
+                if revise_plan_id and active_plan and active_plan.get("status") not in ("completed", "cancelled"):
+                    current_doc = get_action_plan_manager().format_plan_blueprint_for_coder(
+                        active_plan, max_chars=_blueprint_budget
+                    )
+                    file_manager_rules += (
+                        "\n### ✏️ ARCHITECT MODE — IMPLEMENTATION PLAN REVISION (NO CODE EXECUTION YET) ###\n"
+                        f"You are revising the active Implementation Plan (`{active_plan.get('plan_id')}`, current revision v{active_plan.get('revision', 1)}).\n\n"
+                        f"CURRENT PLAN:\n{current_doc}\n\n"
+                        "REVISION RULES:\n"
+                        "1. You may inspect existing workspace files with read-only tools (`EXECUTOR__project_tree`, `EXECUTOR__read_file`, etc.) if needed.\n"
+                        "2. Incorporate the user's requested changes carefully while preserving all unaffected sections, file paths, schemas, and tests.\n"
+                        "3. Call `ACTION_PLANS__revise_plan(plan_id='"
+                        f"{active_plan.get('plan_id')}"
+                        "', revision_note='<what changed>', title='<updated title>', goal='<concise goal>', "
+                        "plan_markdown='<full updated Implementation Plan Markdown>', "
+                        "steps=[{\"title\": \"...\", \"files\": [\"[NEW] path/file.py\"], \"details\": \"...\"}, ...], "
+                        "verification_plan='<concrete tests & checks>')`.\n"
+                        "4. Write the Implementation Plan in the SAME language as the user's message and STOP immediately after calling `revise_plan`. "
+                        "Do NOT create directories, write/patch/delete files, or run commands in this turn.\n"
+                    )
+                elif is_plan_only_turn:
+                    existing_note = ""
+                    if active_plan and active_plan.get("status") in ("awaiting_approval", "draft"):
+                        existing_note = (
+                            f"\nNOTE: An awaiting plan already exists (`{active_plan.get('plan_id')}` — '{active_plan.get('title')}', v{active_plan.get('revision', 1)}). "
+                            "If the user is asking to modify/refine that plan, call `ACTION_PLANS__revise_plan(...)` instead of creating a separate plan. "
+                            "If the user is requesting a brand-new unrelated project/task, call `ACTION_PLANS__create_plan(...)`.\n"
+                        )
+                    file_manager_rules += (
+                        "\n### 📋 ARCHITECT MODE — IMPLEMENTATION PLAN (NO CODE EXECUTION YET) ###\n"
+                        "The user requested a detailed **Implementation Plan** FIRST — NOT a bare to-do list and NOT code execution yet.\n"
+                        "1. You may optionally use read-only inspection tools (`EXECUTOR__project_tree`, `EXECUTOR__read_file`, `EXECUTOR__list_dir`) to inspect existing project files.\n"
+                        "2. Call `ACTION_PLANS__create_plan(...)` (NEVER pass `require_approval=False`) populating ALL key fields:\n"
+                        "   - `title`: Concise project/feature title.\n"
+                        "   - `goal`: 1-3 sentence technical objective & scope.\n"
+                        "   - `plan_markdown`: A rich, concrete engineering Implementation Plan in Markdown (written in the SAME language as the user) using these sections:\n"
+                        "     * `## Goal & Context` — Problem statement, scope, and key constraints.\n"
+                        "     * `## Architecture & Technical Decisions` — Stack, folder layout, data model / DB tables & columns, API endpoints & payloads, state flow, and trade-offs.\n"
+                        "     * `## Proposed Changes` — Grouped by component/layer (`### Backend`, `### Frontend`, `### Tests`, etc.). For EACH file use `[NEW]`, `[MODIFY]`, or `[DELETE]` + exact relative path, and specify classes, functions, routes, UI components, and edge cases.\n"
+                        "     * `## Verification Plan` — Exact automated tests (test file, test cases, assertions), command to run, and runtime/endpoint verification steps.\n"
+                        "     * `## Open Questions` — Optional, only if an ambiguity genuinely requires user input before coding.\n"
+                        "   - `steps`: Ordered JSON array of 4 to 9 actionable execution steps aligned 1:1 with Proposed Changes & Verification Plan, using rich objects:\n"
+                        "     `[{\"title\": \"Implement SQLite ledger module\", \"files\": [\"[NEW] expense_radar/ledger.py\"], \"details\": \"Tables expenses & budgets, CRUD + summary + CSV export\"}, ...]`\n"
+                        "   - `verification_plan`: Concrete test commands and acceptance criteria.\n"
+                        f"{existing_note}"
+                        "3. STOP immediately after calling `ACTION_PLANS__create_plan` (or `revise_plan`). Do NOT create directories, write/patch/delete files, or run mutating commands in this turn.\n"
+                    )
+                elif active_plan and (is_execute_turn or active_plan.get("status") == "running"):
+                    plan_blueprint = get_action_plan_manager().format_plan_blueprint_for_coder(
+                        active_plan, max_chars=_blueprint_budget
+                    )
+                    file_manager_rules += (
+                        "\n### ▶️ ACTIVE IMPLEMENTATION PLAN TO EXECUTE ###\n"
+                        f"{plan_blueprint}\n\n"
+                        f"EXECUTION RULES FOR ACTIVE PLAN (`{active_plan.get('plan_id')}`):\n"
+                        "- Do NOT call `ACTION_PLANS__create_plan` again — the plan above is already active.\n"
+                        "- Follow the Architectural Blueprint specs above (exact file paths, DB schemas, routes, UI requirements, and tests).\n"
+                        "- Execute each pending/running step sequentially using real tools (`EXECUTOR__write_file`, `EXECUTOR__patch_file`, `EXECUTOR__run_project_test`, etc.).\n"
+                        "- After finishing EACH step, call `ACTION_PLANS__update_step(step_index=<N>, status='done', notes='<brief verification note>')` before moving to the next step.\n"
+                        "- When all steps are completed and verified on disk, call `ACTION_PLANS__complete_plan(summary='<final summary>')` and present the `[📄 filename](file:///...)` links.\n"
+                    )
+                elif (
+                    not is_fast_code_turn
+                    and active_plan
+                    and str(active_plan.get("status") or "").lower() in ("awaiting_approval", "draft")
+                    and str(active_plan.get("plan_mode") or "").lower() == "plan_only"
+                ):
+                    pending_summary = get_action_plan_manager().format_plan_summary(active_plan)
+                    file_manager_rules += (
+                        "\n### 📋 PENDING IMPLEMENTATION PLAN AWAITING USER APPROVAL ###\n"
+                        f"{pending_summary}\n"
+                        "- If the user is requesting modifications, additions, or architectural feedback on this pending plan, "
+                        "do NOT edit workspace files yet: call `ACTION_PLANS__revise_plan(...)` with the updated `plan_markdown`, `steps`, and `revision_note` and stop.\n"
+                        "- If the user wants to start implementing the approved plan, tell them they can click **Execute Plan** (or send `/code` / `/coder`), unless they explicitly asked a separate unrelated question.\n"
+                    )
+                elif (
+                    not is_fast_code_turn
+                    and send_tools
                     and ap_cfg.get("enabled", True)
                     and ap_mode in ("auto", "confirm")
                     and (

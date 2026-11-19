@@ -149,6 +149,83 @@ def get_active_soul(session_id: str) -> Optional[SoulProfile]:
     return None
 
 
+def resolve_coder_preset_id(preferred_id: str = "") -> str:
+    """Resolve a valid coding Global Preset ID (e.g. hecos_coder_pro, hecos_coder)."""
+    pref = str(preferred_id or "").strip()
+    if pref and get_soul(pref) is not None:
+        return pref
+    for candidate in ("hecos_coder", "hecos_coder_pro", "hecos_coder_pro_2"):
+        if get_soul(candidate) is not None:
+            return candidate
+    for soul in list_souls():
+        sid = str(soul.meta.id or "")
+        tags = [str(t).lower() for t in (soul.meta.tags or [])]
+        if "coder" in sid.lower() or "coding" in tags:
+            return sid
+    return "hecos_coder"
+
+
+def activate_soul_for_session(soul_id: str, session_id: str) -> Optional[SoulProfile]:
+    """
+    Activate a Global Preset (SoulProfile) for a specific chat session (`session_config_db`),
+    matching the exact session override structure used by `/api/souls/activate`.
+    """
+    if not session_id or not soul_id:
+        return None
+    soul = get_soul(soul_id)
+    if not soul:
+        return None
+    try:
+        from hecos.memory.session_config_db import get_session_config, set_session_config
+
+        overrides = get_session_config(session_id) or {}
+        for k in (
+            "ai",
+            "backend",
+            "inference",
+            "voice",
+            "persona",
+            "model",
+            "payload",
+            "payload_control",
+            "draft",
+        ):
+            overrides.pop(k, None)
+
+        overrides["active_global_preset"] = soul_id
+        overrides["ai"] = {}
+        if soul.persona and soul.persona.soul_file:
+            overrides["ai"]["active_personality"] = soul.persona.soul_file
+        if soul.voice and soul.voice.tts_engine:
+            overrides["ai"]["tts_engine"] = soul.voice.tts_engine
+        if soul.voice and soul.voice.tts_voice:
+            overrides["ai"]["tts_voice"] = soul.voice.tts_voice
+
+        if soul.persona:
+            overrides["persona"] = soul.persona.model_dump(exclude_none=True)
+        if soul.model:
+            overrides["model"] = soul.model.model_dump(exclude_none=True)
+            if soul.model.backend_type:
+                btype = soul.model.backend_type
+                overrides.setdefault("backend", {})["type"] = btype
+                if soul.model.model_name:
+                    overrides["backend"].setdefault(btype, {})["model"] = soul.model.model_name
+        if soul.inference:
+            overrides["inference"] = soul.inference.model_dump(exclude_none=True)
+        if soul.voice:
+            overrides["voice"] = soul.voice.model_dump(exclude_none=True)
+        if soul.payload:
+            p_dump = soul.payload.model_dump(exclude_none=True)
+            overrides["payload"] = p_dump
+            overrides["payload_control"] = dict(p_dump)
+
+        set_session_config(session_id, overrides)
+        return soul
+    except Exception as e:
+        logger.error(f"[GlobalPresets] Error activating soul '{soul_id}' for session '{session_id}': {e}")
+        return None
+
+
 # Canonical Preset Manager function aliases
 list_presets = list_souls
 get_preset = get_soul
@@ -157,3 +234,4 @@ duplicate_preset = duplicate_soul
 delete_preset = delete_soul
 get_active_preset_id = get_active_soul_id
 get_active_preset = get_active_soul
+activate_preset_for_session = activate_soul_for_session
