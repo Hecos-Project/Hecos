@@ -6,18 +6,7 @@ ai:
     '2': Hecos_Coder
     '3': Urania_9800
     '4': antonio_meloni
-    '5': atlas_man
-    '6': claudia
-    '7': dummy_null
-    '8': hecos_presenter
-    '9': hecos_teacher
-    '10': jun_my_little_princess
-    '11': motoko_kusanagi
-    '12': nova_x-01
-    '13': sebastian_pro
-    '14': urania_9800_presenter
-    '15': urania_presenter
-    '16': urania_teacher
+    '5': dummy_null
   save_special_instructions: true
   special_instructions: Ricorda che devi sempre parlare in italiano, non in inglese.
     Scrivi sempre e solo in lingua italiana - a meno che non si tratti della generazione
