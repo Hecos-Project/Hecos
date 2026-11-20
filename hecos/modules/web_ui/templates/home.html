@@ -9,12 +9,12 @@
 <!-- Theme tokens (must load first to prevent FOUC) -->
 <link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
 <link rel="stylesheet" href="/assets/css/core/base.css?v={{ version }}">
-<link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}&t=20261120_tt1">
 <!-- Module B standalone stylesheet -->
-<link rel="stylesheet" href="/assets/css/home.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/home.css?v={{ version }}&t=20261120_pages1">
 <!-- Control Room widget theme rules (.room-widget-card.theme-* etc.) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack.min.css">
-<link rel="stylesheet" href="/assets/css/control_room_panel.css?v={{ version }}&t=20260521">
+<link rel="stylesheet" href="/assets/css/control_room_panel.css?v={{ version }}&t=20261120_pages1">
 <link rel="stylesheet" href="/static/css/hecos_file_picker.css?v={{ version }}">
 <link rel="stylesheet" href="/static/css/hecos_wheel_picker.css?v={{ version }}">
 <link rel="stylesheet" href="/static/css/hecos_progress.css?v={{ version }}-purple">
@@ -84,20 +84,49 @@
       <span>Net Search</span>
     </a>
     {% endif %}
-    <span class="home-nav-link" style="cursor:default; opacity:0.6;">
-      <i class="fas fa-user"></i>
-      <span>{{ current_user.username }}</span>
-    </span>
     {% endif %}
     <!-- Edit layout toggle -->
     <button class="home-nav-link" id="home-edit-btn"
-            style="cursor:pointer; border:none;"
+            style="cursor:pointer;"
             title="Edit layout">
       <i class="fas fa-pen-to-square"></i>
       <span>Edit</span>
     </button>
+    {% if current_user.is_authenticated %}
+    <span class="home-nav-divider" aria-hidden="true"></span>
+    <span class="home-user-pill"
+          title="Active user: {{ current_user.username }}{% if current_user.role %} ({{ current_user.role }}){% endif %}">
+      <span class="home-user-dot" aria-hidden="true"></span>
+      <i class="fas fa-user"></i>
+      <span>{{ current_user.username }}</span>
+    </span>
+    {% endif %}
   </nav>
 </header>
+
+<!-- Pages Bar (Home Assistant-style views) ────────────────────── -->
+<div id="room-pages-bar" class="cr-pages-bar cr-pages-bar-standalone" role="tablist" aria-label="{{ t('room_pages_label') or 'Control Room Pages' }}">
+  <button type="button" class="cr-pages-arrow cr-pages-arrow-left" id="cr-pages-scroll-left"
+          title="{{ t('room_page_scroll_left') or 'Scroll pages left' }}" aria-label="Scroll pages left">
+    <i class="fas fa-chevron-left"></i>
+  </button>
+  <div class="cr-pages-track" id="cr-pages-track"></div>
+  <button type="button" class="cr-pages-arrow cr-pages-arrow-right" id="cr-pages-scroll-right"
+          title="{{ t('room_page_scroll_right') or 'Scroll pages right' }}" aria-label="Scroll pages right">
+    <i class="fas fa-chevron-right"></i>
+  </button>
+  <div class="cr-pages-actions">
+    <button type="button" class="cr-pages-action-btn cr-pages-add-widget-btn" id="cr-pages-add-widget"
+            title="{{ t('room_page_add_widgets') or 'Add / remove widgets on this page' }}" aria-label="Manage page widgets">
+      <i class="fas fa-cubes"></i>
+      <span class="cr-btn-lbl">+ Widget</span>
+    </button>
+    <button type="button" class="cr-pages-action-btn cr-pages-add-btn" id="cr-pages-add"
+            title="{{ t('room_page_new') or 'New Page' }}" aria-label="New Page">
+      <i class="fas fa-plus"></i>
+    </button>
+  </div>
+</div>
 
 <!-- Widget Grid ──────────────────────────────────────────────── -->
 <main id="home-grid" class="grid-stack" gs-column="6" role="main" aria-label="Widget Dashboard">
@@ -132,12 +161,13 @@
 
 <!-- Grid Engine -->
 <script src="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack-all.js"></script>
-<script src="/static/js/control_room_grid_sync.js?v={{ version }}"></script>
-<script src="/static/js/control_room_grid_render.js?v={{ version }}"></script>
+<script src="/static/js/control_room_grid_sync.js?v={{ version }}&t=20261120_pages1"></script>
+<script src="/static/js/control_room_pages.js?v={{ version }}&t=20261120_pages1"></script>
+<script src="/static/js/control_room_grid_render.js?v={{ version }}&t=20261120_pages2"></script>
 <script src="/static/js/control_room_grid_drag.js?v={{ version }}"></script>
-<script src="/static/js/control_room_grid_actions.js?v={{ version }}"></script>
+<script src="/static/js/control_room_grid_actions.js?v={{ version }}&t=20261120_pages1"></script>
 <script src="/static/js/control_room_grid_aes.js?v={{ version }}"></script>
-<script src="/static/js/control_room_grid.js?v={{ version }}&t=20260521"></script>
+<script src="/static/js/control_room_grid.js?v={{ version }}&t=20261120_pages2"></script>
 
 <!-- Global Events (Reminders & Backend Sync) -->
 <script src="/static/js/hecos_progress.js?v={{ version }}-purple"></script>
@@ -159,6 +189,7 @@
       window.HKS.setContext('home');
       window.HKS.registerFocusZones([
         '#home-header',
+        '#room-pages-bar',
         '#home-grid',
         '#home-footer'
       ]);
@@ -173,6 +204,7 @@
 <script src="/static/js/keyboard_shortcuts/hks_actions.js?v={{ version }}"></script>
 <script src="/static/js/keyboard_shortcuts/hks_overlay.js?v={{ version }}"></script>
 <script src="/static/js/keyboard_shortcuts/hks_recorder.js?v={{ version }}"></script>
+<script src="/static/js/hecos_tooltip.js?v={{ version }}&t=20261120_tt1"></script>
 <script src="/static/js/chat_toast_unified/chat_toast_unified.js?v={{ version }}"></script>
 
 </body>

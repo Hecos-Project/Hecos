@@ -110,10 +110,16 @@ def update_config_logic(current_config, new_data):
     preserve_avail = not (isinstance(new_data, dict) and new_data.pop("_update_available_models", False))
     saved_ollama_avail = copy.deepcopy(current_config.get("backend", {}).get("ollama", {}).get("available_models"))
     saved_kobold_avail = copy.deepcopy(current_config.get("backend", {}).get("kobold", {}).get("available_models"))
+    # Control Room pages are managed exclusively via /api/widgets/room/pages* endpoints;
+    # prevent stale Central Hub window.cfg snapshots from overwriting them on unrelated saves.
+    saved_room_pages = copy.deepcopy(current_config.get("widgets", {}).get("room_pages"))
 
     if isinstance(new_data, dict) and "hpm" in new_data and isinstance(new_data["hpm"], dict):
         new_data["hpm"].pop("github_token", None)
     deep_update(temp_config, new_data)
+
+    if saved_room_pages is not None and isinstance(temp_config.get("widgets"), dict):
+        temp_config["widgets"]["room_pages"] = saved_room_pages
 
     if preserve_avail:
         if saved_ollama_avail is not None and isinstance(temp_config.get("backend", {}).get("ollama"), dict):

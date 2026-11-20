@@ -6,7 +6,7 @@
 .dcc-nav-container {
     position: relative;
     width: 100%;
-    min-height: 56px; /* Base height for chips */
+    min-height: 44px; /* Base compact height for desktop chips */
     flex-shrink: 0;
     overflow: hidden; /* For slide animations */
     display: flex;
@@ -127,13 +127,13 @@
     width: 100%;
     overflow: hidden;
     position: relative;
-    height: 54px; /* Increased height to allow top hover transform without cutting off */
+    height: 46px; /* Compact desktop height with room for top hover lift */
 }
 
 .dcc-carousel-arrow {
     flex-shrink: 0;
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     border: none;
     border-radius: 50%;
     background: rgba(255,255,255,0.06);
@@ -161,8 +161,8 @@
 .dcc-featured-track {
     display: flex;
     flex-wrap: nowrap;
-    justify-content: center; /* Centers chips if there are fewer than 3 */
-    gap: 10px;
+    justify-content: center; /* Centers chips if there are fewer than 5 */
+    gap: 8px;
     width: 100%;
     position: absolute;
     top: 5px; /* Push down to leave room at the top for hover effect */
@@ -170,18 +170,18 @@
     transition: transform 0.25s ease-out;
 }
 
-/* 3 chips per page: (100% - 2 gaps of 10px) / 3 */
+/* Desktop: 5 compact chips per page: (100% - 4 gaps of 8px) / 5 */
 .dcc-featured-chip {
-    flex: 0 0 calc((100% - 20px) / 3);
-    max-width: calc((100% - 20px) / 3);
+    flex: 0 0 calc((100% - 32px) / 5);
+    max-width: calc((100% - 32px) / 5);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
     white-space: nowrap;
     overflow: hidden;
-    padding: 10px 14px !important;
-    font-size: 13.5px;
+    padding: 7px 10px !important;
+    font-size: 12px;
     font-weight: 500;
     position: relative;
 }

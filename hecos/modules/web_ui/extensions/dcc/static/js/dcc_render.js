@@ -20,10 +20,27 @@
     let _activeCat = null;
     // Track NEW badges already flashed in this chat page session so they flash only 3x on first view
     const _flashedNewIds = new Set();
+    // Cleanup hooks for keyboard navigation & responsive breakpoint listener
+    let _cleanupL1Listeners = null;
+
+    function _getResponsivePageSize() {
+        if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+            return window.matchMedia('(max-width: 768px)').matches ? 3 : 5;
+        }
+        return 5;
+    }
+
+    function _detachL1Listeners() {
+        if (typeof _cleanupL1Listeners === 'function') {
+            try { _cleanupL1Listeners(); } catch (_) {}
+            _cleanupL1Listeners = null;
+        }
+    }
 
     // ── Navigation ─────────────────────────────────────────────────────────────
 
     function _navigate(newLevel, itemId = null, direction = 'forward') {
+        _detachL1Listeners();
         _level = newLevel;
         
         let newView = null;
@@ -94,8 +111,8 @@
             const otherChips = _shuffle(_data.featured.filter(m => !m.is_new));
             const ordered = [...newChips, ...otherChips];
 
-            const PAGE_SIZE = 3;
-            const totalPages = Math.ceil(ordered.length / PAGE_SIZE);
+            let pageSize = _getResponsivePageSize();
+            let totalPages = Math.max(1, Math.ceil(ordered.length / pageSize));
             let currentPage = 0;
 
             // Build the carousel container
@@ -104,21 +121,25 @@
 
             // Left arrow
             const arrowLeft = document.createElement('button');
+            arrowLeft.type = 'button';
             arrowLeft.className = 'dcc-carousel-arrow dcc-arrow-left';
             arrowLeft.innerHTML = '<i class="fas fa-chevron-left"></i>';
-            arrowLeft.title = 'Previous';
+            arrowLeft.title = 'Previous (←)';
+            arrowLeft.setAttribute('aria-label', 'Previous chips');
             carousel.appendChild(arrowLeft);
 
-            // Viewport (shows exactly 5 chips)
+            // Viewport (shows 5 compact chips on desktop, 3 on mobile)
             const viewport = document.createElement('div');
             viewport.className = 'dcc-featured-viewport';
             carousel.appendChild(viewport);
 
             // Right arrow
             const arrowRight = document.createElement('button');
+            arrowRight.type = 'button';
             arrowRight.className = 'dcc-carousel-arrow dcc-arrow-right';
             arrowRight.innerHTML = '<i class="fas fa-chevron-right"></i>';
-            arrowRight.title = 'Next';
+            arrowRight.title = 'Next (→)';
+            arrowRight.setAttribute('aria-label', 'Next chips');
             carousel.appendChild(arrowRight);
 
             view.appendChild(carousel);
@@ -180,8 +201,8 @@
 
             // Render a specific page into the viewport
             function renderPage(pageIndex, direction) {
-                const start = pageIndex * PAGE_SIZE;
-                const pageItems = ordered.slice(start, start + PAGE_SIZE);
+                const start = pageIndex * pageSize;
+                const pageItems = ordered.slice(start, start + pageSize);
 
                 const newTrack = document.createElement('div');
                 newTrack.className = 'dcc-featured-track';
@@ -214,21 +235,113 @@
                 arrowRight.classList.toggle('dcc-arrow-disabled', currentPage >= totalPages - 1);
             }
 
-            arrowLeft.addEventListener('click', (e) => {
-                e.stopPropagation();
+            function goPrev() {
                 if (currentPage > 0) {
                     currentPage--;
                     renderPage(currentPage, 'prev');
                 }
-            });
+            }
 
-            arrowRight.addEventListener('click', (e) => {
-                e.stopPropagation();
+            function goNext() {
                 if (currentPage < totalPages - 1) {
                     currentPage++;
                     renderPage(currentPage, 'next');
                 }
+            }
+
+            arrowLeft.addEventListener('click', (e) => {
+                e.stopPropagation();
+                goPrev();
             });
+
+            arrowRight.addEventListener('click', (e) => {
+                e.stopPropagation();
+                goNext();
+            });
+
+            // Keyboard Left / Right arrow scrolling while Welcome Screen is visible
+            function _isWelcomeCarouselVisible() {
+                if (!carousel.isConnected || _level !== 1) return false;
+                const welcomeEl = document.getElementById('welcome');
+                if (welcomeEl) {
+                    const cs = window.getComputedStyle ? window.getComputedStyle(welcomeEl) : null;
+                    if (cs && (cs.display === 'none' || cs.visibility === 'hidden')) return false;
+                    if (welcomeEl.style && welcomeEl.style.display === 'none') return false;
+                }
+                if (carousel.offsetParent === null && (!welcomeEl || welcomeEl.offsetParent === null)) {
+                    return false;
+                }
+                // Do not steal arrows when any modal/drawer/panel overlay is open
+                if (document.querySelector(
+                    '#preset-manager-panel.open, #soul-forge-panel.open, #session-overrides-panel.open, ' +
+                    '#hks-modal.open, .modal.open, .hfp-overlay.open, .hwp-overlay.open'
+                )) {
+                    return false;
+                }
+                return true;
+            }
+
+            function _onKeyDown(e) {
+                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+                if (!_isWelcomeCarouselVisible()) return;
+
+                const active = document.activeElement;
+                if (active && active !== document.body && active !== document.documentElement) {
+                    const tag = (active.tagName || '').toUpperCase();
+                    if (active.isContentEditable || tag === 'SELECT') return;
+                    if (tag === 'INPUT') return;
+                    if (tag === 'TEXTAREA') {
+                        // Allow arrows on empty chat composer (#user-input), preserve cursor movement when text exists
+                        const isChatComposer = (active.id === 'user-input' || active === window.userInput);
+                        if (!isChatComposer || (active.value && active.value.length > 0)) return;
+                    }
+                }
+
+                if (e.key === 'ArrowLeft') {
+                    if (currentPage > 0) {
+                        e.preventDefault();
+                        goPrev();
+                    }
+                } else if (e.key === 'ArrowRight') {
+                    if (currentPage < totalPages - 1) {
+                        e.preventDefault();
+                        goNext();
+                    }
+                }
+            }
+
+            document.addEventListener('keydown', _onKeyDown);
+
+            // Responsive sync: recalculate 5 (desktop) vs 3 (mobile) if window crosses 768px
+            const mq = (typeof window !== 'undefined' && typeof window.matchMedia === 'function')
+                ? window.matchMedia('(max-width: 768px)')
+                : null;
+            const _onViewportChange = () => {
+                if (!carousel.isConnected) {
+                    _detachL1Listeners();
+                    return;
+                }
+                const nextSize = _getResponsivePageSize();
+                if (nextSize === pageSize) return;
+                const firstVisibleIdx = currentPage * pageSize;
+                pageSize = nextSize;
+                totalPages = Math.max(1, Math.ceil(ordered.length / pageSize));
+                currentPage = Math.min(totalPages - 1, Math.floor(firstVisibleIdx / pageSize));
+                renderPage(currentPage, null);
+            };
+            if (mq) {
+                if (typeof mq.addEventListener === 'function') mq.addEventListener('change', _onViewportChange);
+                else if (typeof mq.addListener === 'function') mq.addListener(_onViewportChange);
+            }
+
+            _cleanupL1Listeners = () => {
+                document.removeEventListener('keydown', _onKeyDown);
+                if (mq) {
+                    if (typeof mq.removeEventListener === 'function') mq.removeEventListener('change', _onViewportChange);
+                    else if (typeof mq.removeListener === 'function') mq.removeListener(_onViewportChange);
+                }
+            };
 
             // Initial render
             renderPage(0, null);
@@ -283,6 +396,7 @@
     // ── Main Render Entry ──────────────────────────────────────────────────────
 
     function render(container, data) {
+        _detachL1Listeners();
         if (!data || data.length === 0) {
             if (window.WelcomeChips) window.WelcomeChips.renderStatic(container);
             return;

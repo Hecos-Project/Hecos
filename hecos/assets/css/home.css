@@ -75,6 +75,41 @@ body {
   color: var(--accent);
   border-color: var(--accent);
 }
+.home-nav-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  opacity: 0.7;
+  margin: 0 2px;
+}
+.home-user-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--accent-rgb, 108, 140, 255), 0.22);
+  background: rgba(var(--bg2-rgb, 20, 23, 38), 0.85);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+  user-select: none;
+  pointer-events: auto;
+}
+.home-user-pill i {
+  font-size: 10px;
+  color: var(--accent);
+  opacity: 0.85;
+}
+.home-user-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green, #34d399);
+  box-shadow: 0 0 6px rgba(var(--green-rgb, 52, 211, 153), 0.55);
+  flex-shrink: 0;
+}
 .home-title-bar {
   font-size: 11px;
   font-weight: 700;
@@ -193,7 +228,7 @@ body {
   opacity: 0.7;
 }
 
-.room-card-span-btn, .room-card-remove-btn {
+.room-card-span-btn, .room-card-remove-btn, .room-card-page-btn {
   height: 24px;
   border-radius: 5px;
   border: 1px solid var(--border);
@@ -206,9 +241,23 @@ body {
   display: flex; align-items: center; gap: 4px;
   transition: all 0.15s;
 }
-.room-card-span-btn:hover { border-color: var(--accent); color: var(--accent); }
-.room-card-span-btn.active { background: rgba(var(--accent-rgb),.12); color: var(--accent); border-color: var(--accent); }
+.room-card-span-btn:hover, .room-card-page-btn:hover { border-color: var(--accent); color: var(--accent); }
+.room-card-span-btn.active, .room-card-page-btn.active { background: rgba(var(--accent-rgb),.12); color: var(--accent); border-color: var(--accent); }
 .room-card-remove-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* ── Standalone Pages Bar Sticky Alignment ─────────────────────────────────── */
+#room-pages-bar.cr-pages-bar-standalone {
+  padding: 8px 24px;
+  position: sticky;
+  top: 53px;
+  z-index: 9;
+}
+@media (max-width: 600px) {
+  #room-pages-bar.cr-pages-bar-standalone {
+    padding: 6px 14px;
+    top: 49px;
+  }
+}
 
 .room-grid-editing .room-widget-card { cursor: grab; }
 .room-widget-card.dragging { opacity: 0.3; }

@@ -97,6 +97,9 @@ window.controlRoom = (function () {
                 window._gsGrid.column(cols, 'moveScale');
             }
         }
+        if (window.controlRoomPages && typeof window.controlRoomPages.updateScrollArrows === 'function') {
+            window.controlRoomPages.updateScrollArrows();
+        }
     };
 
     function open() {
@@ -143,11 +146,11 @@ window.controlRoom = (function () {
         }
     }
 
-    // ── HPM package events: reset loaded flag so next open always re-fetches ──
+    // ── HPM & Pages events: reset loaded flag so next open always re-fetches ──
     (function() {
         const _hpmChannel = new BroadcastChannel('hecos_widgets');
         _hpmChannel.onmessage = (e) => {
-            if (e.data && e.data.type === 'widgets_reload_request') {
+            if (e.data && (e.data.type === 'widgets_reload_request' || e.data.type === 'room_pages_update')) {
                 _loaded = false;
                 if (_isOpen && window.controlRoomGrid) {
                     window.controlRoomGrid.debouncedRefresh();
@@ -218,6 +221,9 @@ window.controlRoom = (function () {
                     if (typeof window._gsGrid.onParentResize === 'function') {
                         window._gsGrid.onParentResize();
                     }
+                }
+                if (window.controlRoomPages && typeof window.controlRoomPages.updateScrollArrows === 'function') {
+                    window.controlRoomPages.updateScrollArrows();
                 }
             }
         }
