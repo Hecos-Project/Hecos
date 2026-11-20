@@ -17,7 +17,7 @@ window.loadChatSessions = async function () {
     if (resActive.ok) {
         const isNewSession = window.chatHistoryState.activeSessionId !== resActive.session_id;
         window.chatHistoryState.activeSessionId = resActive.session_id;
-        window.chatHistoryState.activeMode      = resActive.mode || 'normal';
+        window.chatHistoryState.activeMode      = window.normalizePrivacyMode ? window.normalizePrivacyMode(resActive.mode) : (resActive.mode || 'normal');
         // Ensure chatHistory is empty for a new session until messages are loaded
         if (isNewSession) {
             window.chatHistory = []; 
@@ -100,12 +100,12 @@ function renderSessionList() {
 
         group.sessions.forEach(s => {
             const isActive   = s.id === activeId;
-            const modeIcon   = s.privacy_mode === 'incognito' ? '🕵️' :
-                               s.privacy_mode === 'auto_wipe' ? '🧹' : '';
+            const normMode   = window.normalizePrivacyMode ? window.normalizePrivacyMode(s.privacy_mode) : (s.privacy_mode || 'normal');
+            const modeIcon   = normMode === 'incognito' ? '🕵️' : '';
             const msgCount   = s.message_count || 0;
             const timeStr    = s.updated_at ? s.updated_at.slice(11, 16) : '';
             const title      = escapeHistoryHtml(s.title || 'Chat senza titolo');
-            const isNormal   = s.privacy_mode === 'normal';
+            const isNormal   = normMode === 'normal';
             
             let actionsHtml = '';
             

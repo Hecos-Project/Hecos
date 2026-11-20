@@ -79,7 +79,7 @@
     "hub_desc_users": "Manage user accounts, roles, permissions, and isolated per-user memory vaults (Admin).",
     "hub_desc_system": "Configure global core preferences: language, startup options, external dependencies, and maintenance.",
     "hub_desc_logs": "Inspect real-time server logs, filter by subsystem or severity, and troubleshoot issues live.",
-    "hub_desc_privacy": "Configure 3-tier privacy modes (Normal, Auto-Wipe, Incognito), history retention, and data cleanup.",
+    "hub_desc_privacy": "Configure privacy modes (Normal & Incognito), history retention, and data cleanup.",
     "hub_desc_hpm_settings": "Configure Module Manager repositories, Store sources, restart policies, and package diagnostics.",
     "hub_desc_presenter": "Configure the live Presenter engine for real-time voice commentary, announcements, and Playbook guidance.",
     "hub_desc_chat_ui": "Customize the Chat workspace layout, message display, sidebar behavior, and visual preferences."

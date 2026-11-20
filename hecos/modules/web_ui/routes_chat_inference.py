@@ -392,6 +392,13 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         if current_persona.endswith(".yaml"):
             current_persona = current_persona[:-5]
             
+        _is_incognito_session = False
+        try:
+            from hecos.core.privacy import privacy_manager as _pm
+            _is_incognito_session = bool(_pm.is_session_incognito(session_id))
+        except Exception:
+            _is_incognito_session = False
+
         _trace_summary = getattr(agent, "last_trace_summary", None)
         _trace_persist = bool(getattr(agent, "agent_config", {}).get("trace_persist_history", True))
         try:
@@ -413,18 +420,22 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
             else:
                 _m_info = _db_m_info
             if _db_m_info:
-                from hecos.memory.brain_interface import _db_path
-                import sqlite3
+                if _is_incognito_session:
+                    from hecos.memory import session_manager as _sm
+                    _sm.update_ram_last_assistant_meta(session_id, model_info=_db_m_info)
+                else:
+                    from hecos.memory.brain_interface import _db_path
+                    import sqlite3
 
-                _db = _db_path(user_id)
-                with sqlite3.connect(_db, timeout=10) as _conn:
-                    _conn.execute(
-                        "UPDATE history SET model_info = ? WHERE id = ("
-                        "  SELECT MAX(id) FROM history WHERE session_id = ? AND role = 'assistant'"
-                        ")",
-                        (_db_m_info, session_id),
-                    )
-                    _conn.commit()
+                    _db = _db_path(user_id)
+                    with sqlite3.connect(_db, timeout=10) as _conn:
+                        _conn.execute(
+                            "UPDATE history SET model_info = ? WHERE id = ("
+                            "  SELECT MAX(id) FROM history WHERE session_id = ? AND role = 'assistant'"
+                            ")",
+                            (_db_m_info, session_id),
+                        )
+                        _conn.commit()
         except Exception as e:
             _chat_log.error(f"Error enriching model_info: {e}")
             _m_info = None
@@ -442,8 +453,8 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         sess["history"].append({"role": "user",      "content": user_message})
         sess["history"].append({"role": "assistant",  "content": full_text})
 
-        # Record Global Preset usage only once an assistant reply actually completed
-        if eff_preset_id and not (cancel_event is not None and cancel_event.is_set()):
+        # Record Global Preset usage only once an assistant reply actually completed (skip in Incognito)
+        if eff_preset_id and not _is_incognito_session and not (cancel_event is not None and cancel_event.is_set()):
             try:
                 from hecos.core.global_presets.usage_stats import record_preset_usage
                 record_preset_usage(eff_preset_id, session_id=session_id)
@@ -483,22 +494,26 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
                 "session_id": session_id,
                 "tab_id": sender_tab_id or "",
             })
-            # Persist audio_id to the last assistant message in the DB
+            # Persist audio_id to the last assistant message (RAM in Incognito, SQLite in Normal)
             if audio_id:
                 try:
-                    from hecos.memory.brain_interface import _db_path
-                    uid = sess.get("user_id", "admin")
-                    db  = _db_path(uid)
-                    import sqlite3
-                    with sqlite3.connect(db, timeout=10) as _conn:
-                        _conn.execute(
-                            "UPDATE history SET audio_file = ? WHERE id = ("
-                            "  SELECT MAX(id) FROM history WHERE session_id = ? AND role = 'assistant'"
-                            ")",
-                            (audio_id, session_id)
-                        )
-                        _conn.commit()
-                    _chat_log.info(f"[INFERENCE] audio_file={audio_id} saved to history.")
+                    if _is_incognito_session:
+                        from hecos.memory import session_manager as _sm
+                        _sm.update_ram_last_assistant_meta(session_id, audio_file=audio_id)
+                    else:
+                        from hecos.memory.brain_interface import _db_path
+                        uid = sess.get("user_id", "admin")
+                        db  = _db_path(uid)
+                        import sqlite3
+                        with sqlite3.connect(db, timeout=10) as _conn:
+                            _conn.execute(
+                                "UPDATE history SET audio_file = ? WHERE id = ("
+                                "  SELECT MAX(id) FROM history WHERE session_id = ? AND role = 'assistant'"
+                                ")",
+                                (audio_id, session_id)
+                            )
+                            _conn.commit()
+                        _chat_log.info(f"[INFERENCE] audio_file={audio_id} saved to history.")
                 except Exception as _ae:
                     _chat_log.warning(f"[INFERENCE] Could not save audio_id to DB: {_ae}")
         elif audio_status == "system":

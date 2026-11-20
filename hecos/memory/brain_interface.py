@@ -226,8 +226,7 @@ def save_message(role, message, config: dict = None, user_id: str = "admin",
                  broadcast_sse: bool = False, sender_tab_id: str = None,
                  model_info: str = None):
     """Stores an exchange in episodic memory, respecting config flags and privacy mode.
-    - incognito → discard entirely (no storage anywhere)
-    - auto_wipe → store in RAM only (vanishes on restart)
+    - incognito → RAM only (keeps multi-turn flow while open, zero disk writes, vanishes on restart)
     - normal    → persist in SQLite DB as usual
     """
     if not is_memory_enabled(config):
@@ -238,15 +237,17 @@ def save_message(role, message, config: dict = None, user_id: str = "admin",
         if not session_id:
             session_id = privacy_manager.get_session_id()
 
-        if privacy_manager.is_incognito():
-            # Total privacy: discard message, write nothing
-            return
-
-        if privacy_manager.is_auto_wipe():
-            # RAM-only: store in session_manager's in-memory store
+        if privacy_manager.is_session_incognito(session_id):
+            # True Incognito: RAM-only during open session, zero SQLite/disk writes
             from hecos.memory import session_manager
             if session_id:
-                session_manager.add_ram_message(session_id, role, message)
+                session_manager.add_ram_message(
+                    session_id,
+                    role,
+                    message,
+                    persona_name=persona_name,
+                    model_info=model_info,
+                )
             return
 
     except Exception:
@@ -307,17 +308,15 @@ def upsert_last_assistant_message(message, config: dict = None, user_id: str = "
         if not session_id:
             session_id = privacy_manager.get_session_id()
 
-        if privacy_manager.is_incognito():
-            return
-
-        if privacy_manager.is_auto_wipe():
+        if privacy_manager.is_session_incognito(session_id):
             from hecos.memory import session_manager
             if session_id:
-                msgs = session_manager._ram_sessions.get(session_id, [])
-                if msgs and msgs[-1].get("role") == "assistant":
-                    msgs[-1]["message"] = message
-                else:
-                    session_manager.add_ram_message(session_id, "assistant", message)
+                session_manager.upsert_ram_assistant_message(
+                    session_id,
+                    message,
+                    persona_name=persona_name,
+                    model_info=model_info,
+                )
             return
     except Exception:
         pass

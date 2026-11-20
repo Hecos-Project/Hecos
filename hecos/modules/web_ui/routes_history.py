@@ -44,7 +44,7 @@ def create_session():
     try:
         data = request.get_json(silent=True) or {}
         title        = data.get("title")
-        privacy_mode = data.get("privacy_mode", "normal")
+        privacy_mode = _pm().normalize_mode(data.get("privacy_mode", "normal"))
         
         session_id = _sm().create_session(title=title, privacy_mode=privacy_mode)
         # Set the new session as active in the privacy manager
@@ -90,7 +90,7 @@ def set_active_session():
         if not session:
             return jsonify({"ok": False, "error": "Session not found"}), 404
         
-        mode = data.get("privacy_mode", session.get("privacy_mode", "normal"))
+        mode = _pm().normalize_mode(data.get("privacy_mode", session.get("privacy_mode", "normal")))
         _pm().set_session(session_id, mode)
         return jsonify({"ok": True, "session_id": session_id, "mode": mode})
     except Exception as e:
@@ -217,10 +217,11 @@ def set_privacy():
     """Sets the privacy mode for the current session. Body: {mode}"""
     try:
         data = request.get_json(silent=True) or {}
-        mode = data.get("mode", "normal")
-        if mode not in ("normal", "auto_wipe", "incognito"):
+        raw_mode = data.get("mode", "normal")
+        if raw_mode not in ("normal", "auto_wipe", "incognito"):
             return jsonify({"ok": False, "error": "Invalid mode"}), 400
         pm = _pm()
+        mode = pm.normalize_mode(raw_mode)
         session_id = pm.get_session_id() or "default"
         
         # 1. Instruct session_manager to move it between DB/RAM if necessary

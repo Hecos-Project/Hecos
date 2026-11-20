@@ -525,23 +525,23 @@ window.updateToolModeBadge = function(mode) {
         chip.classList.add('tool-mode-direct');
         icon.className = 'fas fa-bolt';
         label.textContent = 'Direct Commands';
-        chip.title = 'Direct Commands Mode: Tool schemas stripped for maximum speed (~8k tokens saved). Lazy-loaded plugins (IMAGE_GEN, CALENDAR, etc.) cannot be auto-triggered — use /img for images. Direct /img and /search commands active. Click to configure.';
+        chip.title = 'Direct Commands Mode: Tool schemas stripped for maximum speed (~8k tokens saved). Lazy-loaded plugins (IMAGE_GEN, CALENDAR, etc.) cannot be auto-triggered — use /img for images. Direct /img and /search commands active. Open Preset Manager to configure.';
     } else if (mode === 'disabled') {
         chip.classList.add('tool-mode-disabled');
         icon.className = 'fas fa-comments';
         label.textContent = 'Chat Only';
-        chip.title = 'Chat Only Mode: Tool execution disabled at system level. Click to configure.';
+        chip.title = 'Chat Only Mode: Tool execution disabled at system level. Open Preset Manager to configure.';
     } else if (mode === 'custom') {
         chip.classList.add('tool-mode-native');
         icon.className = 'fas fa-sliders-h';
         const selCount = (window.sfState?.selectedTools || []).length;
         label.textContent = `Tools: Granular${selCount ? ' (' + selCount + ')' : ''}`;
-        chip.title = 'Granular Tool Selection Mode: Only selected modules/tools are exposed to the LLM in this chat/preset. Click to configure.';
+        chip.title = 'Granular Tool Selection Mode: Only selected modules/tools are exposed to the LLM in this chat/preset. Open Preset Manager to configure.';
     } else {
         chip.classList.add('tool-mode-native');
         icon.className = 'fas fa-toolbox';
         label.textContent = 'Tools: ON';
-        chip.title = 'Native Tool Calling Mode: JSON function schemas loaded in model payload. Click to configure.';
+        chip.title = 'Native Tool Calling Mode: JSON function schemas loaded in model payload. Open Preset Manager to configure.';
     }
 };
 

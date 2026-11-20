@@ -1692,7 +1692,7 @@ window.sfUpdateTooltip = function(soul, explicitSoulId) {
         
         let shortcutKey = 'F3';
         if (window.HKS_BINDINGS && typeof window.HKS_BINDINGS.get === 'function') {
-            const raw = window.HKS_BINDINGS.get('ui.global_defaults') || window.HKS_BINDINGS.get('ui.chat_overrides');
+            const raw = window.HKS_BINDINGS.get('ui.global_defaults');
             if (raw) shortcutKey = raw.toUpperCase();
         }
         lines.push(`\n⚡ Click to open Preset Manager (${shortcutKey})`);

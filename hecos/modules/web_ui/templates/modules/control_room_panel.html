@@ -34,24 +34,25 @@
   </div>
 
   <!-- Pages Bar (Home Assistant-style views) ───────────── -->
-  <div id="room-pages-bar" class="cr-pages-bar" role="tablist" aria-label="{{ t('room_pages_label') or 'Control Room Pages' }}">
+  {%- macro _cr_tr(key, fallback) -%}{%- set _v = t(key) -%}{{ fallback if (not _v or _v == key) else _v }}{%- endmacro -%}
+  <div id="room-pages-bar" class="cr-pages-bar" role="tablist" aria-label="{{ _cr_tr('room_pages_label', 'Control Room Pages') }}">
     <button type="button" class="cr-pages-arrow cr-pages-arrow-left" id="cr-pages-scroll-left"
-            title="{{ t('room_page_scroll_left') or 'Scroll pages left' }}" aria-label="Scroll pages left">
+            title="{{ _cr_tr('room_page_scroll_left', 'Scroll pages left') }}" aria-label="Scroll pages left">
       <i class="fas fa-chevron-left"></i>
     </button>
     <div class="cr-pages-track" id="cr-pages-track"></div>
     <button type="button" class="cr-pages-arrow cr-pages-arrow-right" id="cr-pages-scroll-right"
-            title="{{ t('room_page_scroll_right') or 'Scroll pages right' }}" aria-label="Scroll pages right">
+            title="{{ _cr_tr('room_page_scroll_right', 'Scroll pages right') }}" aria-label="Scroll pages right">
       <i class="fas fa-chevron-right"></i>
     </button>
     <div class="cr-pages-actions">
       <button type="button" class="cr-pages-action-btn cr-pages-add-widget-btn" id="cr-pages-add-widget"
-              title="{{ t('room_page_add_widgets') or 'Add / remove widgets on this page' }}" aria-label="Manage page widgets">
+              title="{{ _cr_tr('room_page_add_widgets', 'Add / remove widgets on this page') }}" aria-label="Manage page widgets">
         <i class="fas fa-cubes"></i>
         <span class="cr-btn-lbl">+ Widget</span>
       </button>
       <button type="button" class="cr-pages-action-btn cr-pages-add-btn" id="cr-pages-add"
-              title="{{ t('room_page_new') or 'New Page' }}" aria-label="New Page">
+              title="{{ _cr_tr('room_page_new', 'New Page') }}" aria-label="New Page">
         <i class="fas fa-plus"></i>
       </button>
     </div>

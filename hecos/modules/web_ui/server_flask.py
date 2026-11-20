@@ -191,6 +191,9 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     from .routes_history import history_bp
     app.register_blueprint(history_bp)
 
+    from .chat_search import chat_search_bp
+    app.register_blueprint(chat_search_bp)
+
 
     # Contacts API registration removed (handled by HPM loader or conditionally)
 

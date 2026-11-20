@@ -88,7 +88,14 @@ class PromptBuilder:
 
     def build_system_prompt(user_text, images, config, user_id, session_id, backend_config):
 
-        PromptBuilder._inject_vision_avatars(user_text, images, config, user_id, backend_config)
+        is_incognito = False
+        try:
+            from hecos.core.privacy import privacy_manager
+            is_incognito = bool(privacy_manager.is_session_incognito(session_id))
+        except Exception:
+            is_incognito = False
+
+        PromptBuilder._inject_vision_avatars(user_text, images, config, user_id, backend_config, is_incognito=is_incognito)
 
         
 
@@ -140,7 +147,7 @@ class PromptBuilder:
 
             memory_context, self_awareness, history_block, rag_context_block = PromptBuilder._load_memory_context(
 
-                config, personality_name, user_id, session_id, user_text, display_name=display_name, backend_config=backend_config
+                config, personality_name, user_id, session_id, user_text, display_name=display_name, backend_config=backend_config, is_incognito=is_incognito
 
             )
 
@@ -174,7 +181,7 @@ class PromptBuilder:
 
 
 
-        rules = PromptBuilder._build_rules(config, user_id, backend_config, send_tools=send_tools)
+        rules = PromptBuilder._build_rules(config, user_id, backend_config, send_tools=send_tools, is_incognito=is_incognito)
 
         vision_note = PromptBuilder._build_vision_note(images)
 
@@ -395,7 +402,7 @@ class PromptBuilder:
 
     @staticmethod
 
-    def _inject_vision_avatars(user_text, images, config, user_id, backend_config=None):
+    def _inject_vision_avatars(user_text, images, config, user_id, backend_config=None, is_incognito=False):
 
         if not user_text or not isinstance(user_text, str) or not isinstance(images, list):
 
@@ -423,11 +430,11 @@ class PromptBuilder:
 
             
 
-        # 1. USER IDENTITY TRIGGER
+        # 1. USER IDENTITY TRIGGER (withheld in Incognito mode)
 
         user_id_keywords = r'\b(who am i|what do i look like|my face|my photo|my picture|my avatar|chi sono|come sono|il mio viso|la mia foto|il mio aspetto|la mia immagine)\b'
 
-        if re.search(user_id_keywords, user_text, re.IGNORECASE):
+        if not is_incognito and re.search(user_id_keywords, user_text, re.IGNORECASE):
 
             profile = auth_mgr.get_profile(user_id)
 
@@ -671,7 +678,7 @@ class PromptBuilder:
 
     @staticmethod
 
-    def _load_memory_context(config, personality_name, user_id, session_id, user_text, display_name=None, backend_config=None):
+    def _load_memory_context(config, personality_name, user_id, session_id, user_text, display_name=None, backend_config=None, is_incognito=False):
 
         cog = config.get('cognition', {})
 
@@ -679,7 +686,11 @@ class PromptBuilder:
 
         
 
-        memory_context = brain_interface.get_context(config, dynamic_name=clean_name, user_id=user_id) if cog.get('include_identity_context', True) else ""
+        # In Incognito mode, withhold long-term identity/profile memory vault context
+        memory_context = (
+            "" if is_incognito
+            else (brain_interface.get_context(config, dynamic_name=clean_name, user_id=user_id) if cog.get('include_identity_context', True) else "")
+        )
 
         
 
@@ -791,33 +802,35 @@ class PromptBuilder:
 
         rag_context_block = ""
 
-        try:
+        if not is_incognito:
 
-            rag_cfg = cog.get("rag", {})
+            try:
 
-            if rag_cfg.get("enabled", False):
+                rag_cfg = cog.get("rag", {})
 
-                from hecos.core.rag import get_rag_engine
+                if rag_cfg.get("enabled", False):
 
-                rag_engine = get_rag_engine(config)
+                    from hecos.core.rag import get_rag_engine
 
-                
+                    rag_engine = get_rag_engine(config)
 
-                if getattr(rag_engine, '_initialized', False):
+                    
 
-                    rag_context_block = rag_engine.context_for_query(
+                    if getattr(rag_engine, '_initialized', False):
 
-                        query=user_text,
+                        rag_context_block = rag_engine.context_for_query(
 
-                        user_id=user_id,
+                            query=user_text,
 
-                        top_k=rag_cfg.get("top_k", 5),
+                            user_id=user_id,
 
-                    )
+                            top_k=rag_cfg.get("top_k", 5),
 
-        except Exception as _rag_err:
+                        )
 
-            logger.warning(f"[PromptBuilder] RAG context retrieval failed: {_rag_err}")
+            except Exception as _rag_err:
+
+                logger.warning(f"[PromptBuilder] RAG context retrieval failed: {_rag_err}")
 
             
 
@@ -1021,7 +1034,7 @@ class PromptBuilder:
 
     @staticmethod
 
-    def _build_rules(config, user_id, backend_config, send_tools=True):
+    def _build_rules(config, user_id, backend_config, send_tools=True, is_incognito=False):
         def _get_active_tags_safe():
             try:
                 from hecos.core.system.module_loader import get_active_tags
@@ -1431,41 +1444,48 @@ class PromptBuilder:
 
         user_profile_block = ""
 
-        try:
+        if is_incognito:
+            user_profile_block = (
+                "\n### PRIVACY MODE: INCOGNITO ###\n"
+                "- This is an anonymous zero-trace RAM session: user identity, profile, and long-term memory are withheld.\n"
+                "- Do not claim to know the user's personal details or save personal information to persistent memory.\n"
+            )
+        else:
+            try:
 
-            profile = auth_mgr.get_profile(user_id)
+                profile = auth_mgr.get_profile(user_id)
 
-            if profile:
+                if profile:
 
-                user_profile_block = (
+                    user_profile_block = (
 
-                    "\n### USER IDENTITY ###\n"
+                        "\n### USER IDENTITY ###\n"
 
-                    f"  - Username: {profile.get('username', user_id)}\n"
+                        f"  - Username: {profile.get('username', user_id)}\n"
 
-                    f"  - Display Name: {profile.get('display_name') or '[not provided]'}\n"
+                        f"  - Display Name: {profile.get('display_name') or '[not provided]'}\n"
 
-                    f"  - Preferred Language: {profile.get('preferred_language', 'it')}\n"
+                        f"  - Preferred Language: {profile.get('preferred_language', 'it')}\n"
 
-                    f"  - Role: {profile.get('role', 'admin')}\n"
-
-                )
-
-                if _is_tag_allowed_in_prompt("USERS"):
-
-                    user_profile_block += (
-
-                        "\n### USER DATA ACCESS ###\n"
-
-                        "- To access full contact info (email, phone, address, bio), use [USERS: get_profile].\n"
-
-                        "- To help the user update their data, use [USERS: update_profile:field=value].\n"
+                        f"  - Role: {profile.get('role', 'admin')}\n"
 
                     )
 
-        except Exception as _pe:
+                    if _is_tag_allowed_in_prompt("USERS"):
 
-            logger.debug(f"PromptBuilder: Could not load user identity for context: {_pe}")
+                        user_profile_block += (
+
+                            "\n### USER DATA ACCESS ###\n"
+
+                            "- To access full contact info (email, phone, address, bio), use [USERS: get_profile].\n"
+
+                            "- To help the user update their data, use [USERS: update_profile:field=value].\n"
+
+                        )
+
+            except Exception as _pe:
+
+                logger.debug(f"PromptBuilder: Could not load user identity for context: {_pe}")
 
             
 

@@ -137,6 +137,22 @@
 /* mode-1col fallback: CSS-only single-column that works regardless of gs-column attr */
 #control-room-panel.mode-1col .grid-stack > .grid-stack-item { width: 100% !important; left: 0 !important; }
 
+/* 3-column mode (Standalone medium viewports 901–1200px) */
+.grid-stack[gs-column="3"] > .grid-stack-item:not(.ui-draggable-dragging) { width: 33.3333% !important; left: 0 !important; }
+.grid-stack[gs-column="3"] > .grid-stack-item[gs-x="1"]:not(.ui-draggable-dragging) { left: 33.3333% !important; }
+.grid-stack[gs-column="3"] > .grid-stack-item[gs-x="2"]:not(.ui-draggable-dragging) { left: 66.6667% !important; }
+.grid-stack[gs-column="3"] > .grid-stack-item[gs-w="2"]:not(.ui-draggable-dragging) { width: 66.6667% !important; }
+.grid-stack[gs-column="3"] > .grid-stack-item[gs-w="3"]:not(.ui-draggable-dragging) { width: 100% !important; left: 0 !important; }
+
+/* 4-column mode (Standalone desktop — 25vw per column, identical to Chat 50vw/2) */
+.grid-stack[gs-column="4"] > .grid-stack-item:not(.ui-draggable-dragging) { width: 25% !important; left: 0 !important; }
+.grid-stack[gs-column="4"] > .grid-stack-item[gs-x="1"]:not(.ui-draggable-dragging) { left: 25% !important; }
+.grid-stack[gs-column="4"] > .grid-stack-item[gs-x="2"]:not(.ui-draggable-dragging) { left: 50% !important; }
+.grid-stack[gs-column="4"] > .grid-stack-item[gs-x="3"]:not(.ui-draggable-dragging) { left: 75% !important; }
+.grid-stack[gs-column="4"] > .grid-stack-item[gs-w="2"]:not(.ui-draggable-dragging) { width: 50% !important; }
+.grid-stack[gs-column="4"] > .grid-stack-item[gs-w="3"]:not(.ui-draggable-dragging) { width: 75% !important; }
+.grid-stack[gs-column="4"] > .grid-stack-item[gs-w="4"]:not(.ui-draggable-dragging) { width: 100% !important; left: 0 !important; }
+
 .grid-stack[gs-column="6"] > .grid-stack-item { width: 16.66% !important; }
 .grid-stack[gs-column="6"] > .grid-stack-item[gs-x="1"] { left: 16.66% !important; }
 .grid-stack[gs-column="6"] > .grid-stack-item[gs-x="2"] { left: 33.33% !important; }

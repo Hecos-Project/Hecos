@@ -21,34 +21,34 @@ log = logging.getLogger("hecos.web_ui.shortcuts")
 # ── Default bindings (mirrors hks_bindings.js DEFAULTS) ───────────────────────
 
 DEFAULT_BINDINGS = {
-    "nav.packages":      "f1",
-    "nav.backend":       "f2",
-    "nav.ia":            "f3",
-    "ui.toggle_mic":     "f4",
-    "ui.toggle_voice":   "f6",
-    "nav.hub":           "f7",
-    "ui.toggle_ptt":     "f8",
-    "sys.reboot":        "f9",
-    
-    "nav.chat":          "f10",
-    "nav.home":          "f11",
-    "ui.open_hdcs":      "ctrl+space",
-    
-    "ui.ptt_trigger":    "ctrl+shift",
-    "nav.drive":         "ctrl+shift+d",
-    "nav.flows":         "ctrl+shift+f",
-    "ui.toggle_room":    "ctrl+shift+r",
-    "ui.toggle_sidebar": "ctrl+b",
-    "ui.new_chat":       "ctrl+enter",
-    
-    "ui.show_cheatsheet":"?",
-    "nav.shortcuts":     "ctrl+,",
-    "ui.close_modal":    "escape",
-    "ui.copy_last":      "ctrl+shift+c",
-    "ui.toggle_history": "ctrl+shift+h",
-    "ui.focus_input":    "ctrl+shift+i",
-    "focus.next":        "ctrl+tab",
-    "focus.prev":        "ctrl+shift+tab",
+    "nav.packages":        "f1",
+    "ui.global_defaults":  "f3",
+    "ui.toggle_mic":       "f4",
+    "ui.toggle_voice":     "f6",
+    "chat.toggle_thinking":"f7",
+    "ui.toggle_ptt":       "f8",
+    "sys.reboot":          "f9",
+
+    "nav.chat":            "f10",
+    "nav.home":            "ctrl+shift+home",
+    "ui.open_hdcs":        "ctrl+space",
+
+    "ui.ptt_trigger":      "ctrl+shift",
+    "nav.drive":           "ctrl+shift+d",
+    "nav.flows":           "ctrl+shift+f",
+    "ui.toggle_room":      "ctrl+shift+m",
+    "ui.toggle_sidebar":   "ctrl+b",
+    "ui.new_chat":         "ctrl+enter",
+    "ui.chat_search":      "ctrl+k",
+
+    "ui.show_cheatsheet":  "?",
+    "nav.shortcuts":       "ctrl+,",
+    "ui.close_modal":      "escape",
+    "ui.copy_last":        "ctrl+shift+c",
+    "ui.toggle_history":   "ctrl+shift+h",
+    "ui.focus_input":      "ctrl+shift+l",
+    "focus.next":          "ctrl+tab",
+    "focus.prev":          "ctrl+shift+tab",
 }
 
 DEFAULT_PREFS = {
@@ -74,9 +74,12 @@ def _load_user_shortcuts(root_dir: str, username: str) -> dict:
         except Exception as e:
             log.warning(f"[Shortcuts] Could not load {path}: {e}")
 
-    # Merge with defaults (new defaults in updates survive existing user files)
+    # Merge with defaults (new defaults in updates survive existing user files;
+    # drop orphaned keys no longer in DEFAULT_BINDINGS such as ui.chat_overrides)
     merged_bindings = dict(DEFAULT_BINDINGS)
-    merged_bindings.update(data.get("bindings", {}))
+    for k, v in (data.get("bindings") or {}).items():
+        if k in DEFAULT_BINDINGS:
+            merged_bindings[k] = v
 
     merged_prefs = dict(DEFAULT_PREFS)
     merged_prefs.update(data.get("prefs", {}))

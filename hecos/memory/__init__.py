@@ -173,14 +173,13 @@ def update_profile(key, value):
 
 def save_message(role, message, config: dict = None, session_id: str = None):
     """Stores an exchange in episodic memory (DB), respecting config flags and privacy mode."""
-    # Respect incognito mode — write nothing
+    # Respect incognito mode — never write to disk
     try:
         from hecos.core.privacy import privacy_manager
-        if privacy_manager.is_incognito():
-            return
-        # Pick up session_id from privacy manager if not explicitly passed
         if session_id is None:
             session_id = privacy_manager.get_session_id()
+        if privacy_manager.is_session_incognito(session_id):
+            return
     except Exception:
         pass
 

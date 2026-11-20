@@ -73,6 +73,7 @@
         _setTitle('sidebar-hpm-btn',       'Open Module Manager (Core System & Packages)', 'nav.packages');
 
         // History panel
+        _setTitle('cs-sidebar-search-btn', 'Search conversations',                 'ui.chat_search');
         _setTitle('ch-new-chat-btn',       'Start a new chat session',           'ui.new_chat');
 
         // Preset Manager status pills (no stable IDs, use selector)

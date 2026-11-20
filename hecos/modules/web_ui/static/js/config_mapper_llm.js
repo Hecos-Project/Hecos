@@ -342,8 +342,8 @@ function buildBackendPayload(out) {
     out.ai.save_special_instructions = getC('ia-save-instructions', out.ai.save_special_instructions ?? false);
 
     out.privacy = out.privacy || {};
-    out.privacy.default_mode       = getV('pr-default-mode',        out.privacy.default_mode       || 'normal');
-    out.privacy.auto_wipe_enabled  = getC('pr-auto-wipe',           out.privacy.auto_wipe_enabled  ?? false);
+    const _rawDefMode = getV('pr-default-mode', out.privacy.default_mode || 'normal');
+    out.privacy.default_mode       = (_rawDefMode === 'incognito' || _rawDefMode === 'auto_wipe') ? 'incognito' : 'normal';
     out.privacy.incognito_shortcut = getC('pr-incognito-shortcut',  out.privacy.incognito_shortcut ?? true);
 
     out.filters = out.filters || {};

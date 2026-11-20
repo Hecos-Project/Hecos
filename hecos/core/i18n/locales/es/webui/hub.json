@@ -78,7 +78,7 @@
     "hub_desc_users": "Gestiona cuentas de usuario, roles, permisos y bóvedas de memoria aisladas por perfil (Admin).",
     "hub_desc_system": "Configura preferencias globales del Core: idioma, inicio, dependencias externas y mantenimiento.",
     "hub_desc_logs": "Inspecciona registros del servidor en tiempo real, filtra por módulo o nivel y diagnostica fallos.",
-    "hub_desc_privacy": "Configura privacidad en 3 niveles (Normal, Auto-Wipe, Incognito), retención de historial y limpieza.",
+    "hub_desc_privacy": "Configura los modos de privacidad (Normal e Incógnito), retención de historial y limpieza de datos.",
     "hub_desc_hpm_settings": "Configura repositorios del Module Manager, fuentes de la Store, reinicios y diagnósticos de paquetes.",
     "hub_desc_presenter": "Configura el motor Presenter para comentarios de voz en vivo, anuncios y guía de Playbooks.",
     "hub_desc_chat_ui": "Personaliza el diseño del Chat, visualización de mensajes, barra lateral y preferencias visuales."

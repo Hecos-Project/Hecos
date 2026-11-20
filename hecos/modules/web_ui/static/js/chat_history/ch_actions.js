@@ -6,7 +6,8 @@
  */
 
 window.newChatSession = async function (mode = null) {
-    const privMode = mode || 'normal';
+    const defaultMode = window.getDefaultPrivacyMode ? window.getDefaultPrivacyMode() : 'normal';
+    const privMode = window.normalizePrivacyMode ? window.normalizePrivacyMode(mode || defaultMode) : (mode || defaultMode);
     const res = await window._historyPost('/api/chat/sessions', { privacy_mode: privMode });
     
     if (!res.ok) {
@@ -44,6 +45,9 @@ window.newChatSession = async function (mode = null) {
     if (window.ActionPlanChat && typeof window.ActionPlanChat.clear === 'function') {
         window.ActionPlanChat.clear();
     }
+    if (window.HecosChatSearch && typeof window.HecosChatSearch.clearHighlights === 'function') {
+        window.HecosChatSearch.clearHighlights();
+    }
 };
 
 
@@ -57,7 +61,8 @@ window.activateChatSession = async function (sessionId) {
     }
 
     const session = window.chatHistoryState.sessions.find(s => s.id === sessionId);
-    const mode    = session?.privacy_mode || 'normal';
+    const rawMode = session?.privacy_mode || 'normal';
+    const mode    = window.normalizePrivacyMode ? window.normalizePrivacyMode(rawMode) : rawMode;
 
     await window._historyPost('/api/chat/sessions/active', { session_id: sessionId, privacy_mode: mode });
 
@@ -164,6 +169,9 @@ window.toggleShowArchived = async function() {
     }
     if (window.ActionPlanChat && typeof window.ActionPlanChat.clear === 'function') {
         window.ActionPlanChat.clear();
+    }
+    if (window.HecosChatSearch && typeof window.HecosChatSearch.clearHighlights === 'function') {
+        window.HecosChatSearch.clearHighlights();
     }
 };
 

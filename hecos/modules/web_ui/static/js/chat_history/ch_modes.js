@@ -1,31 +1,42 @@
 /**
  * ch_modes.js
  * ─────────────────────────────────────────────────────────────────────────────
- * Hecos Chat History — Privacy Modes & UI Locking
+ * Hecos Chat History — Privacy Modes (Normal / Incognito) & UI Locking
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+window.normalizePrivacyMode = function (mode) {
+    const val = String(mode || 'normal').trim().toLowerCase();
+    return (val === 'incognito' || val === 'auto_wipe') ? 'incognito' : 'normal';
+};
+
+window.getDefaultPrivacyMode = function () {
+    const raw = window.cfg?.privacy?.default_mode || 'normal';
+    return window.normalizePrivacyMode(raw);
+};
+
 window.setPrivacyMode = async function (mode) {
-    const res = await window._historyPost('/api/chat/privacy', { mode });
+    const norm = window.normalizePrivacyMode(mode);
+    const res = await window._historyPost('/api/chat/privacy', { mode: norm });
     if (res.ok) {
-        window.chatHistoryState.activeMode = mode;
+        window.chatHistoryState.activeMode = window.normalizePrivacyMode(res.mode || norm);
         if (window.updateModeUI) updateModeUI();
         if (window.loadChatSessions) await window.loadChatSessions();
     }
 };
 
 window.selectChatMode = function (mode) {
-    // Lock picker if there are already messages
-    if (window.chatHistoryState.chatModeHasMessages) return;  
+    // Lock picker if there are already messages in this session
+    if (window.chatHistoryState.chatModeHasMessages) return;
     if (window.setPrivacyMode) window.setPrivacyMode(mode);
 };
 
 window.updateModeUI = function () {
-    const mode        = window.chatHistoryState.activeMode;
+    const mode        = window.normalizePrivacyMode(window.chatHistoryState.activeMode);
     const hasMessages = window.chatHistoryState.chatModeHasMessages;
 
     // 1. Mode picker buttons
-    ['normal', 'auto_wipe', 'incognito'].forEach(m => {
+    ['normal', 'incognito'].forEach(m => {
         const btn = document.getElementById(`mode-btn-${m}`);
         if (btn) btn.classList.toggle('active', m === mode);
     });
@@ -42,13 +53,11 @@ window.updateModeUI = function () {
         if (mode === 'normal') {
             chip.style.display = 'none';
         } else {
-            const chipInfo = {
-                auto_wipe: { icon: '🧹', label: 'Auto-Wipe', cls: 'mode-chip-autowipe' },
-                incognito: { icon: '🕵️', label: 'Incognito', cls: 'mode-chip-incognito' }
-            }[mode];
             chip.style.display = '';
-            chip.innerHTML     = `${chipInfo.icon} ${chipInfo.label}`;
-            chip.className     = `topbar-chip ${chipInfo.cls}`;
+            chip.innerHTML     = '🕵️ Incognito';
+            chip.className     = 'topbar-chip mode-chip-incognito';
+            chip.title         = window.I18N?.webui_chat_mode_incognito_tip
+                || 'Incognito: RAM-only session, zero disk writes, anonymous identity';
         }
     }
 };

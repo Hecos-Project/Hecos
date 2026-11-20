@@ -34,18 +34,6 @@
         },
 
         {
-            id: 'ui.chat_overrides',
-            label: 'Open Preset Manager',
-            icon: 'fas fa-sliders-h',
-            category: 'ui',
-            description: 'Open the Preset Manager Panel',
-            contexts: ['chat'],
-            handler: function() {
-                if (window.sfTogglePanel) window.sfTogglePanel();
-            }
-        },
-
-        {
             id: 'nav.home',
             label: 'Open Control Room',
             icon: 'fas fa-th-large',
@@ -81,10 +69,10 @@
 
         {
             id: 'ui.global_defaults',
-            label: 'Preset Manager Panel',
-            description: 'Open the Preset Manager Panel',
-            icon: 'fas fa-globe',
-            category: 'ui',
+            label: 'Preset Manager',
+            description: 'Open or close the unified Preset Manager panel',
+            icon: 'fas fa-sliders-h',
+            category: 'chat',
             contexts: ['global', 'chat', 'hub', 'home'],
             handler: () => {
                 if (window.sfTogglePanel) {
@@ -298,6 +286,23 @@
         },
 
         {
+            id: 'ui.chat_search',
+            label: 'Search Conversations',
+            icon: 'fas fa-search',
+            category: 'chat',
+            description: 'Open or close the conversation search modal',
+            contexts: ['chat'],
+            handler: function() {
+                if (window.HecosChatSearch && typeof window.HecosChatSearch.toggle === 'function') {
+                    window.HecosChatSearch.toggle();
+                    return;
+                }
+                const btn = document.getElementById('cs-sidebar-search-btn');
+                if (btn) btn.click();
+            }
+        },
+
+        {
             id: 'ui.focus_input',
             label: 'Focus Chat Input',
             icon: 'fas fa-keyboard',
@@ -456,6 +461,12 @@
                         window.HecosCmd.close();
                         return;
                     }
+                }
+
+                // ── PRIORITY 2.2: Chat Search Modal ─────────────────────────
+                if (window.HecosChatSearch && typeof window.HecosChatSearch.isOpen === 'function' && window.HecosChatSearch.isOpen()) {
+                    window.HecosChatSearch.close();
+                    return;
                 }
 
                 // ── PRIORITY 2.5: Coding Workspace Modals (Monaco / Source / Runner) ─

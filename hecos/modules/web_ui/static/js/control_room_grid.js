@@ -35,6 +35,20 @@
         return localStorage.getItem('hecos_room_active_page') || '';
     }
 
+    /**
+     * Standalone column count matched to Chat Control Room's 25vw column width:
+     *   Chat 2x = 50vw / 2 = 25vw per column
+     *   Chat 1x = 25vw / 1 = 25vw per column
+     *   Standalone desktop = 100vw / 4 = 25vw per column (identical width!)
+     */
+    function _getStandaloneCols() {
+        const w = window.innerWidth || 1440;
+        if (w <= 600) return 1;
+        if (w <= 900) return 2;
+        if (w <= 1200) return 3;
+        return 4;
+    }
+
     const controlRoomGrid = {
 
         async init(gridEl, editBtn) {
@@ -51,13 +65,13 @@
                 if (_gsGrid) return;
                 const panel = document.getElementById('control-room-panel');
                 const colCount = (_context === 'standalone')
-                    ? 6
+                    ? _getStandaloneCols()
                     : (panel && panel.classList.contains('mode-1col') ? 1 : 2);
                 _grid.setAttribute('gs-column', colCount);
 
                 _gsGrid = GridStack.init({
                     column: colCount,
-                    columnOpts: { breakpoints: [] }, // Important for sidebars
+                    columnOpts: { breakpoints: [] }, // Responsive handled explicitly for crisp parity
                     cellHeight: 110,
                     margin: 10,
                     handle: '.room-card-drag-handle',
@@ -70,6 +84,30 @@
 
                 console.log(`[RoomGrid] GridStack initialized. Width: ${_grid.offsetWidth}px Context: ${_context} Cols: ${colCount}`);
                 global._gsGrid = _gsGrid;
+
+                // Keep Standalone responsive columns synced on viewport resize
+                if (_context === 'standalone') {
+                    let _winResizeTimer = null;
+                    window.addEventListener('resize', () => {
+                        clearTimeout(_winResizeTimer);
+                        _winResizeTimer = setTimeout(() => {
+                            if (!_gsGrid || !_grid) return;
+                            const targetCols = _getStandaloneCols();
+                            if (_gsGrid.getColumn() !== targetCols) {
+                                _isRendering = true;
+                                try {
+                                    _grid.setAttribute('gs-column', targetCols);
+                                    _gsGrid.column(targetCols, 'moveScale');
+                                    _gsGrid.compact();
+                                } finally {
+                                    setTimeout(() => { _isRendering = false; }, 120);
+                                }
+                            } else if (typeof _gsGrid.onParentResize === 'function') {
+                                _gsGrid.onParentResize();
+                            }
+                        }, 140);
+                    });
+                }
 
                 _gsGrid.on('change', () => {
                     if (_isRendering || !_editing) return;

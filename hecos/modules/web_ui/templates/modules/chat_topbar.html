@@ -7,7 +7,7 @@
     </div>
 
     <!-- Active Tool Mode Chip (Native Tools vs Fast Direct vs Disabled) -->
-    <div id="tb-tool-mode-chip" class="tool-mode-chip tool-mode-native" title="Active tool mode — configure from Settings &gt; Backend">
+    <div id="tb-tool-mode-chip" class="tool-mode-chip tool-mode-native" title="Active tool mode — open Preset Manager to configure">
       <i id="tb-tool-mode-icon" class="fas fa-toolbox"></i>
       <span id="tb-tool-mode-label">Tools: ON</span>
     </div>
@@ -15,7 +15,6 @@
     <style>
       @keyframes pulseDot { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); box-shadow: 0 0 12px currentColor; } 100% { opacity: 1; transform: scale(1); } }
       #tb-status-dot.pulsing { animation: pulseDot 2s infinite; }
-      .mode-chip-autowipe { border-color: rgba(var(--yellow-rgb),0.5) !important; color: var(--yellow) !important; background: rgba(var(--yellow-rgb),0.1) !important; }
       .mode-chip-incognito { border-color: rgba(var(--accent2-rgb),0.5) !important; color: var(--accent2) !important; background: rgba(var(--accent2-rgb),0.1) !important; }
 
       /* Tool Mode Chip Styles */

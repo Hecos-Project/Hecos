@@ -37,8 +37,9 @@ function buildWebUIPayload() {
 function populatePrivacyUI() {
     const c = window.cfg;
     if (!c?.privacy) return;
-    setVal('pr-default-mode',       c.privacy.default_mode       || 'normal');
-    setCheck('pr-auto-wipe',        c.privacy.auto_wipe_enabled  ?? false);
+    const rawMode = String(c.privacy.default_mode || 'normal').toLowerCase();
+    const normMode = (rawMode === 'incognito' || rawMode === 'auto_wipe') ? 'incognito' : 'normal';
+    setVal('pr-default-mode', normMode);
     setCheck('pr-incognito-shortcut', c.privacy.incognito_shortcut ?? true);
 }
 

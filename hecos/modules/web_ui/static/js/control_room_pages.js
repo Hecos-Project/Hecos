@@ -27,7 +27,8 @@
     ];
 
     let _pages = [];
-    let _activePageId = localStorage.getItem(STORAGE_ACTIVE_PAGE) || '';
+    let _activePageId = '';
+    try { _activePageId = localStorage.getItem(STORAGE_ACTIVE_PAGE) || ''; } catch (_) {}
     let _availableWidgets = [];
     let _initialized = false;
     let _firstRender = true;
@@ -180,20 +181,21 @@
             }
         });
 
-        // Keyboard left/right switching when focus is inside the pages bar
-        _barEl.addEventListener('keydown', (e) => {
-            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-            if (!_pages.length) return;
-            const idx = _pages.findIndex(p => p.id === _activePageId);
-            if (idx === -1) return;
-            e.preventDefault();
-            const nextIdx = e.key === 'ArrowRight'
-                ? (idx + 1) % _pages.length
-                : (idx - 1 + _pages.length) % _pages.length;
-            selectPage(_pages[nextIdx].id);
-            const nextTab = _trackEl.querySelector(`.cr-page-tab[data-page-id="${CSS.escape(_pages[nextIdx].id)}"]`);
-            if (nextTab) nextTab.focus();
-        });
+        // Keyboard left/right switching (works directly from Standalone /home or
+        // whenever Chat Control Room panel is open, without hijacking inputs/modals)
+        if (!global._crPagesGlobalKeyBound) {
+            global._crPagesGlobalKeyBound = true;
+            document.addEventListener('keydown', (e) => {
+                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+                if (!_isControlRoomKeyContext()) return;
+
+                const activeInBar = Boolean(_barEl && document.activeElement && _barEl.contains(document.activeElement));
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                stepPage(e.key === 'ArrowRight' ? 1 : -1, activeInBar);
+            }, { capture: true });
+        }
 
         if (_addPageBtn) {
             _addPageBtn.addEventListener('click', () => {
@@ -330,6 +332,69 @@
 
     function getPages() {
         return _pages.slice();
+    }
+
+    function _isControlRoomKeyContext() {
+        if (!_pages || _pages.length <= 1) return false;
+        if (_activeModal || _activePopover) return false;
+
+        // Yield when any modal, overlay, or picker is open
+        if (document.querySelector(
+            '#preset-manager-panel.open, #soul-forge-panel.open, #session-overrides-panel.open, ' +
+            '#hks-modal.open, .modal.open, .hfp-overlay.open, .hwp-overlay.open, ' +
+            '.cr-modal-backdrop, .cr-move-popover, .room-card-aes-popover'
+        )) {
+            return false;
+        }
+
+        const active = document.activeElement;
+        if (active && active !== document.body && active !== document.documentElement) {
+            const tag = (active.tagName || '').toUpperCase();
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active.isContentEditable) {
+                return false;
+            }
+        }
+
+        // Standalone Control Room (/home): always active
+        if (document.getElementById('home-grid')) {
+            return true;
+        }
+
+        // Chat Control Room (Module A): only when panel is open
+        const panel = document.getElementById('control-room-panel');
+        if (!panel || !panel.classList.contains('open')) return false;
+
+        // Focus inside Control Room panel or its toggle button: always active
+        if (active && (panel.contains(active) || active.id === 'sidebar-expand-btn')) {
+            return true;
+        }
+
+        // Yield if focus is explicitly inside the Welcome carousel
+        const welcomeEl = document.getElementById('welcome');
+        const welcomeVisible = !!(
+            welcomeEl &&
+            welcomeEl.style.display !== 'none' &&
+            (!global.getComputedStyle || global.getComputedStyle(welcomeEl).display !== 'none')
+        );
+        if (welcomeVisible && active && welcomeEl.contains(active)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function stepPage(delta, focusTab = false) {
+        if (!_pages || _pages.length <= 1) return false;
+        const idx = _pages.findIndex(p => p.id === _activePageId);
+        const baseIdx = idx >= 0 ? idx : 0;
+        const nextIdx = (baseIdx + delta + _pages.length) % _pages.length;
+        const nextId = _pages[nextIdx].id;
+        selectPage(nextId);
+        if (focusTab && _trackEl) {
+            const nextTab = _trackEl.querySelector(`.cr-page-tab[data-page-id="${CSS.escape(nextId)}"]`);
+            if (nextTab) nextTab.focus({ preventScroll: true });
+        }
+        return true;
     }
 
     function selectPage(pageId) {
@@ -949,6 +1014,7 @@
         getActivePage,
         getPages,
         selectPage,
+        stepPage,
         openPageModal,
         openWidgetPickerModal,
         openMoveWidgetMenu,

@@ -1,0 +1,98 @@
+{#- Macro: falls back cleanly when Translator returns the raw key name -#}
+{%- macro _cs_tr(key, fallback) -%}
+  {%- set _v = t(key) -%}
+  {{- fallback if (not _v or _v == key) else _v -}}
+{%- endmacro -%}
+<!-- 🔍 HECOS CHAT SEARCH MODULE — Isolated Dark Glass Modal & In-Chat Navigator -->
+<div id="cs-modal-backdrop" class="cs-modal-backdrop" style="display:none;" aria-hidden="true">
+  <div id="cs-modal" class="cs-modal" role="dialog" aria-modal="true" aria-label="{{ _cs_tr('webui_chat_search_title', 'Search Conversations') }}">
+    <!-- Top Input Bar -->
+    <div class="cs-input-bar">
+      <i class="fas fa-search cs-search-icon" aria-hidden="true"></i>
+      <input type="text"
+             id="cs-search-input"
+             class="cs-search-input"
+             autocomplete="off"
+             spellcheck="false"
+             placeholder="{{ _cs_tr('webui_chat_search_placeholder', 'Search messages and titles... (\x22exact phrase\x22)') }}">
+      <span id="cs-mode-badge" class="cs-mode-badge" style="display:none;"></span>
+      <button type="button" id="cs-clear-btn" class="cs-icon-btn" style="display:none;"
+              title="{{ _cs_tr('webui_chat_search_clear', 'Clear search') }}" aria-label="Clear search">
+        <i class="fas fa-times-circle"></i>
+      </button>
+      <button type="button" id="cs-close-btn" class="cs-icon-btn cs-close-btn"
+              title="Close (Esc)" aria-label="Close search">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Scope & Filters Toolbar -->
+    <div class="cs-toolbar">
+      <div class="cs-scope-group" role="tablist" aria-label="Search Scope">
+        <button type="button" class="cs-scope-btn active" id="cs-scope-all" data-scope="all" role="tab" aria-selected="true">
+          <i class="fas fa-comments"></i>
+          <span id="cs-scope-all-label">{{ _cs_tr('webui_chat_search_scope_all', 'All active chats') }}</span>
+        </button>
+        <button type="button" class="cs-scope-btn" id="cs-scope-current" data-scope="current" role="tab" aria-selected="false">
+          <i class="fas fa-comment-dots"></i>
+          <span>{{ _cs_tr('webui_chat_search_scope_current', 'Current chat') }}</span>
+        </button>
+      </div>
+
+      <div class="cs-filters-group">
+        <div class="cs-pill-set" id="cs-role-filters" role="group" aria-label="Author filter">
+          <button type="button" class="cs-filter-pill active" data-role="all">{{ _cs_tr('webui_chat_search_role_all', 'All') }}</button>
+          <button type="button" class="cs-filter-pill" data-role="user">{{ _cs_tr('webui_chat_search_role_user', 'You') }}</button>
+          <button type="button" class="cs-filter-pill" data-role="assistant">AI</button>
+        </div>
+        <span class="cs-toolbar-sep" aria-hidden="true"></span>
+        <div class="cs-pill-set" id="cs-date-filters" role="group" aria-label="Date filter">
+          <button type="button" class="cs-filter-pill active" data-date="all">{{ _cs_tr('webui_chat_search_date_all', 'Anytime') }}</button>
+          <button type="button" class="cs-filter-pill" data-date="today">{{ _cs_tr('webui_chat_search_date_today', 'Today') }}</button>
+          <button type="button" class="cs-filter-pill" data-date="7d">7d</button>
+          <button type="button" class="cs-filter-pill" data-date="30d">30d</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Archive Mode Privacy Banner (shown ONLY when in Archive Mode) -->
+    <div id="cs-archive-banner" class="cs-archive-banner" style="display:none;">
+      <i class="fas fa-folder-open"></i>
+      <span>{{ _cs_tr('webui_chat_search_archive_notice', 'Archive Mode active — searching exclusively inside archived conversations.') }}</span>
+    </div>
+
+    <!-- Results Viewport -->
+    <div id="cs-results" class="cs-results" role="listbox" aria-label="Search Results"></div>
+
+    <!-- Footer Status & Keyboard Legend -->
+    <div class="cs-footer">
+      <div id="cs-status-text" class="cs-status-text"></div>
+      <div class="cs-kbd-legend">
+        <span><kbd>↑</kbd><kbd>↓</kbd> {{ _cs_tr('webui_chat_search_kbd_nav', 'Navigate') }}</span>
+        <span><kbd>↵</kbd> {{ _cs_tr('webui_chat_search_kbd_open', 'Jump') }}</span>
+        <span><kbd>Tab</kbd> Scope</span>
+        <span><kbd>Esc</kbd> {{ _cs_tr('webui_chat_search_kbd_close', 'Close') }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Floating In-Chat Match Navigator (shown after jumping to a search hit) -->
+<div id="cs-inchat-bar" class="cs-inchat-bar" style="display:none;" role="region" aria-label="In-chat search navigation">
+  <button type="button" id="cs-inchat-reopen" class="cs-inchat-query-btn" title="Open Search (Ctrl+K)">
+    <i class="fas fa-search"></i>
+    <span id="cs-inchat-query"></span>
+  </button>
+  <span id="cs-inchat-counter" class="cs-inchat-counter">0 / 0</span>
+  <div class="cs-inchat-actions">
+    <button type="button" id="cs-inchat-prev" class="cs-inchat-nav-btn" title="Previous match" aria-label="Previous match">
+      <i class="fas fa-chevron-up"></i>
+    </button>
+    <button type="button" id="cs-inchat-next" class="cs-inchat-nav-btn" title="Next match" aria-label="Next match">
+      <i class="fas fa-chevron-down"></i>
+    </button>
+    <button type="button" id="cs-inchat-close" class="cs-inchat-nav-btn cs-inchat-close" title="Clear highlights (Esc)" aria-label="Close navigator">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+</div>

@@ -1,0 +1,558 @@
+/**
+ * chat_search.css
+ * Hecos Chat Search Module — Dark Glass Spotlight Modal & In-Chat Navigator
+ */
+
+/* ── Modal Backdrop & Container ─────────────────────────────────────────────── */
+.cs-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10040;
+  background: rgba(5, 8, 16, 0.68);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 7vh 16px 20px;
+  animation: csFadeIn 0.14s ease;
+}
+
+@keyframes csFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cs-modal {
+  width: 100%;
+  max-width: 680px;
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg2, #141726);
+  border: 1px solid rgba(var(--accent-rgb, 108, 140, 255), 0.3);
+  border-radius: 14px;
+  box-shadow: 0 24px 68px rgba(0, 0, 0, 0.68), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  overflow: hidden;
+  color: var(--text, #e2e8f0);
+  animation: csModalSlide 0.16s cubic-bezier(0.2, 0.85, 0.3, 1.08);
+}
+
+@keyframes csModalSlide {
+  from { opacity: 0; transform: translateY(-10px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Top Search Input Bar ───────────────────────────────────────────────────── */
+.cs-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border, #252b46);
+  background: rgba(var(--bg3-rgb, 28, 32, 51), 0.55);
+}
+
+.cs-search-icon {
+  color: var(--accent, #6c8cff);
+  font-size: 15px;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.cs-search-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text, #e2e8f0);
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 450;
+}
+.cs-search-input::placeholder {
+  color: var(--muted, #8b92a5);
+  opacity: 0.75;
+}
+
+.cs-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cs-mode-badge.is-archive {
+  color: var(--yellow, #fbbf24);
+  background: rgba(var(--yellow-rgb, 251, 191, 36), 0.14);
+  border: 1px solid rgba(var(--yellow-rgb, 251, 191, 36), 0.45);
+}
+.cs-mode-badge.is-incognito {
+  color: var(--accent2, #a78bfa);
+  background: rgba(var(--accent2-rgb, 167, 139, 250), 0.14);
+  border: 1px solid rgba(var(--accent2-rgb, 167, 139, 250), 0.45);
+}
+
+.cs-icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted, #8b92a5);
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.cs-icon-btn:hover {
+  background: var(--glass, rgba(255, 255, 255, 0.06));
+  border-color: var(--border, #252b46);
+  color: var(--text, #e2e8f0);
+}
+
+/* ── Scope & Filters Toolbar ────────────────────────────────────────────────── */
+.cs-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border, #252b46);
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.cs-scope-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px;
+  border-radius: 9px;
+  background: var(--bg3, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border, #252b46);
+}
+
+.cs-scope-btn {
+  height: 25px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted, #8b92a5);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+.cs-scope-btn:hover {
+  color: var(--text, #e2e8f0);
+}
+.cs-scope-btn.active {
+  background: rgba(var(--accent-rgb, 108, 140, 255), 0.18);
+  border-color: rgba(var(--accent-rgb, 108, 140, 255), 0.42);
+  color: var(--text, #e2e8f0);
+}
+.cs-scope-btn.active i {
+  color: var(--accent, #6c8cff);
+}
+
+.cs-filters-group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.cs-pill-set {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.cs-toolbar-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border, #252b46);
+  opacity: 0.75;
+}
+
+.cs-filter-pill {
+  height: 23px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted, #8b92a5);
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+.cs-filter-pill:hover {
+  background: var(--glass, rgba(255, 255, 255, 0.05));
+  color: var(--text, #e2e8f0);
+}
+.cs-filter-pill.active {
+  background: rgba(var(--accent-rgb, 108, 140, 255), 0.14);
+  border-color: rgba(var(--accent-rgb, 108, 140, 255), 0.36);
+  color: var(--accent, #6c8cff);
+}
+
+/* ── Archive Mode Banner ────────────────────────────────────────────────────── */
+.cs-archive-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 15px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--yellow, #fbbf24);
+  background: rgba(var(--yellow-rgb, 251, 191, 36), 0.08);
+  border-bottom: 1px solid rgba(var(--yellow-rgb, 251, 191, 36), 0.25);
+}
+
+/* ── Results List ───────────────────────────────────────────────────────────── */
+.cs-results {
+  flex: 1;
+  min-height: 160px;
+  max-height: 52vh;
+  overflow-y: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border, #252b46) transparent;
+}
+
+.cs-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 36px 20px;
+  color: var(--muted, #8b92a5);
+}
+.cs-empty-state i {
+  font-size: 24px;
+  color: var(--accent, #6c8cff);
+  opacity: 0.65;
+}
+.cs-empty-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text, #e2e8f0);
+}
+.cs-empty-hint {
+  font-size: 11.5px;
+  line-height: 1.5;
+  max-width: 440px;
+}
+.cs-empty-hint code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border, #252b46);
+  color: var(--accent, #6c8cff);
+  font-size: 11px;
+}
+
+/* Session Group Card */
+.cs-group {
+  border: 1px solid var(--border, #252b46);
+  border-radius: 10px;
+  background: rgba(var(--bg3-rgb, 28, 32, 51), 0.42);
+  overflow: hidden;
+}
+
+.cs-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 11px;
+  background: rgba(255, 255, 255, 0.025);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+.cs-group-header:hover,
+.cs-group-header.cs-item-active {
+  background: rgba(var(--accent-rgb, 108, 140, 255), 0.12);
+}
+
+.cs-group-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  flex: 1;
+}
+.cs-group-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.cs-group-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text, #e2e8f0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cs-group-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 10.5px;
+  color: var(--muted, #8b92a5);
+}
+.cs-group-count {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent, #6c8cff);
+  background: rgba(var(--accent-rgb, 108, 140, 255), 0.14);
+  border: 1px solid rgba(var(--accent-rgb, 108, 140, 255), 0.28);
+}
+
+/* Individual Message Hit Row */
+.cs-hit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.035);
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.cs-hit-row:last-child {
+  border-bottom: none;
+}
+.cs-hit-row:hover,
+.cs-hit-row.cs-item-active {
+  background: rgba(var(--accent-rgb, 108, 140, 255), 0.12);
+  border-left-color: var(--accent, #6c8cff);
+}
+
+.cs-hit-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10.5px;
+  color: var(--muted, #8b92a5);
+}
+.cs-role-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.cs-role-tag.role-user {
+  color: var(--accent, #6c8cff);
+  background: rgba(var(--accent-rgb, 108, 140, 255), 0.14);
+}
+.cs-role-tag.role-assistant {
+  color: var(--green, #34d399);
+  background: rgba(var(--green-rgb, 52, 211, 153), 0.12);
+}
+.cs-think-tag {
+  font-size: 9.5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--accent2, #a78bfa);
+  background: rgba(var(--accent2-rgb, 167, 139, 250), 0.12);
+}
+
+.cs-hit-snippet {
+  font-size: 12.2px;
+  line-height: 1.45;
+  color: var(--text, #e2e8f0);
+  opacity: 0.92;
+  word-break: break-word;
+}
+
+.cs-mark {
+  background: rgba(var(--accent-rgb, 108, 140, 255), 0.28);
+  color: #ffffff;
+  border-radius: 3px;
+  padding: 0 2px;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb, 108, 140, 255), 0.35);
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────────── */
+.cs-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border, #252b46);
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 11px;
+  color: var(--muted, #8b92a5);
+}
+.cs-status-text {
+  font-variant-numeric: tabular-nums;
+}
+.cs-kbd-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cs-kbd-legend kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  margin-right: 2px;
+  border-radius: 4px;
+  border: 1px solid var(--border, #252b46);
+  background: var(--bg3, rgba(255, 255, 255, 0.05));
+  color: var(--text, #e2e8f0);
+  font-family: var(--font-mono, monospace);
+  font-size: 9.5px;
+  line-height: 1.3;
+}
+
+/* ── Floating In-Chat Match Navigator Bar ───────────────────────────────────── */
+.cs-inchat-bar {
+  position: fixed;
+  top: 66px;
+  right: 22px;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px 5px 10px;
+  border-radius: 10px;
+  background: rgba(var(--bg2-rgb, 20, 23, 38), 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(var(--accent-rgb, 108, 140, 255), 0.42);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.48);
+  color: var(--text, #e2e8f0);
+  font-size: 12px;
+  animation: csModalSlide 0.16s ease;
+}
+
+.cs-inchat-query-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 170px;
+  background: transparent;
+  border: none;
+  color: var(--text, #e2e8f0);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+.cs-inchat-query-btn:hover {
+  background: var(--glass, rgba(255, 255, 255, 0.06));
+}
+.cs-inchat-query-btn i {
+  color: var(--accent, #6c8cff);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+#cs-inchat-query {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cs-inchat-counter {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: var(--muted, #8b92a5);
+  padding: 0 4px;
+  border-left: 1px solid var(--border, #252b46);
+  white-space: nowrap;
+}
+
+.cs-inchat-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.cs-inchat-nav-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--border, #252b46);
+  background: var(--glass, rgba(255, 255, 255, 0.04));
+  color: var(--muted, #8b92a5);
+  font-size: 10.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.14s ease;
+}
+.cs-inchat-nav-btn:hover:not(:disabled) {
+  color: var(--accent, #6c8cff);
+  border-color: rgba(var(--accent-rgb, 108, 140, 255), 0.45);
+  background: var(--glass-b, rgba(108, 140, 255, 0.12));
+}
+.cs-inchat-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.cs-inchat-close:hover {
+  color: var(--red, #f87171) !important;
+  border-color: rgba(var(--red-rgb, 248, 113, 113), 0.45) !important;
+}
+
+/* ── Inline Message Highlight & Pulse Ring ──────────────────────────────────── */
+mark.cs-inline-mark {
+  background: rgba(var(--accent-rgb, 108, 140, 255), 0.32);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 2px;
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb, 108, 140, 255), 0.45);
+}
+
+.msg.cs-msg-flash {
+  animation: csMsgPulse 1.8s ease;
+  border-radius: 12px;
+}
+
+@keyframes csMsgPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(var(--accent-rgb, 108, 140, 255), 0.75); background-color: rgba(var(--accent-rgb, 108, 140, 255), 0.16); }
+  45%  { box-shadow: 0 0 0 6px rgba(var(--accent-rgb, 108, 140, 255), 0.22); background-color: rgba(var(--accent-rgb, 108, 140, 255), 0.12); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb, 108, 140, 255), 0); background-color: transparent; }
+}
+
+@media (max-width: 640px) {
+  .cs-modal-backdrop { padding: 12px 10px; }
+  .cs-kbd-legend { display: none; }
+  .cs-inchat-bar { top: 58px; right: 10px; left: 10px; justify-content: space-between; }
+}

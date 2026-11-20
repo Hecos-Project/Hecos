@@ -11,7 +11,9 @@ from hecos.memory.session_state import PATH_DB, _ram_sessions, _is_ram_mode
 from hecos.memory.session_db import _purge_vault_sessions
 
 def create_session(title: str = None, privacy_mode: str = "normal") -> str:
-    """Creates a new chat session. Normal → DB. auto_wipe/incognito → RAM only."""
+    """Creates a new chat session. Normal → DB. Incognito → RAM only."""
+    from hecos.core.privacy.privacy_manager import normalize_mode
+    privacy_mode = normalize_mode(privacy_mode)
     session_id = str(uuid.uuid4())
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if not title:
@@ -23,11 +25,11 @@ def create_session(title: str = None, privacy_mode: str = "normal") -> str:
             "title":        title,
             "created_at":   now,
             "updated_at":   now,
-            "privacy_mode": privacy_mode,
-            "is_incognito": 1 if privacy_mode == "incognito" else 0,
+            "privacy_mode": "incognito",
+            "is_incognito": 1,
             "messages":     []
         }
-        logger.info(f"[SESSION] Created RAM session: {session_id} (mode={privacy_mode})")
+        logger.info(f"[SESSION] Created RAM session: {session_id} (mode=incognito)")
     else:
         conn = sqlite3.connect(PATH_DB)
         cur  = conn.cursor()
@@ -168,21 +170,55 @@ def get_session_messages(session_id: str) -> list:
         return []
 
 
-def add_ram_message(session_id: str, role: str, message: str):
-    """Appends a message to a RAM session's in-memory store."""
+def add_ram_message(session_id: str, role: str, message: str, persona_name: str = None, model_info: str = None):
+    """Appends a message to a RAM (incognito) session's in-memory store."""
     if session_id not in _ram_sessions:
         logger.warning(f"[SESSION] add_ram_message: session {session_id} not in RAM — ignoring.")
         return
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     msg_id = str(uuid.uuid4())
     _ram_sessions[session_id]["messages"].append({
-        "id":        msg_id,
-        "timestamp": now,
-        "role":      role,
-        "message":   message
+        "id":           msg_id,
+        "timestamp":    now,
+        "role":         role,
+        "message":      message,
+        "persona_name": persona_name,
+        "audio_file":   None,
+        "model_info":   model_info,
     })
     _ram_sessions[session_id]["updated_at"] = now
     logger.debug(f"[SESSION] RAM message added ({role}) to {session_id}")
+
+
+def upsert_ram_assistant_message(session_id: str, message: str, persona_name: str = None, model_info: str = None):
+    """Updates the latest assistant message in a RAM session, or appends a new one."""
+    if session_id not in _ram_sessions:
+        return
+    msgs = _ram_sessions[session_id].get("messages", [])
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if msgs and msgs[-1].get("role") == "assistant":
+        msgs[-1]["message"] = message
+        if persona_name is not None:
+            msgs[-1]["persona_name"] = persona_name
+        if model_info is not None:
+            msgs[-1]["model_info"] = model_info
+        _ram_sessions[session_id]["updated_at"] = now
+    else:
+        add_ram_message(session_id, "assistant", message, persona_name=persona_name, model_info=model_info)
+
+
+def update_ram_last_assistant_meta(session_id: str, model_info: str = None, audio_file: str = None):
+    """Updates metadata (model_info / audio_file) on the latest assistant message in RAM."""
+    if session_id not in _ram_sessions:
+        return
+    msgs = _ram_sessions[session_id].get("messages", [])
+    for m in reversed(msgs):
+        if m.get("role") == "assistant":
+            if model_info is not None:
+                m["model_info"] = model_info
+            if audio_file is not None:
+                m["audio_file"] = audio_file
+            return
 
 
 def archive_session(session_id: str, archived: bool = True) -> bool:
@@ -225,11 +261,13 @@ def rename_session(session_id: str, new_title: str) -> bool:
 
 def change_session_mode(session_id: str, new_mode: str) -> bool:
     """Changes the privacy mode of a session, moving it between DB and RAM if necessary."""
+    from hecos.core.privacy.privacy_manager import normalize_mode
+    new_mode = normalize_mode(new_mode)
     old_sess = get_session(session_id)
     if not old_sess:
         return False
         
-    old_mode = old_sess["privacy_mode"]
+    old_mode = normalize_mode(old_sess.get("privacy_mode"))
     if old_mode == new_mode:
         return True
         
