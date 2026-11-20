@@ -21,6 +21,7 @@ from .usage_stats import (
     get_all_preset_usage,
     get_preset_usage,
     record_preset_usage,
+    rebuild_preset_usage_from_history,
     delete_preset_usage,
     resolve_soul_created_at,
 )
@@ -35,7 +36,7 @@ __all__ = [
     'list_souls', 'get_soul', 'save_soul', 'duplicate_soul', 'delete_soul', 'get_active_soul', 'get_active_soul_id',
     'list_inference_presets', 'get_inference_preset', 'save_inference_preset', 'delete_inference_preset',
     'merge_soul_into_config',
-    'get_all_preset_usage', 'get_preset_usage', 'record_preset_usage', 'delete_preset_usage', 'resolve_soul_created_at',
+    'get_all_preset_usage', 'get_preset_usage', 'record_preset_usage', 'rebuild_preset_usage_from_history', 'delete_preset_usage', 'resolve_soul_created_at',
 ]
 
 # Create default on first load if it doesn't exist

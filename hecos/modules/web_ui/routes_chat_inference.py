@@ -144,14 +144,12 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
                 f"fast_code={bool(merged_config_dict.get('_turn_fast_code'))}"
             )
 
+        eff_preset_id = None
         try:
             from hecos.core.global_presets.manager import get_active_soul_id
-            from hecos.core.global_presets.usage_stats import record_preset_usage
             eff_preset_id = get_active_soul_id(session_id)
-            if eff_preset_id:
-                record_preset_usage(eff_preset_id)
         except Exception:
-            pass
+            eff_preset_id = None
         
         class MergedConfigManager:
             def __init__(self, base_mgr, merged_dict):
@@ -443,6 +441,14 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
 
         sess["history"].append({"role": "user",      "content": user_message})
         sess["history"].append({"role": "assistant",  "content": full_text})
+
+        # Record Global Preset usage only once an assistant reply actually completed
+        if eff_preset_id and not (cancel_event is not None and cancel_event.is_set()):
+            try:
+                from hecos.core.global_presets.usage_stats import record_preset_usage
+                record_preset_usage(eff_preset_id, session_id=session_id)
+            except Exception:
+                pass
 
         # Emit events for Presenter and other extensions
         try:

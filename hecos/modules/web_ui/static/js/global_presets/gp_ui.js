@@ -751,16 +751,25 @@ function _sfFormatPresetDate(rawIso, mode = 'date') {
 
 function _sfGetSoulStats(s) {
     const createdAt = s?.meta?.created_at || '';
-    const useCount = Math.max(0, Number(s?.usage?.use_count ?? s?.meta?.use_count ?? 0) || 0);
+    const chatCount = Math.max(0, Number(s?.usage?.chat_count ?? s?.meta?.chat_count ?? 0) || 0);
+    const messageCount = Math.max(0, Number(s?.usage?.message_count ?? s?.usage?.use_count ?? s?.meta?.use_count ?? 0) || 0);
     const lastUsedAt = s?.usage?.last_used_at || s?.meta?.last_used_at || '';
+    const hasUsage = chatCount > 0 || messageCount > 0;
+    const chatWord = chatCount === 1 ? 'chat' : 'chats';
+    const msgWord = messageCount === 1 ? 'message' : 'messages';
     return {
         createdAt,
         createdCompact: _sfFormatPresetDate(createdAt, 'date'),
         createdFull: createdAt ? _sfFormatPresetDate(createdAt, 'full') : 'Unknown',
-        useCount,
+        chatCount,
+        messageCount,
+        useCount: messageCount,
+        hasUsage,
+        usageCompact: `💬 ${chatCount} · ✉️ ${messageCount}`,
+        usageTooltip: `${chatCount} ${chatWord} · ${messageCount} ${msgWord}`,
         lastUsedAt,
-        lastCompact: (useCount > 0 && lastUsedAt) ? _sfFormatPresetDate(lastUsedAt, 'last_short') : 'Never',
-        lastFull: (useCount > 0 && lastUsedAt) ? _sfFormatPresetDate(lastUsedAt, 'full') : 'Never used',
+        lastCompact: (hasUsage && lastUsedAt) ? _sfFormatPresetDate(lastUsedAt, 'last_short') : 'Never',
+        lastFull: (hasUsage && lastUsedAt) ? _sfFormatPresetDate(lastUsedAt, 'full') : 'Never used',
     };
 }
 
@@ -798,7 +807,7 @@ window.sfUpdateSoulHoverCard = function(s) {
             <span>${_sfEscHtml(s.meta?.icon || '⚡')} ${_sfEscHtml(s.meta?.name || sid)}</span>
             <span style="font-size:10px; color:#94a3b8; font-weight:500;">${_sfEscHtml(rightTag)}</span>
         </div>
-        <div class="sf-mhc-specs">Created: ${_sfEscHtml(st.createdFull)} · Used: ${st.useCount}× · Last used: ${_sfEscHtml(st.lastFull)}</div>
+        <div class="sf-mhc-specs">Created: ${_sfEscHtml(st.createdFull)} · Chats: ${st.chatCount} · Messages: ${st.messageCount} · Last used: ${_sfEscHtml(st.lastFull)}</div>
         ${badgeBits.length ? `<div class="sf-mhc-caps">${badgeBits.join('')}</div>` : ''}
         ${descHtml}
     `;
@@ -895,7 +904,7 @@ window.sfRenderSoulPickerList = function(filterText = '') {
         item.setAttribute('role', 'option');
         item.setAttribute('aria-selected', sid === curVal ? 'true' : 'false');
         item.dataset.soulId = sid;
-        item.title = `${name} (${sid})\nCreated: ${st.createdFull}\nUsed: ${st.useCount} time(s)\nLast used: ${st.lastFull}`;
+        item.title = `${name} (${sid})\nCreated: ${st.createdFull}\nChats: ${st.chatCount} · Messages: ${st.messageCount}\nLast used: ${st.lastFull}`;
 
         item.innerHTML = `
             <div class="sf-mp-item-left">
@@ -904,7 +913,7 @@ window.sfRenderSoulPickerList = function(filterText = '') {
             </div>
             <div class="sf-mp-item-right">
                 <span class="sf-mp-spec-tag sf-sp-stat-pill" title="Created: ${_sfEscHtml(st.createdFull)}">📅 ${_sfEscHtml(st.createdCompact)}</span>
-                <span class="sf-mp-spec-tag sf-sp-stat-pill${st.useCount > 0 ? ' uses-hot' : ''}" title="Used ${st.useCount} time(s)">⚡ ${st.useCount}×</span>
+                <span class="sf-mp-spec-tag sf-sp-stat-pill${st.hasUsage ? ' uses-hot' : ''}" title="Used in ${_sfEscHtml(st.usageTooltip)}">${st.usageCompact}</span>
                 <span class="sf-mp-spec-tag sf-sp-stat-pill" title="Last used: ${_sfEscHtml(st.lastFull)}">🕒 ${_sfEscHtml(st.lastCompact)}</span>
             </div>
         `;
@@ -992,11 +1001,11 @@ window.sfSyncSoulPickerUI = function() {
         const icon = s.meta?.icon || '⚡';
         const name = s.meta?.name || val;
         labelEl.textContent = `${icon} ${name}`;
-        labelEl.title = `${name}\nCreated: ${st.createdFull}\nUsed: ${st.useCount} time(s)\nLast used: ${st.lastFull}`;
+        labelEl.title = `${name}\nCreated: ${st.createdFull}\nChats: ${st.chatCount} · Messages: ${st.messageCount}\nLast used: ${st.lastFull}`;
         if (metaEl) {
             metaEl.innerHTML =
                 `<span class="sf-mp-spec-tag sf-sp-stat-pill" title="Created: ${_sfEscHtml(st.createdFull)}">📅 ${_sfEscHtml(st.createdCompact)}</span>` +
-                `<span class="sf-mp-spec-tag sf-sp-stat-pill${st.useCount > 0 ? ' uses-hot' : ''}" title="Used ${st.useCount} time(s)">⚡ ${st.useCount}×</span>`;
+                `<span class="sf-mp-spec-tag sf-sp-stat-pill${st.hasUsage ? ' uses-hot' : ''}" title="Used in ${_sfEscHtml(st.usageTooltip)}">${st.usageCompact}</span>`;
         }
     } else {
         const optTxt = sel.options[sel.selectedIndex]?.textContent || val;

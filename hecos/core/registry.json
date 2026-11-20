@@ -1139,9 +1139,9 @@
     "REMINDER": {
         "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
         "commands": {
-            "cancel_reminder": "Cancels an active reminder by ID.",
-            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
             "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
+            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "cancel_reminder": "Cancels an active reminder by ID.",
             "snooze_reminder": "Postpones a reminder by N minutes from now."
         },
         "status": "ONLINE (DORMANT)",
@@ -1154,33 +1154,33 @@
         "module_type": "hpm",
         "slash_commands": [
             {
+                "id": "reminder",
+                "manifest_version": "1",
                 "aliases": [
                     "/reminder",
                     "/ricorda",
                     "/promemoria"
                 ],
                 "description": "Imposta un nuovo promemoria",
+                "usage": "/reminder <titolo> alle <ora>",
                 "example": "/reminder chiamata Marco alle 15:30",
                 "icon": "⏱",
-                "id": "reminder",
-                "manifest_version": "1",
                 "method": "set_reminder",
-                "requires_args": true,
-                "usage": "/reminder <titolo> alle <ora>"
+                "requires_args": true
             },
             {
+                "id": "reminders",
+                "manifest_version": "1",
                 "aliases": [
                     "/reminders",
                     "/promemoria list"
                 ],
                 "description": "Lists all active reminders",
+                "usage": "/reminders",
                 "example": "/reminders",
                 "icon": "📋",
-                "id": "reminders",
-                "manifest_version": "1",
                 "method": "list_reminders",
-                "requires_args": false,
-                "usage": "/reminders"
+                "requires_args": false
             }
         ]
     },

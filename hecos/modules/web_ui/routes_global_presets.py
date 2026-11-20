@@ -30,8 +30,11 @@ def _serialize_soul_with_stats(soul: SoulProfile, usage_map=None) -> dict:
     sid = str(meta.get("id") or "")
     meta["created_at"] = resolve_soul_created_at(sid, str(meta.get("created_at") or ""))
     usage = (usage_map.get(sid) if isinstance(usage_map, dict) else None) or get_preset_usage(sid)
+    msg_count = int(usage.get("message_count") or usage.get("use_count") or 0)
     data["usage"] = {
-        "use_count": int(usage.get("use_count") or 0),
+        "chat_count": int(usage.get("chat_count") or 0),
+        "message_count": msg_count,
+        "use_count": msg_count,
         "last_used_at": str(usage.get("last_used_at") or ""),
     }
     return data
@@ -728,15 +731,6 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
             from hecos.config.session_config_manager import merge_session_config
 
             merged_cfg = merge_session_config(base_config, session_id=session_id, extra_draft=draft)
-
-            try:
-                eff_pid = (draft.get("active_global_preset") if isinstance(draft, dict) else None) or get_active_soul_id(session_id)
-                if eff_pid:
-                    record_preset_usage(eff_pid)
-            except Exception:
-                pass
-
-
 
             from hecos.core.llm.brain import generate_response
 
