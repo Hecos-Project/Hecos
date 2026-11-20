@@ -1,1 +1,0 @@
-Urania Presenter Persona

@@ -1,1 +1,0 @@
-Hecos Presenter Persona
