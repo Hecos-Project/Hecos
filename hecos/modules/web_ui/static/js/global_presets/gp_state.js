@@ -313,7 +313,10 @@ window.sfLoadActiveSessionState = async function() {
 
 window.soLoadActiveSessionState = window.sfLoadActiveSessionState;
 
+window._sfSoulSelectSeq = 0;
+
 window.sfSelectSessionSoul = async function(soulId) {
+    const seq = ++window._sfSoulSelectSeq;
     const sessionId = window.sfGetActiveSessionId();
     if (!sessionId) {
         return window.sfActivateSoul(soulId);
@@ -325,7 +328,8 @@ window.sfSelectSessionSoul = async function(soulId) {
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ soul_id: soulId || "", session_id: sessionId })
         });
-        
+        if (seq !== window._sfSoulSelectSeq) return;
+
         if (res.ok) {
             const msgEl = document.getElementById('sf-status-msg');
             if (msgEl) {
@@ -336,8 +340,10 @@ window.sfSelectSessionSoul = async function(soulId) {
             }
             if (!soulId) {
                 await window.sfLoadGlobalState();
+                if (seq !== window._sfSoulSelectSeq) return;
             }
             await window.sfLoadActiveSessionState();
+            if (seq !== window._sfSoulSelectSeq) return;
             if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show();
         }
     } catch(e) { console.error("sfSelectSessionSoul error", e); }

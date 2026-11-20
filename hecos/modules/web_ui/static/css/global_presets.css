@@ -642,10 +642,12 @@
     transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 .sf-model-picker-btn:hover,
+.sf-model-picker-btn:focus-visible,
 .sf-model-picker-btn[aria-expanded="true"] {
     border-color: var(--accent, #6c8cff);
     box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 108, 140, 255), 0.16);
     background: var(--bg2, #141726);
+    outline: none;
 }
 
 .sf-mp-btn-main {
@@ -786,8 +788,9 @@
 }
 .sf-mp-item:hover,
 .sf-mp-item.sf-mp-hovered {
-    background: var(--glass-b, rgba(108, 140, 255, 0.09));
-    border-color: rgba(var(--accent-rgb, 108, 140, 255), 0.24);
+    background: rgba(var(--accent-rgb, 108, 140, 255), 0.12);
+    border-color: rgba(var(--accent-rgb, 108, 140, 255), 0.36);
+    box-shadow: inset 2px 0 0 var(--accent, #6c8cff);
 }
 .sf-mp-item.selected {
     background: var(--glass-c, rgba(108, 140, 255, 0.15));

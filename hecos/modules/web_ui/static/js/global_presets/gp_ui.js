@@ -20,6 +20,12 @@ window.sfTogglePanel = function(force) {
         panel.classList.add('open');
         overlay.style.display = 'block';
         window.sfLoadData();
+        setTimeout(() => {
+            const soulBtn = document.getElementById('sf-soul-picker-btn');
+            if (soulBtn && panel.classList.contains('open')) {
+                soulBtn.focus({ preventScroll: true });
+            }
+        }, 40);
     } else {
         panel.classList.remove('open');
         panel.style.display = 'none';
@@ -546,6 +552,8 @@ window.sfRenderModelPickerList = function(filterText = '') {
         item.className = 'sf-mp-item' + (m.id === curVal ? ' selected' : '');
         item.setAttribute('role', 'option');
         item.setAttribute('aria-selected', m.id === curVal ? 'true' : 'false');
+        item.dataset.modelId = m.id;
+        item._sfModelObj = m;
         item.title = d.tooltipText;
 
         const capIconsHtml = d.caps.map(c => {
@@ -580,13 +588,22 @@ window.sfRenderModelPickerList = function(filterText = '') {
             window.sfCloseModelPicker();
             if (window.sfSyncModelUI) window.sfSyncModelUI();
             if (window.sfDirty) window.sfDirty();
+            document.getElementById('sf-model-picker-btn')?.focus({ preventScroll: true });
         });
 
         listEl.appendChild(item);
     });
 
-    const activeModel = visible.find(m => m.id === curVal) || visible[0];
-    window.sfUpdateModelHoverCard(activeModel);
+    const initialItem = listEl.querySelector('.sf-mp-item.selected') || listEl.querySelector('.sf-mp-item');
+    if (initialItem) {
+        initialItem.classList.add('sf-mp-hovered');
+        if (typeof initialItem.scrollIntoView === 'function') {
+            initialItem.scrollIntoView({ block: 'nearest' });
+        }
+        window.sfUpdateModelHoverCard(initialItem._sfModelObj || null);
+    } else {
+        window.sfUpdateModelHoverCard(null);
+    }
 };
 
 window.sfFilterModelPicker = function(val) {
@@ -700,6 +717,98 @@ window.sfSyncModelUI = function() {
     }
 };
 
+// ── Keyboard Stepping & Accessible Picker Navigation (Global Preset + Model) ──
+
+window.sfStepSoul = function(step) {
+    const sel = document.getElementById('sf-active-soul-select');
+    if (!sel || !sel.options || sel.options.length <= 1) return false;
+
+    const len = sel.options.length;
+    const curIdx = Math.max(0, sel.selectedIndex);
+    let nextIdx;
+    if (step === 'first') {
+        nextIdx = 0;
+    } else if (step === 'last') {
+        nextIdx = len - 1;
+    } else {
+        nextIdx = (curIdx + step + len) % len;
+    }
+    if (nextIdx === curIdx) return false;
+
+    const nextVal = sel.options[nextIdx].value;
+    sel.value = nextVal;
+    if (window.sfState) window.sfState.activeSoulId = nextVal || null;
+    if (window.sfSyncSoulPickerUI) window.sfSyncSoulPickerUI();
+
+    clearTimeout(window._sfStepSoulTimer);
+    window._sfStepSoulTimer = setTimeout(() => {
+        if (window.sfSelectSessionSoul) window.sfSelectSessionSoul(nextVal);
+    }, 180);
+    return true;
+};
+
+window.sfStepModel = function(step) {
+    const mSel = document.getElementById('sf-model-select');
+    if (!mSel || !mSel.options || mSel.options.length <= 1) return false;
+
+    const len = mSel.options.length;
+    const curIdx = Math.max(0, mSel.selectedIndex);
+    let nextIdx;
+    if (step === 'first') {
+        nextIdx = 0;
+    } else if (step === 'last') {
+        nextIdx = len - 1;
+    } else {
+        nextIdx = (curIdx + step + len) % len;
+    }
+    if (nextIdx === curIdx) return false;
+
+    mSel.value = mSel.options[nextIdx].value;
+    if (window.sfSyncModelUI) window.sfSyncModelUI();
+    if (window.sfDirty) window.sfDirty();
+    return true;
+};
+
+function _sfMovePickerHighlight(listEl, delta, onHighlight) {
+    if (!listEl) return;
+    const items = Array.from(listEl.querySelectorAll('.sf-mp-item'));
+    if (!items.length) return;
+
+    let curIdx = items.findIndex(el => el.classList.contains('sf-mp-hovered'));
+    if (curIdx === -1) curIdx = items.findIndex(el => el.classList.contains('selected'));
+
+    let nextIdx;
+    if (delta === 'first') {
+        nextIdx = 0;
+    } else if (delta === 'last') {
+        nextIdx = items.length - 1;
+    } else if (curIdx === -1) {
+        nextIdx = delta > 0 ? 0 : items.length - 1;
+    } else {
+        nextIdx = (curIdx + delta + items.length) % items.length;
+    }
+
+    items.forEach(el => el.classList.remove('sf-mp-hovered'));
+    const target = items[nextIdx];
+    target.classList.add('sf-mp-hovered');
+    if (typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ block: 'nearest' });
+    }
+    if (typeof onHighlight === 'function') onHighlight(target);
+}
+
+function _sfIsPresetManagerOpen() {
+    const panel = document.getElementById('preset-manager-panel') || document.getElementById('soul-forge-panel');
+    if (!panel || !panel.classList.contains('open')) return false;
+    if (panel.style.display === 'none') return false;
+    // Yield if a confirm/prompt modal is open on top
+    const confirmModal = document.getElementById('hecos-confirm-modal');
+    const promptModal = document.getElementById('hecos-prompt-modal');
+    if (confirmModal && confirmModal.style.display !== 'none' && confirmModal.style.display !== '') return false;
+    if (promptModal && promptModal.style.display !== 'none' && promptModal.style.display !== '') return false;
+    return true;
+}
+
 if (!window._sfModelPickerEventsBound) {
     window._sfModelPickerEventsBound = true;
     document.addEventListener('click', (e) => {
@@ -712,19 +821,175 @@ if (!window._sfModelPickerEventsBound) {
             if (window.sfCloseSoulPicker) window.sfCloseSoulPicker();
         }
     });
+
+    // Capture-phase keydown handler so open picker menus handle Escape/Arrows before HKS
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            const soulMenu = document.getElementById('sf-soul-picker-menu');
-            if (soulMenu && soulMenu.style.display !== 'none') {
+        if (!_sfIsPresetManagerOpen()) return;
+
+        const soulMenu = document.getElementById('sf-soul-picker-menu');
+        const modelMenu = document.getElementById('sf-model-picker-menu');
+        const soulOpen = !!(soulMenu && soulMenu.style.display !== 'none');
+        const modelOpen = !!(modelMenu && modelMenu.style.display !== 'none');
+        const active = document.activeElement;
+
+        // 1. Open Global Preset picker menu navigation
+        if (soulOpen) {
+            const listEl = document.getElementById('sf-soul-picker-list');
+            const searchEl = document.getElementById('sf-soul-search');
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
                 window.sfCloseSoulPicker();
+                document.getElementById('sf-soul-picker-btn')?.focus({ preventScroll: true });
                 return;
             }
-            const menu = document.getElementById('sf-model-picker-menu');
-            if (menu && menu.style.display !== 'none') {
-                window.sfCloseModelPicker();
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                e.stopPropagation();
+                _sfMovePickerHighlight(listEl, e.key === 'ArrowDown' ? 1 : -1, (item) => {
+                    window.sfUpdateSoulHoverCard(item._sfSoulObj || null);
+                });
+                return;
             }
+            if ((e.key === 'Home' || e.key === 'End') && (!searchEl || !searchEl.value)) {
+                e.preventDefault();
+                e.stopPropagation();
+                _sfMovePickerHighlight(listEl, e.key === 'Home' ? 'first' : 'last', (item) => {
+                    window.sfUpdateSoulHoverCard(item._sfSoulObj || null);
+                });
+                return;
+            }
+            if (e.key === 'Enter') {
+                const target = listEl?.querySelector('.sf-mp-item.sf-mp-hovered')
+                    || listEl?.querySelector('.sf-mp-item.selected')
+                    || listEl?.querySelector('.sf-mp-item');
+                if (target) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    target.click();
+                }
+                return;
+            }
+            return;
         }
-    });
+
+        // 2. Open Model Name picker menu navigation
+        if (modelOpen) {
+            const listEl = document.getElementById('sf-model-picker-list');
+            const searchEl = document.getElementById('sf-model-search');
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                window.sfCloseModelPicker();
+                document.getElementById('sf-model-picker-btn')?.focus({ preventScroll: true });
+                return;
+            }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                e.stopPropagation();
+                _sfMovePickerHighlight(listEl, e.key === 'ArrowDown' ? 1 : -1, (item) => {
+                    window.sfUpdateModelHoverCard(item._sfModelObj || null);
+                });
+                return;
+            }
+            if ((e.key === 'Home' || e.key === 'End') && (!searchEl || !searchEl.value)) {
+                e.preventDefault();
+                e.stopPropagation();
+                _sfMovePickerHighlight(listEl, e.key === 'Home' ? 'first' : 'last', (item) => {
+                    window.sfUpdateModelHoverCard(item._sfModelObj || null);
+                });
+                return;
+            }
+            if (e.key === 'Enter') {
+                const target = listEl?.querySelector('.sf-mp-item.sf-mp-hovered')
+                    || listEl?.querySelector('.sf-mp-item.selected')
+                    || listEl?.querySelector('.sf-mp-item');
+                if (target) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    target.click();
+                }
+                return;
+            }
+            return;
+        }
+
+        // 3. Closed Model Name picker button: arrows / Home / End / Alt+Down
+        if (active && active.id === 'sf-model-picker-btn') {
+            if (e.altKey && e.key === 'ArrowDown') {
+                e.preventDefault();
+                window.sfToggleModelPicker(true);
+                return;
+            }
+            if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    window.sfStepModel(-1);
+                    return;
+                }
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    window.sfStepModel(1);
+                    return;
+                }
+                if (e.key === 'Home') {
+                    e.preventDefault();
+                    window.sfStepModel('first');
+                    return;
+                }
+                if (e.key === 'End') {
+                    e.preventDefault();
+                    window.sfStepModel('last');
+                    return;
+                }
+            }
+            return;
+        }
+
+        // 4. Closed Global Preset picker button: arrows / Home / End / Alt+Down
+        if (active && active.id === 'sf-soul-picker-btn') {
+            if (e.altKey && e.key === 'ArrowDown') {
+                e.preventDefault();
+                window.sfToggleSoulPicker(true);
+                return;
+            }
+            if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    window.sfStepSoul(-1);
+                    return;
+                }
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    window.sfStepSoul(1);
+                    return;
+                }
+                if (e.key === 'Home') {
+                    e.preventDefault();
+                    window.sfStepSoul('first');
+                    return;
+                }
+                if (e.key === 'End') {
+                    e.preventDefault();
+                    window.sfStepSoul('last');
+                    return;
+                }
+            }
+            return;
+        }
+
+        // 5. Panel-wide Left / Right Global Preset switching (when not editing text/select/slider)
+        if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
+            if (active && active !== document.body && active !== document.documentElement) {
+                const tag = (active.tagName || '').toUpperCase();
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active.isContentEditable) {
+                    return;
+                }
+            }
+            e.preventDefault();
+            window.sfStepSoul(e.key === 'ArrowRight' ? 1 : -1);
+        }
+    }, { capture: true });
 }
 
 // ── Global Preset Searchable Picker (matches Model Picker UI) ────────────────
@@ -858,6 +1123,8 @@ window.sfRenderSoulPickerList = function(filterText = '') {
         baseItem.className = 'sf-mp-item' + (curVal === '' ? ' selected' : '');
         baseItem.setAttribute('role', 'option');
         baseItem.setAttribute('aria-selected', curVal === '' ? 'true' : 'false');
+        baseItem.dataset.soulId = '';
+        baseItem._sfSoulObj = null;
         baseItem.innerHTML = `
             <div class="sf-mp-item-left">
                 <span>⚙️</span>
@@ -879,6 +1146,7 @@ window.sfRenderSoulPickerList = function(filterText = '') {
             window.sfCloseSoulPicker();
             if (window.sfSyncSoulPickerUI) window.sfSyncSoulPickerUI();
             if (window.sfSelectSessionSoul) window.sfSelectSessionSoul('');
+            document.getElementById('sf-soul-picker-btn')?.focus({ preventScroll: true });
         });
         listEl.appendChild(baseItem);
     }
@@ -904,6 +1172,7 @@ window.sfRenderSoulPickerList = function(filterText = '') {
         item.setAttribute('role', 'option');
         item.setAttribute('aria-selected', sid === curVal ? 'true' : 'false');
         item.dataset.soulId = sid;
+        item._sfSoulObj = s;
         item.title = `${name} (${sid})\nCreated: ${st.createdFull}\nChats: ${st.chatCount} · Messages: ${st.messageCount}\nLast used: ${st.lastFull}`;
 
         item.innerHTML = `
@@ -931,13 +1200,22 @@ window.sfRenderSoulPickerList = function(filterText = '') {
             window.sfCloseSoulPicker();
             if (window.sfSyncSoulPickerUI) window.sfSyncSoulPickerUI();
             if (window.sfSelectSessionSoul) window.sfSelectSessionSoul(sid);
+            document.getElementById('sf-soul-picker-btn')?.focus({ preventScroll: true });
         });
 
         listEl.appendChild(item);
     });
 
-    const activeSoul = visible.find(s => s.meta?.id === curVal) || visible[0] || null;
-    window.sfUpdateSoulHoverCard(activeSoul);
+    const initialItem = listEl.querySelector('.sf-mp-item.selected') || listEl.querySelector('.sf-mp-item');
+    if (initialItem) {
+        initialItem.classList.add('sf-mp-hovered');
+        if (typeof initialItem.scrollIntoView === 'function') {
+            initialItem.scrollIntoView({ block: 'nearest' });
+        }
+        window.sfUpdateSoulHoverCard(initialItem._sfSoulObj || null);
+    } else {
+        window.sfUpdateSoulHoverCard(null);
+    }
 };
 
 window.sfFilterSoulPicker = function(val) {
