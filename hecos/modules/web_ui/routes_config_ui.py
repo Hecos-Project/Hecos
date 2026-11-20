@@ -259,7 +259,7 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
                     "plugin_tag":  manifest.get("tag", pkg["id"].upper()),
                     "version":     pkg.get("version", ""),
                     "type":        pkg.get("type") or manifest.get("type", "plugin"),
-                    "description": pkg.get("description", ""),
+                    "description": pkg.get("description") or manifest.get("description", ""),
                     "js_file":     js_url_legacy,   # legacy — kept for compat
                     "js_files":    js_urls,          # NEW: full ordered list
                     "css_file":    css_url,

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * config_core_hub.js
  * CONFIG HUB ENGINE — renders the tab bar, wall view, and filter category bar.
  * Also provides injectIconsInPanel for automatic icon decoration.
@@ -1432,7 +1432,334 @@ function renderConfigHub(mode = 'tabs') {
     if (typeof window.syncHubKbFocus === 'function') {
         window.syncHubKbFocus(false);
     }
+    // Ensure Central Hub card/tab floating tooltips are initialized
+    if (typeof window.initHubModuleTooltips === 'function') {
+        window.initHubModuleTooltips();
+    }
 }
+
+// ── Central Hub Floating Module Tooltips (Cards & Tabs) ──────────────────────
+(function initHubTooltipEngine() {
+    let _ttEl = null;
+    let _activeAnchor = null;
+    let _showTimer = null;
+    let _hideTimer = null;
+    let _bound = false;
+
+    function _escHtml(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function _cleanDescription(raw) {
+        if (!raw) return '';
+        // Take only the first non-empty paragraph (prevents multi-section README/guide snippets in manifests)
+        const paragraphs = String(raw).split(/\r?\n\s*\r?\n/);
+        let text = '';
+        for (const p of paragraphs) {
+            const trimmed = p.trim();
+            if (trimmed) { text = trimmed; break; }
+        }
+        // Strip light markdown formatting and collapse whitespace
+        text = text
+            .replace(/\r?\n/g, ' ')
+            .replace(/^\s{0,3}#{1,6}\s+/g, '')
+            .replace(/\*\*([^*]+)\*\*/g, '$1')
+            .replace(/__([^_]+)__/g, '$1')
+            .replace(/`([^`]+)`/g, '$1')
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            .replace(/\s+/g, ' ')
+            .trim();
+        const MAX_LEN = 200;
+        if (text.length > MAX_LEN) {
+            const cut = text.slice(0, MAX_LEN - 1);
+            const lastSp = cut.lastIndexOf(' ');
+            text = (lastSp > 120 ? cut.slice(0, lastSp) : cut).replace(/[.,;:\s]+$/, '') + '…';
+        }
+        return text;
+    }
+
+    function _resolveModuleDescription(m) {
+        if (!m) return '';
+        let desc = '';
+        if (m.descKey) {
+            desc = _hubT(m.descKey, '');
+        }
+        if (!desc) {
+            desc = m.description || m.desc || '';
+        }
+        return _cleanDescription(desc);
+    }
+
+    function _resolveModuleTypePill(m) {
+        let type = (m.moduleType || '').toLowerCase().trim();
+        if (m.isCore) type = 'core_module';
+        if (!type && m.isHpm) type = 'plugin';
+        const meta = (window.HPM_TYPE_META && (window.HPM_TYPE_META[type] || window.HPM_TYPE_META.other))
+            || { shortLabel: 'Module', color: '#6c8cff' };
+        const baseLabel = _hubT(meta.shortLabel, meta.shortLabel || 'Module');
+        const ver = (!m.isCore && m.version) ? ` · v${String(m.version).replace(/^v/i, '')}` : '';
+        return {
+            text: `${baseLabel}${ver}`,
+            color: meta.color || '#6c8cff',
+        };
+    }
+
+    function _ensureStyles() {
+        if (document.getElementById('hub-module-tooltip-dyn-css')) return;
+        const st = document.createElement('style');
+        st.id = 'hub-module-tooltip-dyn-css';
+        st.textContent = `
+            #hub-module-tooltip {
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 99999;
+                pointer-events: none;
+                max-width: 300px;
+                min-width: 190px;
+                padding: 10px 12px;
+                border-radius: 10px;
+                background: rgba(14, 17, 29, 0.96);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid rgba(var(--accent-rgb, 108, 140, 255), 0.34);
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+                color: var(--text, #e2e8f0);
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(4px);
+                transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s ease;
+                box-sizing: border-box;
+            }
+            #hub-module-tooltip[data-pos="bottom"] {
+                transform: translateY(-4px);
+            }
+            #hub-module-tooltip.visible {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+            }
+            #hub-module-tooltip .hub-tt-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                margin-bottom: 5px;
+            }
+            #hub-module-tooltip .hub-tt-title {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 12.5px;
+                font-weight: 700;
+                color: #f8fafc;
+                line-height: 1.25;
+                min-width: 0;
+            }
+            #hub-module-tooltip .hub-tt-title i {
+                color: var(--accent, #6c8cff);
+                font-size: 12px;
+                flex-shrink: 0;
+            }
+            #hub-module-tooltip .hub-tt-badge {
+                font-size: 9px;
+                font-weight: 700;
+                letter-spacing: 0.35px;
+                text-transform: uppercase;
+                padding: 2px 6px;
+                border-radius: 999px;
+                white-space: nowrap;
+                flex-shrink: 0;
+                line-height: 1.2;
+            }
+            #hub-module-tooltip .hub-tt-desc {
+                font-size: 11.5px;
+                line-height: 1.45;
+                color: #cbd5e1;
+                word-break: break-word;
+            }
+            #hub-module-tooltip .hub-tt-arrow {
+                position: absolute;
+                width: 9px;
+                height: 9px;
+                background: rgba(14, 17, 29, 0.96);
+                border-right: 1px solid rgba(var(--accent-rgb, 108, 140, 255), 0.34);
+                border-bottom: 1px solid rgba(var(--accent-rgb, 108, 140, 255), 0.34);
+                transform: rotate(45deg);
+            }
+            #hub-module-tooltip[data-pos="top"] .hub-tt-arrow {
+                bottom: -5px;
+            }
+            #hub-module-tooltip[data-pos="bottom"] .hub-tt-arrow {
+                top: -5px;
+                transform: rotate(225deg);
+            }
+        `;
+        document.head.appendChild(st);
+    }
+
+    function _ensureTooltipEl() {
+        _ensureStyles();
+        if (_ttEl && document.body.contains(_ttEl)) return _ttEl;
+        _ttEl = document.getElementById('hub-module-tooltip');
+        if (!_ttEl) {
+            _ttEl = document.createElement('div');
+            _ttEl.id = 'hub-module-tooltip';
+            _ttEl.setAttribute('role', 'tooltip');
+            _ttEl.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(_ttEl);
+        }
+        return _ttEl;
+    }
+
+    function _clearTimers() {
+        if (_showTimer) { clearTimeout(_showTimer); _showTimer = null; }
+        if (_hideTimer) { clearTimeout(_hideTimer); _hideTimer = null; }
+    }
+
+    function _hideTooltip(immediate = false) {
+        if (_showTimer) { clearTimeout(_showTimer); _showTimer = null; }
+        const doHide = () => {
+            _activeAnchor = null;
+            if (_ttEl) {
+                _ttEl.classList.remove('visible');
+                _ttEl.setAttribute('aria-hidden', 'true');
+            }
+        };
+        if (immediate) {
+            if (_hideTimer) { clearTimeout(_hideTimer); _hideTimer = null; }
+            doHide();
+        } else {
+            if (_hideTimer) clearTimeout(_hideTimer);
+            _hideTimer = setTimeout(doHide, 80);
+        }
+    }
+
+    function _positionTooltip(anchorEl, tipEl) {
+        const rect = anchorEl.getBoundingClientRect();
+        const tipRect = tipEl.getBoundingClientRect();
+        const gap = 10;
+        const margin = 12;
+
+        let pos = 'top';
+        let top = rect.top - tipRect.height - gap;
+        if (top < margin) {
+            pos = 'bottom';
+            top = rect.bottom + gap;
+            if (top + tipRect.height > window.innerHeight - margin) {
+                top = Math.max(margin, window.innerHeight - tipRect.height - margin);
+            }
+        }
+
+        const anchorCenterX = rect.left + rect.width / 2;
+        let left = anchorCenterX - tipRect.width / 2;
+        left = Math.max(margin, Math.min(left, window.innerWidth - tipRect.width - margin));
+
+        tipEl.setAttribute('data-pos', pos);
+        tipEl.style.left = `${Math.round(left)}px`;
+        tipEl.style.top = `${Math.round(top)}px`;
+
+        const arrow = tipEl.querySelector('.hub-tt-arrow');
+        if (arrow) {
+            const arrowX = Math.max(16, Math.min(anchorCenterX - left - 4.5, tipRect.width - 25));
+            arrow.style.left = `${Math.round(arrowX)}px`;
+        }
+    }
+
+    function _showTooltipForAnchor(anchorEl) {
+        if (!anchorEl || !document.body.contains(anchorEl)) return;
+        const modId = anchorEl.getAttribute('data-mod-id');
+        const modules = (window.CONFIG_HUB && window.CONFIG_HUB.modules) || [];
+        const m = modules.find(item => item && item.id === modId);
+        if (!m) return;
+
+        const desc = _resolveModuleDescription(m);
+        if (!desc) {
+            _hideTooltip(true);
+            return;
+        }
+
+        const tipEl = _ensureTooltipEl();
+        const title = window.t ? window.t(m.label) : m.label;
+        const iconHtml = window.getIconForModule ? window.getIconForModule(m.id, m.label, m.icon) : (m.icon || '');
+        const pill = _resolveModuleTypePill(m);
+        const rgb = _hexToRgb(pill.color);
+
+        tipEl.innerHTML = `
+            <div class="hub-tt-head">
+                <span class="hub-tt-title">${iconHtml}<span>${_escHtml(title)}</span></span>
+                <span class="hub-tt-badge" style="background:rgba(${rgb},0.16);color:${pill.color};border:1px solid rgba(${rgb},0.32);">${_escHtml(pill.text)}</span>
+            </div>
+            <div class="hub-tt-desc">${_escHtml(desc)}</div>
+            <div class="hub-tt-arrow"></div>
+        `;
+
+        _activeAnchor = anchorEl;
+        _positionTooltip(anchorEl, tipEl);
+        tipEl.classList.add('visible');
+        tipEl.setAttribute('aria-hidden', 'false');
+    }
+
+    function _findAnchor(target) {
+        if (!target || typeof target.closest !== 'function') return null;
+        return target.closest('#config-wall .module-card[data-mod-id], #config-tabs-bar button.tab[data-mod-id]');
+    }
+
+    window.initHubModuleTooltips = function() {
+        _ensureStyles();
+        if (_bound) return;
+        _bound = true;
+
+        document.addEventListener('mouseover', (e) => {
+            const anchor = _findAnchor(e.target);
+            if (!anchor) return;
+            if (anchor === _activeAnchor && _ttEl && _ttEl.classList.contains('visible')) {
+                if (_hideTimer) { clearTimeout(_hideTimer); _hideTimer = null; }
+                return;
+            }
+            _clearTimers();
+            const isAlreadyVisible = !!(_ttEl && _ttEl.classList.contains('visible'));
+            const delay = isAlreadyVisible ? 55 : 220;
+            _showTimer = setTimeout(() => _showTooltipForAnchor(anchor), delay);
+        }, true);
+
+        document.addEventListener('mouseout', (e) => {
+            const anchor = _findAnchor(e.target);
+            if (!anchor) return;
+            if (e.relatedTarget && anchor.contains(e.relatedTarget)) return;
+            _hideTooltip(false);
+        }, true);
+
+        document.addEventListener('focusin', (e) => {
+            const anchor = _findAnchor(e.target);
+            if (!anchor) return;
+            _clearTimers();
+            _showTimer = setTimeout(() => _showTooltipForAnchor(anchor), 120);
+        }, true);
+
+        document.addEventListener('focusout', (e) => {
+            const anchor = _findAnchor(e.target);
+            if (!anchor) return;
+            _hideTooltip(true);
+        }, true);
+
+        document.addEventListener('mousedown', () => _hideTooltip(true), true);
+        document.addEventListener('scroll', () => _hideTooltip(true), true);
+        window.addEventListener('resize', () => _hideTooltip(true));
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' || e.key === 'Enter') _hideTooltip(true);
+        });
+    };
+
+    window.hideHubModuleTooltip = () => _hideTooltip(true);
+    window._hubCleanDescription = _cleanDescription;
+    window._hubResolveModuleDescription = _resolveModuleDescription;
+})();
 
 window.renderConfigHub  = renderConfigHub;
 window.renderFilterTabs = renderFilterTabs;

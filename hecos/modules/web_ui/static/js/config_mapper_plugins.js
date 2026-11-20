@@ -68,6 +68,8 @@ function renderPlugins(plugins) {
         desc = window.t(descAlt);
     } else if (I18N['plugin_desc_' + tag.toLowerCase()]) {
         desc = I18N['plugin_desc_' + tag.toLowerCase()];
+    } else if (m.descKey && window.t && window.t(m.descKey) !== m.descKey) {
+        desc = window.t(m.descKey);
     } else if (m.description) {
         desc = m.description;
     } else {

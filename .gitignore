@@ -770,3 +770,12 @@ hecos/media/
 
 # Isolated external CLI sidecars (e.g. Aider venv managed via uv)
 tools/
+
+# Action Plans, Agent/Flow Checkpoints & Preset Usage Telemetry (Privacy - local user runtime state)
+hecos/data/action_plans/*
+!hecos/data/action_plans/.gitkeep
+hecos/data/agent_checkpoints/*
+!hecos/data/agent_checkpoints/.gitkeep
+hecos/data/flow_checkpoints/*
+!hecos/data/flow_checkpoints/.gitkeep
+hecos/data/global_presets_usage.json

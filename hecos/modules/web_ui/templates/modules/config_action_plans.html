@@ -19,15 +19,8 @@
 
   <div class="card">
     <div class="card-title"><i class="fas fa-sliders-h"></i> {{ t('ap_sec_planning') or 'Multi-Step Planning' }}</div>
-    <div class="toggle-row">
-      <div class="toggle-info">
-        {{ t('ap_enable_label') or 'Enable Action Plans Core Module' }}
-        <div class="toggle-sub">{{ t('ap_enable_desc') or 'Exposes structured Action Plans to LLM tools (ACTION_PLANS__*), plugins, and Hecos Flows.' }}</div>
-      </div>
-      <label class="switch"><input type="checkbox" id="ap-enabled" data-plugin="ACTION_PLANS"><span class="slider"></span></label>
-    </div>
 
-    <div class="field" style="margin-top:14px;">
+    <div class="field">
       <label for="ap-plan-mode">{{ t('ap_mode_label') or 'Default Planning Mode' }}</label>
       <select id="ap-plan-mode">
         <option value="auto">{{ t('ap_mode_auto') or 'Automatic on complex tasks (Recommended)' }}</option>
@@ -112,5 +105,5 @@
 </div>
 
 <script src="/static/js/action_plans_hub/aph_api.js?v={{ version }}&t=20261119_mdexport2"></script>
-<script src="/static/js/action_plans_hub/aph_render.js?v={{ version }}&t=20261119_mdexport2"></script>
+<script src="/static/js/action_plans_hub/aph_render.js?v={{ version }}&t=20261120_nomodtoggle"></script>
 <script src="/static/js/action_plans_hub/aph_bootstrap.js?v={{ version }}&t=20261119_mdexport2"></script>

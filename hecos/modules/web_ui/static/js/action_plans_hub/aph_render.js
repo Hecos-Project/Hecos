@@ -46,7 +46,6 @@
     const setCk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
     const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
 
-    setCk('ap-enabled', c.enabled !== false);
     setVal('ap-plan-mode', c.plan_mode || 'auto');
     setVal('ap-min-steps', c.auto_plan_min_steps_hint ?? 3);
     setCk('ap-expose-presets', c.expose_tools_in_custom_presets !== false);
@@ -71,7 +70,6 @@
     };
     const modeEl = document.getElementById('ap-plan-mode');
     return {
-      enabled: getCk('ap-enabled', true),
       plan_mode: modeEl ? modeEl.value : 'auto',
       auto_plan_min_steps_hint: getNum('ap-min-steps', 3),
       expose_tools_in_custom_presets: getCk('ap-expose-presets', true),

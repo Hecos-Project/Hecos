@@ -203,8 +203,9 @@ function mergeRegistry(registry) {
         const existing   = hub.modules.find(m => m.id === resolvedId || m.pluginTag === tag);
 
         if (existing) {
-            if (!existing.icon)      existing.icon      = plug.icon;
-            if (!existing.pluginTag) existing.pluginTag = tag;
+            if (!existing.icon)        existing.icon        = plug.icon;
+            if (!existing.pluginTag)   existing.pluginTag   = tag;
+            if (!existing.description && plug.description) existing.description = plug.description;
         }
     });
 }
@@ -257,16 +258,20 @@ function mergeHubPanels(panels) {
             existing.pluginTag = p.plugin_tag || panelId.toUpperCase();
             existing.isHpm = true;
             existing.moduleType = p.type || 'plugin';
+            existing.description = p.description || existing.description || '';
+            existing.version = p.version || existing.version || '';
             added++;
         } else {
             hub.modules.push({
-                id:        panelId,
-                label:     p.name || panelId,
-                icon:      iconHtml,
-                cat:       p.category || 'CONNETTIVITÀ',
-                pluginTag: p.plugin_tag || panelId.toUpperCase(),
-                isHpm:     true,
-                moduleType: p.type || 'plugin'
+                id:          panelId,
+                label:       p.name || panelId,
+                icon:        iconHtml,
+                cat:         p.category || 'CONNETTIVITÀ',
+                pluginTag:   p.plugin_tag || panelId.toUpperCase(),
+                isHpm:       true,
+                moduleType:  p.type || 'plugin',
+                description: p.description || '',
+                version:     p.version || ''
             });
             added++;
         }
