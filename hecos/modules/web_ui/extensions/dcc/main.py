@@ -283,7 +283,7 @@ def _build_hierarchy(config: dict) -> list:
             ).fetchall()
             for row in rows:
                 pid = row["id"]
-                if row.get("type"):
+                if row["type"]:
                     pkg_types[pid] = row["type"]
                     
                 ts_candidates = []

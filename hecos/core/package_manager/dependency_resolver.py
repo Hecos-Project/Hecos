@@ -270,56 +270,105 @@ class DependencyResolver:
                 logger.error(f"[HPM:Resolver] pip install error for {req}: {e}")
                 report.pip_failures.append(req)
 
+    @staticmethod
+    def normalize_pip_name(req: str) -> str:
+        """
+        Extract and PEP-503-normalize the base distribution name from a PEP-508
+        requirement string (stripping extras like `[socks]`, version specifiers,
+        environment markers, URLs, and comments).
+
+        Examples:
+            "requests[socks]>=2.31.0" -> "requests"
+            "misaki[en]"              -> "misaki"
+            "tomli_w"                 -> "tomli-w"
+            "ruamel.yaml>=0.18; ..."  -> "ruamel-yaml"
+        """
+        import re
+
+        if not req:
+            return ""
+        text = req.strip()
+        if not text or text.startswith("#"):
+            return ""
+        # Strip inline comments, markers, URLs, extras, version operators, parens, spaces
+        base = re.split(r'[#;@\[\s><=!~()]', text, maxsplit=1)[0].strip()
+        if not base:
+            return ""
+        return re.sub(r'[-_.]+', '-', base).lower()
+
     def get_safe_to_uninstall_pip_deps(self, pkg_requirements: List[str], current_pkg_id: str) -> List[str]:
         """
-        Cross-checks pip_requirements against Hecos Core, other installed HPM packages,
+        Cross-checks pip_requirements against Hecos Core (all dependencies &
+        optional-dependencies in pyproject.toml), other installed HPM packages,
         and all transitive dependencies via importlib.metadata.
-        Returns a list of pip dependencies that are safe to uninstall.
+        Returns a deduplicated list of PEP-503 canonical pip package names that
+        are genuinely safe to uninstall.
         """
         import os
-        import re
         import importlib.metadata
 
         if not pkg_requirements:
             return []
 
-        # 1. Identify which pip packages the current package explicitly installed
+        # 1. Normalize all candidate pip package names requested by the package
+        candidate_order: List[str] = []
         candidate_packages = set()
         for req in pkg_requirements:
-            clean_req = re.split(r'[;>=<~]', req)[0].strip().lower().replace('_', '-')
-            if clean_req and not clean_req.startswith("#"):
+            clean_req = self.normalize_pip_name(req)
+            if clean_req and clean_req not in candidate_packages:
                 candidate_packages.add(clean_req)
+                candidate_order.append(clean_req)
 
         if not candidate_packages:
             return []
 
         safe_to_remove = set(candidate_packages)
 
-        # 2. Get Hecos Core direct dependencies
+        # 2. Protect ALL Hecos Core dependencies (core + all optional-dependencies + build-system)
         core_deps = set()
         hecos_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         toml_path = os.path.join(hecos_root, "pyproject.toml")
         if os.path.exists(toml_path):
             try:
-                with open(toml_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-                deps_match = re.search(r'dependencies\s*=\s*\[(.*?)\]', content, re.DOTALL)
-                if deps_match:
-                    for m in re.findall(r'"([^"]+)"', deps_match.group(1)):
-                        core_deps.add(re.split(r'[;>=<~]', m)[0].strip().lower().replace('_', '-'))
-                service_match = re.search(r'service\s*=\s*\[(.*?)\]', content, re.DOTALL)
-                if service_match:
-                    for m in re.findall(r'"([^"]+)"', service_match.group(1)):
-                        core_deps.add(re.split(r'[;>=<~]', m)[0].strip().lower().replace('_', '-'))
+                try:
+                    import tomllib  # Python 3.11+
+                except ImportError:
+                    import tomli as tomllib  # type: ignore
+
+                with open(toml_path, "rb") as f:
+                    toml_data = tomllib.load(f)
+
+                project_tbl = toml_data.get("project") or {}
+                for dep in project_tbl.get("dependencies") or []:
+                    norm = self.normalize_pip_name(dep)
+                    if norm:
+                        core_deps.add(norm)
+
+                opt_deps = project_tbl.get("optional-dependencies") or {}
+                if isinstance(opt_deps, dict):
+                    for group_deps in opt_deps.values():
+                        for dep in group_deps or []:
+                            norm = self.normalize_pip_name(dep)
+                            if norm:
+                                core_deps.add(norm)
+
+                build_tbl = toml_data.get("build-system") or {}
+                for dep in build_tbl.get("requires") or []:
+                    norm = self.normalize_pip_name(dep)
+                    if norm:
+                        core_deps.add(norm)
             except Exception as e:
                 logger.error(f"[HPM:Resolver] Failed to parse core pyproject.toml: {e}")
+                # Fail-safe: if we cannot verify core dependencies, NEVER uninstall shared pip packages!
+                logger.warning("[HPM:Resolver] Aborting shared pip uninstall to protect Hecos Core.")
+                return []
 
         for req in list(safe_to_remove):
             if req in core_deps:
                 logger.info(f"[HPM:Resolver] Keeping pip dependency '{req}' because it is used by Hecos Core.")
                 safe_to_remove.remove(req)
 
-        # 3. Get dependencies from other installed HPM packages
+        # 3. Protect dependencies declared by other installed HPM packages
         other_packages_deps = set()
         all_packages = self._registry.list_all()
         for pkg in all_packages:
@@ -328,7 +377,7 @@ class DependencyResolver:
             manifest = pkg.get("manifest_snapshot") or {}
             pip_reqs = manifest.get("pip_requirements") or []
             for req in pip_reqs:
-                clean_req = re.split(r'[;>=<~]', req)[0].strip().lower().replace('_', '-')
+                clean_req = self.normalize_pip_name(req)
                 if clean_req:
                     other_packages_deps.add(clean_req)
 
@@ -337,37 +386,44 @@ class DependencyResolver:
                 logger.info(f"[HPM:Resolver] Keeping pip dependency '{req}' because it is used by another installed HPM package.")
                 safe_to_remove.remove(req)
 
-        # 4. Check transitive dependencies (via importlib.metadata)
+        # 4. Protect transitive dependencies via importlib.metadata (fixed-point loop)
+        # Only skip distributions that are STILL marked for removal; any package
+        # that is staying installed (including kept candidates) keeps its own deps.
         if safe_to_remove:
             try:
+                installed_dists = []
                 for dist in importlib.metadata.distributions():
-                    dist_name = dist.metadata.get('Name', '').lower().replace('_', '-')
-                    
-                    # If this installed package is one of the ones we are trying to remove, skip its requirements
-                    if dist_name in candidate_packages:
+                    dist_name = self.normalize_pip_name(dist.metadata.get("Name", "") or "")
+                    if not dist_name:
                         continue
-                        
-                    requires = dist.requires
-                    if requires:
-                        for req in requires:
-                            req_base = re.split(r'[;>=<~\s\(]', req)[0].strip().lower().replace('_', '-')
-                            if req_base in safe_to_remove:
-                                logger.info(f"[HPM:Resolver] Keeping pip dependency '{req_base}' because it is required by installed package '{dist_name}'.")
+                    req_names = {
+                        self.normalize_pip_name(r)
+                        for r in (dist.requires or [])
+                    }
+                    req_names.discard("")
+                    installed_dists.append((dist_name, req_names))
+
+                changed = True
+                while changed and safe_to_remove:
+                    changed = False
+                    for dist_name, req_names in installed_dists:
+                        if dist_name in safe_to_remove:
+                            continue
+                        overlap = safe_to_remove & req_names
+                        if overlap:
+                            for req_base in sorted(overlap):
+                                logger.info(
+                                    f"[HPM:Resolver] Keeping pip dependency '{req_base}' "
+                                    f"because it is required by installed package '{dist_name}'."
+                                )
                                 safe_to_remove.remove(req_base)
-                                
+                                changed = True
                             if not safe_to_remove:
                                 break
-                    if not safe_to_remove:
-                        break
             except Exception as e:
                 logger.error(f"[HPM:Resolver] Error while cross-checking transitive pip dependencies: {e}")
+                # Fail-safe: avoid breaking the shared environment on metadata inspection error
+                return []
 
-        # Return the original requested string for each safe base package
-        # (pip uninstall needs the exact string or at least the valid name)
-        final_safe = []
-        for req in pkg_requirements:
-            clean_req = re.split(r'[;>=<~]', req)[0].strip().lower().replace('_', '-')
-            if clean_req in safe_to_remove:
-                final_safe.append(req.strip())
-
-        return final_safe
+        # Return canonical distribution names (never raw specifiers with extras/versions)
+        return [pkg for pkg in candidate_order if pkg in safe_to_remove]

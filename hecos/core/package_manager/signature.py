@@ -37,9 +37,15 @@ class SignatureVerifier:
         for fname in os.listdir(self._trusted_keys_dir):
             if fname.endswith(".pem"):
                 key_path = os.path.join(self._trusted_keys_dir, fname)
+                if not os.path.isfile(key_path):
+                    continue
                 try:
                     with open(key_path, "rb") as f:
                         key_data = f.read()
+                    # Skip non-public-key PEM files (e.g. private keys or TLS certificates)
+                    if b"BEGIN PUBLIC KEY" not in key_data:
+                        logger.debug(f"[HPM:Signature] Skipping non-public-key PEM file: {fname}")
+                        continue
                     pub_key = serialization.load_pem_public_key(key_data)
                     if isinstance(pub_key, Ed25519PublicKey):
                         self._public_keys[fname] = pub_key

@@ -123,10 +123,11 @@ class PackageUninstaller:
             safe_to_remove = resolver.get_safe_to_uninstall_pip_deps(pip_requirements, pkg_id)
 
             # Log what's being kept and why
+            safe_norm = set(safe_to_remove)
             kept = [
                 req for req in pip_requirements
                 if req.strip() and not req.strip().startswith("#")
-                and req not in safe_to_remove
+                and resolver.normalize_pip_name(req) not in safe_norm
             ]
             for req in kept:
                 logger.info(
