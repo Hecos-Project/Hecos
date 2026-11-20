@@ -2,10 +2,9 @@
 MODULE: Chat Session Manager
 DESCRIPTION: Manages named chat sessions.
              - 'normal' sessions: persisted in SQLite DB across restarts.
-             - 'auto_wipe' sessions: RAM-only (visible while app runs, vanish on restart).
-               Messages are kept in memory and available when switching back to the session.
-             - 'incognito' sessions: RAM-only, zero writes to disk.
-             Both non-normal modes never touch the DB.
+             - 'incognito' sessions: RAM-only, zero writes to disk, vanish on restart.
+               Messages are kept in memory during the open session for coherent
+               multi-turn conversation without leaving traces on disk.
 
 Facade module. Implementations are split across:
 - session_state.py
@@ -30,6 +29,8 @@ from hecos.memory.session_crud import (
     get_session,
     get_session_messages,
     add_ram_message,
+    upsert_ram_assistant_message,
+    update_ram_last_assistant_meta,
     archive_session,
     rename_session,
     change_session_mode,

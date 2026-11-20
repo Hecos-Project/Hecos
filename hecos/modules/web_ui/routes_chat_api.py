@@ -41,12 +41,54 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         try:
             profile      = auth_mgr.get_profile(current_user.username) if current_user.is_authenticated else None
             translations = get_translator().get_translations()
+
+            # Resolve active persona & avatar for immediate UI hydration (no flash / no race conditions)
+            active_persona = cfg_mgr.config.get("ai", {}).get("active_personality", "Hecos_System_Soul")
+            active_preset_id = cfg_mgr.config.get("ai", {}).get("active_global_preset")
+            active_preset_name = None
+            if active_preset_id:
+                try:
+                    from hecos.core.global_presets import get_soul
+                    active_soul = get_soul(active_preset_id)
+                    if active_soul:
+                        if active_soul.meta and active_soul.meta.name:
+                            active_preset_name = active_soul.meta.name
+                        else:
+                            active_preset_name = active_preset_id
+                        if active_soul.persona and active_soul.persona.soul_file:
+                            active_persona = active_soul.persona.soul_file
+                except Exception:
+                    pass
+            if active_persona.endswith(".yaml"):
+                active_persona = active_persona[:-5]
+
+            active_avatar_url = "/assets/Hecos_Logo_NBG.png"
+            active_avatar_type = "image"
+            try:
+                from hecos.core.persona.persona_media import PersonaMediaManager
+                av_info = PersonaMediaManager.resolve_avatar(active_persona)
+                active_avatar_url = av_info.get("url", "/assets/Hecos_Logo_NBG.png")
+                active_avatar_type = av_info.get("type", "image")
+            except Exception:
+                pass
+
+            zcfg_for_chat = dict(cfg_mgr.config)
+            try:
+                from hecos.core.agent.traces import get_agent_config
+                zcfg_for_chat["agent"] = get_agent_config()
+            except Exception:
+                pass
+
             resp = make_response(render_template(
                 "chat.html",
                 profile=profile,
-                zconfig=cfg_mgr.config,
+                zconfig=zcfg_for_chat,
                 translations=translations,
                 sidebar_widgets=get_sidebar_widgets(config=cfg_mgr.config),
+                active_persona=active_persona,
+                active_avatar_url=active_avatar_url,
+                active_avatar_type=active_avatar_type,
+                active_preset_name=active_preset_name,
             ))
             resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
             resp.headers["Pragma"] = "no-cache"
@@ -64,6 +106,15 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         user_msg = data.get("message", "").strip()
         history  = data.get("history", [])
         images   = data.get("images", [])
+        tab_id   = data.get("tab_id") or ""
+        turn_options = {
+            "plan_only": bool(data.get("plan_only")),
+            "revise_plan_id": str(data.get("revise_plan_id") or "").strip(),
+            "execute_plan_id": str(data.get("execute_plan_id") or "").strip(),
+            "execute_step_index": int(data.get("execute_step_index") or 0),
+            "coder_preset_id": str(data.get("coder_preset_id") or "").strip(),
+            "fast_code": bool(data.get("fast_code")),
+        }
 
         if not user_msg and not images:
             return jsonify({"ok": False, "error": "Empty message"}), 400
@@ -71,6 +122,11 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         uid = current_user.username if current_user.is_authenticated else "admin"
         urole = current_user.role if current_user.is_authenticated else "admin"
         
+        # Record user message in StateManager for cross-pipeline deduplication
+        sm = get_state_manager()
+        if sm and user_msg and hasattr(sm, 'record_chat_message'):
+            sm.record_chat_message(user_msg)
+
         # Save to input history
         try:
             from hecos.modules.input_history import history_mgr
@@ -183,7 +239,13 @@ def init_chat_api_routes(app, cfg_mgr, logger):
                     _chat_log.info(f"[Chat] Direct TTS finished: status={audio_status} audio_id={audio_id}")
 
                     if audio_status == "web":
-                        sess["queue"].put({"type": "audio_ready", "text": "", "audio_id": audio_id or ""})
+                        sess["queue"].put({
+                            "type": "audio_ready",
+                            "text": "",
+                            "audio_id": audio_id or "",
+                            "session_id": sid,
+                            "tab_id": tab_id,
+                        })
                         if audio_id:
                             try:
                                 from hecos.memory.brain_interface import _db_path
@@ -201,7 +263,12 @@ def init_chat_api_routes(app, cfg_mgr, logger):
                             except Exception as _ae:
                                 _chat_log.warning(f"[Chat] Direct TTS could not save audio_id to DB: {_ae}")
                     elif audio_status == "system":
-                        sess["queue"].put({"type": "system_audio_playing", "text": ""})
+                        sess["queue"].put({
+                            "type": "system_audio_playing",
+                            "text": "",
+                            "session_id": sid,
+                            "tab_id": tab_id,
+                        })
 
                     sess["history"].append({"role": "user", "content": user_msg})
                     sess["history"].append({"role": "assistant", "content": bubble_text})
@@ -308,12 +375,14 @@ def init_chat_api_routes(app, cfg_mgr, logger):
 
         # ── End Playbook slash commands ──────────────────────────────────────
 
-        sm = get_state_manager()
-        if sm:
-            sm.webui_stop_requested = False  # Clear any stale cancellation flag
+        from hecos.core.agent.turn_control import register_turn
 
         sid  = data.get("session_id") or privacy_manager.get_session_id() or str(uuid.uuid4())
-        tab_id = data.get("tab_id")
+        turn_id, cancel_event = register_turn(sid)
+
+        sm = get_state_manager()
+        if sm:
+            sm.webui_stop_requested = False  # Clear global stop flag ONLY after older session turns have been cancelled
 
         # ── Playbook keyword trigger auto-start ──────────────────────────────
         try:
@@ -339,13 +408,20 @@ def init_chat_api_routes(app, cfg_mgr, logger):
             pass
         # ─────────────────────────────────────────────────────────────────────
 
-        sess = {"queue": queue.Queue(), "history": list(history), "done": False, "user_id": uid}
+        sess = {
+            "queue": queue.Queue(),
+            "history": list(history),
+            "done": False,
+            "user_id": uid,
+            "turn_id": turn_id,
+            "cancel_event": cancel_event,
+        }
         with _sessions_lock:
             _sessions[sid] = sess
 
         threading.Thread(
             target=_run_inference,
-            args=(sess, sid, user_msg, history, cfg_mgr, images, uid, urole, tab_id),
+            args=(sess, sid, user_msg, history, cfg_mgr, images, uid, urole, tab_id, None, turn_options),
             daemon=True,
         ).start()
         return jsonify({"ok": True, "session_id": sid})
@@ -391,8 +467,15 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         if request.method == "POST":
             data = request.get_json(force=True) or {}
             overrides = data.get("config", {})
+            if not isinstance(overrides, dict):
+                overrides = {}
             
             old_overrides = get_session_config(session_id) or {}
+            # Preserve explicit preset choice (including active_global_preset == "" for Base Configuration / No Preset)
+            # whenever normal per-chat overrides/drafts are saved without specifying active_global_preset.
+            if "active_global_preset" not in overrides and "active_global_preset" in old_overrides:
+                overrides["active_global_preset"] = old_overrides["active_global_preset"]
+
             old_p = old_overrides.get("ai", {}).get("active_personality")
             new_p = overrides.get("ai", {}).get("active_personality")
             
@@ -428,11 +511,15 @@ def init_chat_api_routes(app, cfg_mgr, logger):
 
         def generate():
             from hecos.modules.web_ui.server import get_state_manager
+            from hecos.core.agent.turn_control import cancel_session_turns
             sm = get_state_manager()
+            ev_cancel = sess.get("cancel_event")
             while True:
-                # ESC / stop interceptor
-                if sm and getattr(sm, "webui_stop_requested", False):
-                    sm.webui_stop_requested = False
+                # ESC / stop interceptor (do NOT clear sm.webui_stop_requested here so backend loop/sockets also abort!)
+                if (ev_cancel is not None and ev_cancel.is_set()) or (sm and getattr(sm, "webui_stop_requested", False)):
+                    if ev_cancel is not None:
+                        ev_cancel.set()
+                    cancel_session_turns(session_id, by_user=True)
                     yield "data: " + json.dumps({"type": "error", "text": "⛔ Generation aborted."}) + "\n\n"
                     break
                 try:
@@ -447,7 +534,8 @@ def init_chat_api_routes(app, cfg_mgr, logger):
                     yield "data: " + json.dumps({"type": "heartbeat"}) + "\n\n"
 
             with _sessions_lock:
-                _sessions.pop(session_id, None)
+                if _sessions.get(session_id) is sess:
+                    _sessions.pop(session_id, None)
 
         return Response(
             stream_with_context(generate()),

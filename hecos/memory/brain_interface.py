@@ -226,8 +226,7 @@ def save_message(role, message, config: dict = None, user_id: str = "admin",
                  broadcast_sse: bool = False, sender_tab_id: str = None,
                  model_info: str = None):
     """Stores an exchange in episodic memory, respecting config flags and privacy mode.
-    - incognito → discard entirely (no storage anywhere)
-    - auto_wipe → store in RAM only (vanishes on restart)
+    - incognito → RAM only (keeps multi-turn flow while open, zero disk writes, vanishes on restart)
     - normal    → persist in SQLite DB as usual
     """
     if not is_memory_enabled(config):
@@ -238,15 +237,17 @@ def save_message(role, message, config: dict = None, user_id: str = "admin",
         if not session_id:
             session_id = privacy_manager.get_session_id()
 
-        if privacy_manager.is_incognito():
-            # Total privacy: discard message, write nothing
-            return
-
-        if privacy_manager.is_auto_wipe():
-            # RAM-only: store in session_manager's in-memory store
+        if privacy_manager.is_session_incognito(session_id):
+            # True Incognito: RAM-only during open session, zero SQLite/disk writes
             from hecos.memory import session_manager
             if session_id:
-                session_manager.add_ram_message(session_id, role, message)
+                session_manager.add_ram_message(
+                    session_id,
+                    role,
+                    message,
+                    persona_name=persona_name,
+                    model_info=model_info,
+                )
             return
 
     except Exception:
@@ -292,6 +293,76 @@ def save_message(role, message, config: dict = None, user_id: str = "admin",
         logger.error(f"[MEMORY] Save Error: {e}")
 
 
+def upsert_last_assistant_message(message, config: dict = None, user_id: str = "admin",
+                                  session_id: str = None, persona_name: str = None,
+                                  sender_tab_id: str = None, model_info: str = None):
+    """Updates the last assistant message in the current session if the latest row is already
+    an assistant message (e.g. saved during turn 1 before tool execution/media interception),
+    or inserts a new assistant message if the latest row is a user message (e.g. native tool_calls).
+    """
+    if not is_memory_enabled(config) or not message:
+        return
+
+    try:
+        from hecos.core.privacy import privacy_manager
+        if not session_id:
+            session_id = privacy_manager.get_session_id()
+
+        if privacy_manager.is_session_incognito(session_id):
+            from hecos.memory import session_manager
+            if session_id:
+                session_manager.upsert_ram_assistant_message(
+                    session_id,
+                    message,
+                    persona_name=persona_name,
+                    model_info=model_info,
+                )
+            return
+    except Exception:
+        pass
+
+    try:
+        initialize_user_vault(user_id)
+        db_path = _db_path(user_id)
+
+        with sqlite3.connect(db_path, timeout=20) as conn:
+            cursor = conn.cursor()
+            if session_id:
+                cursor.execute(
+                    "SELECT id, role FROM history WHERE session_id = ? ORDER BY id DESC LIMIT 1",
+                    (session_id,)
+                )
+            else:
+                cursor.execute("SELECT id, role FROM history ORDER BY id DESC LIMIT 1")
+            last_row = cursor.fetchone()
+
+            if last_row and last_row[1] == "assistant":
+                if model_info is not None:
+                    cursor.execute(
+                        "UPDATE history SET message = ?, model_info = ? WHERE id = ?",
+                        (message, model_info, last_row[0])
+                    )
+                else:
+                    cursor.execute(
+                        "UPDATE history SET message = ? WHERE id = ?",
+                        (message, last_row[0])
+                    )
+                conn.commit()
+                return
+
+        # Otherwise insert a new assistant message row
+        save_message(
+            "assistant",
+            message,
+            config=config,
+            user_id=user_id,
+            session_id=session_id,
+            persona_name=persona_name,
+            sender_tab_id=sender_tab_id,
+            model_info=model_info,
+        )
+    except Exception as e:
+        logger.error(f"[MEMORY] Upsert Assistant Error: {e}")
 
 
 def get_history(limit: int = None, config: dict = None, user_id: str = "admin", session_id: str = None) -> list:

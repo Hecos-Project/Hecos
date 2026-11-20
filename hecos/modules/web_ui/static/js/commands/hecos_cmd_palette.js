@@ -365,6 +365,20 @@
             return;
         }
 
+        // Route LLM-orchestrated slash commands (/plan <task>, /code, /coder) through the live chat stream when in Chat UI
+        const lowCmd = finalInput.trim().toLowerCase();
+        const isChatStreamCmd = (
+            /^\/(?:code|coder|sviluppa)(?:\s|$)/.test(lowCmd) && !/^\/(?:code|coder|sviluppa)\s+(?:status|help|info)\b/.test(lowCmd)
+        ) || (
+            /^\/(?:plan|piano)\s+\S+/.test(lowCmd) && !/^\/(?:plan|piano)\s+(?:show|status|list|info|help|mode|clear|cancel|reject|reset|close|approve|accept|ok)\b/.test(lowCmd)
+        );
+        const chatInputEl = document.getElementById('user-input');
+        if (isChatStreamCmd && chatInputEl && typeof window.sendMessage === 'function') {
+            _forceSetValue(chatInputEl, finalInput);
+            window.sendMessage();
+            return;
+        }
+
         try {
             const res = await fetch('/api/commands/run', {
                 method: 'POST',

@@ -35,10 +35,12 @@ def init_config_agent_routes(app, root_dir, logger):
 
             from hecos.config import save_yaml
             from hecos.config.schemas.agent_schema import AgentConfig
+            from hecos.core.agent.traces import invalidate_agent_config_cache
             model = AgentConfig(**incoming)
             if save_yaml(_agent_path, model):
+                invalidate_agent_config_cache()
                 logger.info("[WebUI] Agent configuration saved successfully.")
-                return jsonify({"ok": True})
+                return jsonify({"ok": True, "agent": model.model_dump()})
             return jsonify({"ok": False, "error": "Save failed"}), 500
         except Exception as exc:
             logger.error(f"[WebUI] POST /hecos/config/agent error: {exc}")

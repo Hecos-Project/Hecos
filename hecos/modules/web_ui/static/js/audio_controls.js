@@ -3,10 +3,10 @@
  * Handles UI toggles and API calls for Mic, TTS, and routing.
  */
 
-window.currentMicOn  = false;
-window.currentTTSOn  = false;
-window.currentPTTOn  = false;
-window.currentSTTSource = 'system';
+window.currentMicOn  = true;
+window.currentTTSOn  = true;
+window.currentPTTOn  = true;
+window.currentSTTSource = 'web';
 window.currentTTSDest   = 'web';
 
 function _applyMicState(on) {

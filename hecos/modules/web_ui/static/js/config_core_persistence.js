@@ -25,6 +25,10 @@ async function saveConfig(silent = false) {
         window.cfg.hpm = window.cfg.hpm || {};
         window.cfg.hpm.store_catalog_url = window._hpmActiveRepoUrl;
       }
+      if (window._hpmRestartMode) {
+        window.cfg.hpm = window.cfg.hpm || {};
+        window.cfg.hpm.restart_mode = window._hpmRestartMode;
+      }
       if (window.cfg.hpm) {
         delete window.cfg.hpm.github_token;
       }
@@ -36,7 +40,8 @@ async function saveConfig(silent = false) {
     }
     payload._force_restart = !silent;
 
-    const audioPayload = (typeof buildAudioPayload === 'function') ? buildAudioPayload() : {};
+    const hasAudioLoaded = !!(window.audioConfig && typeof window.audioConfig === 'object' && Object.keys(window.audioConfig).length > 0);
+    const audioPayload = (hasAudioLoaded && typeof buildAudioPayload === 'function') ? buildAudioPayload() : null;
     const mediaPayload = (typeof buildMediaPayload === 'function') ? buildMediaPayload() : {};
 
     const resCfg = await fetch('/hecos/config', {
@@ -46,12 +51,15 @@ async function saveConfig(silent = false) {
     });
     const data = await resCfg.json();
 
-    const resAud = await fetch('/api/audio/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(audioPayload)
-    });
-    const audData = await resAud.json();
+    let audData = { ok: true };
+    if (audioPayload) {
+      const resAud = await fetch('/api/audio/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(audioPayload)
+      });
+      audData = await resAud.json();
+    }
 
     const resMed = await fetch('/hecos/api/config/media', {
       method: 'POST',
@@ -67,17 +75,27 @@ async function saveConfig(silent = false) {
       body: JSON.stringify(agentPayload.agent || {})
     });
     const agentData = await resAgent.json();
+    const visionPayload = (typeof buildVisionPayload === 'function') ? buildVisionPayload() : {};
+    const resVision = await fetch('/hecos/config/vision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(visionPayload.vision || {})
+    });
+    const visionData = await resVision.json();
 
-    if (data.ok && audData.ok && medData.ok && agentData.ok) {
+    if (data.ok && audData.ok && medData.ok && agentData.ok && (visionData.ok !== false)) {
       window.cfg        = payload;
-      window.audioConfig = audioPayload;
-      try { if (typeof audioConfig !== 'undefined') audioConfig = audioPayload; } catch (_) {}
+      if (audioPayload) {
+          window.audioConfig = audioPayload;
+          try { if (typeof audioConfig !== 'undefined') audioConfig = audioPayload; } catch (_) {}
+      }
       // CRITICAL: update mediaConfig immediately so the next save cycle reads fresh data
       // and doesn't fall back to stale defaults for Image Gen fields.
       if (mediaPayload && typeof mediaPayload === 'object') {
           window.mediaConfig = mediaPayload;
       }
       if (window.cfg.agent) window.cfg.agent = agentPayload.agent;
+      if (window.cfg.vision) window.cfg.vision = visionPayload.vision;
 
       if (!silent) {
           setSaveMsg(I18N.msg_saved || 'Saved', 'ok');

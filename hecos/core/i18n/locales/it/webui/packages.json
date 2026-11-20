@@ -1,6 +1,6 @@
 {
     "hpm_title": "Hecos Module Manager",
-    "hpm_subtitle": "Gestisci e installa i pacchetti .hpkg. I moduli nativi di Hecos non possono essere disinstallati.",
+    "hpm_subtitle": "Gestisci i moduli Core System, la Package Library (.hpkg), i widget e le estensioni dello Store.",
     "hpm_btn_refresh": "Aggiorna Lista",
     "hpm_tab_all": "Tutti i Moduli",
     "hpm_tab_install": "Installazione",

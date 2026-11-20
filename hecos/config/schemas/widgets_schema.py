@@ -23,6 +23,13 @@ class WidgetPersistence(BaseModel):
     bg_image: str = ""
 
 
+class ControlRoomPage(BaseModel):
+    id: str
+    name: str
+    icon: str = "fa-layer-group"
+    widgets: List[str] = Field(default_factory=list)
+
+
 class WidgetsConfig(BaseModel):
     model_config = ConfigDict(extra='allow')
     sidebar_order: List[str] = Field(default_factory=list)
@@ -31,6 +38,7 @@ class WidgetsConfig(BaseModel):
     sidebar_audio_collapsed: bool = False
     sidebar_widgets_enabled: bool = False
     room_layout: List[str] = Field(default_factory=list)
+    room_pages: List[ControlRoomPage] = Field(default_factory=list)
 
 
 # ─── ROOT SCHEMA FOR widgets.yaml ─────────────────────────────────────────────

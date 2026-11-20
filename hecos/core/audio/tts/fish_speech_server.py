@@ -2,7 +2,7 @@
 Fish Speech Local FastAPI Server
 Provides a pure-Python, resilient, FastAPI HTTP endpoint (/v1/tts)
 compatible with Fish Speech API and Hecos FishSpeechEngine.
-Runs locally using checkpoints in hecos/engines/fish_speech/checkpoints/fish-speech-1.5.
+Runs locally using checkpoints in hecos/engines/fish_speech/checkpoints/s2-pro (or fish-speech-1.5).
 Eliminates any reliance on problematic C-extensions (like baize / kui).
 """
 
@@ -11,7 +11,6 @@ import sys
 import io
 import time
 import argparse
-import tempfile
 from typing import Optional
 
 # Ensure project root & fish_speech engine are on sys.path
@@ -50,7 +49,7 @@ except ImportError as e:
     sys.exit(1)
 
 
-app = FastAPI(title="Hecos Fish Speech Local Server", version="3.0.0")
+app = FastAPI(title="Hecos Fish Speech Local Server", version="3.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -94,12 +93,21 @@ def init_engine(checkpoint_dir: str, device: str = "auto", compile_model: bool =
 @app.get("/v1/health")
 async def health_check():
     family = getattr(engine, "model_family", "s2-pro") if engine is not None else "s2-pro"
+    vram_mb = 0.0
+    if torch.cuda.is_available():
+        try:
+            vram_mb = round(torch.cuda.memory_allocated() / (1024 * 1024), 1)
+        except Exception:
+            pass
     return {
         "ok": True,
+        "service": "hecos-fish-speech",
+        "pid": os.getpid(),
         "status": "ready" if engine is not None else "initializing",
         "engine": f"fish_speech_{family}",
         "device": server_device,
         "cuda_available": torch.cuda.is_available(),
+        "vram_mb": vram_mb,
     }
 
 
@@ -160,7 +168,6 @@ async def tts_endpoint(request: Request):
                 raise RuntimeError("Engine returned None audio.")
 
             if hasattr(raw_audio, "dtype") or isinstance(raw_audio, (list, tuple)):
-                import numpy as np
                 buffer = io.BytesIO()
                 sf.write(
                     buffer,
@@ -192,7 +199,7 @@ async def tts_endpoint(request: Request):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Hecos Fish Speech Local Server")
-    parser.add_argument("--port", type=int, default=8080, help="Listen port (default 8080)")
+    parser.add_argument("--port", type=int, default=18480, help="Listen port (default 18480)")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host address (default 127.0.0.1)")
     parser.add_argument("--device", type=str, default="auto", help="Device: auto, cuda, or cpu")
     parser.add_argument("--checkpoint-dir", type=str, default=None, help="Path to checkpoint directory")

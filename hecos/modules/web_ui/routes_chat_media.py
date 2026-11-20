@@ -14,6 +14,7 @@ Registers:
 ────────────────────────────────────────────────────────────────────────────
 """
 import os
+import re
 import json
 import base64
 import subprocess
@@ -23,6 +24,113 @@ from urllib.parse import quote, unquote
 from hecos.core.constants import SNAPSHOTS_DIR, IMAGES_DIR, MEDIA_DIR
 
 _chat_log = logging.getLogger("HecosChatRoutes")
+
+_MEDIA_SKIP_SCHEMES = (
+    "http://", "https://", "//", "data:", "blob:", "mailto:", "tel:", "javascript:", "#", "/api/"
+)
+
+
+def _resolve_local_media_candidate(raw: str, base_dir: str = "", *, allow_base_relative: bool = True) -> str | None:
+    """Resolve an explicit file:// / drive path or local media reference to an existing file on disk."""
+    val = unquote((raw or "").strip())
+    if not val:
+        return None
+    clean_no_q = val.split("#", 1)[0].split("?", 1)[0].strip()
+    if not clean_no_q:
+        return None
+
+    # 1. Explicit file:// URI or Windows drive path (e.g. C:/Hecos/hecos/media/Images/Urania.png)
+    if clean_no_q.lower().startswith("file:///"):
+        p = clean_no_q[8:].replace("/", os.sep)
+        if os.path.isfile(p):
+            return os.path.abspath(p)
+    elif clean_no_q.lower().startswith("file://"):
+        p = clean_no_q[7:].replace("/", os.sep)
+        if os.path.isfile(p):
+            return os.path.abspath(p)
+    elif len(clean_no_q) > 2 and clean_no_q[1] == ":" and clean_no_q[0].isalpha():
+        p = clean_no_q.replace("/", os.sep)
+        if os.path.isfile(p):
+            return os.path.abspath(p)
+
+    # 2. Project-relative path inside base_dir (used by /api/serve_html)
+    rel_clean = clean_no_q.lstrip("/\\").replace("/", os.sep)
+    if allow_base_relative and base_dir and os.path.isdir(base_dir):
+        candidate = os.path.normpath(os.path.join(base_dir, rel_clean))
+        try:
+            if os.path.commonpath([os.path.abspath(base_dir), candidate]) == os.path.abspath(base_dir) and os.path.isfile(candidate):
+                return os.path.abspath(candidate)
+        except ValueError:
+            pass
+
+    # 3. Fallback to Hecos MEDIA_DIR / IMAGES_DIR when a path points to images/media outside project root
+    low_slashes = clean_no_q.replace("\\", "/").lower()
+    if not (allow_base_relative and base_dir and os.path.isfile(os.path.join(base_dir, rel_clean))):
+        # Skip plain local asset names when running behind app proxy unless present in IMAGES_DIR
+        bname = os.path.basename(rel_clean)
+        for root_cand in (MEDIA_DIR, IMAGES_DIR):
+            if not root_cand or not os.path.isdir(root_cand):
+                continue
+            cand_direct = os.path.normpath(os.path.join(root_cand, rel_clean))
+            try:
+                if os.path.commonpath([os.path.abspath(root_cand), cand_direct]) == os.path.abspath(root_cand) and os.path.isfile(cand_direct):
+                    return os.path.abspath(cand_direct)
+            except ValueError:
+                pass
+            if bname and ("images/" in low_slashes or not allow_base_relative):
+                cand_base = os.path.join(root_cand, bname)
+                if os.path.isfile(cand_base):
+                    return os.path.abspath(cand_base)
+    return None
+
+
+def rewrite_html_local_media_refs(
+    html: str,
+    base_dir: str = "",
+    *,
+    rewrite_relative: bool = True,
+) -> str:
+    """
+    Rewrite file://, Windows drive paths (C:/...), and optional project-relative local
+    media references in src/href/poster/data-src and CSS url(...) to /api/local_file?path=...
+    """
+    if not html:
+        return html
+
+    def _rewrite_attr(m):
+        prefix, value, suffix = m.group(1), m.group(2), m.group(3)
+        val_low = value.strip().lower()
+        if not val_low:
+            return m.group(0)
+        is_abs_or_file = (
+            val_low.startswith("file://")
+            or (len(value.strip()) > 2 and value.strip()[1] == ":" and value.strip()[0].isalpha())
+        )
+        if not is_abs_or_file and val_low.startswith(_MEDIA_SKIP_SCHEMES):
+            return m.group(0)
+
+        resolved = _resolve_local_media_candidate(
+            value,
+            base_dir=base_dir,
+            allow_base_relative=rewrite_relative,
+        )
+        if resolved:
+            return prefix + f"/api/local_file?path={quote(resolved)}" + suffix
+        return m.group(0)
+
+    out = re.sub(
+        r'((?:src|href|poster|data-src)=["\'])([^"\']+)(["\'])',
+        _rewrite_attr,
+        html,
+        flags=re.IGNORECASE,
+    )
+    out = re.sub(
+        r'(url\(["\']?)([^"\')\s]+)(["\']?\))',
+        _rewrite_attr,
+        out,
+        flags=re.IGNORECASE,
+    )
+    return out
 
 
 def init_chat_media_routes(app, logger):
@@ -181,7 +289,12 @@ def init_chat_media_routes(app, logger):
     def api_open_media_folder():
         """Opens the centralized media folder (or subfolder) in the native OS file manager."""
         target = request.args.get("target") or (request.get_json(silent=True) or {}).get("target")
-        folder = IMAGES_DIR if target == "images" else MEDIA_DIR
+        if target == "images":
+            folder = IMAGES_DIR
+        elif target in ("action_plans", "plans"):
+            folder = os.path.join(MEDIA_DIR, "action_plans")
+        else:
+            folder = MEDIA_DIR
         os.makedirs(folder, exist_ok=True)
         try:
             from hecos.core.system.os_adapter import OSAdapter
@@ -202,6 +315,8 @@ def init_chat_media_routes(app, logger):
         from flask import Response
 
         path = request.args.get("path", "")
+        while "?path=" in path:
+            path = unquote(path.split("?path=", 1)[1])
         if not path or not os.path.exists(path):
             return jsonify({"error": "File not found"}), 404
 
@@ -210,46 +325,25 @@ def init_chat_media_routes(app, logger):
             return jsonify({"error": "Not an HTML file"}), 400
 
         try:
-            with open(path, "r", encoding="utf-8", errors="replace") as f:
+            abs_html_path = os.path.abspath(path)
+            if request.args.get("static") not in ("1", "true"):
+                try:
+                    from hecos.modules.web_ui.routes_workspace_runner import (
+                        find_matching_running_app,
+                        proxy_workspace_run_request,
+                    )
+
+                    matched = find_matching_running_app(abs_html_path)
+                    if matched and matched.get("run_id"):
+                        return proxy_workspace_run_request(matched["run_id"], "")
+                except Exception:
+                    pass
+
+            base_dir = os.path.dirname(abs_html_path)
+            with open(abs_html_path, "r", encoding="utf-8", errors="replace") as f:
                 html = f.read()
 
-            def _rewrite_path(raw):
-                """Convert a file:// or absolute Windows path to /api/local_file?path="""
-                p = raw
-                if p.startswith("file:///"):
-                    p = p[8:]          # strip file:///
-                elif p.startswith("file://"):
-                    p = p[7:]
-                # Re-encode backslashes for Windows paths
-                p = p.replace("/", os.sep)
-                if os.path.exists(p):
-                    from urllib.parse import quote
-                    return f"/api/local_file?path={quote(p)}"
-                return raw  # leave unchanged if we can't resolve it
-
-            def _rewrite_attr(m):
-                """Regex replacer for src="..." href="..." url(...)"""
-                prefix = m.group(1)
-                value  = m.group(2)
-                suffix = m.group(3)
-                # Only rewrite local paths
-                if value.startswith("file://") or (len(value) > 2 and value[1] == ":"):
-                    value = _rewrite_path(value)
-                return prefix + value + suffix
-
-            # Rewrite src="..." and href="..."
-            html = re.sub(
-                r'((?:src|href)=["\'])([^"\']+)(["\'])',
-                _rewrite_attr,
-                html
-            )
-            # Rewrite url('...') and url("...")
-            html = re.sub(
-                r'(url\(["\']?)([^"\')\s]+)(["\']?\))',
-                _rewrite_attr,
-                html
-            )
-
+            html = rewrite_html_local_media_refs(html, base_dir=base_dir, rewrite_relative=True)
             return Response(html, status=200, mimetype="text/html; charset=utf-8")
 
         except Exception as e:
@@ -273,11 +367,19 @@ def init_chat_media_routes(app, logger):
 
         # If path does not exist directly, try resolving candidate files
         if not path or not os.path.exists(path):
-            docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "media", "documents")
+            docs_dir = os.path.join(MEDIA_DIR, "documents")
+            workspace_dir = os.path.join(MEDIA_DIR, "workspace")
+            plans_dir = os.path.join(MEDIA_DIR, "action_plans")
             basename = os.path.basename(path)
-            candidate = os.path.join(docs_dir, basename)
-            if os.path.exists(candidate):
-                path = candidate
+            candidate_doc = os.path.join(docs_dir, basename)
+            candidate_ws = os.path.join(workspace_dir, basename)
+            candidate_plan = os.path.join(plans_dir, basename)
+            if os.path.exists(candidate_doc):
+                path = candidate_doc
+            elif os.path.exists(candidate_ws):
+                path = candidate_ws
+            elif os.path.exists(candidate_plan):
+                path = candidate_plan
             else:
                 # Match if filename was concatenated without slashes (e.g. C:Hecos...file.pdf)
                 matched = False
@@ -302,7 +404,27 @@ def init_chat_media_routes(app, logger):
 
         try:
             file_size = os.path.getsize(path)
-            mime_type, _ = mimetypes.guess_type(path)
+            ext_low = os.path.splitext(path)[1].lower()
+            _explicit_mimes = {
+                ".css": "text/css; charset=utf-8",
+                ".js": "application/javascript; charset=utf-8",
+                ".mjs": "application/javascript; charset=utf-8",
+                ".html": "text/html; charset=utf-8",
+                ".htm": "text/html; charset=utf-8",
+                ".svg": "image/svg+xml",
+                ".png": "image/png",
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".webp": "image/webp",
+                ".gif": "image/gif",
+                ".mp4": "video/mp4",
+                ".webm": "video/webm",
+                ".mp3": "audio/mpeg",
+                ".wav": "audio/wav",
+            }
+            mime_type = _explicit_mimes.get(ext_low)
+            if not mime_type:
+                mime_type, _ = mimetypes.guess_type(path)
             if not mime_type:
                 mime_type = "application/octet-stream"
 

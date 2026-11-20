@@ -16,30 +16,32 @@ window.CONFIG_HUB = {
 
     // Core Modules (not discovered via plugin loader)
     modules: [
-        { id: 'backend',   label: 'hub_mod_backend',      icon: '<i class="fas fa-server"></i>', cat: 'INTELLIGENZA', pluginTag: 'MODELS', isCore: true },
+        { id: 'backend',      label: 'hub_mod_backend',        descKey: 'hub_desc_backend',      icon: '<i class="fas fa-server"></i>',         cat: 'INTELLIGENZA', pluginTag: 'MODELS', isCore: true },
 
-        { id: 'keymanager',label: 'hub_mod_keymanager',   icon: '<i class="fas fa-key"></i>', cat: 'INTELLIGENZA', isCore: true },
-        { id: 'ia',        label: 'hub_mod_persona',      icon: '<i class="fas fa-user-astronaut"></i>', cat: 'INTELLIGENZA', isCore: true },
-        { id: 'filters',   label: 'hub_mod_filters',      icon: '<i class="fas fa-filter"></i>', cat: 'INTELLIGENZA', isCore: true },
-        { id: 'memory',    label: 'hub_mod_memory',       icon: '<i class="fas fa-memory"></i>', cat: 'INTELLIGENZA', pluginTag: 'MEMORY', isCore: true },
-        { id: 'agent',     label: 'hub_mod_agent',        icon: '<i class="fas fa-robot"></i>', cat: 'INTELLIGENZA', isCore: true },
+        { id: 'keymanager',   label: 'hub_mod_keymanager',     descKey: 'hub_desc_keymanager',   icon: '<i class="fas fa-key"></i>',            cat: 'INTELLIGENZA', isCore: true },
+        { id: 'ia',           label: 'hub_mod_persona',        descKey: 'hub_desc_persona',      icon: '<i class="fas fa-user-astronaut"></i>', cat: 'INTELLIGENZA', isCore: true },
+        { id: 'filters',      label: 'hub_mod_filters',        descKey: 'hub_desc_filters',      icon: '<i class="fas fa-filter"></i>',         cat: 'INTELLIGENZA', isCore: true },
+        { id: 'memory',       label: 'hub_mod_memory',         descKey: 'hub_desc_memory',       icon: '<i class="fas fa-memory"></i>',         cat: 'INTELLIGENZA', pluginTag: 'MEMORY', isCore: true },
+        { id: 'agent',        label: 'hub_mod_agent',          descKey: 'hub_desc_agent',        icon: '<i class="fas fa-robot"></i>',          cat: 'INTELLIGENZA', isCore: true },
+        { id: 'vision',       label: 'Multimodal Perception',  descKey: 'hub_desc_vision',       icon: '<i class="fas fa-eye"></i>',            cat: 'INTELLIGENZA', isCore: true },
         
-        { id: 'voice',     label: 'hub_mod_voice',        icon: '<i class="fas fa-microphone-alt"></i>', cat: 'MULTIMEDIA', isCore: true },
+        { id: 'voice',        label: 'hub_mod_voice',          descKey: 'hub_desc_voice',        icon: '<i class="fas fa-microphone-alt"></i>', cat: 'MULTIMEDIA', isCore: true },
 
         
-        { id: 'payload',          label: 'hub_mod_payload',      icon: '<i class="fas fa-box-open"></i>', cat: 'RISORSE', isCore: true },
-        { id: 'sysnet',    label: 'Web Server',           icon: '<i class="fas fa-server"></i>', cat: 'SISTEMA', isCore: true },
-        { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
-        { id: 'hdcs',      label: 'hub_mod_hdcs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', pluginTag: 'HDCS', isCore: true },
-        { id: 'shortcuts', label: 'Keyboard Shortcuts',   icon: '<i class="fas fa-keyboard"></i>', cat: 'SISTEMA', isCore: true },
-        { id: 'help',      label: 'webui_help_about_title', icon: '<i class="fas fa-question-circle"></i>', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
-        { id: 'users',     label: 'hub_mod_users',        icon: '<i class="fas fa-users-cog"></i>', cat: 'SISTEMA', adminOnly: true, isCore: true },
-        { id: 'system',    label: 'hub_mod_system',       icon: '<i class="fas fa-cog"></i>', cat: 'SISTEMA', isCore: true },
-        { id: 'logs',      label: 'hub_mod_logs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', isCore: true },
-        { id: 'privacy',   label: 'hub_mod_privacy',      icon: '<i class="fas fa-user-secret"></i>', cat: 'SISTEMA', isCore: true },
-        { id: 'hpm-settings',label: 'HPM Settings',       icon: '<i class="fas fa-box-open"></i>', cat: 'SISTEMA', isCore: true },
-        { id: 'presenter', label: 'Presenter',            icon: '<i class="fas fa-bullhorn"></i>', cat: 'SISTEMA', isCore: true },
-        { id: 'chat_ui',   label: 'Chat Interface',       icon: '<i class="fas fa-comment-dots"></i>', cat: 'SISTEMA', isCore: true }
+        { id: 'payload',      label: 'hub_mod_payload',        descKey: 'hub_desc_payload',      icon: '<i class="fas fa-box-open"></i>',       cat: 'RISORSE', isCore: true },
+        { id: 'sysnet',       label: 'Web Server',             descKey: 'hub_desc_sysnet',       icon: '<i class="fas fa-server"></i>',         cat: 'SISTEMA', isCore: true },
+        { id: 'executor',     label: 'hub_mod_executor',       descKey: 'hub_desc_executor',     icon: '<i class="fas fa-bolt"></i>',           cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
+        { id: 'action-plans', label: 'hub_mod_action_plans',   descKey: 'hub_desc_action_plans', icon: '<i class="fas fa-list-check"></i>',     cat: 'SISTEMA', pluginTag: 'ACTION_PLANS', isCore: true },
+        { id: 'hdcs',         label: 'hub_mod_hdcs',           descKey: 'hub_desc_hdcs',         icon: '<i class="fas fa-terminal"></i>',       cat: 'SISTEMA', pluginTag: 'HDCS', isCore: true },
+        { id: 'shortcuts',    label: 'Keyboard Shortcuts',     descKey: 'hub_desc_shortcuts',    icon: '<i class="fas fa-keyboard"></i>',       cat: 'SISTEMA', isCore: true },
+        { id: 'help',         label: 'webui_help_about_title', descKey: 'hub_desc_help',         icon: '<i class="fas fa-question-circle"></i>',cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
+        { id: 'users',        label: 'hub_mod_users',          descKey: 'hub_desc_users',        icon: '<i class="fas fa-users-cog"></i>',      cat: 'SISTEMA', adminOnly: true, isCore: true },
+        { id: 'system',       label: 'hub_mod_system',         descKey: 'hub_desc_system',       icon: '<i class="fas fa-cog"></i>',            cat: 'SISTEMA', isCore: true },
+        { id: 'logs',         label: 'hub_mod_logs',           descKey: 'hub_desc_logs',         icon: '<i class="fas fa-terminal"></i>',       cat: 'SISTEMA', isCore: true },
+        { id: 'privacy',      label: 'hub_mod_privacy',        descKey: 'hub_desc_privacy',      icon: '<i class="fas fa-user-secret"></i>',    cat: 'SISTEMA', isCore: true },
+        { id: 'hpm-settings', label: 'Module Manager',         descKey: 'hub_desc_hpm_settings', icon: '<i class="fas fa-box-open"></i>',       cat: 'SISTEMA', isCore: true },
+        { id: 'presenter',    label: 'Presenter',              descKey: 'hub_desc_presenter',    icon: '<i class="fas fa-tower-broadcast"></i>',cat: 'SISTEMA', isCore: true },
+        { id: 'chat_ui',      label: 'Chat Interface',         descKey: 'hub_desc_chat_ui',      icon: '<i class="fas fa-comment-dots"></i>',   cat: 'SISTEMA', isCore: true }
     ],
 
     // Fallback Icons based on keywords (for MCP or new plugins)
@@ -102,6 +104,7 @@ window.getIconForModule = function(id, name, metaIcon) {
 window.CONFIG_HUB.tagMap = {
     'DRIVE': 'drive',
     'EXECUTOR': 'executor',
+    'ACTION_PLANS': 'action-plans',
     'WEBCAM': 'webcam',
     'MEMORY': 'memory',
     // SYS_NET removed — sys_net is now an HPM package with its own tab_id

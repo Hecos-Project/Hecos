@@ -45,15 +45,63 @@ class FishSpeechEngine(BaseTTSEngine):
         """Checks if the configured Fish Speech endpoint or local model is ready."""
         return FishSpeechClient.model_ready()
 
-    def preload(self, delay: float = 2.0):
-        """Preloads the local Fish Speech server in background if configured for local use."""
+    def preload(self, delay: float = 2.0, blocking: bool = False):
+        """Preloads the local Fish Speech server in background (or synchronously if blocking=True)."""
         try:
             from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
             daemon = FishSpeechDaemon.get_instance()
             if daemon.is_local_target():
-                daemon.preload(delay=delay)
+                if blocking:
+                    if delay > 0:
+                        time.sleep(delay)
+                    ok, _ = daemon.ensure_running(timeout=240.0)
+                    return ok
+                return daemon.preload(delay=delay)
         except Exception as e:
             logger.debug("FISH_SPEECH", f"Preload non-fatal notice: {e}")
+        return None
+
+    def unload(self) -> bool:
+        """Stops ongoing playback and shuts down the local Fish Speech server daemon to free VRAM."""
+        self.stop()
+        try:
+            from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
+            FishSpeechDaemon.get_instance().stop(force_all=True)
+            return True
+        except Exception as e:
+            logger.warning("FISH_SPEECH", f"Unload notice: {e}")
+            return False
+
+    def is_loaded(self) -> bool:
+        """Returns True if Fish Speech is online (healthy local server or cloud endpoint)."""
+        try:
+            from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
+            st = FishSpeechDaemon.get_instance().get_runtime_status()
+            return st.get("status") in ("online", "cloud")
+        except Exception:
+            return False
+
+    def get_runtime_status(self) -> dict:
+        """Returns live diagnostics for the Fish Speech daemon / cloud endpoint."""
+        try:
+            from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
+            st = FishSpeechDaemon.get_instance().get_runtime_status()
+            st["installed"] = self.is_available() and self.model_ready()
+            return st
+        except Exception as e:
+            return {
+                "status": "offline",
+                "loaded": False,
+                "installed": self.is_available(),
+                "mode": "daemon",
+                "pid": None,
+                "port": 18480,
+                "device": "—",
+                "ram_mb": 0.0,
+                "vram_mb": 0.0,
+                "model": "Fish Speech",
+                "last_error": str(e),
+            }
 
     # ── Parameters & Chunk Synthesis ─────────────────────────────────────────
 

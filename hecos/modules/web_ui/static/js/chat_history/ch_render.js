@@ -17,10 +17,11 @@ window.loadChatSessions = async function () {
     if (resActive.ok) {
         const isNewSession = window.chatHistoryState.activeSessionId !== resActive.session_id;
         window.chatHistoryState.activeSessionId = resActive.session_id;
-        window.chatHistoryState.activeMode      = resActive.mode || 'normal';
+        window.chatHistoryState.activeMode      = window.normalizePrivacyMode ? window.normalizePrivacyMode(resActive.mode) : (resActive.mode || 'normal');
         // Ensure chatHistory is empty for a new session until messages are loaded
         if (isNewSession) {
             window.chatHistory = []; 
+            if (window.sfLoadActiveSessionState) window.sfLoadActiveSessionState();
         }
         if (resActive.session_id) {
             localStorage.setItem('hecos_active_session_id', resActive.session_id);
@@ -37,6 +38,12 @@ window.loadChatSessions = async function () {
 
     renderSessionList();
     if (window.updateModeUI) window.updateModeUI();
+    if (window.AgentResume && typeof window.AgentResume.refreshBanner === 'function') {
+        window.AgentResume.refreshBanner(window.chatHistoryState.activeSessionId);
+    }
+    if (window.ActionPlanChat && typeof window.ActionPlanChat.refreshForSession === 'function') {
+        window.ActionPlanChat.refreshForSession(window.chatHistoryState.activeSessionId);
+    }
 };
 
 function _dayKey(dateStr) {
@@ -93,12 +100,12 @@ function renderSessionList() {
 
         group.sessions.forEach(s => {
             const isActive   = s.id === activeId;
-            const modeIcon   = s.privacy_mode === 'incognito' ? '🕵️' :
-                               s.privacy_mode === 'auto_wipe' ? '🧹' : '';
+            const normMode   = window.normalizePrivacyMode ? window.normalizePrivacyMode(s.privacy_mode) : (s.privacy_mode || 'normal');
+            const modeIcon   = normMode === 'incognito' ? '🕵️' : '';
             const msgCount   = s.message_count || 0;
             const timeStr    = s.updated_at ? s.updated_at.slice(11, 16) : '';
             const title      = escapeHistoryHtml(s.title || 'Chat senza titolo');
-            const isNormal   = s.privacy_mode === 'normal';
+            const isNormal   = normMode === 'normal';
             
             let actionsHtml = '';
             
@@ -126,14 +133,23 @@ function renderSessionList() {
                 actionsHtml += `<button class="history-action-btn" style="margin-left:2px;" title="${descTitle}" onclick="${descFn}">🗑️</button>`;
             }
 
+            const st = window.HecosChatStatus && typeof window.HecosChatStatus.getSessionState === 'function'
+                ? window.HecosChatStatus.getSessionState(s.id)
+                : { status: 'idle' };
+            const ledStatus = st.status || 'idle';
+            const ledTitle = _getChatLedLabel(ledStatus);
+            const statusCls = ledStatus !== 'idle' ? ` status-${ledStatus}` : '';
+
             html += `
-        <div class="history-item${isActive ? ' active' : ''}" data-id="${s.id}" onclick="window.activateChatSession('${s.id}')">
+        <div class="history-item${isActive ? ' active' : ''}${statusCls}" data-id="${s.id}" onclick="window.activateChatSession('${s.id}')">
           <div class="history-item-main">
+            <span class="chat-status-led is-${ledStatus}" data-session-led="${s.id}" title="${ledTitle}"></span>
             <span class="history-icon">${modeIcon || '💬'}</span>
             <div class="history-item-info">
               <div class="history-title" title="${window.I18N?.webui_chat_rename_hint || 'Double click to rename'}" ondblclick="window.startRenameSession(event, '${s.id}')">${title}</div>
               <div class="history-meta">${timeStr} · ${msgCount} msg</div>
             </div>
+            <span class="history-speaking-tag" data-session-speaking-tag="${s.id}" style="display:${ledStatus === 'speaking' ? 'inline-flex' : 'none'};" title="Audio attivo"><i class="fas fa-volume-up"></i></span>
           </div>
           <div class="history-item-actions">
             ${actionsHtml}
@@ -144,3 +160,45 @@ function renderSessionList() {
 
     container.innerHTML = html;
 }
+
+function _getChatLedLabel(status) {
+    const labels = {
+        idle: 'Idle',
+        running: 'In esecuzione…',
+        speaking: 'Voce attiva…',
+        stopped: 'Interrotta',
+        error: 'Errore'
+    };
+    return labels[status] || 'Idle';
+}
+
+window.updateChatSessionLeds = function () {
+    const container = document.getElementById('chat-history-list');
+    if (!container) return;
+
+    const statusClasses = ['status-running', 'status-speaking', 'status-stopped', 'status-error'];
+    const ledClasses = ['is-idle', 'is-running', 'is-speaking', 'is-stopped', 'is-error'];
+
+    container.querySelectorAll('.history-item[data-id]').forEach((item) => {
+        const sid = item.dataset.id;
+        const st = window.HecosChatStatus && typeof window.HecosChatStatus.getSessionState === 'function'
+            ? window.HecosChatStatus.getSessionState(sid)
+            : { status: 'idle' };
+        const status = st.status || 'idle';
+
+        item.classList.remove(...statusClasses);
+        if (status !== 'idle') item.classList.add(`status-${status}`);
+
+        const led = item.querySelector('.chat-status-led');
+        if (led) {
+            led.classList.remove(...ledClasses);
+            led.classList.add(`is-${status}`);
+            led.title = _getChatLedLabel(status);
+        }
+
+        const spTag = item.querySelector('.history-speaking-tag');
+        if (spTag) {
+            spTag.style.display = (status === 'speaking') ? 'inline-flex' : 'none';
+        }
+    });
+};

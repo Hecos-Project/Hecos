@@ -1,4 +1,10 @@
 enabled: true
 max_iterations: 24
 verbose_traces: true
+trace_mode: detailed
+trace_after_done: summary
+trace_show_args: true
+trace_persist_history: true
+cli_traces_enabled: true
 action_console_enabled: true
+action_console_mode: inline

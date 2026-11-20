@@ -11,6 +11,7 @@ This file acts as a lightweight proxy, importing and registering them all.
 from .routes_config_core import init_config_core_routes
 from .routes_config_media import init_config_media_routes
 from .routes_config_agent import init_config_agent_routes
+from .routes_config_vision import init_config_vision_routes
 from .routes_config_utils import init_config_utils_routes
 
 from .routes_global_presets import init_global_presets_routes
@@ -29,9 +30,11 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     # 3. Agent Config (agent.yaml)
     init_config_agent_routes(app, root_dir, logger)
 
+    # 4. Vision / Multimodal Perception (vision.yaml)
+    init_config_vision_routes(app, root_dir, logger)
+
     # 5. UI Utilities (Plugin Registry, Window State)
     init_config_utils_routes(app, root_dir, logger)
-
 
     # 7. Soul Forge (Global Presets)
     init_global_presets_routes(app, root_dir, logger, cfg_mgr)

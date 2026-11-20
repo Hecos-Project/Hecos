@@ -1,32 +1,147 @@
 /**
  * MODULE: chat_media_processor.js
  * PURPOSE: Processes raw HTML from Markdown to enrich local files, videos, and images natively in the chat.
+ * Delegates preview zoom and VLC commands to chat_media_zoom.js and styling to chat_media_preview.css.
  */
 
-window.processAiMedia = function(html) {
-  // We use DOMParser to safely traverse and modify the HTML tree
+window.processAiMedia = function (html) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
 
   function isLocalLink(url) {
     if (!url) return false;
-    return url.startsWith('file://') || url.startsWith('/api/local_file') || url.startsWith('/api/serve_html') || /^[a-zA-Z]:[\\/]/.test(url) || url.startsWith('http://localhost') || url.startsWith('https://localhost');
+    return url.startsWith('file://') || url.startsWith('/api/local_file') || url.startsWith('/api/serve_html') || /^[a-zA-Z]:[\\/]/.test(url) || /^https?:\/\/localhost(?::\d+)?\/api\/(?:local_file|serve_html)/i.test(url);
   }
-  
+
   function getSafeLocalUrl(rawUrl) {
     let clean = rawUrl;
     if (clean.startsWith('file:///')) clean = clean.substring(8);
     else if (clean.startsWith('file://')) clean = clean.substring(7);
-    
-    // We only rewrite true local paths that aren't already API endpoints
+
     if (clean.startsWith('/api/') || clean.startsWith('http://') || clean.startsWith('https://')) return clean;
-    
     return `/api/local_file?path=${encodeURIComponent(clean)}`;
+  }
+
+  function _buildLocalFileCardHtml(docPath, src, fileName, ext, includeOpenBtn = true) {
+    const fileIconMap = {
+      pdf: 'fa-file-pdf', html: 'fa-file-code', htm: 'fa-file-code',
+      py: 'fa-file-code', js: 'fa-file-code', ts: 'fa-file-code',
+      jsx: 'fa-file-code', tsx: 'fa-file-code', css: 'fa-file-code',
+      json: 'fa-file-code', yaml: 'fa-file-code', yml: 'fa-file-code',
+      toml: 'fa-file-code', sh: 'fa-file-code', bat: 'fa-file-code', cmd: 'fa-file-code',
+      sql: 'fa-file-code',
+      doc: 'fa-file-word', docx: 'fa-file-word', txt: 'fa-file-alt',
+      md: 'fa-file-alt', csv: 'fa-file-csv'
+    };
+    const fileColorMap = {
+      pdf: '#e74c3c', html: '#3498db', htm: '#3498db',
+      py: '#f59e0b', js: '#facc15', ts: '#38bdf8',
+      json: '#34d399', yaml: '#a78bfa', yml: '#a78bfa',
+      doc: '#2980b9', docx: '#2980b9', xls: '#27ae60',
+      xlsx: '#27ae60', ppt: '#e67e22', pptx: '#e67e22'
+    };
+    const iconClass = fileIconMap[ext] || 'fa-file-alt';
+    const iconColor = fileColorMap[ext] || 'var(--accent)';
+
+    const isHtml = (ext === 'html' || ext === 'htm');
+    const isPreviewable = (ext === 'pdf' || isHtml);
+    const previewId = isPreviewable ? ('preview_box_' + Math.random().toString(36).substring(2, 10)) : null;
+    const iframeId = isPreviewable ? ('preview_' + Math.random().toString(36).substring(2, 10)) : null;
+    const serveUrl = isHtml
+      ? `/api/serve_html?path=${encodeURIComponent(docPath)}`
+      : src;
+
+    const openBtnHtml = (includeOpenBtn && isPreviewable)
+      ? (isHtml
+        ? `<a href="${serveUrl}" target="_blank" rel="noopener noreferrer" class="wr-btn wr-btn-url" title="Open HTML page in new browser tab"><i class="fas fa-external-link-alt"></i> Open in Browser</a>`
+        : `<a href="${serveUrl}" target="_blank" rel="noopener noreferrer" class="wr-btn wr-btn-view" title="Open in new tab"><i class="fas fa-external-link-alt"></i> Open</a>`)
+      : '';
+
+    let actionsHtml;
+    if (window.WorkspaceRunner && typeof window.WorkspaceRunner.buildCardActionsHtml === 'function') {
+      actionsHtml = window.WorkspaceRunner.buildCardActionsHtml({
+        docPath,
+        src,
+        fileName,
+        ext,
+        isPreviewable,
+        previewId,
+        extraButtonsHtml: openBtnHtml,
+      });
+    } else {
+      const zoomBtn = isPreviewable
+        ? `<button class="chat-file-zoom-btn" data-preview-id="${previewId}" onclick="window.togglePdfPreviewZoom('${previewId}')" title="Expand preview in chat" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.15); border:1px solid rgba(108,140,255,0.3); color:#c4b5fd; font-size:0.8em; font-family:inherit; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.2s ease;"><i class="fas fa-expand-arrows-alt"></i> <span class="zoom-label">Zoom</span></button>`
+        : '';
+      actionsHtml = `${openBtnHtml}<a href="${src}" target="_blank" download="${fileName}" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.12); border:1px solid rgba(108,140,255,0.25); color:var(--muted); font-size:0.8em; text-decoration:none;"><i class="fas fa-download"></i> Download</a>${zoomBtn}`;
+    }
+
+    let htmlOut = `<div class="chat-file-card-wrap" style="width:100%;">
+      <div class="chat-file-card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;margin:6px 0;">
+        <div class="chat-file-icon" style="font-size:1.6em;color:${iconColor};"><i class="fas ${iconClass}"></i></div>
+        <div class="chat-file-details" style="flex:1;min-width:0;">
+          <div class="chat-file-name" style="font-weight:600;font-size:0.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${docPath}">${fileName}</div>
+          <div class="chat-file-action" style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;align-items:center;">${actionsHtml}</div>
+        </div>
+      </div>`;
+
+    if (ext === 'html' || ext === 'htm') {
+      const safeDocPath = docPath.replace(/\\/g, '/').replace(/'/g, "\\'");
+      const modeNow = (window.HecosHtmlPreview && window.HecosHtmlPreview.getMode)
+        ? window.HecosHtmlPreview.getMode()
+        : 'static';
+      const isDyn = (modeNow === 'dynamic');
+      const initSandbox = isDyn
+        ? 'allow-same-origin allow-scripts allow-forms allow-popups allow-modals'
+        : 'allow-same-origin';
+      const modeBtnLabel = isDyn
+        ? '<i class="fas fa-bolt"></i> Live Dynamic'
+        : '<i class="fas fa-lock"></i> Static Frame';
+      const isFit = (window.HecosHtmlPreview && window.HecosHtmlPreview.getFit)
+        ? window.HecosHtmlPreview.getFit()
+        : true;
+      htmlOut += `
+      <div class="chat-html-preview ${isDyn ? 'is-dynamic' : 'is-static'} ${isFit ? 'is-fit' : ''}" id="${previewId}" data-doc-path="${docPath.replace(/"/g, '&quot;')}" data-static-src="${serveUrl.replace(/"/g, '&quot;')}" data-iframe-id="${iframeId}">
+        <div class="chat-html-preview-bar">
+          <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+            <span>Preview: ${fileName}</span>
+            <span class="chat-preview-live-meta" style="font-size:11px; color:var(--muted,#94a3b8);">${isDyn ? '⚡ Live' : '🔒 Privacy Static'}</span>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+            <button type="button" class="chat-preview-mode-btn ${isDyn ? 'is-dynamic' : ''}" onclick="if(window.HecosHtmlPreview) window.HecosHtmlPreview.toggleMode();" title="Switch between privacy Static frame and persistent Live Dynamic preview (with auto-refresh on file edits)">${modeBtnLabel}</button>
+            <button type="button" class="chat-preview-fit-btn ${isFit ? 'is-active' : ''}" onclick="if(window.HecosHtmlPreview) window.HecosHtmlPreview.toggleFit();" title="Toggle between scaled Full Desktop Page (1280px) and 1:1 native frame">${isFit ? '<i class="fas fa-desktop"></i> Fit Page' : '<i class="fas fa-expand"></i> 1:1'}</button>
+            <button type="button" class="chat-preview-start-btn" style="display:none;" onclick="if(window.HecosHtmlPreview) window.HecosHtmlPreview.startBackendForBox('${previewId}');" title="Start local backend server for this project"><i class="fas fa-play"></i> Start Backend</button>
+            <button type="button" onclick="if(window.openDocPreview) window.openDocPreview('${safeDocPath}');" title="Open Visual Document Editor" style="background:rgba(108,140,255,0.2);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9em;"><i class="fas fa-magic"></i> Visual Editor</button>
+            <button type="button" onclick="if(window.HecosHtmlPreview) window.HecosHtmlPreview.reloadBox('${previewId}');" title="Reload preview" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <div class="chat-html-preview-body">
+          <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:400px;border:none;display:block;" sandbox="${initSandbox}"></iframe>
+        </div>
+      </div>`;
+    } else if (ext === 'pdf') {
+      const pdfServeUrl = `/api/local_file?path=${encodeURIComponent(docPath)}#pagemode=thumbs&navpanes=1&page=1`;
+      htmlOut += `
+      <div class="chat-pdf-preview" id="${previewId}">
+        <div class="chat-pdf-preview-bar">
+          <span>Preview: ${fileName}</span>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Reload preview" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <div class="chat-pdf-preview-body">
+          <iframe id="${iframeId}" src="${pdfServeUrl}" style="width:100%;min-width:min(780px,100%);height:480px;border:none;display:block;"></iframe>
+        </div>
+      </div>`;
+    }
+
+    htmlOut += `</div>`;
+    return htmlOut;
   }
 
   // 1. Process <a> tags (Videos and Generic Files)
   const links = doc.querySelectorAll('a');
   links.forEach(a => {
+    if (a.closest('.chat-file-card-wrap, .chat-file-card, .wr-item-actions, .wr-subfile-row')) return;
     const href = a.getAttribute('href');
     if (!href) return;
 
@@ -49,14 +164,13 @@ window.processAiMedia = function(html) {
 
     // Is it a video file?
     const NATIVE_VIDEO_EXTS = /\.(mp4|webm|ogg|mov)$/i;
-    const ALL_VIDEO_EXTS    = /\.(mp4|webm|ogg|mov|avi|mkv|m4v|ts|flv|3gp|wmv|mpeg|mpg)$/i;
+    const ALL_VIDEO_EXTS = /\.(mp4|webm|ogg|mov|avi|mkv|m4v|ts|flv|3gp|wmv|mpeg|mpg)$/i;
     if (ALL_VIDEO_EXTS.test(href)) {
       const src = isLocalLink(href) ? getSafeLocalUrl(href) : href;
       const fileName = href.split(/[\\/]/).pop() || 'Video';
       const isNative = NATIVE_VIDEO_EXTS.test(href);
 
       if (isNative) {
-        // Browser can play natively — use HTML5 video element
         const video = document.createElement('video');
         video.controls = true;
         video.src = src;
@@ -65,15 +179,13 @@ window.processAiMedia = function(html) {
         video.style.marginTop = '10px';
         a.replaceWith(video);
       } else {
-        // Format not natively supported (e.g. MKV, AVI, WMV...)
-        // Show a rich card with an inline player attempt + external fallbacks
         const card = document.createElement('div');
         card.className = 'chat-video-card';
         const extIcon = href.match(/\.mkv$/i) ? '🎬' : '🎥';
-        const extName = (href.match(/\.([a-z0-9]+)$/i) || ['','?'])[1].toUpperCase();
+        const extName = (href.match(/\.([a-z0-9]+)$/i) || ['', '?'])[1].toUpperCase();
         const rawPath = href.startsWith('file:///') ? href.slice(8)
-                      : href.startsWith('file://') ? href.slice(7)
-                      : href;
+          : href.startsWith('file://') ? href.slice(7)
+            : href;
         const safeRawPath = rawPath.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         const videoId = 'vid_' + Math.random().toString(36).slice(2, 9);
 
@@ -93,7 +205,7 @@ window.processAiMedia = function(html) {
             </video>
             <div class="chat-video-card-hint" style="margin-top:4px;">
               <i class="fas fa-info-circle"></i>
-              Se il video non parte, usa <strong>Apri con VLC</strong> oppure <strong>Download</strong>.
+              If the video does not play, use <strong>Open with VLC</strong> or <strong>Download</strong>.
             </div>
           </div>
           <div class="chat-video-card-actions">
@@ -103,10 +215,10 @@ window.processAiMedia = function(html) {
               if(w.style.display==='none'){w.style.display='block'; v.play().catch(function(){});}
               else{w.style.display='none'; v.pause();}
             })()" class="chat-video-btn chat-video-btn-open">
-              <i class="fas fa-play"></i> Riproduci qui
+              <i class="fas fa-play"></i> Play here
             </button>
             <button onclick="window.openInVlc('${safeRawPath}')" class="chat-video-btn chat-video-btn-open" style="background:rgba(255,120,0,0.18); border-color:rgba(255,120,0,0.35); color:#ff7800;">
-              <i class="fas fa-external-link-alt"></i> Apri con VLC
+              <i class="fas fa-external-link-alt"></i> Open with VLC
             </button>
             <a href="${src}" download="${fileName}" class="chat-video-btn chat-video-btn-dl">
               <i class="fas fa-download"></i> Download
@@ -121,7 +233,7 @@ window.processAiMedia = function(html) {
     // Is it a generic local file?
     if (isLocalLink(href)) {
       const src = getSafeLocalUrl(href);
-      
+
       let docPath = href;
       try {
         while (docPath.includes('?path=')) {
@@ -135,110 +247,17 @@ window.processAiMedia = function(html) {
         } else if (docPath.startsWith('file://')) {
           docPath = decodeURIComponent(docPath.substring(7));
         }
-      } catch(e) {}
+      } catch (e) { }
       docPath = docPath.replace(/\\/g, '/');
-      
-      // Extract clean filename from the actual document path rather than the messy URL
+
       const fileName = docPath.split('/').pop() || 'Local File';
       const ext = (fileName.match(/\.([a-z0-9]+)$/i) || ['', ''])[1].toLowerCase();
 
-      // Determine icon and color by file extension
-      const fileIconMap = { pdf: 'fa-file-pdf', html: 'fa-file-code', htm: 'fa-file-code',
-                            doc: 'fa-file-word', docx: 'fa-file-word', txt: 'fa-file-alt',
-                            md: 'fa-file-alt', csv: 'fa-file-csv' };
-      const fileColorMap = { pdf: '#e74c3c', html: '#3498db', htm: '#3498db',
-                             doc: '#2980b9', docx: '#2980b9' };
-      const iconClass = fileIconMap[ext] || 'fa-file-alt';
-      const iconColor = fileColorMap[ext] || 'var(--accent)';
-
-      const isPreviewable = (ext === 'pdf' || ext === 'html' || ext === 'htm');
-      const previewId = isPreviewable ? ('preview_box_' + Math.random().toString(36).substring(2, 10)) : null;
-      const iframeId = isPreviewable ? ('preview_' + Math.random().toString(36).substring(2, 10)) : null;
-
-      const zoomBtnHtml = isPreviewable ? `
-        <button class="chat-file-zoom-btn" data-preview-id="${previewId}" onclick="window.togglePdfPreviewZoom('${previewId}')" title="Expand preview in chat" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.15); border:1px solid rgba(108,140,255,0.3); color:#c4b5fd; font-size:0.8em; font-family:inherit; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.2s ease;">
-          <i class="fas fa-expand-arrows-alt"></i> <span class="zoom-label">Zoom</span>
-        </button>
-      ` : '';
-
-      const card = document.createElement('div');
-      card.className = 'chat-file-card';
-      card.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;margin:6px 0;';
-      card.innerHTML = `
-        <div class="chat-file-icon" style="font-size:1.6em;color:${iconColor};"><i class="fas ${iconClass}"></i></div>
-        <div class="chat-file-details" style="flex:1;min-width:0;">
-          <div class="chat-file-name" style="font-weight:600;font-size:0.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${docPath}">${fileName}</div>
-          <div class="chat-file-action" style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;align-items:center;">
-            <a href="${src}" target="_blank" download style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.12); border:1px solid rgba(108,140,255,0.25); color:var(--muted); font-size:0.8em; text-decoration:none;"><i class="fas fa-download"></i> Download</a>${zoomBtnHtml}
-          </div>
-        </div>
-      `;
-
-      // For HTML files, add inline preview iframe with Visual Editor hover overlay
-      if (ext === 'html' || ext === 'htm') {
-        const serveUrl = `/api/serve_html?path=${encodeURIComponent(docPath)}`;
-        const safeDocPath = docPath.replace(/\\/g, '/');
-        const previewDiv = document.createElement('div');
-        previewDiv.className = 'chat-html-preview';
-        previewDiv.id = previewId;
-        previewDiv.innerHTML = `
-          <div class="chat-html-preview-bar">
-            <span>Preview: ${fileName}</span>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <button onclick="if(window.openDocPreview) window.openDocPreview('${safeDocPath.replace(/'/g, "\\'")}');" style="background:rgba(108,140,255,0.2);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9em;"><i class="fas fa-magic"></i> Visual Editor</button>
-              <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Ricarica anteprima" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
-            </div>
-          </div>
-          <div class="chat-html-preview-body">
-            <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:400px;border:none;display:block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
-          </div>
-        `;
-        // Wrap card and preview together
-        const wrapper = document.createElement('div');
-        wrapper.style.width = '100%';
-        wrapper.appendChild(card);
-        wrapper.appendChild(previewDiv);
-        a.replaceWith(wrapper);
-        setTimeout(() => {
-          const pMsg = wrapper.closest('.msg');
-          if (pMsg) pMsg.classList.add('has-pdf');
-          const pBubble = wrapper.closest('.msg-bubble');
-          if (pBubble) pBubble.classList.add('has-pdf');
-        }, 0);
-      } else if (ext === 'pdf') {
-        // For PDF files, add an iframe preview with full navigation toolbar
-        const serveUrl = `/api/local_file?path=${encodeURIComponent(docPath)}#pagemode=thumbs&navpanes=1&page=1`;
-        const safeDocPath = docPath.replace(/\\/g, '/');
-        const previewDiv = document.createElement('div');
-        previewDiv.className = 'chat-pdf-preview';
-        previewDiv.id = previewId;
-        previewDiv.innerHTML = `
-          <div class="chat-pdf-preview-bar">
-            <span>Preview: ${fileName}</span>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Ricarica anteprima" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
-            </div>
-          </div>
-          <div class="chat-pdf-preview-body">
-            <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:480px;border:none;display:block;"></iframe>
-          </div>
-        `;
-        const wrapper = document.createElement('div');
-        wrapper.style.width = '100%';
-        wrapper.appendChild(card);
-        wrapper.appendChild(previewDiv);
-        a.replaceWith(wrapper);
-        setTimeout(() => {
-          const pMsg = wrapper.closest('.msg');
-          if (pMsg) pMsg.classList.add('has-pdf');
-          const pBubble = wrapper.closest('.msg-bubble');
-          if (pBubble) pBubble.classList.add('has-pdf');
-        }, 0);
-      } else {
-        a.replaceWith(card);
-      }
+      const wrapper = document.createElement('div');
+      wrapper.style.width = '100%';
+      wrapper.innerHTML = _buildLocalFileCardHtml(docPath, src, fileName, ext, true);
+      a.replaceWith(wrapper.firstElementChild || wrapper);
     }
-
   });
 
   // 2. Process <img> tags (Images)
@@ -246,19 +265,18 @@ window.processAiMedia = function(html) {
   imgs.forEach(img => {
     const src = img.getAttribute('src');
     if (!src) return;
-    
+
     const isLocal = isLocalLink(src);
     const safeSrc = isLocal ? getSafeLocalUrl(src) : src;
     const alt = img.getAttribute('alt') || src.split(/[\\/]/).pop() || 'Image';
-    
-    // We replace it with the rich gallery wrapper if it isn't already inside one
+
     if (!img.closest('.chat-img-wrap')) {
       const wrapper = document.createElement('div');
       wrapper.className = 'chat-img-wrap';
       wrapper.setAttribute('draggable', 'true');
       wrapper.setAttribute('data-img-url', safeSrc);
       wrapper.setAttribute('data-img-name', alt);
-      
+
       wrapper.innerHTML = `
         <img src="${safeSrc}" alt="${alt}" loading="lazy"
              onerror="this.parentElement.style.display='none'"
@@ -275,17 +293,22 @@ window.processAiMedia = function(html) {
     }
   });
 
-  // ── 3. Scan text nodes for bare absolute Windows/Unix paths not wrapped in <a> ──
-  // The AI often outputs paths like "(C:\Hecos\...\file.pdf)" that marked.js won't linkify.
-  // We walk all text nodes, find these bare paths, and replace them with rich file cards.
+  // Normalize any inline <video>, <audio>, <source> tags using local file:// or drive paths
+  doc.querySelectorAll('video, audio, source').forEach(el => {
+    const rawSrc = el.getAttribute('src');
+    if (rawSrc && isLocalLink(rawSrc)) {
+      el.setAttribute('src', getSafeLocalUrl(rawSrc));
+    }
+    const rawPoster = el.getAttribute('poster');
+    if (rawPoster && isLocalLink(rawPoster)) {
+      el.setAttribute('poster', getSafeLocalUrl(rawPoster));
+    }
+  });
+
+  // 3. Scan text nodes for bare absolute Windows/Unix paths not wrapped in <a>
   const IMG_EXTS = /\.(png|jpe?g|gif|webp|bmp|svg)$/i;
   const VIDEO_EXTS = /\.(mp4|webm|ogg|mov|avi|mkv)$/i;
-  // Matches absolute Windows paths: C:\path\to\file.ext or C:/path/to/file.ext
-  // Stops at whitespace, quotes, angle brackets
-  // Group 1: Optional opening wrapper: "(", "( ", "[[IMG:"
-  // Group 2: The actual path
-  // Group 3: Optional closing wrapper: ")", " )", "]]"
-  const PATH_RE = /(?:(\(\s*|\[\[IMG:\s*)([A-Za-z]:[\\/][^\s'"<>\)\]]+)(\s*\)|\s*\]\])?|([A-Za-z]:[\\/][^\s'"<>\)\]]+))/g;
+  const PATH_RE = /(?:(\(\s*|\[\[IMG:\s*|(?:HTML|PDF):\s*)([A-Za-z]:[\\/](?:[^:*?"<>|\r\n\(\)\[\]]+?\.(?:pdf|html?|png|jpe?g|gif|webp|bmp|svg|mp4|webm|ogg|mov|avi|mkv|docx?|xlsx?|pptx?|txt|csv|json|md)|[^\s'"<>\)\]]+))(\s*\)|\s*\]\])?|([A-Za-z]:[\\/](?:[^:*?"<>|\r\n\(\)\[\]]+?\.(?:pdf|html?|png|jpe?g|gif|webp|bmp|svg|mp4|webm|ogg|mov|avi|mkv|docx?|xlsx?|pptx?|txt|csv|json|md)|[^\s'"<>\)\]]+)))/gi;
 
   function _makeBareFileCard(rawPath) {
     const cleanPath = rawPath.replace(/\\/g, '/').replace(/\/+$/, '');
@@ -294,7 +317,6 @@ window.processAiMedia = function(html) {
     const apiUrl = `/api/local_file?path=${encodeURIComponent(rawPath)}`;
 
     if (IMG_EXTS.test(fileName)) {
-      // Inline image
       return `
 <div class="chat-img-wrap" draggable="true" data-img-url="${apiUrl}" data-img-name="${fileName}">
   <img src="${apiUrl}" alt="${fileName}" loading="lazy"
@@ -311,157 +333,78 @@ window.processAiMedia = function(html) {
     }
 
     if (VIDEO_EXTS.test(fileName)) {
-      // Inline video
       return `<video controls style="max-width:100%;border-radius:8px;margin-top:8px;" src="${apiUrl}"></video>`;
     }
 
-    // Determine icon by extension
-    const iconMap = { pdf: 'fa-file-pdf', html: 'fa-file-code', htm: 'fa-file-code',
-                      doc: 'fa-file-word', docx: 'fa-file-word', xls: 'fa-file-excel',
-                      xlsx: 'fa-file-excel', ppt: 'fa-file-powerpoint', pptx: 'fa-file-powerpoint',
-                      txt: 'fa-file-alt', csv: 'fa-file-csv', json: 'fa-file-code',
-                      md: 'fa-file-alt' };
-    const iconClass = iconMap[ext] || 'fa-file-alt';
-    const colorMap = { pdf: '#e74c3c', html: '#3498db', htm: '#3498db',
-                       doc: '#2980b9', docx: '#2980b9', xls: '#27ae60',
-                       xlsx: '#27ae60', ppt: '#e67e22', pptx: '#e67e22' };
-    const iconColor = colorMap[ext] || 'var(--accent)';
-
-    // For PDF/HTML, offer an "Open" button linking to the API serve endpoint
-    const isPreviewable = (ext === 'pdf' || ext === 'html' || ext === 'htm');
-    const previewId = isPreviewable ? ('preview_box_' + Math.random().toString(36).substring(2, 10)) : null;
-    const iframeId = isPreviewable ? ('preview_' + Math.random().toString(36).substring(2, 10)) : null;
-
-    const serveUrl = (ext === 'html' || ext === 'htm') ? `/api/serve_html?path=${encodeURIComponent(rawPath)}` : apiUrl;
-    
-    const openBtn = isPreviewable
-      ? `<a href="${serveUrl}" target="_blank" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.18); border:1px solid rgba(108,140,255,0.35); color:var(--accent); font-size:0.8em; text-decoration:none; font-weight:600;">
-          <i class="fas fa-external-link-alt"></i> Open
-        </a>`
-      : '';
-    const dlBtn = `<a href="${apiUrl}" download="${fileName}" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.12); border:1px solid rgba(108,140,255,0.25); color:var(--muted); font-size:0.8em; text-decoration:none;">
-        <i class="fas fa-download"></i> Download
-      </a>`;
-    const zoomBtn = isPreviewable ? `<button class="chat-file-zoom-btn" data-preview-id="${previewId}" onclick="window.togglePdfPreviewZoom('${previewId}')" title="Expand preview in chat" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.15); border:1px solid rgba(108,140,255,0.3); color:#c4b5fd; font-size:0.8em; font-family:inherit; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.2s ease;">
-        <i class="fas fa-expand-arrows-alt"></i> <span class="zoom-label">Zoom</span>
-      </button>` : '';
-
-    let cardHtml = `<div class="chat-file-card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;margin:6px 0;">
-      <div class="chat-file-icon" style="font-size:1.6em;color:${iconColor};"><i class="fas ${iconClass}"></i></div>
-      <div class="chat-file-details" style="flex:1;min-width:0;">
-        <div class="chat-file-name" style="font-weight:600;font-size:0.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${rawPath}">${fileName}</div>
-        <div class="chat-file-action" style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;align-items:center;">${openBtn}${dlBtn}${zoomBtn}</div>
-      </div>
-    </div>`;
-
-    // Add inline iframe preview for HTML
-    if (ext === 'html' || ext === 'htm') {
-      const safeDocPath = rawPath.replace(/\\/g, '/');
-      cardHtml += `
-      <div class="chat-html-preview" id="${previewId}">
-        <div class="chat-html-preview-bar">
-          <span>Preview: ${fileName}</span>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <button onclick="if(window.openDocPreview) window.openDocPreview('${safeDocPath.replace(/'/g, "\\'")}');" style="background:rgba(108,140,255,0.2);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9em;"><i class="fas fa-magic"></i> Visual Editor</button>
-            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Ricarica anteprima" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
-          </div>
-        </div>
-        <div class="chat-html-preview-body">
-          <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:400px;border:none;display:block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
-        </div>
-      </div>`;
-    } else if (ext === 'pdf') {
-      const serveUrl = `/api/local_file?path=${encodeURIComponent(rawPath)}#pagemode=thumbs&navpanes=1&page=1`;
-      cardHtml += `
-      <div class="chat-pdf-preview" id="${previewId}">
-        <div class="chat-pdf-preview-bar">
-          <span>Preview: ${fileName}</span>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" title="Ricarica anteprima" style="background:none;border:none;color:var(--accent);cursor:pointer;padding:2px 6px;"><i class="fas fa-sync-alt"></i></button>
-          </div>
-        </div>
-        <div class="chat-pdf-preview-body">
-          <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;min-width:min(780px,100%);height:480px;border:none;display:block;"></iframe>
-        </div>
-      </div>`;
-    }
-
-    return cardHtml;
+    return _buildLocalFileCardHtml(cleanPath, apiUrl, fileName, ext, true);
   }
 
-  // Walk the parsed DOM's text nodes and replace bare paths
   function _processTextNodes(node) {
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent;
       if (!PATH_RE.test(text)) return;
-      PATH_RE.lastIndex = 0; // Reset regex state
+      PATH_RE.lastIndex = 0;
       const parts = [];
       let lastIdx = 0;
+      let m;
       while ((m = PATH_RE.exec(text)) !== null) {
-        // m[2] is the path if there were wrappers, m[4] is the path if there were no wrappers.
-        const rawPath = m[2] || m[4];
-        
-        // Skip if path doesn't have a file extension (likely just a directory reference)
+        const rawPath = (m[2] || m[4] || '').trim();
         if (!/\.[a-z0-9]{2,5}$/i.test(rawPath)) {
-          // Still keep text up to here as-is by NOT updating lastIdx
           continue;
         }
-        
+
         if (lastIdx < m.index) parts.push(document.createTextNode(text.slice(lastIdx, m.index)));
-        
         const span = document.createElement('span');
         span.innerHTML = _makeBareFileCard(rawPath);
         parts.push(span);
-        
         lastIdx = m.index + m[0].length;
       }
       PATH_RE.lastIndex = 0;
-      if (parts.length === 0) return; // No matches found, leave as-is
+      if (parts.length === 0) return;
       if (lastIdx < text.length) parts.push(document.createTextNode(text.slice(lastIdx)));
       const frag = document.createDocumentFragment();
       parts.forEach(p => frag.appendChild(p));
       node.parentNode.replaceChild(frag, node);
     } else if (node.nodeType === Node.ELEMENT_NODE) {
-      // Don't process inside <a>, <pre>, <code>, or elements we already transformed
-      if (['A','PRE','CODE','SCRIPT','STYLE'].includes(node.tagName)) return;
-      if (node.classList && (node.classList.contains('chat-file-card') || node.classList.contains('chat-img-wrap') || node.classList.contains('chat-video-card') || node.classList.contains('action-console-block'))) return;
-      // Must snapshot childNodes before iteration since we may mutate the list
+      if (['A', 'PRE', 'CODE', 'SCRIPT', 'STYLE'].includes(node.tagName)) return;
+      if (node.classList && (node.classList.contains('chat-file-card-wrap') || node.classList.contains('chat-file-card') || node.classList.contains('chat-img-wrap') || node.classList.contains('chat-video-card') || node.classList.contains('action-console-block'))) return;
       Array.from(node.childNodes).forEach(_processTextNodes);
     }
   }
   _processTextNodes(doc.body);
 
-  // Maintain the legacy [[IMG:...]] support for backwards compatibility
   let finalHtml = doc.body.innerHTML;
   if (typeof window.processAiImages === 'function') {
-      finalHtml = window.processAiImages(finalHtml);
+    finalHtml = window.processAiImages(finalHtml);
+  }
+
+  if (finalHtml.includes('[[HSEARCH:') || finalHtml.includes('[[HMEDIA:')) {
+    if (typeof window.renderHSearchCard === 'function') {
+      finalHtml = finalHtml.replace(/\[\[HSEARCH:([a-zA-Z0-9_-]+)\]\]/g, (match, sid) => window.renderHSearchCard(sid, false));
+      finalHtml = finalHtml.replace(/\[\[HMEDIA:([a-zA-Z0-9_-]+)\]\]/g, (match, sid) => window.renderHSearchCard(sid, true));
+    }
   }
 
   // --- Photo Wall Feature ---
-  // Group consecutive .chat-img-wrap elements into a grid gallery
   try {
     const wallDoc = new DOMParser().parseFromString(finalHtml, 'text/html');
     let wraps = Array.from(wallDoc.querySelectorAll('.chat-img-wrap'));
     if (wraps.length >= 2) {
       let currentGroup = [];
       const groups = [];
-      
+
       for (let i = 0; i < wraps.length; i++) {
         const wrap = wraps[i];
         if (currentGroup.length === 0) {
           currentGroup.push(wrap);
         } else {
-          // Check if wrap is a sibling of the last one and only whitespace/br/p between them
           const prev = currentGroup[currentGroup.length - 1];
           let valid = true;
           let node = prev.nextSibling;
           while (node && node !== wrap) {
             if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) {
-              // whitespace is ok
             } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'BR') {
-              // br is ok
             } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'P' && node.innerHTML.trim() === '') {
-              // empty p is ok
             } else {
               valid = false;
               break;
@@ -479,15 +422,14 @@ window.processAiMedia = function(html) {
       if (currentGroup.length > 0) groups.push(currentGroup);
 
       groups.forEach(group => {
-        if (group.length >= 2) { // Only create wall if 2 or more consecutive images
+        if (group.length >= 2) {
           const wall = wallDoc.createElement('div');
           wall.className = 'chat-photo-wall';
           const parent = group[0].parentNode;
           parent.insertBefore(wall, group[0]);
           group.forEach(w => {
-            // Remove any BRs immediately preceding
             let p = w.previousSibling;
-            while(p && (p.nodeType === Node.TEXT_NODE || p.tagName === 'BR')) {
+            while (p && (p.nodeType === Node.TEXT_NODE || p.tagName === 'BR')) {
               let toRemove = p;
               p = p.previousSibling;
               if (toRemove.parentNode === parent) parent.removeChild(toRemove);
@@ -505,267 +447,271 @@ window.processAiMedia = function(html) {
   return finalHtml;
 };
 
-window.openInVlc = function(filePath) {
-  // Mostra un feedback all'utente
-  if (window.HecosUI && window.HecosUI.showToast) {
-    window.HecosUI.showToast("Avvio VLC in corso...", "info");
+// --- Persistent Static vs Live Dynamic HTML Preview Manager ---
+(function () {
+  if (window.HecosHtmlPreview) return;
+
+  const STORAGE_KEY = 'hecos_html_preview_mode';
+  const FIT_STORAGE_KEY = 'hecos_html_preview_fit';
+  const VIRTUAL_W = 1280;
+  const VIRTUAL_H = 820;
+  const _watchers = new Map();
+  let _memMode = 'static';
+  let _memFit = true;
+  try {
+    if (localStorage.getItem(STORAGE_KEY) === 'dynamic') _memMode = 'dynamic';
+    if (localStorage.getItem(FIT_STORAGE_KEY) === 'false') _memFit = false;
+  } catch (e) {}
+
+  function getFit() {
+    try {
+      const saved = localStorage.getItem(FIT_STORAGE_KEY);
+      if (saved === 'false' || saved === 'true') _memFit = (saved === 'true');
+    } catch (e) {}
+    return _memFit;
   }
 
-  fetch('/api/open_in_vlc', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ path: decodeURIComponent(filePath) })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (!data.ok) {
-      console.error("[VLC] Errore:", data.error);
-      if (window.HecosUI && window.HecosUI.showToast) {
-        window.HecosUI.showToast("Impossibile avviare il video con VLC.", "error");
-      } else {
-        alert("Errore avvio video: " + data.error);
-      }
-    } else if (data.message) {
-      if (window.HecosUI && window.HecosUI.showToast) {
-        window.HecosUI.showToast(data.message, "success");
-      }
+  function applyViewportFit(box) {
+    if (!box) return;
+    const fitOn = getFit();
+    const isExpanded = box.classList.contains('expanded');
+    const fitBtn = box.querySelector('.chat-preview-fit-btn');
+    const bodyEl = box.querySelector('.chat-html-preview-body');
+    const iframe = document.getElementById(box.dataset.iframeId || '') || box.querySelector('iframe');
+    box.classList.toggle('is-fit', fitOn);
+    if (fitBtn) {
+      fitBtn.classList.toggle('is-active', fitOn);
+      fitBtn.innerHTML = fitOn
+        ? '<i class="fas fa-desktop"></i> Fit Page'
+        : '<i class="fas fa-expand"></i> 1:1';
     }
-  })
-  .catch(err => {
-    console.error("[VLC] Network error:", err);
-    if (window.HecosUI && window.HecosUI.showToast) {
-      window.HecosUI.showToast("Errore di rete durante l'avvio del video.", "error");
+    if (!bodyEl || !iframe) return;
+    if (!fitOn || isExpanded) {
+      iframe.style.transform = '';
+      bodyEl.style.height = '';
+      bodyEl.style.overflow = '';
+      return;
     }
-  });
-};
+    const availW = bodyEl.clientWidth || box.clientWidth || 780;
+    const scale = Math.min(1, Math.max(0.28, availW / VIRTUAL_W));
+    iframe.style.transform = `scale(${scale.toFixed(4)})`;
+    bodyEl.style.height = `${Math.round(VIRTUAL_H * scale)}px`;
+    bodyEl.style.overflow = 'hidden';
+  }
 
-// ── Preview Zoom / Full-Chat Expansion ──────────────────────────────────────
-window.togglePdfPreviewZoom = function(previewId) {
-  const el = document.getElementById(previewId);
-  if (!el) return;
+  function toggleFit() {
+    _memFit = !getFit();
+    try {
+      localStorage.setItem(FIT_STORAGE_KEY, _memFit ? 'true' : 'false');
+    } catch (e) {}
+    document.querySelectorAll('.chat-html-preview').forEach((b) => applyViewportFit(b));
+    return _memFit;
+  }
 
-  const isExpanded = el.classList.toggle('expanded');
-  
-  // Find all zoom buttons targeting this previewId
-  const zoomBtns = document.querySelectorAll(`[data-preview-id="${previewId}"], .chat-file-zoom-btn[onclick*="${previewId}"]`);
-  
-  // Overrides on parent bubble to prevent backdrop-filter stacking context traps
-  const msgBubble = el.closest('.msg-bubble');
-  const msgEl = el.closest('.msg');
-  
-  if (isExpanded) {
-    if (msgBubble) msgBubble.classList.add('has-expanded-preview');
-    if (msgEl) msgEl.classList.add('has-expanded-preview');
-    document.body.classList.add('preview-zoomed');
-    
-    zoomBtns.forEach(btn => {
-      const icon = btn.querySelector('i');
-      const label = btn.querySelector('.zoom-label') || btn;
-      if (icon) icon.className = 'fas fa-compress-arrows-alt';
-      if (label && label !== btn) label.textContent = 'Collapse';
-      btn.setAttribute('title', 'Restore normal size (Esc)');
-    });
-    
-    const bar = el.querySelector('.chat-pdf-preview-bar, .chat-html-preview-bar');
-    if (bar && !bar.querySelector('.chat-preview-close-btn')) {
-      const closeBtn = document.createElement('button');
-      closeBtn.className = 'chat-preview-close-btn';
-      closeBtn.innerHTML = '<i class="fas fa-times"></i> <span style="font-size:0.85em;font-weight:600;">Close</span>';
-      closeBtn.title = 'Close expanded preview (Esc)';
-      closeBtn.style.cssText = 'background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:0.85em;display:inline-flex;align-items:center;gap:5px;';
-      closeBtn.onclick = function(e) {
-        e.stopPropagation();
-        window.togglePdfPreviewZoom(previewId);
-      };
-      bar.appendChild(closeBtn);
+  function getMode() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved === 'dynamic' || saved === 'static') _memMode = saved;
+    } catch (e) {}
+    return _memMode;
+  }
+
+  function setMode(mode) {
+    const clean = mode === 'dynamic' ? 'dynamic' : 'static';
+    _memMode = clean;
+    try {
+      localStorage.setItem(STORAGE_KEY, clean);
+    } catch (e) {}
+    syncAll();
+    return clean;
+  }
+
+  function toggleMode() {
+    return setMode(getMode() === 'dynamic' ? 'static' : 'dynamic');
+  }
+
+  function _clearWatcher(boxId) {
+    if (_watchers.has(boxId)) {
+      clearInterval(_watchers.get(boxId));
+      _watchers.delete(boxId);
     }
+  }
+
+  function _withCacheBust(url) {
+    if (!url) return url;
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}_t=${Date.now()}`;
+  }
+
+  function _withStaticFlag(url) {
+    if (!url || !url.includes('/api/serve_html')) return url;
+    if (url.includes('static=')) return url;
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}static=1`;
+  }
+
+  async function _syncBox(box, forceReload) {
+    if (!box || !box.id) return;
+    box.dataset.hpInit = '1';
+    const mode = getMode();
+    const isDyn = mode === 'dynamic';
+    const iframe = document.getElementById(box.dataset.iframeId || '') || box.querySelector('iframe');
+    const modeBtn = box.querySelector('.chat-preview-mode-btn');
+    const metaEl = box.querySelector('.chat-preview-live-meta');
+    const startBtn = box.querySelector('.chat-preview-start-btn');
+    const staticSrc = box.dataset.staticSrc || (iframe ? iframe.getAttribute('src') : '');
+    const docPath = box.dataset.docPath || '';
+
+    box.classList.toggle('is-dynamic', isDyn);
+    box.classList.toggle('is-static', !isDyn);
+    applyViewportFit(box);
+    if (modeBtn) {
+      modeBtn.classList.toggle('is-dynamic', isDyn);
+      modeBtn.innerHTML = isDyn
+        ? '<i class="fas fa-bolt"></i> Live Dynamic'
+        : '<i class="fas fa-lock"></i> Static Frame';
+    }
+
+    if (!isDyn) {
+      _clearWatcher(box.id);
+      box.dataset.lastSig = '';
+      box.dataset.lastRunId = '';
+      box.dataset.backendEntry = '';
+      if (metaEl) metaEl.textContent = '🔒 Privacy Static';
+      if (startBtn) startBtn.style.display = 'none';
+      if (iframe) {
+        iframe.setAttribute('sandbox', 'allow-same-origin');
+        const curSrc = iframe.getAttribute('src') || '';
+        const safeStaticUrl = _withStaticFlag(staticSrc);
+        if (safeStaticUrl && (forceReload || curSrc.includes('/api/workspace/preview_proxy/'))) {
+          iframe.setAttribute('src', forceReload ? _withCacheBust(safeStaticUrl) : safeStaticUrl);
+        }
+      }
+      return;
+    }
+
+    if (iframe) {
+      iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups allow-modals');
+    }
+
+    async function _probeAndApply(allowSetNow) {
+      if (!document.body.contains(box) || getMode() !== 'dynamic') {
+        _clearWatcher(box.id);
+        return;
+      }
+      try {
+        const resp = await fetch(`/api/workspace/preview_target?path=${encodeURIComponent(docPath)}`);
+        if (!resp.ok) {
+          if (allowSetNow && iframe && staticSrc) {
+            iframe.setAttribute('src', _withCacheBust(staticSrc));
+          }
+          if (metaEl) metaEl.textContent = '⚡ Live JS';
+          return;
+        }
+        const info = await resp.json();
+        const prevSig = box.dataset.lastSig || '';
+        const prevRun = box.dataset.lastRunId || '';
+        const newSig = String(info.signature || '');
+        const newRun = String(info.run_id || '');
+        const targetBase = (info.backend_running && info.proxy_url) ? info.proxy_url : staticSrc;
+        box.dataset.backendEntry = info.backend_entry_path || '';
+
+        if (startBtn) {
+          startBtn.style.display = (!info.backend_running && info.backend_entry_path) ? 'inline-flex' : 'none';
+        }
+        if (metaEl) {
+          metaEl.textContent = info.backend_running
+            ? '⚡ Live Backend + Auto-Refresh'
+            : '⚡ Live Dynamic + Auto-Refresh';
+        }
+
+        const changed = (prevSig && newSig !== prevSig) || (prevRun !== '' && newRun !== prevRun) || (!prevRun && newRun !== '');
+        box.dataset.lastSig = newSig;
+        box.dataset.lastRunId = newRun;
+
+        if (iframe && (allowSetNow || changed)) {
+          iframe.setAttribute('src', _withCacheBust(targetBase));
+        }
+      } catch (e) {
+        if (allowSetNow && iframe && staticSrc) {
+          iframe.setAttribute('src', _withCacheBust(staticSrc));
+        }
+      }
+    }
+
+    await _probeAndApply(true);
+    _clearWatcher(box.id);
+    const timer = setInterval(() => _probeAndApply(false), 2000);
+    _watchers.set(box.id, timer);
+  }
+
+  async function startBackendForBox(boxId) {
+    const box = document.getElementById(boxId);
+    if (!box) return;
+    const entry = box.dataset.backendEntry;
+    const btn = box.querySelector('.chat-preview-start-btn');
+    if (!entry) return;
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+    }
+    try {
+      const resp = await fetch('/api/workspace/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: entry, mode: 'app', wait_seconds: 1.5 }),
+      });
+      await resp.json();
+      await _syncBox(box, true);
+    } catch (e) {
+      if (window.showToast) window.showToast('Failed to start backend: ' + e, true);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play"></i> Start Backend';
+      }
+    }
+  }
+
+  function reloadBox(boxId) {
+    const box = document.getElementById(boxId);
+    if (box) _syncBox(box, true);
+  }
+
+  function syncAll() {
+    document.querySelectorAll('.chat-html-preview').forEach((box) => _syncBox(box, true));
+  }
+
+  function initPending() {
+    document.querySelectorAll('.chat-html-preview:not([data-hp-init])').forEach((box) => _syncBox(box, false));
+  }
+
+  function _attachObserver() {
+    if (!document.body || typeof MutationObserver === 'undefined') return;
+    initPending();
+    const obs = new MutationObserver(() => initPending());
+    obs.observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _attachObserver);
   } else {
-    if (msgBubble) msgBubble.classList.remove('has-expanded-preview');
-    if (msgEl) msgEl.classList.remove('has-expanded-preview');
-    document.body.classList.remove('preview-zoomed');
-    
-    zoomBtns.forEach(btn => {
-      const icon = btn.querySelector('i');
-      const label = btn.querySelector('.zoom-label') || btn;
-      if (icon) icon.className = 'fas fa-expand-arrows-alt';
-      if (label && label !== btn) label.textContent = 'Zoom';
-      btn.setAttribute('title', 'Expand preview in chat');
-    });
-    
-    const closeBtn = el.querySelector('.chat-preview-close-btn');
-    if (closeBtn) closeBtn.remove();
+    _attachObserver();
   }
-};
-
-// Global Esc listener to exit preview zoom
-if (!window._pdfZoomEscBound) {
-  window._pdfZoomEscBound = true;
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      const expanded = document.querySelector('.chat-pdf-preview.expanded, .chat-html-preview.expanded');
-      if (expanded) {
-        window.togglePdfPreviewZoom(expanded.id);
-      }
-    }
+  window.addEventListener('resize', () => {
+    document.querySelectorAll('.chat-html-preview').forEach((b) => applyViewportFit(b));
   });
-}
 
-// Ensure CSS styles for Zoom/Full-Chat expansion and immediate wide view
-(function _ensurePreviewZoomCSS() {
-  if (document.getElementById('chat-preview-zoom-styles')) return;
-  const style = document.createElement('style');
-  style.id = 'chat-preview-zoom-styles';
-  style.textContent = `
-    .msg:has(.chat-pdf-preview),
-    .msg.has-pdf,
-    .msg:has(.chat-html-preview),
-    .msg.has-html-preview {
-      max-width: 980px !important;
-      width: 100% !important;
-    }
-    .msg:has(.chat-pdf-preview) .msg-content-wrapper,
-    .msg.has-pdf .msg-content-wrapper,
-    .msg:has(.chat-html-preview) .msg-content-wrapper,
-    .msg.has-html-preview .msg-content-wrapper {
-      max-width: 100% !important;
-      width: 100% !important;
-      align-items: stretch !important;
-    }
-    .msg:has(.chat-pdf-preview) .msg-bubble,
-    .msg.has-pdf .msg-bubble,
-    .msg:has(.chat-html-preview) .msg-bubble,
-    .msg.has-html-preview .msg-bubble {
-      width: 100% !important;
-      max-width: 100% !important;
-      min-width: min(800px, 100%) !important;
-      box-sizing: border-box !important;
-    }
-    .chat-pdf-preview,
-    .chat-html-preview {
-      width: 100% !important;
-      min-width: min(780px, 100%) !important;
-      box-sizing: border-box !important;
-      margin: 10px 0 4px 0 !important;
-      border-radius: 8px !important;
-      overflow: hidden !important;
-      border: 1px solid var(--border-color, rgba(255,255,255,0.12)) !important;
-      background: var(--bg2, #12141f) !important;
-    }
-    .chat-pdf-preview-bar,
-    .chat-html-preview-bar {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      padding: 8px 14px !important;
-      background: rgba(0, 0, 0, 0.25) !important;
-      border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08)) !important;
-      font-size: 0.85em !important;
-      font-weight: 600 !important;
-      color: var(--muted, #94a3b8) !important;
-      gap: 10px !important;
-    }
-    .chat-pdf-preview-bar > span,
-    .chat-html-preview-bar > span {
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      white-space: nowrap !important;
-      flex: 1 !important;
-    }
-    .chat-pdf-preview-body,
-    .chat-html-preview-body {
-      width: 100% !important;
-      min-width: min(780px, 100%) !important;
-      box-sizing: border-box !important;
-      position: relative !important;
-    }
-    .chat-pdf-preview-body iframe,
-    .chat-html-preview-body iframe {
-      width: 100% !important;
-      min-width: min(780px, 100%) !important;
-      height: 480px !important;
-      border: none !important;
-      display: block !important;
-      box-sizing: border-box !important;
-    }
-    .chat-file-zoom-btn:hover {
-      background: rgba(108,140,255,0.28) !important;
-      border-color: var(--accent, #6c8cff) !important;
-      color: #fff !important;
-      transform: translateY(-1px) !important;
-    }
-    .has-expanded-preview {
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-      transform: none !important;
-      filter: none !important;
-      animation: none !important;
-      z-index: 9999 !important;
-    }
-    .chat-pdf-preview.expanded,
-    .chat-html-preview.expanded {
-      position: fixed !important;
-      top: 50px !important;
-      left: var(--sidebar-w, 260px) !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      width: auto !important;
-      height: auto !important;
-      min-width: 0 !important;
-      max-width: none !important;
-      margin: 0 !important;
-      border-radius: 0 !important;
-      border: none !important;
-      border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
-      z-index: 99999 !important;
-      background: #0b0c12 !important;
-      display: flex !important;
-      flex-direction: column !important;
-      box-shadow: 0 0 60px rgba(0, 0, 0, 0.95) !important;
-      animation: previewZoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    }
-    @keyframes previewZoomIn {
-      from { opacity: 0; transform: scale(0.985); }
-      to   { opacity: 1; transform: scale(1); }
-    }
-    #sidebar.collapsed ~ #main .chat-pdf-preview.expanded,
-    #sidebar.collapsed ~ #main .chat-html-preview.expanded,
-    body.sidebar-collapsed .chat-pdf-preview.expanded,
-    body.sidebar-collapsed .chat-html-preview.expanded {
-      left: 0 !important;
-    }
-    @media (max-width: 768px) {
-      .chat-pdf-preview.expanded,
-      .chat-html-preview.expanded {
-        left: 0 !important;
-        top: 0 !important;
-      }
-    }
-    .chat-pdf-preview.expanded .chat-pdf-preview-bar,
-    .chat-html-preview.expanded .chat-html-preview-bar {
-      padding: 10px 18px !important;
-      background: #12141f !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
-      flex-shrink: 0 !important;
-    }
-    .chat-pdf-preview.expanded .chat-pdf-preview-body,
-    .chat-html-preview.expanded .chat-html-preview-body {
-      flex: 1 !important;
-      height: calc(100% - 48px) !important;
-      width: 100% !important;
-      min-width: 0 !important;
-      padding: 0 !important;
-      margin: 0 !important;
-    }
-    .chat-pdf-preview.expanded iframe,
-    .chat-html-preview.expanded iframe {
-      width: 100% !important;
-      min-width: 0 !important;
-      height: 100% !important;
-      min-height: 100% !important;
-      display: block !important;
-      border: none !important;
-    }
-  `;
-  document.head.appendChild(style);
+  window.HecosHtmlPreview = {
+    getMode,
+    setMode,
+    toggleMode,
+    getFit,
+    toggleFit,
+    applyViewportFit,
+    reloadBox,
+    startBackendForBox,
+    syncAll,
+    initPending,
+  };
 })();
-

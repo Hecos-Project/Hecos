@@ -1,7 +1,7 @@
 {
     "tag": "MEMORY",
     "description": "Access to the Vault of memories and Admin profile (Identity and History). Includes RAG vector memory for long-term semantic recall.",
-    "lazy_load": true,
+    "lazy_load": false,
     "is_class_based": true,
     "status": "ONLINE (Vault Access Granted)",
     "commands": {
@@ -27,7 +27,9 @@
                             "description": "The number of previous messages to extract (e.g. '10')."
                         }
                     },
-                    "required": ["n"]
+                    "required": [
+                        "n"
+                    ]
                 }
             }
         },
@@ -44,7 +46,9 @@
                             "description": "The detailed information to remember (e.g. 'The user likes coffee')."
                         }
                     },
-                    "required": ["text"]
+                    "required": [
+                        "text"
+                    ]
                 }
             }
         },
@@ -85,7 +89,9 @@
                             "description": "The question or topic to search for in the knowledge base."
                         }
                     },
-                    "required": ["query"]
+                    "required": [
+                        "query"
+                    ]
                 }
             }
         },
@@ -106,7 +112,9 @@
                             "description": "A short descriptive label for this memory (e.g. 'colour_preference')."
                         }
                     },
-                    "required": ["text"]
+                    "required": [
+                        "text"
+                    ]
                 }
             }
         },
@@ -123,7 +131,9 @@
                             "description": "Absolute or relative path to the file to ingest."
                         }
                     },
-                    "required": ["path"]
+                    "required": [
+                        "path"
+                    ]
                 }
             }
         }

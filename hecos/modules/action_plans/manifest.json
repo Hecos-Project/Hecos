@@ -1,0 +1,124 @@
+{
+  "id": "action_plans",
+  "tag": "ACTION_PLANS",
+  "name": "Action Plans",
+  "version": "1.0.0",
+  "description": "Shared Core multi-step planning, execution checkpoints, and human-in-the-loop approval across Agent, Flows, and Plugins.",
+  "icon": "📋",
+  "lazy_load": false,
+  "is_class_based": true,
+  "llm_callable": true,
+  "status": "ONLINE (Core Module Active)",
+  "commands": {
+    "create_plan": "Create a structured multi-step action plan for the active task.",
+    "update_step": "Update the status of a step in the active action plan.",
+    "get_plan": "Inspect the current progress and steps of an action plan.",
+    "complete_plan": "Mark the active action plan completed, failed, or cancelled."
+  },
+  "tool_schema": [
+    {
+      "type": "function",
+      "function": {
+        "name": "ACTION_PLANS__create_plan",
+        "description": "Create a structured multi-step action plan for complex tasks (coding, multi-file edits, Flows, or audits). In confirm mode, pauses until user approves.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "Short title describing the overall goal."
+            },
+            "steps": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Ordered list of concise actionable steps."
+            },
+            "require_approval": {
+              "type": "boolean",
+              "description": "Optional override to force waiting for user approval before executing."
+            }
+          },
+          "required": ["title", "steps"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "ACTION_PLANS__update_step",
+        "description": "Update a step status ('done', 'running', 'failed', 'skipped', 'pending') in the active Action Plan.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "step_index": {
+              "type": "integer",
+              "description": "1-based index of the step to update."
+            },
+            "status": {
+              "type": "string",
+              "enum": ["pending", "running", "done", "skipped", "failed"],
+              "description": "New status for the step."
+            },
+            "notes": {
+              "type": "string",
+              "description": "Brief outcome note or verified artifact path."
+            },
+            "plan_id": {
+              "type": "string",
+              "description": "Optional plan_id; defaults to current session plan."
+            }
+          },
+          "required": ["step_index", "status"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "ACTION_PLANS__get_plan",
+        "description": "Read the current status and step checklist of the active Action Plan.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "plan_id": {
+              "type": "string",
+              "description": "Optional plan_id; omit to inspect current session plan."
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "ACTION_PLANS__complete_plan",
+        "description": "Finalize an Action Plan once all steps and verifications are finished.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "summary": {
+              "type": "string",
+              "description": "Short final summary of what was accomplished and verified."
+            },
+            "status": {
+              "type": "string",
+              "enum": ["completed", "failed", "cancelled"],
+              "description": "Final plan status (default: completed)."
+            },
+            "plan_id": {
+              "type": "string",
+              "description": "Optional plan_id; omit to close current session plan."
+            }
+          }
+        }
+      }
+    }
+  ],
+  "config_panel": {
+    "tab_id": "action-plans",
+    "tab_label": "Action Plans",
+    "tab_icon": "fas fa-list-check",
+    "template_file": "modules/config_action_plans.html",
+    "category": "SISTEMA"
+  }
+}

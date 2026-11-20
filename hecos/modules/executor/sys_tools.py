@@ -99,7 +99,7 @@ def kill_process_tool(name: str) -> str:
     except ImportError:
         try:
             if sys.platform == "win32":
-                subprocess.run(f"taskkill /F /IM {name}", shell=True, check=False)
+                subprocess.run(f"taskkill /F /IM {name}", shell=True, check=False, creationflags=subprocess.CREATE_NO_WINDOW)
             else:
                 subprocess.run(f"pkill -f {name}", shell=True, check=False)
             return f"Kill signal sent to '{name}'."
@@ -114,6 +114,11 @@ def reboot_system_tool() -> str:
     if _HAS_WINSOUND:
         winsound.Beep(600, 150)
         winsound.Beep(400, 150)
+    try:
+        from hecos.core.audio.tts_manager import shutdown_all_tts
+        shutdown_all_tts()
+    except Exception:
+        pass
     os._exit(42)
     return "Rebooting..."
 
@@ -189,14 +194,26 @@ def _run_pip_with_progress(command: str, tag: str):
     return clean_output if clean_output.strip() else "Command executed successfully (no output)."
 
 
-def execute_shell_command_tool(command: str, tag: str) -> str:
+def execute_shell_command_tool(command: str, tag: str, cwd: str = "") -> str:
     """
-    Executes a shell command (cmd.exe on Windows, bash on Linux).
+    Executes a shell command (cmd.exe on Windows, bash on Linux) with python_env tools on PATH.
     :param command: The shell command to run.
+    :param cwd: Optional working directory for the command.
     """
     cfg = ConfigManager()
     if not cfg.get_plugin_config(tag, "enable_shell_commands", True):
         return "Error: Shell commands are disabled in configuration."
+
+    work_dir = None
+    if cwd and str(cwd).strip():
+        from .file_manager import _is_safe_path
+        abs_cwd = os.path.abspath(str(cwd).strip())
+        if not _is_safe_path(abs_cwd):
+            return "[EXECUTOR] ACCESS DENIED: Shell commands on protected system paths are forbidden."
+        if not os.path.isdir(abs_cwd):
+            return f"[EXECUTOR] Working directory not found: {abs_cwd}"
+        work_dir = abs_cwd
+
     pip_result = None
     try:
         pip_result = _run_pip_with_progress(command, tag)
@@ -207,16 +224,39 @@ def execute_shell_command_tool(command: str, tag: str) -> str:
     if pip_result is not None:
         AgentTracer.emit_action(tag, command, pip_result)
         return pip_result
+
+    env = os.environ.copy()
+    exe_dir = os.path.dirname(os.path.abspath(sys.executable))
+    extra_bins = [
+        p for p in (exe_dir, os.path.join(exe_dir, "Scripts"), os.path.join(exe_dir, "bin"))
+        if os.path.isdir(p)
+    ]
+    if extra_bins:
+        env["PATH"] = os.pathsep.join(extra_bins) + os.pathsep + env.get("PATH", "")
+
+    def _cap_output(txt: str) -> str:
+        if len(txt) <= 12000:
+            return txt
+        omitted = len(txt) - 11500
+        return txt[:3500] + f"\n... [SHELL OUTPUT TRUNCATED: {omitted} chars omitted] ...\n" + txt[-8000:]
+
     try:
         output = subprocess.check_output(
-            command, shell=True, text=True,
-            errors='replace', stderr=subprocess.STDOUT, timeout=300
+            command,
+            shell=True,
+            cwd=work_dir,
+            env=env,
+            text=True,
+            errors='replace',
+            stderr=subprocess.STDOUT,
+            timeout=300,
         )
-        final_output = output if output.strip() else "Command executed successfully (no output)."
+        final_output = _cap_output(output) if output.strip() else "Command executed successfully (no output)."
         AgentTracer.emit_action(tag, command, final_output)
         return final_output
     except subprocess.CalledProcessError as e:
-        err_msg = f"Shell Error (exit code {e.returncode}): {e.output or str(e)}"
+        raw_out = _cap_output(e.output or str(e))
+        err_msg = f"Shell Error (exit code {e.returncode}): {raw_out}"
         AgentTracer.emit_action(tag, command, err_msg)
         return err_msg
     except Exception as e:

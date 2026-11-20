@@ -1,0 +1,709 @@
+﻿Uso: vlc [opzioni] [flusso] ...
+Puoi specificare flussi multipli nella riga di comando. Saranno accodati nella scaletta.
+Il primo elemento specificato sarà riprodotto per primo.
+
+Stili delle opzioni:
+  --opzione  Un'opzione globale impostata per la durata del programma.
+   -opzione  Una versione a singola lettera di una --opzione globale.
+   :opzione  Un'opzione che si applica direttamente al flusso
+            e che scavalca le precedenti impostazioni.
+
+Sintassi MRL dei flussi:
+  [[accesso][/demultiplatore]://]URL[#[titolo][:capitolo][-[titolo][:capitolo]]]
+  [:opzione=valore ...]
+
+  Molte delle --opzioni globali possono essere usate anche come :opzioni   specifiche MRL.
+  Possono essere specificate coppie multiple di :opzione=valore.
+
+Sintassi URL:
+  file:///percorso/file              File multimediale
+  http://host[:porta]/file            URL HTTP
+  ftp://host[:porta]/file             URL FTP
+  mms://host[:porta]/file             URL MMS
+  screen://                           Cattura schermata
+  dvd://[dispositivo]                 Dispositivo DVD
+  vcd://[dispositivo]               Dispositivo VCD
+  cdda://[dispositivo]              Dispositivo CD audio
+  udp://[[<indirizzo sorgente>]@[<indirizzo associato>][:<porta associata>]]
+                                 flusso UDP inviato da un server di trasmissione
+  vlc://pause:<secondi>            Elemento speciale per mettere in pausa la scaletta per un tempo determinato
+  vlc://quit                       Elemento speciale per uscire da VLC
+
+
+ programma principale (core)
+
+ Audio
+ Queste opzioni permettono di configurare il sottosistema audio di VLC, e di aggiungere filtri audio che possono essere utilizzati per per post-elaborazioni o effetti di visualizzazione (analizzatore di spettro, ecc.). Abilita questi filtri qui, e configurali nella sezione dei moduli "Filtri audio".
+      --audio, --no-audio        Abilita audio
+                                  (predefinito abilitato)
+          È possibile disabilitare completamente l'uscita audio. In questo caso
+          la parte di decodifica audio non verrà effettuata, il che fa
+          risparmiare potenza di calcolo.
+      --force-dolby-surround={0 (Auto), 1 (Attivo), 2 (Inattivo)} 
+                                 Forza il rilevamento del Dolby Surround
+          Usa questa opzione quando sai che la tua trasmissione è (o non è)
+          codificata con Dolby Surround ma non riesce a essere rilevata come
+          tale. Anche se la trasmissione non non è momentaneamente codificata
+          con Dolby Surround, attivare questa opzione potrebbe migliorare la
+          tua esperienza, specialmente quando è combinata con il canale mixer
+          delle cuffie.
+      --audio-replay-gain-mode={none,track,album} 
+                                 Modalità guadagno di riproduzione
+          Seleziona la modalità del guadagno di riproduzione
+      --audio-replay-gain-preamp=<virgola mobile> 
+                                 Preamplificazione di riproduzione
+          Consente di cambiare il livello di destinazione predefinito (89 dB)
+          per i flussi con informazioni sul guadagno di riproduzione
+      --audio-replay-gain-default=<virgola mobile> 
+                                 Guadagno di riproduzione predefinito
+          Questo è il guadagno utilizzato per i flussi senza informazioni sul
+          guadagno di riproduzione
+      --audio-time-stretch, --no-audio-time-stretch 
+                                 Abilita allungamento temporale dell'audio
+                                  (predefinito abilitato)
+          Consente di riprodurre audio a velocità più bassa o più alta
+          preservando la tonalità
+      --audio-filter=<stringa>   Filtri audio
+          Aggiunge filtri audio di post-elaborazione, per modificare la resa
+          del suono.
+      --audio-visual={any,goom,projectm,visual,glspectrum,none} 
+                                 Visualizzazioni audio
+          Aggiunge i moduli di visualizzazione (analizzatore di spettro, ecc.).
+
+ Video
+ Queste opzioni permettono di modificare il comportamento del sottosistema di uscita video. Per esempio, è possibile attivare dei filtri video (deinterlacciamento, regolazione dell'immagine, ecc.). Questi filtri vanno attivati qui e configurati nella sezione dei moduli Filtri video. È possibile inoltre configurare svariate opzioni video.
+  -f, --fullscreen, --no-fullscreen 
+                                 Uscita video a schermo intero
+                                  (predefinito disabilitato)
+          Avvia il video a schermo intero
+      --video-on-top, --no-video-on-top 
+                                 Sempre in primo piano
+                                  (predefinito disabilitato)
+          Mettere la finestra video sempre in primo piano rispetto alle altre.
+      --video-wallpaper, --no-video-wallpaper 
+                                 Attiva modalità wallpaper 
+                                  (predefinito disabilitato)
+          La modalità wallpaper permette di visualizzare il video come sfondo
+          dello schermo.
+      --video-title-show, --no-video-title-show 
+                                 Mostra titolo del media nel video
+                                  (predefinito abilitato)
+          Visualizza il titolo del video in cima al film.
+      --video-title-timeout=<intero> 
+                                 Mostra il titolo del video per n millisecondi
+          Mostra titolo del video per n millisecondi, il valore predefinito è
+          5000 ms (5 sec.)
+      --video-title-position={0 (Centro), 1 (Sinistra), 2 (Destra), 4 (Alto), 8 (Basso), 5 (In alto a sinistra), 6 (In alto a destra), 9 (In basso a sinistra), 10 (In basso a destra)} 
+                                 Posizione del titolo del video
+          Posizione del video in cui visualizzare il titolo (predefinito in
+          basso al centro).
+      --mouse-hide-timeout=<intero> 
+                                 Nascondi puntatore e controllo a schermo
+                                 intero dopo x millisecondi
+          Nascondi puntatore e controllo a schermo intero dopo n millisecondi.
+   Schermata:
+      --snapshot-path=<stringa>  Cartella delle schermate video (o nome file)
+          Cartella dove saranno archiviate le schermate video.
+      --snapshot-prefix=<stringa> 
+                                 Prefisso file delle schermate video
+          Prefisso file delle schermate video
+      --snapshot-format={png,jpg,tiff} 
+                                 Formato delle schermate video
+          Il formato immagine che sarà utilizzato per memorizzare le schermate
+          dei video
+      --snapshot-preview, --no-snapshot-preview 
+                                 Visualizza l'anteprima della schermata video
+                                  (predefinito abilitato)
+          Visualizza l'anteprima della schermata nell'angolo in alto a sinistra
+          dello schermo.
+      --snapshot-sequential, --no-snapshot-sequential 
+                                 Usa numeri sequenziali al posto del formato
+                                 orario
+                                  (predefinito disabilitato)
+          Usa numeri sequenziali al posto del formato orario per la numerazione
+          delle schermate
+   Proprietà della finestra:
+      --crop=<stringa>           Ritaglio video
+          Questa opzione forza il "ritaglio" della sorgente video. I formati
+          accettati sono x:y (4:3, 16:9, ecc.) che rappresentano l'aspetto
+          dell'immagine globale.
+      --custom-crop-ratios=<stringa> 
+                                 Elenco fattori di ritaglio personalizzati
+          Un elenco separato da virgole di fattori di ritaglio che saranno
+          aggiunti all'elenco dei fattori di ritaglio dell'interfaccia.
+      --aspect-ratio=<stringa>   Formato immagine sorgente
+          Forza il formato fisico del video. Per esempio, alcuni DVD dichiarano
+          di essere in 16:9 mentre in realtà sono in formato 4:3. Può essere
+          anche utilizzata come "suggerimento" per VLC quando un filmato non
+          contiene le informazioni necessarie sulle proporzioni. I formati
+          accettati sono x:y (4:3, 16:9, ecc.), che esprime il formato immagine
+          globale, oppure un valore in virgola mobile (1.25, 1.3333, ecc) che
+          esprime la quadratura del pixel.
+      --autoscale, --no-autoscale 
+                                 Ridimensionamento video automatico
+                                  (predefinito abilitato)
+          Permetti il ridimensionamento del video per adattarsi a una finestra
+          specifica o allo schermo intero
+      --custom-aspect-ratios=<stringa> 
+                                 Elenco proporzioni personalizzate
+          Elenco separato da virgole di proporzioni che saranno aggiunte
+          all'elenco di proporzioni dell'interfaccia.
+      --deinterlace={0 (Inattivo), -1 (Automatico), 1 (Attivo)} 
+                                 Deinterlacciamento
+          Deinterlacciamento
+      --deinterlace-mode={auto,discard,blend,mean,bob,linear,x,yadif,yadif2x,phosphor,ivtc} 
+                                 Modalità deinterlacciata
+          Metodo di deinterlacciamento da utilizzare per l'elaborazione video.
+      --video-filter=<stringa>   Modulo filtro video
+          Aggiunge filtri di post-elaborazione per migliorare la qualità
+          dell'immagine, per esempio deinterlacciando o distorcendo il video.
+      --video-splitter=<stringa> Modulo splitter video
+          Aggiunge separatori video come clona o muro
+
+ Immagini
+ Queste opzioni permettono di modificare il comportamento del sottosistema di delle sottoimmagini. Ad esempio, è possibile abilitare le fonti delle sottoimmagini (logo, ecc.). Questi filtri vanno attivati qui e configurati nella sezione dei moduli "Filtri delle sottoimmagini". È possibile inoltre configurare diverse opzioni delle sottoimmagini.
+   Messaggi in sovrimpressione (OSD):
+      --spu, --no-spu            Abilita le sottoimmagini
+                                  (predefinito abilitato)
+          Puoi disabilitare completamente l'elaborazione dei sottotitoli.
+      --osd, --no-osd            Messaggi in sovrimpressione (OSD)
+                                  (predefinito abilitato)
+          VLC può visualizzare messaggi sullo schermo. Si chiama OSD (On Screen
+          Display).
+   Sottotitoli:
+      --sub-file=<stringa>       Usa un file di sottotitoli
+          Carica il file di sottotitoli specificato. Utilizzare quando la
+          ricerca automatica non riesce a trovarlo o a riconoscerlo.
+      --sub-autodetect-file, --no-sub-autodetect-file 
+                                 Rilevamento automatico dei file di sottotitoli
+                                  (predefinito abilitato)
+          Rileva automaticamente un file di sottotitoli, se nessun nome file di
+          sottotitoli è stato specificato (basato sul nome file del filmato).
+      --sub-text-scale=<intero [10 .. 500]> 
+                                 Fattore di ridimensionamento del testo dei
+                                 sottotitoli
+          Cambia la dimensione dei sottotitoli se possibile
+   Sovrimpressioni:
+      --sub-source=<stringa>     Modulo delle fonti delle sottoimmagini
+          Questo aggiunge le cosiddette "sorgenti di immagini secondarie".
+          Questi filtri sovrappongono al video immagini o testo (come un logo,
+          testo arbitrario, ...).
+      --sub-filter=<stringa>     Modulo di trattamento d'immagine
+          Questo aggiunge i cosiddetti "filtri di immagini secondarie". Questi
+          filtrano immagini secondarie create da decodificatori di sottotitoli
+          o altre sorgenti di immagini secondarie.
+   Impostazioni traccia:
+      --audio-language=<stringa> Lingua dell'audio
+          Lingua della traccia audio che si desidera utilizzare (separate da
+          virgole, codice paese di due o tre lettere, puoi usare 'nessuna' per
+          impedire il ripiego su un'altra lingua).
+      --sub-language=<stringa>   Lingua dei sottotitoli
+          Lingua della traccia dei sottotitoli che si desidera utilizzare
+          (separate da virgola, due o tre lettere per il codice paese, puoi
+          utilizzare 'qualsiasi' come ripiego).
+      --menu-language=<stringa>  Lingua dei menu
+          Lingua dei menu che desideri utilizzare con DVD/BluRay (separate da
+          virgola, due o tre lettere per il codice paese, puoi utilizzare
+          'qualsiasi' come ripiego).
+      --preferred-resolution={-1 (Migliore disponibile), 1080 (Full HD (1080p)), 720 (HD (720p)), 576 (Definizione standard (576 o 480 righe)), 360 (Bassa definizione (360 righe)), 240 (Bassissima definizione (240 righe))} 
+                                 Risoluzione video preferita
+          Quando sono disponibili diversi formati video, selezionane uno la cui
+          risoluzione è più vicina a questa impostazione (ma non superiore), in
+          numero di linee. Usa questa opzione se la CPU non ha abbastanza
+          potenza oppure se non hai sufficiente ampiezza di banda della rete
+          per avviarlo a risoluzioni più alte.
+   Controllo di riproduzione:
+      --input-repeat=<intero [0 .. 65535]> 
+                                 Ripetizioni di ingresso
+          Numero di volte in cui lo stesso ingresso sarà ripetuto
+      --input-fast-seek, --no-input-fast-seek 
+                                 Posizionamento veloce
+                                  (predefinito disabilitato)
+          Preferisci la velocità alla precisione durante il posizionamento
+      --rate=<virgola mobile>    Velocità di riproduzione
+          Definisce la velocità di riproduzione (la velocità nominale è 1.0).
+   Dispositivi predefiniti:
+      --dvd=<stringa>            Periferica DVD
+          Questo è il lettore DVD predefinito (o file) da utilizzare. Non
+          dimenticare i due punti dopo la lettera (ad es. D:)
+      --vcd=<stringa>            Periferica VCD
+          Questo è il lettore VCD predefinito (o file) da utilizzare. Non
+          dimenticare i due punti dopo la lettera (ad es. D:)
+   Impostazioni dei rete:
+      --http-proxy=<stringa>     Proxy HTTP
+          Proxy HTTP da utilizzare. Deve essere nel formato
+          http://[user@]myproxy.mydomain:myport/ ; se vuoto, sarà utilizzata la
+          variabile d'ambiente http_proxy.
+      --http-proxy-pwd=<stringa> Password proxy HTTP
+          Se il proxy HTTP richiede una password, impostala qui.
+   Avanzate:
+      --input-title-format=<stringa> 
+                                 Cambia il titolo in base al media corrente
+          Questa opzione consente di impostare il titolo in base a ciò che
+          viene riprodotto<br>$a: Artista<br>$b: Album<br>$c: Copyright<br>$t:
+          Titolo<br>$g: Genere<br>$n: Num traccia<br>$p: In riproduzione<br>$A:
+          Data<br>$D: Durata<br>$Z: "In riproduzione" (Ripiego su Titolo -
+          Artista)
+
+ Ingresso
+ Queste opzioni permettono di modificare la configurazione dei moduli d'ingresso, come la periferica DVD o VCD, i parametri dell'interfaccia di rete o il canale dei sottotitoli.
+      --stream-filter=<stringa>  Modulo di filtro del flusso
+          I filtri di flusso sono utilizzati per modificare il flusso in fase
+          di lettura. 
+   Opzioni relative alle prestazioni:
+      --high-priority, --no-high-priority 
+                                 Aumenta la priorità del processo
+                                  (predefinito disabilitato)
+          L'aumento della priorità del processo probabilmente migliorerà le
+          prestazioni di VLC poiché impedisce ad altri processi di consumare
+          troppe risorse. D'altra parte, in alcuni casi (bug) VLC potrebbe
+          monopolizzare il processore e bloccare completamente il sistema,
+          obbligando l'utente a riavviare la macchina.
+
+ Scaletta
+ Queste opzioni definiscono il comportamento della scaletta. Alcune possono essere ulteriormente modificate nella finestra di dialogo della scaletta.
+  -Z, --random, --no-random      Riproduci file casualmente in modo continuo
+                                  (predefinito disabilitato)
+          Se selezionata, VLC riproduce i file nella scaletta in ordine casuale
+          e in continuo (fino all'interruzione da parte dell'utilizzatore).
+  -L, --loop, --no-loop          Ripeti tutto
+                                  (predefinito disabilitato)
+          VLC continuerà a riprodurre la scaletta all'infinito.
+  -R, --repeat, --no-repeat      Ripeti l'elemento attuale
+                                  (predefinito disabilitato)
+          VLC continuerà a riprodurre l'elemento attuale della scaletta.
+      --play-and-exit, --no-play-and-exit 
+                                 Riproduci ed esci
+                                  (predefinito disabilitato)
+          Esci se non ci sono altri elementi nella scaletta.
+      --play-and-stop, --no-play-and-stop 
+                                 Play e stop
+                                  (predefinito disabilitato)
+          Ferma la scaletta dopo ogni elemento riprodotto.
+      --start-paused, --no-start-paused 
+                                 Avvio sospeso
+                                  (predefinito disabilitato)
+          Sospendi ogni elemento nella scaletta al primo fotogramma.
+      --playlist-autostart, --no-playlist-autostart 
+                                 Avvio automatico
+                                  (predefinito abilitato)
+          Avvia automaticamente la riproduzione del contenuto della scaletta
+          una volta caricata.
+      --playlist-cork, --no-playlist-cork 
+                                 Pausa durante le comunicazioni audio
+                                  (predefinito abilitato)
+          Se viene rilevata una comunicazione audio in corso, la riproduzione
+          sarà sospesa automaticamente.
+      --media-library, --no-media-library 
+                                 Usa la raccolta multimediale
+                                  (predefinito disabilitato)
+          La raccolta multimediale è salvata automaticamente e ricaricata ogni
+          volta che avvii VLC.
+      --playlist-tree, --no-playlist-tree 
+                                 Visualizza l'albero della scaletta
+                                  (predefinito disabilitato)
+          La scaletta può utilizzare una struttura ad albero per categorizzare
+          alcuni elementi, come il contenuto di una cartella.
+      --open=<stringa>           Flusso predefinito
+          Questo flusso sarà aperto sempre all'avvio di VLC.
+      --auto-preparse, --no-auto-preparse 
+                                 Pre-analisi automatica degli elementi
+                                  (predefinito abilitato)
+          Pre-analisi automatica degli elementi aggiunti alla scaletta (per
+          recuperare alcuni metadati).
+      --preparse-timeout=<intero> 
+                                 Tempo massimo di pre-analisi
+          Tempo massimo consentito per la pre-analisi di un elemento, in
+          millisecondi
+      --metadata-network-access, --no-metadata-network-access 
+                                 Consenti accesso di rete per i metadati
+                                  (predefinito abilitato)
+          Consenti accesso di rete per i metadati
+      --recursive={none,collapse,expand} 
+                                 Comportamento con le sottocartelle
+          Scegliere se le sottocartelle debbano essere aperte o no. no: le
+          sottocartelle non sono aggiunte alla scaletta. chiuse: le
+          sottocartelle sono nella scaletta, ma vengono aperte soltanto durante
+          la riproduzione. espanse: tutte le sottocartelle sono aperte. 
+      --ignore-filetypes=<stringa> 
+                                 Estensioni ignorate
+          I file con queste estensioni non saranno aggiunti alla scaletta
+          all'apertura di una cartella. Questa funzione è utile se aggiungi
+          cartelle che contengono, ad esempio, file di scalette. Utilizza un
+          elenco di estensioni separato da virgole.
+      --show-hiddenfiles, --no-show-hiddenfiles 
+                                 Mostra file nascosti
+                                  (predefinito disabilitato)
+          Ignora i file che iniziano con '.'
+  -v, --verbose=<intero>         Dettaglio messaggi (0,1,2)
+          Questo è livello di dettaglio dei messaggi (0=solo errori e messaggi
+          standard, 1=avvisi, 2=debug).
+      --advanced, --no-advanced  Mostra opzioni avanzate
+                                  (predefinito disabilitato)
+          Quando questa opzione è abilitata, le preferenze e/o le interfacce
+          mostreranno tutte le opzioni disponibili, incluse quelle che la
+          maggior parte degli utenti non dovrebbe mai modificare.
+      --interact, --no-interact  Interazione con l'interfaccia
+                                  (predefinito abilitato)
+          Se questa opzione è abilitata, l'interfaccia mostrerà un finestra di
+          dialogo ogni volta che è richiesto un comando dell'utente.
+  -I, --intf=<stringa>           Modulo di interfaccia
+          Questa è l'interfaccia principale usata da VLC. Il comportamento
+          predefinito è di selezionare automaticamente il miglior modulo
+          disponibile.
+      --extraintf=<stringa>      Moduli d'interfaccia supplementari
+          Puoi selezionare "interfacce aggiuntive" per VLC. Saranno avviate
+          sullo sfondo, in aggiunta a quella predefinita. Utilizza un elenco
+          separato da due punti dei moduli di interfaccia. (i valori tipici
+          sono "rc" (telecomando), "http", "gestures" ...)
+      --control=<stringa>        Interfacce di controllo
+          Puoi selezionare le interfacce di controllo per VLC.
+
+ Tasti speciali
+ Parametri di controllo via tastiera, conosciuti come "hotkeys".
+      --hotkeys-y-wheel-mode={-1 (Ignora), 0 (Controllo del volume), 2 (Controllo della posizione), 3 (Controllo della posizione invertito)} 
+                                 Controllo asse verticale della rotella del
+                                 mouse
+          L'asse verticale della rotella (su/giù) del mouse può controllare il
+          volume, la posizione o la rotella può essere ignorata
+      --hotkeys-x-wheel-mode={-1 (Ignora), 0 (Controllo del volume), 2 (Controllo della posizione), 3 (Controllo della posizione invertito)} 
+                                 Controllo asse orizzontale della rotella del
+                                 mouse
+          L'asse orizzontale della rotella (sinistra/destra) del mouse può
+          controllare il volume, la posizione o la rotella può essere ignorata
+      --global-key-toggle-fullscreen=<stringa> 
+                                 Schermo intero
+          Scelta del tasto di passaggio a schermo intero.
+      --key-toggle-fullscreen=<stringa> 
+                                 Schermo intero
+          Scelta del tasto di passaggio a schermo intero.
+      --global-key-leave-fullscreen=<stringa> 
+                                 Esci dalla modalità a schermo intero
+          Seleziona la scorciatoia da utilizzare per uscito dalla modalità a
+          schermo intero.
+      --key-leave-fullscreen=<stringa> 
+                                 Esci dalla modalità a schermo intero
+          Seleziona la scorciatoia da utilizzare per uscito dalla modalità a
+          schermo intero.
+      --global-key-play-pause=<stringa> 
+                                 Riproduci/Pausa
+          Scelta del tasto di riproduzione/pausa.
+      --key-play-pause=<stringa> Riproduci/Pausa
+          Scelta del tasto di riproduzione/pausa.
+      --global-key-faster=<stringa> 
+                                 Più veloce
+          Scelta del tasto di riproduzione accelerata.
+      --key-faster=<stringa>     Più veloce
+          Scelta del tasto di riproduzione accelerata.
+      --global-key-slower=<stringa> 
+                                 Più lento
+          Scelta del tasto di riproduzione rallentata.
+      --key-slower=<stringa>     Più lento
+          Scelta del tasto di riproduzione rallentata.
+      --global-key-rate-normal=<stringa> 
+                                 Velocità normale
+          Seleziona il tasto per riportare la velocità di riproduzione a
+          normale.
+      --key-rate-normal=<stringa> 
+                                 Velocità normale
+          Seleziona il tasto per riportare la velocità di riproduzione a
+          normale.
+      --global-key-rate-faster-fine=<stringa> 
+                                 Più veloce (fine)
+          Scelta del tasto di riproduzione accelerata.
+      --key-rate-faster-fine=<stringa> 
+                                 Più veloce (fine)
+          Scelta del tasto di riproduzione accelerata.
+      --global-key-rate-slower-fine=<stringa> 
+                                 Più lento (fine)
+          Scelta del tasto di riproduzione rallentata.
+      --key-rate-slower-fine=<stringa> 
+                                 Più lento (fine)
+          Scelta del tasto di riproduzione rallentata.
+      --global-key-next=<stringa> 
+                                 Successivo
+          Scelta del tasto per passare all'elemento successivo della scaletta.
+      --key-next=<stringa>       Successivo
+          Scelta del tasto per passare all'elemento successivo della scaletta.
+      --global-key-prev=<stringa> 
+                                 Precedente
+          Scelta del tasto per passare all'elemento precedente della scaletta.
+      --key-prev=<stringa>       Precedente
+          Scelta del tasto per passare all'elemento precedente della scaletta.
+      --global-key-stop=<stringa> 
+                                 Interrompi
+          Seleziona il tasto per fermare la riproduzione.
+      --key-stop=<stringa>       Interrompi
+          Seleziona il tasto per fermare la riproduzione.
+      --global-key-jump-extrashort=<stringa> 
+                                 Salto molto corto all'indietro
+          Seleziona il tasto per fare un salto molto corto all'indietro.
+      --key-jump-extrashort=<stringa> 
+                                 Salto molto corto all'indietro
+          Seleziona il tasto per fare un salto molto corto all'indietro.
+      --global-key-jump+extrashort=<stringa> 
+                                 Salto molto corto in avanti
+          Seleziona il tasto per fare un salto molto corto in avanti.
+      --key-jump+extrashort=<stringa> 
+                                 Salto molto corto in avanti
+          Seleziona il tasto per fare un salto molto corto in avanti.
+      --global-key-jump-short=<stringa> 
+                                 Salto corto all'indietro
+          Seleziona il tasto per fare un salto corto all'indietro.
+      --key-jump-short=<stringa> Salto corto all'indietro
+          Seleziona il tasto per fare un salto corto all'indietro.
+      --global-key-jump+short=<stringa> 
+                                 Salto corto in avanti
+          Seleziona il tasto per fare un salto corto in avanti.
+      --key-jump+short=<stringa> Salto corto in avanti
+          Seleziona il tasto per fare un salto corto in avanti.
+      --global-key-jump-medium=<stringa> 
+                                 Salto medio all'indietro
+          Seleziona il tasto per fare un salto medio all'indietro.
+      --key-jump-medium=<stringa> 
+                                 Salto medio all'indietro
+          Seleziona il tasto per fare un salto medio all'indietro.
+      --global-key-jump+medium=<stringa> 
+                                 Salto medio in avanti
+          Seleziona il tasto per fare un salto medio in avanti.
+      --key-jump+medium=<stringa> 
+                                 Salto medio in avanti
+          Seleziona il tasto per fare un salto medio in avanti.
+      --global-key-jump-long=<stringa> 
+                                 Salto lungo all'indietro
+          Seleziona il tasto per fare un salto lungo all'indietro.
+      --key-jump-long=<stringa>  Salto lungo all'indietro
+          Seleziona il tasto per fare un salto lungo all'indietro.
+      --global-key-jump+long=<stringa> 
+                                 Salto lungo in avanti
+          Seleziona il tasto per fare un salto lungo in avanti.
+      --key-jump+long=<stringa>  Salto lungo in avanti
+          Seleziona il tasto per fare un salto lungo in avanti.
+      --global-key-frame-next=<stringa> 
+                                 Fotogramma successivo
+          Seleziona il tasto per spostarti al fotogramma successivo del video.
+      --key-frame-next=<stringa> Fotogramma successivo
+          Seleziona il tasto per spostarti al fotogramma successivo del video.
+      --global-key-quit=<stringa> 
+                                 Esci
+          Seleziona il tasto per uscire dall'applicazione.
+      --key-quit=<stringa>       Esci
+          Seleziona il tasto per uscire dall'applicazione.
+      --global-key-vol-up=<stringa> 
+                                 Aumenta il volume
+          Seleziona il tasto per aumentare il volume audio.
+      --key-vol-up=<stringa>     Aumenta il volume
+          Seleziona il tasto per aumentare il volume audio.
+      --global-key-vol-down=<stringa> 
+                                 Riduci il volume
+          Seleziona il tasto per ridurre il volume audio.
+      --key-vol-down=<stringa>   Riduci il volume
+          Seleziona il tasto per ridurre il volume audio.
+      --global-key-vol-mute=<stringa> 
+                                 Silenzio
+          Seleziona il tasto per silenziare l'audio.
+      --key-vol-mute=<stringa>   Silenzio
+          Seleziona il tasto per silenziare l'audio.
+      --global-key-audio-track=<stringa> 
+                                 Scelta traccia audio
+          Scelta a rotazione tra le tracce audio disponibili (lingue).
+      --key-audio-track=<stringa> 
+                                 Scelta traccia audio
+          Scelta a rotazione tra le tracce audio disponibili (lingue).
+      --global-key-audiodevice-cycle=<stringa> 
+                                 Rotazione tra i dispositivi audio
+          Rotazione tra i dispositivi audio disponibili
+      --key-audiodevice-cycle=<stringa> 
+                                 Rotazione tra i dispositivi audio
+          Rotazione tra i dispositivi audio disponibili
+      --global-key-subtitle-revtrack=<stringa> 
+                                 Rotazione della traccia dei sottotitoli in
+                                 ordine inverso
+          Rotazione delle tracce dei sottotitoli disponibili in ordine inverso.
+      --key-subtitle-revtrack=<stringa> 
+                                 Rotazione della traccia dei sottotitoli in
+                                 ordine inverso
+          Rotazione delle tracce dei sottotitoli disponibili in ordine inverso.
+      --global-key-subtitle-track=<stringa> 
+                                 Scelta traccia sottotitoli
+          Scelta a rotazione tra le tracce di sottotitoli disponibili.
+      --key-subtitle-track=<stringa> 
+                                 Scelta traccia sottotitoli
+          Scelta a rotazione tra le tracce di sottotitoli disponibili.
+      --global-key-subtitle-toggle=<stringa> 
+                                 Commuta i sottotitoli
+          Commuta la visibilità della traccia dei sottotitoli.
+      --key-subtitle-toggle=<stringa> 
+                                 Commuta i sottotitoli
+          Commuta la visibilità della traccia dei sottotitoli.
+      --global-key-program-sid-next=<stringa> 
+                                 Riprende l'identificatore di servizio del
+                                 programma successivo
+          Riprende mediante gli identificatori di servizio (SID) del prossimo
+          programma disponibile.
+      --key-program-sid-next=<stringa> 
+                                 Riprende l'identificatore di servizio del
+                                 programma successivo
+          Riprende mediante gli identificatori di servizio (SID) del prossimo
+          programma disponibile.
+      --global-key-program-sid-prev=<stringa> 
+                                 Riprende l'identificatore di servizio del
+                                 programma precedente
+          Riprende mediante gli identificatori di servizio (SID) del precedente
+          programma disponibile.
+      --key-program-sid-prev=<stringa> 
+                                 Riprende l'identificatore di servizio del
+                                 programma precedente
+          Riprende mediante gli identificatori di servizio (SID) del precedente
+          programma disponibile.
+      --global-key-aspect-ratio=<stringa> 
+                                 Rotazione delle proporzioni della sorgente
+          Scelta a rotazione tra un elenco predefinito di proporzioni della
+          sorgente.
+      --key-aspect-ratio=<stringa> 
+                                 Rotazione delle proporzioni della sorgente
+          Scelta a rotazione tra un elenco predefinito di proporzioni della
+          sorgente.
+      --global-key-crop=<stringa> 
+                                 Riprendi ritaglio del video
+          Riprende mediante una lista predefinita di formati di ritaglio.
+      --key-crop=<stringa>       Riprendi ritaglio del video
+          Riprende mediante una lista predefinita di formati di ritaglio.
+      --global-key-toggle-autoscale=<stringa> 
+                                 Ridimensionamento automatico
+          Attiva o disattiva il ridimensionamento automatico.
+      --key-toggle-autoscale=<stringa> 
+                                 Ridimensionamento automatico
+          Attiva o disattiva il ridimensionamento automatico.
+      --global-key-incr-scalefactor=<stringa> 
+                                 Aumenta il fattore di scala
+          Aumenta il fattore di scala
+      --key-incr-scalefactor=<stringa> 
+                                 Aumenta il fattore di scala
+          Aumenta il fattore di scala
+      --global-key-decr-scalefactor=<stringa> 
+                                 Riduci il fattore di scala
+          Riduci il fattore di scala
+      --key-decr-scalefactor=<stringa> 
+                                 Riduci il fattore di scala
+          Riduci il fattore di scala
+      --global-key-deinterlace=<stringa> 
+                                 Commuta il deinterlacciamento
+          Attiva o disattiva il deinterlacciamento.
+      --key-deinterlace=<stringa> 
+                                 Commuta il deinterlacciamento
+          Attiva o disattiva il deinterlacciamento.
+      --global-key-deinterlace-mode=<stringa> 
+                                 Rotazione delle modalità deinterlacciate
+          Scorri tra le modalità di deinterlacciamento disponibili.
+      --key-deinterlace-mode=<stringa> 
+                                 Rotazione delle modalità deinterlacciate
+          Scorri tra le modalità di deinterlacciamento disponibili.
+      --global-key-intf-show=<stringa> 
+                                 Mostra controllo a schermo intero
+          Mostra controllo a schermo intero
+      --key-intf-show=<stringa>  Mostra controllo a schermo intero
+          Mostra controllo a schermo intero
+      --global-key-wallpaper=<stringa> 
+                                 Commuta la modalità wallpaper nell'uscita
+                                 video
+          Commuta la modalità wallpaper nell'uscita video.
+      --key-wallpaper=<stringa>  Commuta la modalità wallpaper nell'uscita
+                                 video
+          Commuta la modalità wallpaper nell'uscita video.
+      --global-key-random=<stringa> 
+                                 Casuale
+          Attiva la riproduzione casuale della scaletta
+      --key-random=<stringa>     Casuale
+          Attiva la riproduzione casuale della scaletta
+      --global-key-loop=<stringa> 
+                                 Normale/Ciclo/Ripeti
+          Alterna le modalità Normale/Ciclo/Ripeti della scaletta
+      --key-loop=<stringa>       Normale/Ciclo/Ripeti
+          Alterna le modalità Normale/Ciclo/Ripeti della scaletta
+      --global-key-zoom-quarter=<stringa> 
+                                 1:4 Quarto
+      --key-zoom-quarter=<stringa> 
+                                 1:4 Quarto
+      --global-key-zoom-half=<stringa> 
+                                 1:2 Metà
+      --key-zoom-half=<stringa>  1:2 Metà
+      --global-key-zoom-original=<stringa> 
+                                 1:1 Originale
+      --key-zoom-original=<stringa> 
+                                 1:1 Originale
+      --global-key-zoom-double=<stringa> 
+                                 2:1 Doppio
+      --key-zoom-double=<stringa> 
+                                 2:1 Doppio
+   Dimensioni salto:
+      --extrashort-jump-size=<intero> 
+                                 Lunghezza del salto molto corto
+          Lunghezza del salto molto corto, in secondi.
+      --short-jump-size=<intero> Lunghezza del salto corto
+          Lunghezza del salto corto, in secondi.
+      --medium-jump-size=<intero> 
+                                 Lunghezza del salto medio
+          Lunghezza del salto medio, in secondi.
+      --long-jump-size=<intero>  Lunghezza del salto lungo
+          Lunghezza del salto lungo, in secondi.
+      --bookmark1=<stringa>      Elemento preferito 1
+          Permette di definire elementi preferiti della scaletta.
+      --bookmark2=<stringa>      Elemento preferito 2
+          Permette di definire elementi preferiti della scaletta.
+      --bookmark3=<stringa>      Elemento preferito 3
+          Permette di definire elementi preferiti della scaletta.
+      --bookmark4=<stringa>      Elemento preferito 4
+          Permette di definire elementi preferiti della scaletta.
+      --bookmark5=<stringa>      Elemento preferito 5
+          Permette di definire elementi preferiti della scaletta.
+      --bookmark6=<stringa>      Elemento preferito 6
+          Permette di definire elementi preferiti della scaletta.
+      --bookmark7=<stringa>      Elemento preferito 7
+          Permette di definire elementi preferiti della scaletta.
+      --bookmark8=<stringa>      Elemento preferito 8
+          Permette di definire elementi preferiti della scaletta.
+      --bookmark9=<stringa>      Elemento preferito 9
+          Permette di definire elementi preferiti della scaletta.
+      --bookmark10=<stringa>     Elemento preferito 10
+          Permette di definire elementi preferiti della scaletta.
+  -h, --help, --no-help          mostra la guida di VLC (può essere combinato
+                                 con --advanced e --help-verbose)
+                                  (predefinito disabilitato)
+  -H, --full-help, --no-full-help 
+                                 Guida completa per VLC e i suoi moduli
+                                  (predefinito disabilitato)
+      --longhelp, --no-longhelp  mostra la guida di VLC e tutti i suoi moduli
+                                 (può essere combinato con --advanced e
+                                 --help-verbose)
+                                  (predefinito disabilitato)
+      --help-verbose, --no-help-verbose 
+                                 richiesta di maggiore dettaglio quando si
+                                 visualizza la guida
+                                  (predefinito disabilitato)
+  -l, --list, --no-list          mostra una lista dei moduli disponibili
+                                  (predefinito disabilitato)
+      --list-verbose, --no-list-verbose 
+                                 mostra una lista dei moduli disponibili con
+                                 dettagli aggiuntivi
+                                  (predefinito disabilitato)
+  -p, --module=<stringa>         mostra la guida su un modulo (può essere
+                                 combinato con --advanced e --help-verbose).
+                                 Fai precedere un = al nome del modulo per una
+                                 corrispondenza precisa.
+      --ignore-config, --no-ignore-config 
+                                 nessuna opzione sarà caricata o salvata nel
+                                 file di configurazione
+                                  (predefinito abilitato)
+      --reset-config, --no-reset-config 
+                                 azzera la configurazione corrente e ripristina
+                                 i valori di default
+                                  (predefinito disabilitato)
+      --reset-plugins-cache, --no-reset-plugins-cache 
+                                 azzera la memoria dei plugin
+                                  (predefinito disabilitato)
+      --version, --no-version    mostra informazioni sulla versione
+                                  (predefinito disabilitato)
+      --config=<stringa>         usa un altro file di configurazione
+
+Nota: aggiungi --advanced alla riga di comando per vedere le opzioni avanza

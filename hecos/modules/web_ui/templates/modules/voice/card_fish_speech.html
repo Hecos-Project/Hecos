@@ -11,7 +11,7 @@
           <span id="fish-server-status-pill" class="badge-pill badge-ok">🟢 Checking Server...</span>
         </div>
         <div id="fish-server-desc" style="font-size: 11px; color: var(--muted); margin-top: 3px; font-family: monospace;">
-          Port 8080 · Model: Fish Speech S2-Pro (Dual-AR FP16 on CUDA)
+          Port 18480 · Model: Fish Speech S2-Pro (Dual-AR FP16 on CUDA)
         </div>
       </div>
       <div style="display: flex; gap: 6px; align-items: center;">
@@ -30,10 +30,21 @@
       </div>
     </div>
 
+    <div class="toggle-row" style="margin:0 0 8px 0; padding-top:8px; border-top:1px dashed var(--border);">
+      <div class="toggle-info">
+        <strong style="font-size:12px;">Auto-start Server at Hecos Boot (when Active)</strong>
+        <div style="font-size:11px; color:var(--muted);">Automatically starts the dedicated local Fish Speech daemon (port 18480) on startup when selected as the active TTS engine</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="v-fish-autostart" checked onchange="if(window.saveAudioConfig) window.saveAudioConfig();">
+        <span class="slider"></span>
+      </label>
+    </div>
+
     <!-- Client-Server architecture banner -->
     <div style="font-size:10px; color:var(--muted); border-top:1px dashed var(--border); padding-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
       <span>
-        <i class="fas fa-info-circle"></i> <b>Client-Server Architecture:</b> Hecos connects to Fish Speech on port <code>8080</code>. Use <b>Restart Server</b> if you reconfigure neural weights, or restart Hecos if backend scripts change.
+        <i class="fas fa-info-circle"></i> <b>Client-Server Architecture:</b> Hecos connects to Fish Speech on dedicated port <code>18480</code>. Use <b>Restart Server</b> if you reconfigure neural weights, or restart Hecos if backend scripts change.
       </span>
       <span id="v-fish-timer" style="color: var(--accent); display: none; font-weight: bold; font-family: monospace;">0.0s</span>
     </div>
@@ -100,6 +111,7 @@
         </select>
         <button type="button" class="btn btn-primary btn-sm" onclick="saveFishPreset()" title="Save as New Preset"><i class="fas fa-plus"></i> New</button>
         <button type="button" class="btn btn-secondary btn-sm" onclick="updateFishPreset()" title="Update Current Preset"><i class="fas fa-sync-alt"></i> Update</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="renameFishPreset()" title="Rename Preset"><i class="fas fa-edit"></i> Rename</button>
         <button type="button" class="btn btn-secondary btn-sm" onclick="resetFishConfig()" title="Reset to Defaults"><i class="fas fa-undo"></i> Reset</button>
         <button type="button" class="btn btn-danger btn-sm" onclick="deleteFishPreset()" title="Delete Preset"><i class="fas fa-trash"></i></button>
       </div>
@@ -110,9 +122,9 @@
   <div class="grid-2">
     <div class="field">
       <label>Server Endpoint URL</label>
-      <input type="text" id="v-fish-api-url" placeholder="http://127.0.0.1:8080/v1/tts">
+      <input type="text" id="v-fish-api-url" placeholder="http://127.0.0.1:18480/v1/tts">
       <p style="font-size:10px; color:var(--muted); margin-top:3px;">
-        Local server: <code>http://127.0.0.1:8080/v1/tts</code> | Cloud API: <code>https://api.fish.audio/v1/tts</code>
+        Local server: <code>http://127.0.0.1:18480/v1/tts</code> | Cloud API: <code>https://api.fish.audio/v1/tts</code>
       </p>
     </div>
     <div class="field">
@@ -200,6 +212,8 @@
         </select>
         <button type="button" class="btn btn-primary btn-sm" onclick="saveFishInferencePreset()" title="Save as New Inference Preset"><i class="fas fa-plus"></i> New</button>
         <button type="button" class="btn btn-secondary btn-sm" onclick="updateFishInferencePreset()" title="Update Current Inference Preset"><i class="fas fa-sync-alt"></i> Update</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="renameFishInferencePreset()" title="Rename Inference Preset"><i class="fas fa-edit"></i> Rename</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetFishInferencePreset()" title="Reset Inference Parameters"><i class="fas fa-undo"></i> Reset</button>
         <button type="button" class="btn btn-danger btn-sm" onclick="deleteFishInferencePreset()" title="Delete Inference Preset"><i class="fas fa-trash"></i></button>
       </div>
     </div>

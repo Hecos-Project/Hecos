@@ -8,24 +8,40 @@ window.HecosTTSPlayer.controls = true;
 window.HecosTTSPlayer.style.display = 'block';
 window.HecosTTSPlayer.style.marginTop = '10px';
 
-// Append to body to ensure it's in the DOM for earlier interaction
-document.addEventListener('DOMContentLoaded', () => {
-  const container = document.createElement('div');
-  container.id = 'hecos-player-container';
-  container.style.display = 'none';
-  document.body.appendChild(container);
-  container.appendChild(window.HecosTTSPlayer);
+function _ensureHecosPlayerContainer() {
+  let container = document.getElementById('hecos-player-container');
+  if (!container && document.body) {
+    container = document.createElement('div');
+    container.id = 'hecos-player-container';
+    container.style.display = 'none';
+    document.body.appendChild(container);
+    container.appendChild(window.HecosTTSPlayer);
+  }
+  return container;
+}
+
+function _initHecosAudioPlayerDom() {
+  _ensureHecosPlayerContainer();
 
   // Prevent <audio> elements from trapping the ESC key inside browser Shadow DOM.
   // Instead of blurring unconditionally on focus (which breaks the three-dots menu),
   // we intercept the ESC key during the capture phase and blur the audio element, 
   // allowing the event to propagate normally to our other document-level listeners.
-  document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && document.activeElement && document.activeElement.tagName === 'AUDIO') {
-          document.activeElement.blur();
-      }
-  }, true);
-});
+  if (!window._hecosAudioEscHooked) {
+    window._hecosAudioEscHooked = true;
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.activeElement && document.activeElement.tagName === 'AUDIO') {
+            document.activeElement.blur();
+        }
+    }, true);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _initHecosAudioPlayerDom);
+} else {
+  _initHecosAudioPlayerDom();
+}
 
 // ── Output VU Meter Hook ──
 function initOutVuMeter(audioElement) {
@@ -85,8 +101,41 @@ window.unlockAudioContext = function() {
   }
 };
 
-async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
+function _resolveAudioMeta(bubble, meta = null) {
+  const activeSid = window.chatHistoryState?.activeSessionId || null;
+  const resolvedSid = (meta && meta.sessionId) || bubble?.dataset?.sessionId || activeSid || null;
+  return {
+    sessionId: resolvedSid,
+    sessionTitle: (meta && meta.sessionTitle)
+      || (window.HecosChatStatus?.resolveSessionTitle?.(resolvedSid))
+      || '',
+    personaName: (meta && meta.personaName)
+      || bubble?.dataset?.personaTitle
+      || (window.HecosChatStatus?.resolvePersonaName?.())
+      || ''
+  };
+}
+
+function _notifySpeakingStart(audioMeta) {
+  if (window.HecosAudioBus) window.HecosAudioBus.claim('main_chat', audioMeta || {});
+  if (window.HecosChatStatus && audioMeta && audioMeta.sessionId) {
+    window.HecosChatStatus.setLocalState(audioMeta.sessionId, 'speaking', audioMeta);
+  }
+}
+
+function _notifySpeakingEnd(audioMeta) {
+  if (window.HecosChatStatus && audioMeta && audioMeta.sessionId) {
+    if (typeof window.HecosChatStatus.isSessionStreaming === 'function' && window.HecosChatStatus.isSessionStreaming(audioMeta.sessionId)) {
+      window.HecosChatStatus.setLocalState(audioMeta.sessionId, 'running', audioMeta);
+    } else {
+      window.HecosChatStatus.setLocalState(audioMeta.sessionId, 'idle', audioMeta);
+    }
+  }
+}
+
+async function tryLoadAudio(bubble, autoplay = true, forceUrl = null, meta = null) {
   if (!bubble) return;
+  const audioMeta = _resolveAudioMeta(bubble, meta);
 
   // Prefer the persistent audio_id stored on the bubble (survives page refresh)
   const audioId = bubble.dataset?.audioId || null;
@@ -146,18 +195,22 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
           historicalPlayer.volume = window.globalTTSVolume;
       }
       
+      historicalPlayer._audioMeta = audioMeta;
       historicalPlayer.onplay = () => {
+          _notifySpeakingStart(historicalPlayer._audioMeta);
           window.currentAudio = historicalPlayer;
           window.showStopVoiceBtn(true);
           if (typeof initOutVuMeter === 'function') initOutVuMeter(historicalPlayer);
       };
       
       historicalPlayer.onpause = () => {
+          _notifySpeakingEnd(historicalPlayer._audioMeta);
           window.showStopVoiceBtn(false);
           fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
       };
       
       historicalPlayer.onended = () => {
+          _notifySpeakingEnd(historicalPlayer._audioMeta);
           window.showStopVoiceBtn(false);
           fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
       };
@@ -168,11 +221,14 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
   }
 
   // ── Live Audio (Autoplay = true) ──
-  // If the global player is currently attached to another bubble in the document,
-  // leave a static clone on that other bubble so the user can replay earlier messages.
+  // If the user switched to another chat while audio finished synthesizing, the target bubble
+  // is detached from document.body: keep HecosTTSPlayer inside #hecos-player-container in the DOM
+  // so Chromium keeps playing cleanly and Origin Pill / LEDs show which chat is speaking.
+  const isBubbleInDom = document.body.contains(bubble);
   const oldParent = window.HecosTTSPlayer.parentNode;
   const isAttachedToAnotherBubble = oldParent && 
                                    document.body.contains(window.HecosTTSPlayer) && 
+                                   oldParent.id !== 'hecos-player-container' &&
                                    !bubble.contains(window.HecosTTSPlayer);
 
   if (isAttachedToAnotherBubble) {
@@ -187,25 +243,35 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
       } else {
           oldParent.removeChild(window.HecosTTSPlayer);
       }
-  } else if (oldParent && oldParent !== badge) {
+  } else if (isBubbleInDom && oldParent && oldParent !== badge) {
       oldParent.removeChild(window.HecosTTSPlayer);
   }
 
   window.HecosTTSPlayer.oncanplaythrough = null;
+  window.HecosTTSPlayer._audioMeta = audioMeta;
   window.HecosTTSPlayer.src = blobUrl;
   if (window.globalTTSVolume !== undefined) {
       window.HecosTTSPlayer.volume = window.globalTTSVolume;
   }
   window.currentAudio = window.HecosTTSPlayer;
-  badge.appendChild(window.HecosTTSPlayer);
-  bubble.appendChild(badge);
+  if (isBubbleInDom) {
+      badge.appendChild(window.HecosTTSPlayer);
+      bubble.appendChild(badge);
+  } else {
+      const hostContainer = _ensureHecosPlayerContainer() || document.body;
+      if (window.HecosTTSPlayer.parentNode !== hostContainer) {
+          hostContainer.appendChild(window.HecosTTSPlayer);
+      }
+  }
   
   window.HecosTTSPlayer.oncanplaythrough = () => {
     console.log("[Audio] Can play through, attempting autoplay...");
+    _notifySpeakingStart(window.HecosTTSPlayer._audioMeta);
     window.HecosTTSPlayer.play().then(() => {
         console.log("[Audio] Autoplay success");
     }).catch(err => {
       console.warn("[Audio] Autoplay blocked by browser. User must click play.", err);
+      _notifySpeakingEnd(window.HecosTTSPlayer._audioMeta);
       const hint = document.createElement('span');
       hint.style.fontSize = '11px';
       hint.style.color = 'var(--accent)';
@@ -217,35 +283,39 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
   };
 
   window.HecosTTSPlayer.onplay = () => {
+      _notifySpeakingStart(window.HecosTTSPlayer._audioMeta);
       window.showStopVoiceBtn(true);
       if (typeof initOutVuMeter === 'function') initOutVuMeter(window.HecosTTSPlayer);
       fetch('/api/audio/speaking/start', { method: 'POST' }).catch(() => {});
   };
 
   window.HecosTTSPlayer.onpause = () => {
+      _notifySpeakingEnd(window.HecosTTSPlayer._audioMeta);
       window.showStopVoiceBtn(false);
       fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
   };
 
   window.HecosTTSPlayer.onended = () => { 
       window.currentAudio = null; 
+      _notifySpeakingEnd(window.HecosTTSPlayer._audioMeta);
       window.showStopVoiceBtn(false); 
       fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
   };
   window.HecosTTSPlayer.onerror = () => {
     console.error("[Audio] Player error:", window.HecosTTSPlayer.error ? window.HecosTTSPlayer.error.code : 'unknown');
     window.currentAudio = null; 
+    _notifySpeakingEnd(window.HecosTTSPlayer._audioMeta);
     window.showStopVoiceBtn(false);
     fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
   };
 }
 
 // ── Audio Ready Handler (Single File) ──
-function handleAudioReady(bubble, finalAudioId) {
+function handleAudioReady(bubble, finalAudioId, meta = null) {
   if (!bubble || !finalAudioId) return;
   console.log("[Audio] Single consolidated audio ready:", finalAudioId);
   bubble.dataset.audioId = finalAudioId;
-  tryLoadAudio(bubble, true);
+  tryLoadAudio(bubble, true, null, meta);
 }
 
 // ── Deprecated progressive chunk stub ──
@@ -263,13 +333,17 @@ function showStopVoiceBtn(visible) {
   if (window.updateStopAllBtn) window.updateStopAllBtn();
 }
 
-window.stopVoice = function(engine = null) {
+function _stopLocalChatAudioOnly() {
   if (window.HecosTTSPlayer) {
     try { window.HecosTTSPlayer.pause(); } catch(e) {}
+    window.HecosTTSPlayer._audioMeta = null;
   }
   if (window.currentAudio) {
     try { window.currentAudio.pause(); } catch(e) {}
     window.currentAudio = null;
+  }
+  if (window.HecosChatStatus && typeof window.HecosChatStatus.clearSpeakingLocal === 'function') {
+    window.HecosChatStatus.clearSpeakingLocal();
   }
   if (window._lastAiBubble) {
     window._lastAiBubble._audioChunks = [];
@@ -277,6 +351,22 @@ window.stopVoice = function(engine = null) {
     window._lastAiBubble._chunksFinished = true;
   }
   window.showStopVoiceBtn(false);
+}
+
+if (window.HecosAudioBus) {
+  window.HecosAudioBus.onClaim((msg) => {
+    console.log(`[Audio] Remote tab (${msg.owner}) claimed audio — pausing Main Chat player.`);
+    _stopLocalChatAudioOnly();
+  });
+  window.HecosAudioBus.onStopAll(() => {
+    console.log("[Audio] Remote Stop All received — stopping Main Chat player.");
+    _stopLocalChatAudioOnly();
+  });
+}
+
+window.stopVoice = function(engine = null) {
+  _stopLocalChatAudioOnly();
+  if (window.HecosAudioBus) window.HecosAudioBus.stopAll('main_chat');
   fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
   fetch('/api/audio/stop', { method: 'POST' }).catch(() => {});
 };

@@ -48,6 +48,7 @@ function populateUI() {
   if (typeof populatePrivacyUI === 'function') safeCall('Privacy', () => populatePrivacyUI());
   if (typeof populateWebUIConfig === 'function') safeCall('WebUIConfig', () => populateWebUIConfig());
   if (typeof populateAgentUI === 'function') safeCall('Agent', () => populateAgentUI());
+  if (typeof populateVisionUI === 'function') safeCall('Vision', () => populateVisionUI());
 
   // 10. Standalone plugin enabled toggles
   safeCall('StandaloneToggles', () => {

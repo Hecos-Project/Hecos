@@ -1,0 +1,192 @@
+<script src="/hpm_plugin/net_search/web/static/js/search/hub/endpoints_adapters.js?v=4tab8"></script>
+<script src="/hpm_plugin/net_search/web/static/js/search/search_endpoints.js?v=4tab8"></script>
+<script src="/hpm_plugin/net_search/web/static/js/search/hub/sources_sqlite_ui.js?v=4tab8"></script>
+<script src="/hpm_plugin/net_search/web/static/js/search/hub/sources_importer.js?v=4tab8"></script>
+<script src="/hpm_plugin/net_search/web/static/js/search/search_sources.js?v=4tab8"></script>
+<script src="/hpm_plugin/net_search/web/static/js/search/hub/panel_network_controls.js?v=4tab8"></script>
+<script src="/hpm_plugin/net_search/web/static/js/search/hub/panel_node_actions.js?v=4tab8"></script>
+<script src="/hpm_plugin/net_search/web/static/js/netsearch_panel.js?v=4tab8"></script>
+
+<link rel="stylesheet" href="/hpm_plugin/net_search/web/static/css/netsearch_panel.css?v=4tab7">
+
+<div id="tab-netsearch" class="panel">
+  <!-- ═══ NET SEARCH & INTELLIGENCE SUITE ═══ -->
+  <div class="card" style="border-left: 4px solid #38bdf8; margin-bottom: 20px;">
+    <div
+      style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:10px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="card-title" style="margin-bottom:0; color:#38bdf8; font-size:16px;">
+          <i class="fas fa-satellite-dish"></i> Hecos Net Search &amp; Intelligence
+        </div>
+      </div>
+      <a href="/search" target="_blank" class="btn btn-primary"
+        style="font-size:11px; padding:6px 14px; border-radius:6px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+        <i class="fas fa-external-link-alt"></i> Open Net Search Dashboard
+      </a>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">
+      Autonomous multi-engine search suite: Clearnet meta-aggregators, Tor Dark Web (.onion) hidden services, OSINT and
+      deep file hunting.
+    </p>
+
+    <!-- Dedicated Console Notice Banner -->
+    <div
+      style="padding:10px 14px; background:rgba(6, 182, 212, 0.08); border-radius:8px; border:1px solid rgba(6, 182, 212, 0.2); margin-bottom:14px; display:flex; align-items:center; gap:10px;">
+      <i class="fas fa-cubes" style="color:var(--accent-cyan, #06b6d4); font-size:14px;"></i>
+      <div style="font-size:12px; color:var(--text); line-height:1.4;">
+        <strong>Search Engine Nodes &amp; Component Manager</strong>: Manage, restart, or update search nodes (SearXNG,
+        Tor daemon, DDGS, Sherlock) directly from the Net Search Console.
+      </div>
+    </div>
+
+    {% include 'netsearch_hub/settings_grid.html' %}
+
+    <!-- ═══ RESILIENT SEARCH ENDPOINTS, NODES & FALLBACKS (4-TAB ORGANIZER) ═══ -->
+    <div
+      style="margin-top:16px; padding:16px; background:var(--bg3); border-radius:10px; border:1px solid rgba(6, 182, 212, 0.25);">
+      <div
+        style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:16px;"><i class="fas fa-network-wired"
+              style="color:var(--accent-cyan, #06b6d4);"></i></span>
+          <strong style="font-size:13px; color:var(--text);">Search Endpoints, Fallback Pools &amp; Source Lists</strong>
+          <i class="fas fa-info-circle ns-info-icon" title="Configure active search backends, resilient fallback mirrors, custom query-template engines, Tor .onion gateways, and automated SQLite/list feeds."></i>
+          <span id="badge-sources-count" class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;"
+            title="Total registered automated source lists across all four tabs">0 Lists</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <label style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); cursor:pointer; padding:3px 6px; border:1px solid var(--border); border-radius:6px; background:var(--bg1);"
+            title="Enable/disable periodic background updates for all source lists that have Auto-Update checked">
+            <input type="checkbox" id="sources-auto-update-master" checked
+              onchange="window.SearchSources && window.SearchSources.setGlobalAutoUpdate(this.checked)">
+            <span>Auto-Update <i class="fas fa-info-circle ns-info-icon"></i></span>
+          </label>
+          <button type="button" class="btn btn-sm btn-secondary"
+            style="border-radius:6px; font-size:11px; padding:4px 10px; display:inline-flex; align-items:center; gap:5px;"
+            onclick="window.SearchSources && window.SearchSources.syncAll()" title="Download, parse, deduplicate, and refresh all currently enabled automated source lists right now">
+            <i class="fas fa-sync-alt"></i> Sync All Enabled
+          </button>
+          <button type="button" class="btn btn-sm btn-secondary"
+            style="border-radius:6px; font-size:11px; padding:4px 10px; display:inline-flex; align-items:center; gap:5px;"
+            onclick="window.toggleAllEndpointSections(false)" title="Collapse all collapsible subsections in the currently active tab">
+            <i class="fas fa-compress-alt"></i> Collapse (-)
+          </button>
+          <button type="button" class="btn btn-sm btn-secondary"
+            style="border-radius:6px; font-size:11px; padding:4px 10px; display:inline-flex; align-items:center; gap:5px;"
+            onclick="window.toggleAllEndpointSections(true)" title="Expand all collapsible subsections in the currently active tab">
+            <i class="fas fa-expand-alt"></i> Expand (+)
+          </button>
+          <button type="button" class="btn btn-sm btn-secondary"
+            style="border-radius:6px; font-size:11px; padding:4px 10px; display:inline-flex; align-items:center; gap:5px;"
+            onclick="window.reloadNetSearchEndpoints()" title="Reload saved endpoints, source lists, and SQLite domain statistics from backend">
+            <i class="fas fa-redo-alt"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <p style="font-size:11px; color:var(--muted); margin-bottom:12px; line-height:1.45;">
+        Organize endpoints by network type. Each tab combines direct node/engine configuration with its own dedicated
+        automated lists and presets.
+      </p>
+
+      <div id="netsearch-endpoints-manager-container">
+        <!-- 4 Main Category Tabs -->
+        <div class="ns-tabs-bar" role="tablist">
+          <button type="button" id="ns-tab-btn-searxng" data-ns-tab="searxng" class="ns-tab-btn active"
+            title="Configure the primary SearXNG meta-search daemon, its upstream engines, fallback public/custom mirrors, and automated SearXNG node lists"
+            onclick="window.switchNetSearchEndpointTab('searxng')">
+            <i class="fas fa-server" style="color:var(--accent-cyan, #06b6d4);"></i>
+            <span>SearXNG</span>
+            <span id="badge-tab-searxng-count" class="badge-pill badge-neutral" style="font-size:10px; padding:1px 6px;">0</span>
+          </button>
+          <button type="button" id="ns-tab-btn-web" data-ns-tab="web" class="ns-tab-btn"
+            title="Configure direct Clearnet query-template/OpenSearch engines, Open Archives &amp; Repositories (Internet Archive, Wikimedia, etc.), and automated Web source lists"
+            onclick="window.switchNetSearchEndpointTab('web')">
+            <i class="fas fa-globe" style="color:var(--accent-emerald, #10b981);"></i>
+            <span>Direct Web</span>
+            <span id="badge-tab-web-count" class="badge-pill badge-neutral" style="font-size:10px; padding:1px 6px;">0</span>
+          </button>
+          <button type="button" id="ns-tab-btn-dark" data-ns-tab="dark" class="ns-tab-btn"
+            title="Configure Tor .onion search engines, clearnet gateways routed over Tor SOCKS5h, and automated .onion index feeds"
+            onclick="window.switchNetSearchEndpointTab('dark')">
+            <i class="fas fa-user-secret" style="color:var(--accent-purple, #a855f7);"></i>
+            <span>Dark Web (.onion)</span>
+            <span id="badge-tab-dark-count" class="badge-pill badge-neutral" style="font-size:10px; padding:1px 6px;">0</span>
+          </button>
+          <button type="button" id="ns-tab-btn-files" data-ns-tab="files" class="ns-tab-btn"
+            title="Configure File Hunter sources: dedicated open file APIs, Clearnet meta-engines (Google/DDG/SearXNG), Tor .onion search engines, and SQLite Domain Directory"
+            onclick="window.switchNetSearchEndpointTab('files')">
+            <i class="fas fa-file-shield" style="color:#38bdf8;"></i>
+            <span>File Hunter</span>
+            <span id="badge-tab-files-count" class="badge-pill badge-neutral" style="font-size:10px; padding:1px 6px;">11</span>
+          </button>
+          <button type="button" id="ns-tab-btn-osint" data-ns-tab="osint" class="ns-tab-btn"
+            title="Configure OSINT Hunt sources: Sherlock 480+ site catalog, username variants, People &amp; Social Dorks, OSINT APIs, Clearnet, Tor .onion, and SQLite Directory"
+            onclick="window.switchNetSearchEndpointTab('osint')">
+            <i class="fas fa-id-badge" style="color:#f472b6;"></i>
+            <span>OSINT Hunt</span>
+            <span id="badge-tab-osint-count" class="badge-pill badge-neutral" style="font-size:10px; padding:1px 6px;">11</span>
+          </button>
+          <button type="button" id="ns-tab-btn-domains" data-ns-tab="domains" class="ns-tab-btn"
+            title="Manage large SQLite domain compilations: set any list as Searchable Directory (unfiltered reverse search), SafeSearch Blocklist (exclusion filter), or Allowlist"
+            onclick="window.switchNetSearchEndpointTab('domains')">
+            <i class="fas fa-database" style="color:var(--accent-amber, #f59e0b);"></i>
+            <span>Domains (SQLite)</span>
+            <span id="badge-tab-domains-count" class="badge-pill badge-neutral" style="font-size:10px; padding:1px 6px;">0</span>
+          </button>
+          <button type="button" id="ns-tab-btn-streams" data-ns-tab="streams" class="ns-tab-btn"
+            title="Configure Live Streams (Stream Hunter): built-in TV/Radio/Webcam providers, periodic live preview, manual stream servers (host/port/protocol), and SQLite .m3u/.m3u8/.pls compilations"
+            onclick="window.switchNetSearchEndpointTab('streams')">
+            <i class="fas fa-satellite-dish" style="color:#06b6d4;"></i>
+            <span>Live Streams</span>
+            <span id="badge-tab-streams-count" class="badge-pill badge-neutral" style="font-size:10px; padding:1px 6px;">0</span>
+          </button>
+        </div>
+
+        {% include 'netsearch_hub/tab_searxng.html' %}
+        {% include 'netsearch_hub/tab_web.html' %}
+        {% include 'netsearch_hub/tab_dark.html' %}
+        {% include 'netsearch_hub/tab_files.html' %}
+        {% include 'netsearch_hub/tab_osint.html' %}
+        {% include 'netsearch_hub/tab_domains.html' %}
+        {% include 'netsearch_hub/tab_streams.html' %}
+        {% include 'netsearch_hub/src_editor_drawer.html' %}
+
+        <!-- Bottom Action Bar -->
+        <div
+          style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; padding-top:14px; border-top:1px solid var(--border); flex-wrap:wrap; gap:10px;">
+          <button type="button" class="btn btn-secondary" style="border-radius:6px; padding:8px 16px; font-size:12px;"
+            title="Restore built-in default endpoints and fallback nodes (does not wipe SQLite domain lists)"
+            onclick="window.resetEndpointsFromUI()">
+            <i class="fas fa-undo"></i> Reset to Defaults
+          </button>
+          <button type="button" class="btn btn-primary" style="border-radius:6px; padding:8px 20px; font-size:12px;"
+            title="Save all endpoint changes across SearXNG, Direct Web, and Dark Web tabs to endpoints config"
+            onclick="window.saveEndpointsFromUI()">
+            <i class="fas fa-save"></i> Save Endpoints
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  function _initNetSearchPanel() {
+    if (typeof window.loadNetSearchPanelConfig === 'function') {
+      window.loadNetSearchPanelConfig();
+    }
+    try {
+      const tabParam = new URLSearchParams(window.location.search).get('tab');
+      if (tabParam && typeof window.switchNetSearchEndpointTab === 'function') {
+        window.switchNetSearchEndpointTab(tabParam);
+      }
+    } catch (_) {}
+  }
+  _initNetSearchPanel();
+  setTimeout(_initNetSearchPanel, 150);
+  setTimeout(_initNetSearchPanel, 600);
+})();
+</script>

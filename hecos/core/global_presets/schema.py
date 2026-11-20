@@ -5,7 +5,6 @@ Pydantic v2 models for the Global Preset (Soul) and Inference Presets.
 
 from typing import Optional, List, Dict
 from pydantic import BaseModel, ConfigDict, Field
-from datetime import datetime
 
 # ── Inference Presets ──
 
@@ -44,7 +43,7 @@ class SoulPersona(BaseModel):
     use_global_safety_instructions: Optional[bool] = None
     custom_instructions: Optional[str] = None
     user_notes: Optional[str] = None
-    send_notes_to_ai: Optional[bool] = False
+    send_notes_to_ai: Optional[bool] = None
 
 class SoulInference(BaseModel):
     preset_name: Optional[str] = None
@@ -95,10 +94,20 @@ class SoulVoice(BaseModel):
     fish_normalize: Optional[bool] = None
     fish_use_memory_cache: Optional[bool] = None
     fish_reference_id: Optional[str] = None
+    fish_volume: Optional[float] = None
 
 class SoulModel(BaseModel):
     backend_type: Optional[str] = None
     model_name: Optional[str] = None
+
+class SoulPayload(BaseModel):
+    send_tools: Optional[bool] = None
+    tool_selection_mode: Optional[str] = None  # "all" (default) | "custom"
+    selected_tools: Optional[List[str]] = None  # ["EXECUTOR__*", "NETSEARCH__web_search", ...]
+    send_personality: Optional[bool] = None
+    send_memory: Optional[bool] = None
+    include_thinking_in_history: Optional[bool] = None
+    enable_thinking: Optional[bool] = None  # If False, sends think=false to Ollama (faster, no reasoning)
 
 class SoulProfile(BaseModel):
     model_config = ConfigDict(extra='ignore')
@@ -108,3 +117,14 @@ class SoulProfile(BaseModel):
     inference: SoulInference = Field(default_factory=SoulInference)
     voice: SoulVoice = Field(default_factory=SoulVoice)
     model: SoulModel = Field(default_factory=SoulModel)
+    payload: SoulPayload = Field(default_factory=SoulPayload)
+
+
+# Canonical Preset Manager aliases (leaving Soul* free for Persona/Soul modules)
+GlobalPresetMeta = SoulMeta
+GlobalPresetPersona = SoulPersona
+GlobalPresetInference = SoulInference
+GlobalPresetVoice = SoulVoice
+GlobalPresetModel = SoulModel
+GlobalPresetPayload = SoulPayload
+GlobalPresetProfile = SoulProfile

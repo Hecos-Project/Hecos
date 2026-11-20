@@ -284,6 +284,14 @@
 
 /* Hidden file inputs */
 #file-upload-doc, #file-upload-img { display: none; }
+
+/* Plan First (Architect) Toggle Button */
+#btn-toolbar-plan.plan-first-active {
+  background: rgba(245, 158, 11, 0.22) !important;
+  color: #fde68a !important;
+  border-color: rgba(245, 158, 11, 0.75) !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.32);
+}
 </style>
 
 <!-- ── Input Toolbar HTML ── -->
@@ -298,7 +306,7 @@
   <button class="toolbar-btn" title="Open and read document directly with Document Reader" onclick="if(window.docReaderOpenFilePicker) window.docReaderOpenFilePicker(); else if(window.DocReader) window.DocReader.open();">
     <span class="tb-icon" style="color: #a78bfa;"><i class="fas fa-book-reader"></i></span> Reader
   </button>
-  <button class="toolbar-btn" id="btn-open-media-folder" title="Open Media folder (audio, documents, images, video)" onclick="openMediaFolder(this)">
+  <button class="toolbar-btn" id="btn-open-media-folder" title="Open Media folder (audio, documents, images, action_plans, video, workspace)" onclick="openMediaFolder(this)">
     <span class="tb-icon" style="color: #38bdf8;"><i class="fas fa-folder-open"></i></span> Media
   </button>
   <button class="toolbar-btn emoji-trigger-btn" title="Insert Emoji" onclick="toggleEmoticonPicker(event)">
@@ -307,35 +315,21 @@
   <button class="toolbar-btn" title="Paste long text or context (Ctrl+Shift+V)" onclick="openPasteModal()">
     <span class="tb-icon"><i class="fas fa-paste"></i></span> {{ t('webui_chat_toolbar_paste') }}
   </button>
+  <button id="btn-toolbar-plan" type="button" class="toolbar-btn" title="Plan First Mode: design a structured Action Plan (code, storyboard, travel, workflow) before executing it with any Global Preset" onclick="window.togglePlanFirstMode && window.togglePlanFirstMode(this)">
+    <span class="tb-icon" style="color: #f59e0b;"><i class="fas fa-list-check"></i></span> <span id="btn-toolbar-plan-label">Plan First</span>
+  </button>
   
   <div style="flex: 1;"></div>
   
-  <button class="toolbar-btn" title="Toggle Presenter" onclick="
-    if (!window.Presenter) return;
-    const isCurrentlyEnabled = window._presenterEnabled;
-    const nextState = !isCurrentlyEnabled;
-    
-    // Update frontend state immediately
-    window.Presenter.setEnabled(nextState);
-    const el = document.getElementById('hbs-presenter-embedded');
-    if (el) {
-        if (nextState) {
-            el.classList.add('active');
-            localStorage.setItem('hecos_presenter_active', 'true');
-        } else {
-            el.classList.remove('active');
-            localStorage.setItem('hecos_presenter_active', 'false');
-        }
+  <button id="btn-toolbar-presenter" class="toolbar-btn" title="Show/Hide Chat Presenter" onclick="
+    if (window.Presenter && typeof window.Presenter.toggleVisibility === 'function') {
+        window.Presenter.toggleVisibility(event);
+    } else {
+        const el = document.getElementById('hbs-presenter-embedded');
+        if (el) el.classList.toggle('active');
     }
-    
-    // Tell the backend to actually shut down or start up to save resources
-    fetch('/api/ext/presenter/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: nextState })
-    }).catch(err => console.error('Failed to toggle presenter config', err));
   ">
-    <span class="tb-icon" style="color: #ff512f;"><i class="fas fa-bullhorn"></i></span> Presenter
+    <span class="tb-icon" style="color: #ff512f;"><i class="fas fa-tower-broadcast"></i></span> Presenter
   </button>
 </div>
 <input type="file" id="file-upload-doc" accept=".pdf,.txt,.docx,.csv,.md" multiple>
@@ -371,6 +365,41 @@
 </div>
 
 <script>
+window.hecosPlanFirstMode = false;
+
+window.setPlanFirstMode = function(enabled, silent) {
+  window.hecosPlanFirstMode = !!enabled;
+  const btn = document.getElementById('btn-toolbar-plan');
+  const lbl = document.getElementById('btn-toolbar-plan-label');
+  const input = document.getElementById('user-input');
+  if (btn) {
+    btn.classList.toggle('plan-first-active', window.hecosPlanFirstMode);
+    btn.setAttribute('aria-pressed', window.hecosPlanFirstMode ? 'true' : 'false');
+  }
+  if (lbl) {
+    lbl.textContent = window.hecosPlanFirstMode ? 'Plan First: ON' : 'Plan First';
+  }
+  if (input) {
+    if (window.hecosPlanFirstMode) {
+      if (!input.dataset.origPlaceholder) input.dataset.origPlaceholder = input.placeholder || '';
+      input.placeholder = '📋 Plan First: describe the plan to design (project, storyboard, travel itinerary, workflow) before executing...';
+    } else if (input.dataset.origPlaceholder !== undefined) {
+      input.placeholder = input.dataset.origPlaceholder;
+    }
+  }
+  if (!silent && typeof window.showToast === 'function') {
+    window.showToast(
+      window.hecosPlanFirstMode
+        ? '📋 Plan First Mode ON — Messages will design/revise a structured Action Plan first (until toggled OFF or Execute Plan)'
+        : '📋 Plan First Mode OFF'
+    );
+  }
+};
+
+window.togglePlanFirstMode = function() {
+  window.setPlanFirstMode(!window.hecosPlanFirstMode, false);
+};
+
 window.openMediaFolder = async function(btnEl) {
   const btn = btnEl || document.getElementById('btn-open-media-folder') || (window.event && window.event.currentTarget);
   const icon = btn ? btn.querySelector('i') : null;
@@ -378,21 +407,21 @@ window.openMediaFolder = async function(btnEl) {
   if (icon) icon.className = 'fas fa-spinner fa-spin';
 
   const startTime = performance.now();
-  console.group('%c[Hecos Media Debug] 📂 Richiesta Apertura Cartella Media', 'background: #0284c7; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 13px;');
+  console.group('%c[Hecos Media Debug] 📂 Open Media Folder Request', 'background: #0284c7; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 13px;');
   console.log('%c⏰ Timestamp:%c ' + new Date().toISOString(), 'font-weight: bold; color: #38bdf8;', 'color: #aaa;');
-  console.log('%c🎯 Pulsante:%c', 'font-weight: bold; color: #38bdf8;', '', btn);
+  console.log('%c🎯 Button:%c', 'font-weight: bold; color: #38bdf8;', '', btn);
 
   const endpoints = [
-    { url: '/hecos/api/media/open-folder', label: '1. Endpoint Primario (/hecos/api/media/open-folder)' },
-    { url: '/api/open_media_folder', label: '2. Endpoint Fallback (/api/open_media_folder)' },
-    { url: '/api/system/explorer/open-folder', label: '3. Endpoint Explorer (/api/system/explorer/open-folder)' }
+    { url: '/hecos/api/media/open-folder', label: '1. Primary Endpoint (/hecos/api/media/open-folder)' },
+    { url: '/api/open_media_folder', label: '2. Fallback Endpoint (/api/open_media_folder)' },
+    { url: '/api/system/explorer/open-folder', label: '3. Explorer Endpoint (/api/system/explorer/open-folder)' }
   ];
 
   let success = false;
   let finalResult = null;
 
   for (const ep of endpoints) {
-    console.log(`%c👉 Chiamata ${ep.label}...`, 'font-weight: bold; color: #cbd5e1;');
+    console.log(`%c👉 Calling ${ep.label}...`, 'font-weight: bold; color: #cbd5e1;');
     try {
       const t0 = performance.now();
       const res = await fetch(ep.url, {
@@ -405,31 +434,31 @@ window.openMediaFolder = async function(btnEl) {
       const data = await res.json().catch(() => ({}));
 
       console.log(`  └─> HTTP Status: %c${res.status} ${res.statusText}%c (${elapsed}ms)`, res.ok ? 'color: #22c55e; font-weight: bold;' : 'color: #ef4444; font-weight: bold;', '');
-      console.log('  └─> Dati Risposta:', data);
+      console.log('  └─> Response Data:', data);
 
       if (res.ok && data && data.ok) {
         success = true;
         finalResult = data;
-        console.log(`%c  ✔ SUCCESSO con ${ep.label}!`, 'color: #22c55e; font-weight: bold;');
+        console.log(`%c  ✔ SUCCESS with ${ep.label}!`, 'color: #22c55e; font-weight: bold;');
         if (data.details) {
           console.table([data.details]);
         }
         break;
       } else {
-        console.warn(`  ✖ Fallito con ${ep.label}:`, data ? (data.error || data.message || 'Risposta ok: false') : 'Nessuna risposta');
+        console.warn(`  ✖ Failed with ${ep.label}:`, data ? (data.error || data.message || 'Response ok: false') : 'No response');
       }
     } catch (netErr) {
-      console.error(`  ✖ Errore di rete su ${ep.label}:`, netErr);
+      console.error(`  ✖ Network error on ${ep.label}:`, netErr);
     }
   }
 
   const totalTime = Math.round(performance.now() - startTime);
   if (success) {
-    console.log(`%c[Hecos Media Debug] Operazione completata con successo in ${totalTime}ms`, 'color: #22c55e; font-weight: bold;');
-    if (window.showToast) window.showToast('📂 Cartella Media aperta');
+    console.log(`%c[Hecos Media Debug] Operation completed successfully in ${totalTime}ms`, 'color: #22c55e; font-weight: bold;');
+    if (window.showToast) window.showToast('📂 Media folder opened');
   } else {
-    console.error(`%c[Hecos Media Debug] Tutti gli endpoint hanno fallito (${totalTime}ms)`, 'color: #ef4444; font-weight: bold;');
-    const msg = (finalResult && (finalResult.error || finalResult.message)) || 'Impossibile aprire la cartella Media';
+    console.error(`%c[Hecos Media Debug] All endpoints failed (${totalTime}ms)`, 'color: #ef4444; font-weight: bold;');
+    const msg = (finalResult && (finalResult.error || finalResult.message)) || 'Unable to open Media folder';
     if (window.showToast) window.showToast('⚠️ ' + msg, 'error');
   }
   console.groupEnd();

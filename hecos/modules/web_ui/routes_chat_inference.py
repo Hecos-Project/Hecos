@@ -24,21 +24,29 @@ _CAMERA_TOKEN = "[CAMERA_SNAPSHOT_REQUEST]"
 
 # ── Default WebUI inference timeout (seconds) ────────────────────────────────
 # Overridden at runtime by /hecos/api/keymanager/settings (webui_timeout field)
-_WEBUI_INFERENCE_TIMEOUT = 300  # seconds
+_WEBUI_INFERENCE_TIMEOUT = 900  # seconds
 
 
-def _run_inference(sess: dict, session_id: str, user_message: str, history: list, cfg_mgr, images=None, user_id="admin", user_role="admin", sender_tab_id=None):
+def _run_inference(sess: dict, session_id: str, user_message: str, history: list, cfg_mgr, images=None, user_id="admin", user_role="admin", sender_tab_id=None, resume_checkpoint=None, turn_options=None):
     if not sess:
         return
 
+    turn_id = sess.get("turn_id")
+    cancel_event = sess.get("cancel_event")
+    if not turn_id or cancel_event is None:
+        from hecos.core.agent.turn_control import register_turn
+        turn_id, cancel_event = register_turn(session_id)
+        sess["turn_id"] = turn_id
+        sess["cancel_event"] = cancel_event
+
     t_start = time.monotonic()
-    _chat_log.info(f"[INFERENCE] ══ START sid={session_id[:8]} user={user_id} msg_len={len(user_message)} images={len(images) if images else 0}")
+    _chat_log.info(f"[INFERENCE] ══ START sid={session_id[:8]} turn={turn_id} user={user_id} msg_len={len(user_message)} images={len(images) if images else 0}")
 
     try:
         from hecos.core.llm import brain  # noqa: F401 – ensure core is importable
-    except ImportError as e:
-        _chat_log.error(f"[INFERENCE] Core import failed: {e}")
-        sess["queue"].put({"type": "error", "text": f"Core non importabile: {e}"})
+    except Exception as e:
+        _chat_log.error(f"[INFERENCE] Core import failed: {e}", exc_info=True)
+        sess["queue"].put({"type": "error", "text": f"Core import failed: {e}"})
         sess["done"] = True
         return
 
@@ -51,7 +59,7 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
 
     _timed_out = threading.Event()
     _last_activity = [time.monotonic()]
-    max_turn_timeout = max(webui_timeout * 2, 900)  # 15 mins absolute hard cap
+    max_turn_timeout = max(webui_timeout * 4, 3600)  # 60 mins hard cap for multi-step local loops
 
     def _watchdog():
         while not _timed_out.is_set():
@@ -75,6 +83,8 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         from hecos.modules.web_ui.server import get_state_manager
 
         sm = get_state_manager()
+        if sm and user_message and hasattr(sm, 'record_chat_message'):
+            sm.record_chat_message(user_message)
 
         # ── Defensive cfg_mgr recovery ───────────────────────────────────────
         # If cfg_mgr is None (timing gap between boot paths), try to recover it
@@ -98,8 +108,48 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         # ────────────────────────────────────────────────────────────────────
 
         # ── PER-SESSION CONFIGURATION OVERRIDE ──────────────────────────────
+        t_opts = turn_options if isinstance(turn_options, dict) else {}
+        if t_opts.get("coder_preset_id"):
+            try:
+                from hecos.core.global_presets import activate_soul_for_session, resolve_coder_preset_id
+                target_preset = resolve_coder_preset_id(t_opts["coder_preset_id"])
+                activate_soul_for_session(target_preset, session_id)
+            except Exception as _pe:
+                _chat_log.warning(f"[INFERENCE] Could not activate coder preset '{t_opts.get('coder_preset_id')}': {_pe}")
+
         from hecos.config.session_config_manager import merge_session_config
         merged_config_dict = merge_session_config(cfg_mgr.config, session_id)
+
+        if t_opts.get("plan_only"):
+            merged_config_dict["_turn_plan_only"] = True
+            merged_config_dict.setdefault("payload_control", {})["send_tools"] = True
+        if t_opts.get("revise_plan_id"):
+            merged_config_dict["_turn_plan_only"] = True
+            merged_config_dict["_turn_revise_plan_id"] = str(t_opts["revise_plan_id"])
+            merged_config_dict.setdefault("payload_control", {})["send_tools"] = True
+        if t_opts.get("execute_plan_id"):
+            merged_config_dict["_turn_execute_plan"] = str(t_opts["execute_plan_id"])
+            if int(t_opts.get("execute_step_index") or 0) > 0:
+                merged_config_dict["_turn_single_step_index"] = int(t_opts["execute_step_index"])
+            merged_config_dict.setdefault("payload_control", {})["send_tools"] = True
+        if t_opts.get("fast_code"):
+            merged_config_dict["_turn_fast_code"] = True
+            merged_config_dict.setdefault("payload_control", {})["send_tools"] = True
+        if any(t_opts.get(k) for k in ("plan_only", "revise_plan_id", "execute_plan_id", "fast_code")):
+            _chat_log.info(
+                f"[INFERENCE] Turn flags sid={session_id[:8]}: "
+                f"plan_only={bool(merged_config_dict.get('_turn_plan_only'))} "
+                f"revise_plan_id={merged_config_dict.get('_turn_revise_plan_id', '')} "
+                f"execute_plan_id={merged_config_dict.get('_turn_execute_plan', '')} "
+                f"fast_code={bool(merged_config_dict.get('_turn_fast_code'))}"
+            )
+
+        eff_preset_id = None
+        try:
+            from hecos.core.global_presets.manager import get_active_soul_id
+            eff_preset_id = get_active_soul_id(session_id)
+        except Exception:
+            eff_preset_id = None
         
         class MergedConfigManager:
             def __init__(self, base_mgr, merged_dict):
@@ -117,7 +167,11 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         # Inject agent traces directly into the session-specific SSE queue.
         def _session_trace(msg, level: str = "info"):
             _last_activity[0] = time.monotonic()  # Reset watchdog on activity
+            if (cancel_event is not None and cancel_event.is_set()) or sess.get("done"):
+                return
             if isinstance(msg, dict):
+                if msg.get("type") == "heartbeat":
+                    return
                 sess["queue"].put(msg)
             else:
                 sess["queue"].put({"type": "agent_trace", "level": level, "message": str(msg)})
@@ -131,13 +185,115 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
             current_user_id=user_id,
             current_user_role=user_role,
             session_id=session_id,
-            sender_tab_id=sender_tab_id
+            sender_tab_id=sender_tab_id,
+            cancel_event=cancel_event,
+            turn_id=turn_id,
         )
 
         # ── SSE Connection Buffer ────────────────────────────────────────────
         # Allow the browser to open the SSE stream BEFORE first tokens arrive.
         time.sleep(0.4)
         # ────────────────────────────────────────────────────────────────────
+
+        # ── Immediate Visual + Spoken Turn Acknowledgment (non-blocking) ─────
+        # Gives instant feedback on Plan First / Plan Revision / Plan Execution
+        # and long tool-assisted tasks so the user immediately knows Hecos understood
+        # the active mode before a heavy local model takes minutes to think.
+        try:
+            from hecos.core.i18n import translator as _tr_mod
+            _is_it = str(getattr(_tr_mod.get_translator(), "language", "en") or "en").lower().startswith("it")
+            _um_low = (user_message or "").strip().lower()
+            _is_plan_rev_cmd = _um_low.startswith(("/plan revise", "/plan edit", "/plan update", "/plan modify", "/piano modifica", "/piano aggiorna", "/piano revisiona"))
+            _is_plan_mgmt_cmd = _um_low in ("/plan", "/piano") or _um_low.startswith(("/plan show", "/plan status", "/plan list", "/plan mode", "/plan clear", "/plan cancel", "/plan approve", "/code status", "/code help"))
+            _is_plan_slash = (_um_low.startswith(("/plan ", "/piano ")) and not _is_plan_mgmt_cmd and not _is_plan_rev_cmd and not _um_low.startswith(("/plan run", "/plan execute", "/plan start", "/plan coder", "/plan esegui")))
+            _is_code_slash = (_um_low in ("/code", "/coder", "/sviluppa") or _um_low.startswith(("/code ", "/coder ", "/sviluppa ", "/plan run", "/plan execute", "/plan coder"))) and not _is_plan_mgmt_cmd
+
+            _ack_visual = ""
+            _ack_spoken = ""
+            if merged_config_dict.get("_turn_revise_plan_id") or _is_plan_rev_cmd:
+                _ack_visual = (
+                    "✏️ Modalità Revisione Piano attiva — Sto aggiornando il Piano di Implementazione con le tue modifiche (nessun file verrà toccato)..."
+                    if _is_it
+                    else "✏️ Plan Revision Mode active — Updating the Implementation Plan with your feedback (no files will be edited)..."
+                )
+                _ack_spoken = (
+                    "Ricevuto! Sto aggiornando il piano di implementazione con le tue modifiche."
+                    if _is_it
+                    else "Got it! Updating the implementation plan with your requested changes."
+                )
+            elif merged_config_dict.get("_turn_plan_only") or _is_plan_slash:
+                _ack_visual = (
+                    "📋 Modalità Plan First attiva — Sto progettando l'Action Plan strutturato (nessuna esecuzione in questo turno)..."
+                    if _is_it
+                    else "📋 Plan First Mode active — Designing the structured Action Plan (no execution in this turn)..."
+                )
+                _ack_spoken = (
+                    "Ricevuto! Modalità Plan First attiva: preparo prima il piano d'azione strutturato."
+                    if _is_it
+                    else "Got it! Plan First Mode active: preparing the structured action plan first."
+                )
+            elif merged_config_dict.get("_turn_execute_plan") or _is_code_slash:
+                _single_step = int(merged_config_dict.get("_turn_single_step_index") or 0)
+                if _single_step > 0:
+                    _ack_visual = (
+                        f"⏭️ Esecuzione Step {_single_step} avviata — Eseguo solo questo step del piano..."
+                        if _is_it
+                        else f"⏭️ Step {_single_step} execution started — Running only this step of the plan..."
+                    )
+                    _ack_spoken = (
+                        f"Avvio subito lo step {_single_step} del piano."
+                        if _is_it
+                        else f"Starting step {_single_step} of the plan."
+                    )
+                else:
+                    _ack_visual = (
+                        "▶️ Esecuzione Piano avviata — Eseguo gli step in sequenza secondo il piano attivo..."
+                        if _is_it
+                        else "▶️ Plan Execution started — Running steps sequentially according to the active plan..."
+                    )
+                    _ack_spoken = (
+                        "Perfetto! Avvio subito l'esecuzione del piano passo dopo passo."
+                        if _is_it
+                        else "Starting execution of the action plan step by step."
+                    )
+            elif not _um_low.startswith("/") and len(_um_low) >= 120 and merged_config_dict.get("payload_control", {}).get("send_tools", True):
+                _ack_visual = (
+                    "⚙️ Richiesta ricevuta — Sto analizzando il task e preparando i passaggi..."
+                    if _is_it
+                    else "⚙️ Request received — Analyzing the task and preparing steps..."
+                )
+                _ack_spoken = (
+                    "Ricevuto! Sto analizzando la richiesta."
+                    if _is_it
+                    else "Got it! Analyzing your request."
+                )
+
+            if _ack_visual and not sess.get("done") and not (cancel_event is not None and cancel_event.is_set()):
+                sess["queue"].put({
+                    "type": "status_ack",
+                    "text": _ack_visual,
+                    "session_id": session_id,
+                    "tab_id": sender_tab_id or "",
+                })
+            if _ack_spoken and not sess.get("done") and not (cancel_event is not None and cancel_event.is_set()):
+                def _emit_ack_tts(_spoken=_ack_spoken):
+                    try:
+                        if sess.get("done") or (cancel_event is not None and cancel_event.is_set()):
+                            return
+                        st_ack, ack_aid = _maybe_generate_tts(_spoken, active_cfg_mgr)
+                        if st_ack == "web" and ack_aid and not sess.get("done") and not (cancel_event is not None and cancel_event.is_set()):
+                            sess["queue"].put({
+                                "type": "ack_audio",
+                                "audio_id": ack_aid,
+                                "text": _spoken,
+                                "session_id": session_id,
+                                "tab_id": sender_tab_id or "",
+                            })
+                    except Exception:
+                        pass
+                threading.Thread(target=_emit_ack_tts, daemon=True).start()
+        except Exception as _ack_err:
+            _chat_log.debug(f"[INFERENCE] Status ack skipped: {_ack_err}")
 
         _chat_log.info(f"[INFERENCE] Calling AgentExecutor.run_agentic_loop...")
         t_llm_start = time.monotonic()
@@ -152,13 +308,23 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         except Exception as e:
             _chat_log.warning(f"[INFERENCE] Could not emit user_message_sent: {e}")
 
-        full_text, clean_voice = agent.run_agentic_loop(user_message, voice_status=True, images=images)
+        full_text, clean_voice = agent.run_agentic_loop(
+            user_message, voice_status=True, images=images, resume_checkpoint=resume_checkpoint
+        )
 
         t_llm_end = time.monotonic()
         _chat_log.info(f"[INFERENCE] AgentExecutor returned in {t_llm_end - t_llm_start:.2f}s | response_len={len(full_text or '')} chars")
 
         # Stop watchdog - we got a response
         _timed_out.set()
+
+        # If this turn was cancelled or superseded, exit immediately without streaming or running TTS
+        from hecos.core.agent.turn_control import is_turn_superseded
+        if (cancel_event is not None and cancel_event.is_set()) or is_turn_superseded(session_id, turn_id):
+            _chat_log.info(f"[INFERENCE] Turn '{turn_id}' cancelled/superseded — stopping output & TTS pipeline.")
+            if not sess.get("done"):
+                sess["queue"].put({"type": "error", "text": "⛔ Generation aborted."})
+            return
 
         # If watchdog already fired (race condition), don't push more tokens but ensure state is synced
         if sess.get("done"):
@@ -180,11 +346,6 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         # ────────────────────────────────────────────────────────────────────
 
         # ── Extract Thinking Block for dedicated SSE event ────────────────
-        # Reasoning models (like Qwen3.5) often output thinking WITHOUT the opening
-        # <think> tag — they write: "[reasoning...]\n</think>\n\n[visible response]"
-        # We need to handle ALL these patterns:
-        #   1. <think>...</think>  (properly tagged, e.g. from loop.py re-injection)
-        #   2. [reasoning...]</think>  (model forgot opening tag — MOST COMMON CASE)
         import re as _re
         _think_text = None
         
@@ -208,8 +369,22 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         # ────────────────────────────────────────────────────────────────────
 
         _chat_log.info(f"[INFERENCE] Streaming {len(full_text)} chars to client...")
-        for i in range(0, len(full_text), 40):
-            sess["queue"].put({"type": "token", "text": full_text[i:i+40]})
+        _media_tail_m = _re.search(
+            r'((?:\r?\n\s*(?:\[\[(?:IMG|HSEARCH|HMEDIA):[^\]]+\]\]|(?:HTML|PDF):\s*[^\r\n]+))+\s*)$',
+            full_text or ''
+        )
+        if _media_tail_m:
+            _prose_part = full_text[:_media_tail_m.start(1)]
+            _media_tail = _media_tail_m.group(1)
+        else:
+            _prose_part = full_text or ''
+            _media_tail = ''
+
+        for i in range(0, len(_prose_part), 40):
+            sess["queue"].put({"type": "token", "text": _prose_part[i:i+40]})
+            time.sleep(0.02)
+        if _media_tail:
+            sess["queue"].put({"type": "token", "text": _media_tail})
             time.sleep(0.02)
 
         # Signal the frontend to stop the ⚙️ spinner (before blocking TTS)
@@ -217,123 +392,74 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         if current_persona.endswith(".yaml"):
             current_persona = current_persona[:-5]
             
+        _is_incognito_session = False
+        try:
+            from hecos.core.privacy import privacy_manager as _pm
+            _is_incognito_session = bool(_pm.is_session_incognito(session_id))
+        except Exception:
+            _is_incognito_session = False
+
+        _trace_summary = getattr(agent, "last_trace_summary", None)
+        _trace_persist = bool(getattr(agent, "agent_config", {}).get("trace_persist_history", True))
         try:
             from hecos.core.llm.client import LAST_PAYLOAD_INFO
-            _m_info = LAST_PAYLOAD_INFO.get("model_info")
-            import json
-            if _m_info:
-                _m_info_dict = json.loads(_m_info)
-                
-                # Global Preset
-                from hecos.core.global_presets.manager import get_active_soul_id
-                _gp_global = get_active_soul_id("global")
-                _gp_session = get_active_soul_id(session_id)
-                _m_info_dict["global_preset"] = _gp_global
-                _m_info_dict["session_preset"] = _gp_session
-                
-                # Token usage
-                _m_info_dict["prompt_tokens"] = LAST_PAYLOAD_INFO.get("prompt_tokens", 0)
-                _m_info_dict["completion_tokens"] = LAST_PAYLOAD_INFO.get("completion_tokens", 0)
-                
-                # Always ensure tts_engine/tts_voice/backend/persona from merged config
-                ai_cfg = active_cfg_mgr.config.get("ai", {})
-                voice_cfg = active_cfg_mgr.config.get("voice", {})
-                if not _m_info_dict.get("tts_engine"):
-                    _m_info_dict["tts_engine"] = voice_cfg.get("tts_engine", ai_cfg.get("tts_engine"))
-                if not _m_info_dict.get("tts_voice"):
-                    _m_info_dict["tts_voice"] = voice_cfg.get("tts_voice", ai_cfg.get("tts_voice"))
-                if not _m_info_dict.get("persona"):
-                    _m_info_dict["persona"] = current_persona
-                if not _m_info_dict.get("backend") or _m_info_dict["backend"] == "unknown":
-                    btype = active_cfg_mgr.config.get("backend", {}).get("type")
-                    if btype:
-                        _m_info_dict["backend"] = btype
-                
-                # Check for XTTS / Fish Speech presets and voice clones overriding the default voice
-                _eng = (_m_info_dict.get("tts_engine") or "").lower()
-                voice_cfg = active_cfg_mgr.config.get("voice", {})
-                voice_overrides = ai_cfg.get("voice_overrides", {})
-                if _eng in ("xtts", "xtts2"):
-                    try:
-                        preset = voice_overrides.get("xtts_preset") or voice_cfg.get("xtts_preset") or ai_cfg.get("xtts_preset")
-                        if not preset:
-                            from hecos.core.audio.device_manager import get_audio_config
-                            aud_cfg = get_audio_config().get("xtts", {})
-                            curr = aud_cfg.get("current_preset", "").strip()
-                            if curr and curr != "default":
-                                preset = curr
-                        if preset and preset != "default":
-                            _m_info_dict["tts_voice"] = preset
-                        else:
-                            speaker_wav = voice_overrides.get("xtts_speaker_wav") or voice_cfg.get("xtts_speaker_wav")
-                            if not speaker_wav:
-                                from hecos.core.audio.device_manager import get_audio_config
-                                aud_cfg = get_audio_config().get("xtts", {})
-                                speaker_wav = aud_cfg.get("speaker_wav", "").strip()
-                            if speaker_wav:
-                                import os
-                                bname = os.path.basename(speaker_wav)
-                                name = os.path.splitext(bname)[0]
-                                _m_info_dict["tts_voice"] = f"Clone: {name}"
-                    except Exception:
-                        pass
-                elif _eng in ("fish_speech", "fish"):
-                    try:
-                        preset = voice_overrides.get("fish_preset") or voice_cfg.get("fish_preset") or ai_cfg.get("fish_preset")
-                        if not preset:
-                            from hecos.core.audio.device_manager import get_audio_config
-                            aud_cfg = get_audio_config().get("fish_speech", {})
-                            preset = aud_cfg.get("current_preset", "").strip()
-                        if preset and preset != "default":
-                            _m_info_dict["tts_voice"] = preset
-                        else:
-                            ref_audio = voice_overrides.get("fish_reference_audio") or voice_cfg.get("fish_reference_audio") or _m_info_dict.get("tts_voice")
-                            if not ref_audio:
-                                from hecos.core.audio.device_manager import get_audio_config
-                                aud_cfg = get_audio_config().get("fish_speech", {})
-                                ref_audio = aud_cfg.get("reference_audio", "").strip()
-                            if ref_audio and ref_audio != "default":
-                                import os
-                                bname = os.path.basename(ref_audio)
-                                name = os.path.splitext(bname)[0]
-                                _m_info_dict["tts_voice"] = f"Clone: {name}"
-                            elif not ref_audio or ref_audio == "default":
-                                _m_info_dict["tts_voice"] = "Default Voice (Base)"
-                    except Exception:
-                        pass
-                elif _eng == "kokoro":
-                    try:
-                        preset = voice_overrides.get("kokoro_preset") or voice_cfg.get("kokoro_preset") or ai_cfg.get("kokoro_preset")
-                        if not preset:
-                            from hecos.core.audio.device_manager import get_audio_config
-                            aud_cfg = get_audio_config().get("kokoro", {})
-                            curr = aud_cfg.get("current_preset", "").strip()
-                            if curr and curr != "default":
-                                preset = curr
-                        if preset and preset != "default":
-                            _m_info_dict["tts_voice"] = preset
-                        else:
-                            k_voice = voice_overrides.get("kokoro_voice") or voice_cfg.get("kokoro_voice") or _m_info_dict.get("tts_voice")
-                            if k_voice:
-                                import os
-                                bname = os.path.basename(k_voice)
-                                name = os.path.splitext(bname)[0]
-                                _m_info_dict["tts_voice"] = name
-                    except Exception:
-                        pass
-                
-                _m_info = json.dumps(_m_info_dict)
+            from hecos.core.llm.history_manager import HistoryManager
+
+            _raw_m_info = LAST_PAYLOAD_INFO.get("model_info")
+            _persist_trace = _trace_summary if (_trace_summary and _trace_persist) else None
+            _db_m_info, _base_dict = HistoryManager.enrich_model_info(
+                _raw_m_info,
+                config=active_cfg_mgr.config,
+                session_id=session_id,
+                persona_name=current_persona,
+                trace_summary=_persist_trace,
+            )
+            if _trace_summary and not _trace_persist and isinstance(_base_dict, dict):
+                import json as _json
+                _m_info = _json.dumps({**_base_dict, "agent_trace": _trace_summary})
+            else:
+                _m_info = _db_m_info
+            if _db_m_info:
+                if _is_incognito_session:
+                    from hecos.memory import session_manager as _sm
+                    _sm.update_ram_last_assistant_meta(session_id, model_info=_db_m_info)
+                else:
+                    from hecos.memory.brain_interface import _db_path
+                    import sqlite3
+
+                    _db = _db_path(user_id)
+                    with sqlite3.connect(_db, timeout=10) as _conn:
+                        _conn.execute(
+                            "UPDATE history SET model_info = ? WHERE id = ("
+                            "  SELECT MAX(id) FROM history WHERE session_id = ? AND role = 'assistant'"
+                            ")",
+                            (_db_m_info, session_id),
+                        )
+                        _conn.commit()
         except Exception as e:
             _chat_log.error(f"Error enriching model_info: {e}")
             _m_info = None
-            
-        sess["queue"].put({"type": "trace_done", "persona_name": current_persona, "model_info": _m_info})
+
+        sess["queue"].put({
+            "type": "trace_done",
+            "persona_name": current_persona,
+            "model_info": _m_info,
+            "trace_summary": _trace_summary,
+        })
 
         if camera_request_pending:
             sess["queue"].put({"type": "camera_request"})
 
         sess["history"].append({"role": "user",      "content": user_message})
         sess["history"].append({"role": "assistant",  "content": full_text})
+
+        # Record Global Preset usage only once an assistant reply actually completed (skip in Incognito)
+        if eff_preset_id and not _is_incognito_session and not (cancel_event is not None and cancel_event.is_set()):
+            try:
+                from hecos.core.global_presets.usage_stats import record_preset_usage
+                record_preset_usage(eff_preset_id, session_id=session_id)
+            except Exception:
+                pass
 
         # Emit events for Presenter and other extensions
         try:
@@ -352,7 +478,7 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
             _chat_log.warning(f"[INFERENCE] Could not emit message events: {e}")
 
         from hecos.core.processing import filtri
-        voice_text_target = filtri.clean_for_voice(full_text) if full_text else clean_voice
+        voice_text_target = clean_voice if (clean_voice and str(clean_voice).strip()) else (filtri.clean_for_voice(full_text) if full_text else "")
         def _on_chunk_ready(chunk_idx, total_chunks, *args):
             _last_activity[0] = time.monotonic()  # Keep watchdog alive during multi-sentence synthesis
 
@@ -361,36 +487,69 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         _chat_log.info(f"[INFERENCE] TTS done in {time.monotonic() - t_tts_start:.2f}s | status={audio_status} id={audio_id}")
 
         if audio_status == "web":
-            sess["queue"].put({"type": "audio_ready", "text": "", "audio_id": audio_id or ""})
-            # Persist audio_id to the last assistant message in the DB
+            sess["queue"].put({
+                "type": "audio_ready",
+                "text": "",
+                "audio_id": audio_id or "",
+                "session_id": session_id,
+                "tab_id": sender_tab_id or "",
+            })
+            # Persist audio_id to the last assistant message (RAM in Incognito, SQLite in Normal)
             if audio_id:
                 try:
-                    from hecos.memory.brain_interface import _db_path
-                    uid = sess.get("user_id", "admin")
-                    db  = _db_path(uid)
-                    import sqlite3
-                    with sqlite3.connect(db, timeout=10) as _conn:
-                        _conn.execute(
-                            "UPDATE history SET audio_file = ? WHERE id = ("
-                            "  SELECT MAX(id) FROM history WHERE session_id = ? AND role = 'assistant'"
-                            ")",
-                            (audio_id, session_id)
-                        )
-                        _conn.commit()
-                    _chat_log.info(f"[INFERENCE] audio_file={audio_id} saved to history.")
+                    if _is_incognito_session:
+                        from hecos.memory import session_manager as _sm
+                        _sm.update_ram_last_assistant_meta(session_id, audio_file=audio_id)
+                    else:
+                        from hecos.memory.brain_interface import _db_path
+                        uid = sess.get("user_id", "admin")
+                        db  = _db_path(uid)
+                        import sqlite3
+                        with sqlite3.connect(db, timeout=10) as _conn:
+                            _conn.execute(
+                                "UPDATE history SET audio_file = ? WHERE id = ("
+                                "  SELECT MAX(id) FROM history WHERE session_id = ? AND role = 'assistant'"
+                                ")",
+                                (audio_id, session_id)
+                            )
+                            _conn.commit()
+                        _chat_log.info(f"[INFERENCE] audio_file={audio_id} saved to history.")
                 except Exception as _ae:
                     _chat_log.warning(f"[INFERENCE] Could not save audio_id to DB: {_ae}")
         elif audio_status == "system":
-            sess["queue"].put({"type": "system_audio_playing", "text": ""})
+            sess["queue"].put({
+                "type": "system_audio_playing",
+                "text": "",
+                "session_id": session_id,
+                "tab_id": sender_tab_id or "",
+            })
 
         sess["queue"].put({"type": "done", "text": ""})
 
     except Exception as exc:
         _timed_out.set()  # stop watchdog
+        try:
+            from hecos.core.agent.turn_control import is_turn_superseded
+            superseded = is_turn_superseded(session_id, turn_id)
+            if not superseded:
+                from hecos.core.agent.checkpointing import mark_checkpoint_status
+                mark_checkpoint_status(session_id, "interrupted", reason=str(exc)[:180])
+                from hecos.core.action_plans import get_action_plan_manager
+                mgr = get_action_plan_manager()
+                active_plan = mgr.resolve_plan(source_id=session_id)
+                if active_plan and active_plan.get("status") == "running":
+                    mgr.complete_plan(plan_id=active_plan["plan_id"], status="interrupted", summary=str(exc)[:180])
+        except Exception:
+            pass
         _chat_log.error(f"[INFERENCE] ❌ Exception after {time.monotonic() - t_start:.2f}s: {exc}", exc_info=True)
         if not sess.get("done"):  # don't push if watchdog already sent error
             sess["queue"].put({"type": "error", "text": str(exc)})
     finally:
         _timed_out.set()  # always stop watchdog
+        try:
+            from hecos.core.agent.turn_control import complete_turn
+            complete_turn(turn_id)
+        except Exception:
+            pass
         sess["done"] = True
-        _chat_log.info(f"[INFERENCE] ══ END sid={session_id[:8]} total={time.monotonic() - t_start:.2f}s")
+        _chat_log.info(f"[INFERENCE] ══ END sid={session_id[:8]} turn={turn_id} total={time.monotonic() - t_start:.2f}s")

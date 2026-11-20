@@ -71,3 +71,36 @@
     color: var(--accent);
     transform: translateY(-1px);
 }
+
+@media (max-width: 768px) {
+    #welcome {
+        padding: 4px 4px 14px 4px !important;
+        gap: 6px !important;
+        width: 100% !important;
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        justify-content: center !important;
+    }
+
+    .welcome-logo {
+        height: 64px !important;
+        max-height: 16vh !important;
+        min-height: 36px !important;
+        flex-shrink: 1 !important;
+        margin-bottom: 0 !important;
+    }
+
+    .welcome-title {
+        font-size: 20px !important;
+        line-height: 1.2 !important;
+        flex-shrink: 0 !important;
+    }
+
+    .welcome-sub {
+        font-size: 12.5px !important;
+        line-height: 1.35 !important;
+        max-width: 92% !important;
+        margin-bottom: 2px !important;
+        flex-shrink: 0 !important;
+    }
+}

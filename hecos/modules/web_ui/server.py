@@ -104,6 +104,12 @@ class HecosWebUIServer:
                 use_https = webui_cfg.get("https_enabled", False)
                 scheme = "https" if use_https and ssl_context else "http"
 
+                try:
+                    from hecos.core.audio.tts.process_registry import init_local_control_token
+                    init_local_control_token(port=self.port, scheme=scheme)
+                except Exception as _tok_err:
+                    self.logger.debug(f"[WebUI] Local TTS control token init notice: {_tok_err}")
+
                 self.logger.info(
                     f"[WebUI] 🚀 Server live (debug={debug_on}) → "
                     f"{scheme}://{lan_ip}:{self.port}/chat  |  "
@@ -227,13 +233,22 @@ if __name__ == "__main__":
     sm.ptt_hotkey      = acfg.get('ptt_hotkey', 'ctrl+shift')
     set_state_manager(sm)
 
-    # Pre-load active TTS engine in background (Fish Speech daemon or Piper) to eliminate cold-start latency
+    # Pre-load configured TTS engines in background (Piper fallback + active engine if autostart enabled)
     try:
-        from hecos.core.audio.tts_manager import preload_active_engine
-        preload_active_engine(delay=2.0)
-        logger.info("[WEB] Active TTS engine pre-loading scheduled (2s delay).")
+        from hecos.core.audio.tts_manager import preload_configured_engines
+        preload_configured_engines(delay=2.0)
+        logger.info("[WEB] Configured TTS engine pre-loading scheduled (2s delay).")
     except Exception as _pe:
         logger.debug(f"[WEB] TTS preload skipped: {_pe}")
+
+    # ── Ollama Lifecycle — Auto-start server & Model Warm-Up ──────────────────
+    try:
+        from hecos.core.llm.ollama_lifecycle import run_ollama_startup_sequence
+        run_ollama_startup_sequence(cfg.config)
+        logger.info("[WEB] Ollama startup sequence triggered.")
+    except Exception as _oe:
+        logger.warning(f"[WEB] Ollama startup sequence error: {_oe}")
+    # ──────────────────────────────────────────────────────────────────────────
 
     # Start the listening thread (Whisper + PTT)
     logger.info("[WEB] Starting standalone audio engine...")
@@ -246,7 +261,15 @@ if __name__ == "__main__":
             if sm and sm.detected_voice_command:
                 cmd = sm.detected_voice_command
                 sm.detected_voice_command = None
+                
+                # Check for duplication with recently processed chat message or voice command
+                if hasattr(sm, 'is_recent_duplicate') and sm.is_recent_duplicate(cmd, window_seconds=6.0):
+                    logger.info(f"[WEB] Suppressed duplicate standalone voice command (already handled): '{cmd}'")
+                    continue
+
                 logger.info(f"[WEB] Dispatched standalone voice command: '{cmd}'")
+                if hasattr(sm, 'record_chat_message'):
+                    sm.record_chat_message(cmd)
                 sm.add_event("voice_detected", {"text": cmd, "standalone": True})
             import time
             time.sleep(0.2)
@@ -274,6 +297,34 @@ if __name__ == "__main__":
     # [Removed] - Auto-open logic is now fully managed by tray_app.py or plugin wrappers 
     # to avoid race conditions and redundant browser tabs.
 
+    # Register Windows console close handler so X button stops Ollama cleanly
+    if sys.platform == "win32":
+        try:
+            import ctypes, ctypes.wintypes
+            _HANDLER = ctypes.WINFUNCTYPE(ctypes.wintypes.BOOL, ctypes.wintypes.DWORD)
+            @_HANDLER
+            def _web_ctrl_handler(ctrl_type):
+                if ctrl_type in (0, 1, 2, 5, 6):
+                    try:
+                        from hecos.core.audio.tts_manager import shutdown_all_tts
+                        shutdown_all_tts()
+                    except Exception:
+                        pass
+                    try:
+                        from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
+                        OllamaLifecycleManager.get_instance().on_application_exit(cfg.config)
+                    except Exception:
+                        pass
+                    try:
+                        from hecos.modules.executor.process_registry import get_process_registry
+                        get_process_registry().stop_all_runs(include_orphans=False)
+                    except Exception:
+                        pass
+                return False
+            ctypes.windll.kernel32.SetConsoleCtrlHandler(_web_ctrl_handler, True)
+        except Exception:
+            pass
+
     from hecos.core.system import instance_lock
     if not os.environ.get("HECOS_MONITORED_PROCESS"):
         if not instance_lock.acquire_lock("hecos_web"):
@@ -292,13 +343,23 @@ if __name__ == "__main__":
         print("Hecos WebUI server stopped.")
     finally:
         try:
-            from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
-            FishSpeechDaemon.get_instance().stop()
-        except:
+            from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
+            OllamaLifecycleManager.get_instance().on_application_exit(cfg.config)
+        except Exception:
+            pass
+        try:
+            from hecos.core.audio.tts_manager import shutdown_all_tts
+            shutdown_all_tts()
+        except Exception:
             pass
         try:
             from hecos.core.audio import ptt_bus
             ptt_bus.stop()
         except:
+            pass
+        try:
+            from hecos.modules.executor.process_registry import get_process_registry
+            get_process_registry().stop_all_runs(include_orphans=False)
+        except Exception:
             pass
 

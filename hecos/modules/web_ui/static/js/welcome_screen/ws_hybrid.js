@@ -10,6 +10,7 @@
     'use strict';
 
     let _listeners = null;
+    let _transitionTimer = null;
 
     /**
      * Set up hybrid mode listeners.
@@ -29,16 +30,25 @@
             );
             if (hasMsgs) { cleanup(); return; }
 
+            if (_transitionTimer) {
+                clearTimeout(_transitionTimer);
+                _transitionTimer = null;
+            }
+
             const showingMain = mainEl && mainEl.style.display !== 'none';
 
             if (showingMain) {
                 // Fade out Main Welcome -> Show Avatar
                 mainEl.style.transition = 'opacity 0.25s ease-out';
                 mainEl.style.opacity = '0';
-                setTimeout(() => {
-                    mainEl.style.display = 'none';
-                    mainEl.style.opacity = '1';
-                    mainEl.style.transition = '';
+                _transitionTimer = setTimeout(() => {
+                    _transitionTimer = null;
+                    const currentMain = document.getElementById('welcome') || mainEl;
+                    if (currentMain) {
+                        currentMain.style.display = 'none';
+                        currentMain.style.opacity = '1';
+                        currentMain.style.transition = '';
+                    }
                     if (window.WelcomeAvatar) {
                         avatarEl = window.WelcomeAvatar.render(chatArea, { hidden: false });
                     }
@@ -57,14 +67,16 @@
                     if (card) card.classList.remove('is-flipped');
                     if (text) text.classList.remove('show');
                     
-                    setTimeout(() => {
+                    _transitionTimer = setTimeout(() => {
+                        _transitionTimer = null;
                         avatarEl.style.display = 'none';
-                        if (mainEl) {
-                            mainEl.style.opacity = '0';
-                            mainEl.style.display = 'flex';
+                        const currentMain = document.getElementById('welcome') || mainEl;
+                        if (currentMain) {
+                            currentMain.style.opacity = '0';
+                            currentMain.style.display = 'flex';
                             setTimeout(() => {
-                                mainEl.style.transition = 'opacity 0.25s ease-out';
-                                mainEl.style.opacity = '1';
+                                currentMain.style.transition = 'opacity 0.25s ease-out';
+                                currentMain.style.opacity = '1';
                             }, 50);
                         }
                     }, 350); // wait for reverse flip
@@ -109,6 +121,10 @@
      * Remove all hybrid listeners (cleanup on transition or chat clear).
      */
     function cleanup() {
+        if (_transitionTimer) {
+            clearTimeout(_transitionTimer);
+            _transitionTimer = null;
+        }
         if (!_listeners) return;
         const { input, handleTrigger, onGlobalClick, onKeydown } = _listeners;
         if (input) input.removeEventListener('focus', handleTrigger);

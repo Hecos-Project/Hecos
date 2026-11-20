@@ -57,6 +57,15 @@ window.initWebAudio = async function() {
 window.startWebAudioRecording = async function() {
   if (window.isWebAudioRecording) return;
 
+  // Stop any playing TTS (local + cross-tab) and claim mic exclusively across open Hecos tabs
+  if (window.HecosAudioBus) {
+    window.HecosAudioBus.stopAll('main_chat_mic');
+    window.HecosAudioBus.claimMic('main_chat_mic');
+  }
+  if (typeof window.stopPlayback === 'function') {
+    try { window.stopPlayback(); } catch (_e) {}
+  }
+
   if (window._webptt_setButtonState) window._webptt_setButtonState('idle'); 
   const btn = document.getElementById('web-ptt-btn');
   if (btn) btn.innerHTML = '⏳';
@@ -131,6 +140,18 @@ window.cancelWebAudioRecording = function() {
   console.log('[WebAudio] Recording cancelled.');
 };
 
+if (window.HecosAudioBus && typeof window.HecosAudioBus.onMicClaim === 'function') {
+  window.HecosAudioBus.onMicClaim((msg) => {
+    if (msg && msg.owner !== 'main_chat_mic' && window.isWebAudioRecording) {
+      window.isLockedMode = false;
+      window.isTouchHold = false;
+      if (typeof window.cancelWebAudioRecording === 'function') {
+        window.cancelWebAudioRecording();
+      }
+    }
+  });
+}
+
 
 
 async function uploadWebAudio(wasLockedMode) {
@@ -173,9 +194,16 @@ async function uploadWebAudio(wasLockedMode) {
       const transcribed = data.text.trim();
       console.log('[WebAudio] Transcribed:', transcribed);
 
-      // Deduplication safeguard: avoid re-sending identical voice command within debounce window
+      // Deduplication safeguard: avoid re-sending duplicate/similar voice command within debounce window
       const now = Date.now();
-      if (window._lastVoiceCmdText === transcribed && (now - (window._lastVoiceCmdTime || 0)) < 3500) {
+      const timeSinceLastVoice = now - (window._lastVoiceCmdTime || 0);
+      const isDuplicate = (
+        (timeSinceLastVoice < 8000 && window.areVoicePhrasesSimilar && window.areVoicePhrasesSimilar(window._lastVoiceCmdText, transcribed)) ||
+        (window.isStreaming && timeSinceLastVoice < 15000 && window.areVoicePhrasesSimilar && window.areVoicePhrasesSimilar(window._lastVoiceCmdText, transcribed)) ||
+        (window.isStreaming && timeSinceLastVoice < 4000)
+      );
+
+      if (isDuplicate) {
         console.warn('[WebAudio] Duplicate voice command ignored within debounce window:', transcribed);
         return;
       }

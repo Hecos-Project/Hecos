@@ -179,7 +179,7 @@
                     fishBadge.textContent = '✅ Server Ready & Connected';
                     fishBadge.style.color = 'var(--green, #2ecc71)';
                 } else if (d.fish_speech) {
-                    fishBadge.textContent = '⏳ Client ready (Server offline on port 8080)';
+                    fishBadge.textContent = '⏳ Client ready (Server offline on port 18480)';
                     fishBadge.style.color = 'var(--yellow, #f1c40f)';
                 } else {
                     fishBadge.textContent = '⚠️ Not installed';

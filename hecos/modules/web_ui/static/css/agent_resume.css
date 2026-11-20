@@ -1,0 +1,113 @@
+.agent-resume-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 8px 18px 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(168, 85, 247, 0.12));
+  border: 1px solid rgba(245, 158, 11, 0.42);
+  color: var(--text, #e2e8f0);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.agent-resume-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.agent-resume-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-weight: 600;
+}
+
+.agent-resume-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.22);
+  border: 1px solid rgba(245, 158, 11, 0.48);
+  color: #fcd34d;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.agent-resume-preview {
+  color: var(--muted, #94a3b8);
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-resume-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.agent-resume-file-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #6ee7b7;
+}
+
+.agent-resume-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.agent-resume-btn-go {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(168, 85, 247, 0.65);
+  background: rgba(168, 85, 247, 0.28);
+  color: #f3e8ff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.agent-resume-btn-go:hover:not(:disabled) {
+  background: rgba(168, 85, 247, 0.44);
+}
+
+.agent-resume-btn-go:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.agent-resume-btn-dismiss {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14));
+  background: transparent;
+  color: var(--muted, #94a3b8);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.agent-resume-btn-dismiss:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text, #e2e8f0);
+}

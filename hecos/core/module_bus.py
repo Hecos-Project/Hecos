@@ -59,7 +59,8 @@ class ModuleBus:
                     subprocess.run(
                         ['taskkill', '/F', '/FI', 'IMAGENAME eq python.exe',
                          '/FI', 'WINDOWTITLE eq hecos_sdk*'],
-                        capture_output=True, timeout=5
+                        capture_output=True, timeout=5,
+                        creationflags=subprocess.CREATE_NO_WINDOW
                     )
                 except Exception:
                     pass

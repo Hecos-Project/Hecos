@@ -7,6 +7,7 @@ function populateAudioUI() {
     const v = (window.audioConfig && typeof window.audioConfig === 'object')
         ? window.audioConfig
         : ((typeof audioConfig !== 'undefined' && audioConfig) ? audioConfig : {});
+    setCheck('v-piper-autostart', v.piper_autostart !== undefined ? v.piper_autostart : true);
     setVal('v-piper', v.piper_path || '');
     const curOnnx = (v.onnx_model || '').split('\\').pop().split('/').pop();
     populateSelect('v-onnx-model', sysOptions.piper_voices || [], curOnnx, true);
@@ -25,6 +26,7 @@ function populateAudioUI() {
     setVal('v-tts-history-max', v.tts_history_max_files ?? 100);
     setVal('v-active-engine', v.active_engine ?? 'piper');
     // Kokoro
+    setCheck('v-kokoro-autostart', (v.kokoro && v.kokoro.autostart !== undefined) ? v.kokoro.autostart : true);
     setVal('v-kokoro-speed', (v.kokoro && v.kokoro.speed) ? v.kokoro.speed : 1.0);
     setVal('v-kokoro-speed-range', (v.kokoro && v.kokoro.speed) ? v.kokoro.speed : 1.0);
 
@@ -76,6 +78,7 @@ function populateAudioUI() {
     if (typeof window.onKokoroBlendVoiceChange === 'function') window.onKokoroBlendVoiceChange();
     if (typeof window.loadKokoroInstalledClones === 'function') window.loadKokoroInstalledClones();
     // XTTS
+    setCheck('v-xtts-autostart', (v.xtts && v.xtts.autostart !== undefined) ? v.xtts.autostart : true);
     setVal('v-xtts-speed', (v.xtts && v.xtts.speed) ? v.xtts.speed : 1.0);
     setVal('v-xtts-lang', (v.xtts && v.xtts.language) ? v.xtts.language : 'it');
     setVal('v-xtts-speaker', (v.xtts && v.xtts.speaker) ? v.xtts.speaker : 'Claribel Dervla');
@@ -89,7 +92,12 @@ function populateAudioUI() {
     setVal('v-xtts-length-penalty', (v.xtts && v.xtts.length_penalty !== undefined) ? v.xtts.length_penalty : 1.0);
 
     // Fish Speech
-    setVal('v-fish-api-url', (v.fish_speech && v.fish_speech.api_url) ? v.fish_speech.api_url : 'http://127.0.0.1:8080/v1/tts');
+    setCheck('v-fish-autostart', (v.fish_speech && v.fish_speech.autostart !== undefined) ? v.fish_speech.autostart : true);
+    const rawFishUrl = (v.fish_speech && v.fish_speech.api_url) ? v.fish_speech.api_url : 'http://127.0.0.1:18480/v1/tts';
+    const normFishUrl = (rawFishUrl === 'http://127.0.0.1:8080/v1/tts' || rawFishUrl === 'http://localhost:8080/v1/tts')
+        ? 'http://127.0.0.1:18480/v1/tts'
+        : rawFishUrl;
+    setVal('v-fish-api-url', normFishUrl);
     setVal('v-fish-api-key', (v.fish_speech && v.fish_speech.api_key) ? v.fish_speech.api_key : '');
     setVal('v-fish-speaker-wav', (v.fish_speech && v.fish_speech.reference_audio) ? v.fish_speech.reference_audio : '');
     setVal('v-fish-reference-id', (v.fish_speech && v.fish_speech.reference_id) ? v.fish_speech.reference_id : '');
@@ -224,6 +232,7 @@ function populateAudioUI() {
         }
     }
 
+    if (typeof populatePiperPresets === 'function') populatePiperPresets();
     if (typeof populatePiperInferencePresets === 'function') populatePiperInferencePresets();
 
     refreshAudioHistoryCount();
@@ -279,6 +288,9 @@ function populateAudioUI() {
     if (typeof window.checkFishServerStatus === 'function') {
         window.checkFishServerStatus();
     }
+    if (typeof window.refreshTTSEnginesRuntime === 'function') {
+        window.refreshTTSEnginesRuntime(false);
+    }
 }
 
 // ── Engine Tab Switcher ──────────────────────────────────────────────────────
@@ -325,8 +337,16 @@ window.switchAudioEngineTab = function (engine, saveEngine = true) {
         if (typeof window.refreshKokoroClonesAll === 'function') window.refreshKokoroClonesAll();
     }
 
+    if (typeof window.refreshTTSEnginesRuntime === 'function') {
+        window.refreshTTSEnginesRuntime(false);
+    }
+
     if (saveEngine && typeof window.saveAudioConfig === 'function') {
-        window.saveAudioConfig();
+        Promise.resolve(window.saveAudioConfig()).then(() => {
+            if (typeof window.refreshTTSEnginesRuntime === 'function') {
+                setTimeout(() => window.refreshTTSEnginesRuntime(false), 800);
+            }
+        });
     }
 };
 
@@ -406,7 +426,23 @@ function buildAudioPayload() {
         (window.audioConfig?.fish_speech_inference_presets) ? window.audioConfig.fish_speech_inference_presets : {}
     );
 
+    const piperPresetsObj = Object.assign(
+        {},
+        (typeof audioConfig !== 'undefined' && audioConfig?.piper_presets) ? audioConfig.piper_presets : {},
+        (window.audioConfig?.piper_presets) ? window.audioConfig.piper_presets : {},
+        v.piper_presets || {}
+    );
+    const piperInfPresetsObj = Object.assign(
+        {},
+        (typeof audioConfig !== 'undefined' && audioConfig?.piper_inference_presets) ? audioConfig.piper_inference_presets : {},
+        (window.audioConfig?.piper_inference_presets) ? window.audioConfig.piper_inference_presets : {},
+        v.piper_inference_presets || {}
+    );
+
     // Sync in memory immediately
+    cfg.piper_presets = piperPresetsObj;
+    cfg.piper_inference_presets = piperInfPresetsObj;
+    cfg.piper_current_preset = getV('v-piper-preset', v.piper_current_preset || 'default');
     cfg.kokoro_presets = kokoroPresetsObj;
     cfg.kokoro_inference_presets = kokoroInfPresetsObj;
     cfg.xtts_presets = xttsPresetsObj;
@@ -418,7 +454,9 @@ function buildAudioPayload() {
 
     return {
         active_engine: getV('v-active-engine', v.active_engine || 'piper'),
+        piper_autostart: getC('v-piper-autostart', v.piper_autostart ?? true),
         kokoro: {
+            autostart: getC('v-kokoro-autostart', v.kokoro?.autostart ?? true),
             speed: parseFloat(getV('v-kokoro-speed', v.kokoro?.speed ?? 1.0)),
             voice: getV('v-kokoro-voice', v.kokoro?.voice || 'af_heart'),
             lang_code: getV('v-kokoro-lang', v.kokoro?.lang_code || 'auto'),
@@ -435,6 +473,7 @@ function buildAudioPayload() {
         kokoro_presets: kokoroPresetsObj,
         kokoro_inference_presets: kokoroInfPresetsObj,
         xtts: {
+            autostart: getC('v-xtts-autostart', v.xtts?.autostart ?? true),
             speed: parseFloat(getV('v-xtts-speed', v.xtts?.speed ?? 1.0)),
             language: getV('v-xtts-lang', v.xtts?.language || 'it'),
             speaker: getV('v-xtts-speaker', v.xtts?.speaker || 'Claribel Dervla'),
@@ -449,7 +488,9 @@ function buildAudioPayload() {
             current_preset: getV('v-xtts-preset', 'default')
         },
         fish_speech: {
-            api_url: getV('v-fish-api-url', v.fish_speech?.api_url || 'http://127.0.0.1:8080/v1/tts'),
+            autostart: getC('v-fish-autostart', v.fish_speech?.autostart ?? true),
+            model_checkpoint: getV('v-fish-model-checkpoint', v.fish_speech?.model_checkpoint || 's2-pro'),
+            api_url: getV('v-fish-api-url', v.fish_speech?.api_url || 'http://127.0.0.1:18480/v1/tts'),
             api_key: getV('v-fish-api-key', v.fish_speech?.api_key || ''),
             reference_id: getV('v-fish-reference-id', v.fish_speech?.reference_id || ''),
             reference_audio: getV('v-fish-speaker-wav', v.fish_speech?.reference_audio || ''),
@@ -478,6 +519,8 @@ function buildAudioPayload() {
         ptt_sources: v.ptt_sources || { keyboard_hotkey: true },
         custom_ptt_key: v.custom_ptt_key || '',
         piper_path: getV('v-piper', v.piper_path || ''),
+        piper_current_preset: getV('v-piper-preset', v.piper_current_preset || 'default'),
+        piper_presets: piperPresetsObj,
         onnx_model: (modelFile.includes('\\') || modelFile.includes('/')) ? modelFile : pdir + '\\' + modelFile,
         speed: (() => { const n = parseFloat(getV('v-speed', v.speed)); return isNaN(n) ? 1.0 : n; })(),
         noise_scale: (() => { const n = parseFloat(getV('v-noise', v.noise_scale)); return isNaN(n) ? 0.667 : n; })(),
@@ -490,7 +533,8 @@ function buildAudioPayload() {
         tts_history_max_files: parseInt(getV('v-tts-history-max', v.tts_history_max_files)) || 100,
         energy_threshold: parseInt(getV('a-threshold', v.energy_threshold)) || 450,
         silence_timeout: parseInt(getV('a-timeout', v.silence_timeout)) || 5,
-        phrase_limit: parseInt(getV('a-limit', v.phrase_limit)) || 15
+        phrase_limit: parseInt(getV('a-limit', v.phrase_limit)) || 15,
+        _allow_empty_presets: !!v._allow_empty_presets
     };
 }
 

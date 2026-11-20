@@ -17,8 +17,29 @@ class RoutingManager:
     @staticmethod
     def get_dynamic_instructions(config):
         try:
-            # 1. Load active plugin tags
+            # 1. Load active plugin tags, filtered by per-session/preset payload_control
             active_tags = get_active_tags()
+            if not active_tags:
+                try:
+                    from hecos.core.system.module_loader import update_capability_registry
+                    update_capability_registry(config, debug_log=False)
+                    active_tags = get_active_tags()
+                except Exception as _reg_err:
+                    logger.debug(f"RoutingManager: capability update skipped: {_reg_err}")
+
+            p_ctrl = (config.get("payload_control") or {}) if isinstance(config, dict) else {}
+            if config and (config.get("disable_tools", False) or not p_ctrl.get("send_tools", True)):
+                return ""
+            sel_mode = str(p_ctrl.get("tool_selection_mode") or "all").strip().lower()
+            custom_allowed_tags = None
+            if sel_mode == "custom":
+                custom_allowed_tags = {
+                    (str(item).strip().split("__", 1)[0].upper() if "__" in str(item) else str(item).strip().upper())
+                    for item in (p_ctrl.get("selected_tools") or [])
+                    if str(item).strip()
+                }
+                if not custom_allowed_tags:
+                    return ""
             
             # 2. Load instructions from registry
             registry_data = {}
@@ -36,6 +57,8 @@ class RoutingManager:
             for tag in active_tags:
                 tag_upper = tag.upper()
                 tag_lower = tag.lower()
+                if custom_allowed_tags is not None and tag_upper not in custom_allowed_tags:
+                    continue
                 # Priority: HPM routing_override.yaml > HPM Manifest > Legacy Registry
                 instruction = None
                 

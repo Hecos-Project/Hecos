@@ -25,14 +25,13 @@
     const STORAGE_KEY   = 'hecos_hks_bindings';
     const PREFS_KEY     = 'hecos_hks_prefs';
     const VERSION_KEY   = 'hecos_hks_version';
-    const BINDINGS_VER  = '7'; // ← increment this whenever DEFAULTS change
+    const BINDINGS_VER  = '9'; // ← increment this whenever DEFAULTS change
 
     // ── Default bindings ──────────────────────────────────────────────────────
     // Inspired by Linux terminal function key conventions.
 
     const DEFAULTS = {
         'nav.packages':      'f1',
-        'ui.chat_overrides': 'f2',
         'ui.global_defaults':'f3',
         'ui.toggle_mic':     'f4',
         'ui.toggle_voice':   'f6',
@@ -50,6 +49,7 @@
         'ui.toggle_room':    'ctrl+shift+m',
         'ui.toggle_sidebar': 'ctrl+b',
         'ui.new_chat':       'ctrl+enter',
+        'ui.chat_search':    'ctrl+k',
         
         'ui.show_cheatsheet':'?',
         'nav.shortcuts':     'ctrl+,',
@@ -83,9 +83,25 @@
             // ── Version guard: if DEFAULTS changed, wipe old bindings ──────────
             const savedVer = localStorage.getItem(VERSION_KEY);
             if (savedVer !== BINDINGS_VER) {
-                console.log('[HKS Bindings] Bindings version mismatch (saved:', savedVer, '→ current:', BINDINGS_VER, ') — resetting to defaults.');
-                _bindings = Object.assign({}, DEFAULTS);
-                localStorage.removeItem(STORAGE_KEY);
+                console.log('[HKS Bindings] Bindings version mismatch (saved:', savedVer, '→ current:', BINDINGS_VER, ') — upgrading bindings cleanly.');
+                const clean = Object.assign({}, DEFAULTS);
+                const rawOld = localStorage.getItem(STORAGE_KEY);
+                if (rawOld) {
+                    try {
+                        const savedOld = JSON.parse(rawOld) || {};
+                        const usedCombos = new Set();
+                        for (const id of Object.keys(DEFAULTS)) {
+                            if (savedOld[id] !== undefined) {
+                                clean[id] = savedOld[id];
+                                if (savedOld[id]) usedCombos.add(savedOld[id]);
+                            } else if (DEFAULTS[id] && usedCombos.has(DEFAULTS[id])) {
+                                clean[id] = null; // Avoid hijacking an existing user binding
+                            }
+                        }
+                    } catch (_) {}
+                }
+                _bindings = clean;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(_bindings));
                 localStorage.setItem(VERSION_KEY, BINDINGS_VER);
             } else {
                 const raw = localStorage.getItem(STORAGE_KEY);

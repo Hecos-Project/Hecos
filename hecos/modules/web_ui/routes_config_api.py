@@ -92,11 +92,36 @@ def register_config_api_routes(app, cfg_mgr, get_sm=None):
 
     @app.route("/hecos/config", methods=["GET"])
     def get_config():
-        """Returns the in-memory YAML configuration."""
+        """Returns the in-memory YAML configuration.
+
+        Auto-reloads from disk if newly-added schema fields are missing from
+        the in-memory config (happens when system.yaml is patched while the
+        server is already running without a full restart).
+        """
         try:
-            return jsonify(cfg_mgr.config)
+            cfg = cfg_mgr.config
+            # Auto-heal: reload from YAML if new Ollama lifecycle fields are absent
+            ollama_cfg = cfg.get("backend", {}).get("ollama", {})
+            if "auto_start_server" not in ollama_cfg or "warmup_model" not in ollama_cfg:
+                logger.info("[Config] New schema fields absent from memory - reloading config from disk.")
+                cfg = cfg_mgr.reload()
+            return jsonify(cfg)
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
+
+    @app.route("/api/config/reload", methods=["POST"])
+    def reload_config():
+        """Force a config reload from disk without restarting Hecos.
+        Useful after patching YAML files while the server is running.
+        """
+        try:
+            cfg = cfg_mgr.reload()
+            _invalidate_options_cache()
+            logger.info("[Config] In-memory config reloaded from disk via API.")
+            return jsonify({"ok": True, "message": "Config reloaded from disk."})
+        except Exception as exc:
+            logger.error(f"[Config] Reload failed: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
 
     @app.route("/hecos/config", methods=["POST"])
     def post_config():
@@ -112,6 +137,38 @@ def register_config_api_routes(app, cfg_mgr, get_sm=None):
 
             success = cfg_mgr.update_from_webui(data)
             if success:
+                # Auto-fix: if binary_path is a directory, resolve the actual exe inside it
+                try:
+                    import os as _os
+                    _odata = data.get("backend", {}).get("ollama", {}) if isinstance(data, dict) else {}
+                    _raw_bin = _odata.get("binary_path", "").strip()
+                    if _raw_bin and _os.path.isdir(_raw_bin):
+                        from hecos.core.llm.ollama_lifecycle import find_ollama_executable
+                        _resolved = find_ollama_executable(_raw_bin)
+                        if _resolved and _resolved != _raw_bin:
+                            cfg_mgr.config.setdefault("backend", {}).setdefault("ollama", {})["binary_path"] = _resolved
+                            cfg_mgr.save_config()
+                            logger.info(f"[WebUI] Auto-fixed ollama binary_path: {_raw_bin!r} -> {_resolved!r}")
+                except Exception as _fix_e:
+                    logger.debug(f"[WebUI] binary_path auto-fix: {_fix_e}")
+
+                # If auto_start_server or warmup_model is enabled, ensure Ollama & model residency match config
+                try:
+                    if isinstance(data, dict) and "backend" in data:
+                        from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager, is_ollama_running
+                        ollama_cfg_now = cfg_mgr.config.get("backend", {}).get("ollama", {})
+                        our_url = ollama_cfg_now.get("url", "http://localhost:11434")
+                        mgr = OllamaLifecycleManager.get_instance()
+                        running_now = is_ollama_running(our_url, timeout=2)
+                        if not running_now and ollama_cfg_now.get("auto_start_server"):
+                            mgr.maybe_auto_start_server(cfg_mgr.config)
+                            if ollama_cfg_now.get("warmup_model"):
+                                mgr.maybe_warmup_model(cfg_mgr.config, delay=4.5)
+                        elif running_now and ollama_cfg_now.get("warmup_model"):
+                            mgr.maybe_warmup_model(cfg_mgr.config, delay=0.5)
+                except Exception as _start_e:
+                    logger.debug(f"[WebUI] Ollama live start/warmup check error: {_start_e}")
+
                 def _bg_sync(cfg_snapshot):
                     try:
                         from hecos.core.system import module_loader
@@ -152,4 +209,132 @@ def register_config_api_routes(app, cfg_mgr, get_sm=None):
                 os.remove(hist_path)
             return jsonify({"ok": True})
         except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/api/vram/status", methods=["GET"])
+    def vram_status():
+        """Returns current VRAM state and the adaptive context profile that would be selected."""
+        try:
+            from hecos.core.llm.adaptive import get_vram_status
+            ollama_cfg = cfg_mgr.config.get("backend", {}).get("ollama", {})
+            data = get_vram_status(ollama_cfg)
+            return jsonify(data)
+        except Exception as exc:
+            logger.debug(f"[WebUI] vram_status error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.route("/hecos/backend/ollama/status", methods=["GET"])
+    def ollama_server_status():
+        """Returns whether Ollama is currently running and responsive, plus binary detection info."""
+        try:
+            from hecos.core.llm.ollama_lifecycle import is_ollama_running, find_ollama_executable
+            ollama_cfg = cfg_mgr.config.get("backend", {}).get("ollama", {})
+            ollama_url = ollama_cfg.get("url", "http://localhost:11434")
+            user_bin = ollama_cfg.get("binary_path", "")
+            detected = find_ollama_executable(user_bin)
+            running = is_ollama_running(ollama_url, timeout=1)
+            return jsonify({
+                "ok": True,
+                "running": running,
+                "url": ollama_url,
+                "binary_path": user_bin,
+                "detected_binary": detected or ""
+            })
+        except Exception as e:
+            return jsonify({"ok": False, "running": False, "error": str(e)})
+
+    @app.route("/hecos/backend/ollama/warmup", methods=["POST"])
+    def warmup_ollama_model():
+        """Triggers an immediate model pre-warm into GPU VRAM."""
+        try:
+            import copy
+            from hecos.core.llm.ollama_lifecycle import (
+                OllamaLifecycleManager,
+                is_ollama_running,
+                resolve_effective_ollama_target,
+            )
+            data = request.json or {}
+            explicit_model = (data.get("model") or "").strip()
+            mgr = OllamaLifecycleManager.get_instance()
+            cfg_clone = copy.deepcopy(cfg_mgr.config)
+            _, eff_model, eff_ollama = resolve_effective_ollama_target(cfg_clone)
+            target_model = explicit_model or eff_model or eff_ollama.get("model", "")
+            cfg_clone.setdefault("backend", {}).setdefault("ollama", {})["warmup_model"] = True
+
+            # If Ollama is not running, launch it first and give it 4.0s to bind
+            ollama_url = eff_ollama.get("url", "http://localhost:11434")
+            delay = 0.0
+            if not is_ollama_running(ollama_url, timeout=2):
+                cfg_clone["backend"]["ollama"]["auto_start_server"] = True
+                mgr.maybe_auto_start_server(cfg_clone)
+                delay = 4.0
+
+            mgr.maybe_warmup_model(cfg_clone, delay=delay, force_model=target_model or None)
+            return jsonify({"ok": True, "model": target_model, "message": "Pre-warming initiated", "started_server": delay > 0})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/backend/ollama/start", methods=["POST"])
+    def start_ollama_server():
+        """Manually launches Ollama in background if not running."""
+        try:
+            from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager, is_ollama_running, find_ollama_executable
+            data = request.json or {}
+            ollama_url = cfg_mgr.config.get("backend", {}).get("ollama", {}).get("url", "http://localhost:11434")
+            if is_ollama_running(ollama_url):
+                return jsonify({"ok": True, "already_running": True, "message": "Ollama is already running"})
+
+            user_bin = data.get("binary_path") or cfg_mgr.config.get("backend", {}).get("ollama", {}).get("binary_path", "")
+            resolved_exe = find_ollama_executable(user_bin)
+            if not resolved_exe:
+                return jsonify({"ok": False, "error": "Ollama executable not found. Please set the path manually."}), 404
+
+            mgr = OllamaLifecycleManager.get_instance()
+            cfg_clone = dict(cfg_mgr.config)
+            cfg_clone.setdefault("backend", {}).setdefault("ollama", {})["auto_start_server"] = True
+            if user_bin:
+                cfg_clone["backend"]["ollama"]["binary_path"] = user_bin
+            mgr.maybe_auto_start_server(cfg_clone)
+            return jsonify({
+                "ok": True,
+                "already_running": False,
+                "executable": resolved_exe,
+                "message": f"Ollama launch initiated ({resolved_exe})"
+            })
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/backend/ollama/stop", methods=["POST"])
+    def stop_ollama_server():
+        """Manually stops Ollama: unloads all models from VRAM then kills the process tree.
+        Returns immediately (non-blocking) — the actual stop runs in a background thread
+        so the Flask server stays responsive and the browser does not time out.
+        """
+        try:
+            from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager, is_ollama_running
+            import threading
+
+            ollama_cfg = cfg_mgr.config.get("backend", {}).get("ollama", {})
+            ollama_url = ollama_cfg.get("url", "http://localhost:11434")
+
+            # Quick pre-check — don't bother if already offline
+            if not is_ollama_running(ollama_url, timeout=2):
+                return jsonify({"ok": True, "message": "Ollama was not running.", "was_running": False})
+
+            mgr = OllamaLifecycleManager.get_instance()
+
+            def _stop_bg():
+                try:
+                    mgr.unload_all_models(ollama_url, timeout=8)
+                    mgr.stop_server()
+                    logger.info("[WebUI] Ollama stopped and VRAM freed (background).")
+                except Exception as _e:
+                    logger.error(f"[WebUI] Background Ollama stop error: {_e}")
+
+            # Fire-and-forget: respond instantly, stop runs in the background
+            threading.Thread(target=_stop_bg, daemon=True, name="OllamaStopBg").start()
+
+            return jsonify({"ok": True, "message": "Ollama stop initiated. VRAM will be freed shortly.", "was_running": True})
+        except Exception as e:
+            logger.error(f"[WebUI] stop_ollama_server error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500

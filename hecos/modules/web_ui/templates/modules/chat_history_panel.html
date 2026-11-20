@@ -1,26 +1,22 @@
+{%- set _cs_tip = t('webui_chat_search_trigger_tip') -%}
 <!-- CHAT HISTORY PANEL - included in chat_sidebar.html -->
 <div class="sidebar-section" id="chat-history-section">
   <div class="sidebar-label" style="display:flex; justify-content:space-between; align-items:center; padding-right:10px;">
     <span>{{ t('webui_chat_history_label') }}</span>
     <div style="display:flex; gap:8px; align-items:center;">
+       <span id="cs-sidebar-search-btn" title="{{ 'Search conversations [Ctrl+K]' if (not _cs_tip or _cs_tip == 'webui_chat_search_trigger_tip') else _cs_tip }}" style="cursor:pointer; font-size: 11px; opacity:0.65; transition:opacity 0.2s, color 0.2s;" onmouseover="this.style.opacity=1; this.style.color='var(--accent)'" onmouseout="this.style.opacity=0.65; this.style.color=''" onclick="window.HecosChatSearch && window.HecosChatSearch.open()"><i class="fas fa-search"></i></span>
        <span id="toggle-archive-btn" title="{{ t('webui_chat_archive_open') }}" style="cursor:pointer; font-size: 11px; opacity:0.5; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" onclick="window.toggleShowArchived()"><i class="fas fa-folder-open"></i></span>
        <span id="ch-delete-all-btn" title="{{ t('webui_chat_archive_all_title') }}" style="cursor:pointer; font-size: var(--font-size-sm); opacity:0.5; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" onclick="window.deleteAllChatSessions(event)"><i class="fas fa-archive"></i></span>
     </div>
   </div>
 
-  <!-- ── Mode Picker ──────────────────────────────────────────── -->
+  <!-- ── Mode Picker (2-tier: Normal / Incognito) ────────────── -->
   <div id="chat-mode-picker" class="chat-mode-picker">
     <button class="mode-btn" id="mode-btn-normal"
             onclick="window.selectChatMode('normal')"
             title="{{ t('webui_chat_mode_normal_tip') }}">
       <span class="mode-icon"><i class="fas fa-cloud"></i></span>
       <span class="mode-label">Normal</span>
-    </button>
-    <button class="mode-btn" id="mode-btn-auto_wipe"
-            onclick="window.selectChatMode('auto_wipe')"
-            title="{{ t('webui_chat_mode_autowipe_tip') }}">
-      <span class="mode-icon"><i class="fas fa-broom"></i></span>
-      <span class="mode-label">Auto-Wipe</span>
     </button>
     <button class="mode-btn" id="mode-btn-incognito"
             onclick="window.selectChatMode('incognito')"
@@ -89,8 +85,7 @@
 
 /* Active state per mode */
 #mode-btn-normal.active    { border-color: var(--accent); color: var(--accent); background: rgba(var(--accent-rgb),0.08); box-shadow: 0 0 8px rgba(var(--accent-rgb),0.15); }
-#mode-btn-auto_wipe.active { border-color: var(--yellow);       color: var(--yellow);       background: rgba(var(--yellow-rgb),0.08); box-shadow: 0 0 8px rgba(var(--yellow-rgb),0.15); }
-#mode-btn-incognito.active { border-color: var(--accent2);       color: var(--accent2);       background: rgba(var(--accent2-rgb),0.08); box-shadow: 0 0 8px rgba(var(--accent2-rgb),0.15); }
+#mode-btn-incognito.active { border-color: var(--accent2); color: var(--accent2); background: rgba(var(--accent2-rgb),0.08); box-shadow: 0 0 8px rgba(var(--accent2-rgb),0.15); }
 
 /* Locked state */
 .chat-mode-picker.locked .mode-btn {
@@ -163,5 +158,59 @@
   height: 1px;
   background: var(--border);
   opacity: 0.5;
+}
+
+/* ── Flows-style Chat Activity Status LEDs ────────────────────── */
+.chat-status-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+  background: rgba(148, 163, 184, 0.35);
+  transition: background 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+.chat-status-led.is-idle {
+  background: rgba(148, 163, 184, 0.35);
+  box-shadow: none;
+}
+.chat-status-led.is-running {
+  background: #2ecc71;
+  box-shadow: 0 0 6px #2ecc71;
+  animation: chatLedPulseRunning 1.5s infinite;
+}
+.chat-status-led.is-speaking {
+  background: #f59e0b;
+  box-shadow: 0 0 7px rgba(245, 158, 11, 0.9);
+  animation: chatLedPulseSpeaking 1.1s infinite;
+}
+.chat-status-led.is-stopped,
+.chat-status-led.is-error {
+  background: #e74c3c;
+  box-shadow: 0 0 6px rgba(231, 76, 60, 0.85);
+}
+.history-item.status-running {
+  border-color: rgba(46, 204, 113, 0.45);
+}
+.history-item.status-speaking {
+  border-color: rgba(245, 158, 11, 0.6);
+  background: rgba(245, 158, 11, 0.08);
+}
+.history-speaking-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fbbf24;
+  font-size: 10px;
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+@keyframes chatLedPulseRunning {
+  0%, 100% { box-shadow: 0 0 4px #2ecc71; opacity: 1; }
+  50% { box-shadow: 0 0 11px #2ecc71; opacity: 0.72; }
+}
+@keyframes chatLedPulseSpeaking {
+  0%, 100% { box-shadow: 0 0 4px #f59e0b; opacity: 1; }
+  50% { box-shadow: 0 0 12px #fbbf24; opacity: 0.78; }
 }
 </style>

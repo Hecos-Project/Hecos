@@ -1,4 +1,4 @@
-﻿/**
+/**
  * config_core_hub.js
  * CONFIG HUB ENGINE — renders the tab bar, wall view, and filter category bar.
  * Also provides injectIconsInPanel for automatic icon decoration.
@@ -194,7 +194,7 @@ function renderFilterTabs() {
     const { newPanels: _ftNewPanels, newCats: _ftNewCats } = window.hpmGetNewCategories(allVisible);
 
     let html = `
-        <button class="filter-btn ${window.activeCategoryFilter === 'ALL' ? 'active' : ''}" onclick="setCategoryFilter('ALL')">
+        <button type="button" class="filter-btn ${window.activeCategoryFilter === 'ALL' ? 'active' : ''}" data-filter-cat="ALL" onclick="setCategoryFilter('ALL')">
             <span><i class="fas fa-star"></i></span> ${_hubT('hub_filter_all', 'All')}
             <span class="btn-badge">${counts['ALL']}</span>
         </button>
@@ -207,7 +207,7 @@ function renderFilterTabs() {
         if (count === 0) return;
         const _ftCatIsNew = _ftNewCats.has(catId);
         html += `
-            <button class="filter-btn ${activeClass}" onclick="setCategoryFilter('${catId}')">
+            <button type="button" class="filter-btn ${activeClass}" data-filter-cat="${catId}" onclick="setCategoryFilter('${catId}')">
                 <span>${cat.icon}</span> ${window.t ? window.t(cat.label) : catId}
                 <span class="btn-badge${_ftCatIsNew ? ' badge-new' : ''}">${count}</span>
             </button>
@@ -223,25 +223,51 @@ function renderFilterTabs() {
 // Per-category page size (max cards shown when paginated)
 // ── Hub Pagination Architecture: Default (Top Bar) & Per-Category Override ──
 // Global default cards per page (controlled via the top search-bar dropdown)
-const _savedDefPageSize = localStorage.getItem('hub_default_page_size') || localStorage.getItem('hub_cat_page_size');
-window.HUB_DEFAULT_PAGE_SIZE = parseInt(_savedDefPageSize, 10) || 6;
+const _rawDefSize = localStorage.getItem('hub_default_page_size') || localStorage.getItem('hub_cat_page_size');
+let _savedDefPageSize = parseInt(_rawDefSize, 10);
+const _allowedPageSizes = [5, 10, 15, 20, 25];
+if (!_savedDefPageSize || !_allowedPageSizes.includes(_savedDefPageSize)) {
+    if (!_savedDefPageSize || _savedDefPageSize <= 5) _savedDefPageSize = 5;
+    else if (_savedDefPageSize <= 10) _savedDefPageSize = 10;
+    else if (_savedDefPageSize <= 15) _savedDefPageSize = 15;
+    else if (_savedDefPageSize <= 20) _savedDefPageSize = 20;
+    else _savedDefPageSize = 25;
+    try { localStorage.setItem('hub_default_page_size', _savedDefPageSize); } catch(e) {}
+}
+window.HUB_DEFAULT_PAGE_SIZE = _savedDefPageSize;
 window.HUB_CAT_PAGE_SIZE = window.HUB_DEFAULT_PAGE_SIZE; // backward-compat
 
 // Per-category custom overrides: { [catId]: number }
 let _savedCatPerPage = {};
-try { _savedCatPerPage = JSON.parse(localStorage.getItem('hub_cat_per_page') || '{}'); } catch(e) {}
+try {
+    _savedCatPerPage = JSON.parse(localStorage.getItem('hub_cat_per_page') || '{}');
+    let dirty = false;
+    for (const [k, v] of Object.entries(_savedCatPerPage)) {
+        if (!_allowedPageSizes.includes(v)) {
+            if (v <= 5) _savedCatPerPage[k] = 5;
+            else if (v <= 10) _savedCatPerPage[k] = 10;
+            else if (v <= 15) _savedCatPerPage[k] = 15;
+            else if (v <= 20) _savedCatPerPage[k] = 20;
+            else _savedCatPerPage[k] = 25;
+            dirty = true;
+        }
+    }
+    if (dirty) {
+        localStorage.setItem('hub_cat_per_page', JSON.stringify(_savedCatPerPage));
+    }
+} catch(e) {}
 window.HUB_CAT_PER_PAGE = _savedCatPerPage;
 
 window.hubGetCatPageSize = function(catId) {
     if (window.HUB_CAT_PER_PAGE && window.HUB_CAT_PER_PAGE[catId]) {
         return window.HUB_CAT_PER_PAGE[catId];
     }
-    return window.HUB_DEFAULT_PAGE_SIZE || 6;
+    return window.HUB_DEFAULT_PAGE_SIZE || 5;
 };
 
 window.hubSetDefaultPageSize = function(size) {
     size = parseInt(size, 10);
-    if (isNaN(size) || size < 4) size = 4;
+    if (isNaN(size) || size < 5) size = 5;
     if (size > 100) size = 100;
     window.HUB_DEFAULT_PAGE_SIZE = size;
     window.HUB_CAT_PAGE_SIZE = size;
@@ -256,7 +282,7 @@ window.hubSetCatPageSize = function(catId, size) {
         delete window.HUB_CAT_PER_PAGE[catId];
     } else {
         size = parseInt(size, 10);
-        if (!isNaN(size) && size >= 4) {
+        if (!isNaN(size) && size >= 5) {
             window.HUB_CAT_PER_PAGE[catId] = size;
         }
     }
@@ -304,7 +330,9 @@ window.hubCatPage = function(catId, delta) {
         } catch(e) {}
     }
     const cur = window.HUB_CAT_PAGES[catId] || 1;
-    window.HUB_CAT_PAGES[catId] = Math.max(1, cur + delta);
+    const grp = document.querySelector(`.category-group[data-cat-id="${catId}"]`);
+    const maxP = grp ? (parseInt(grp.dataset.totalPages, 10) || 999) : 999;
+    window.HUB_CAT_PAGES[catId] = Math.max(1, Math.min(maxP, cur + delta));
     renderConfigHub();
 };
 
@@ -505,12 +533,41 @@ window.hubCatSetPage = function(catId, page) {
             border-color: var(--accent, #6c8cff) !important;
             box-shadow: 0 0 8px rgba(var(--accent-rgb, 108, 140, 255), 0.35) !important;
         }
+        /* ── Hub 2D Keyboard Focus Ring (.hub-kb-focus) ── */
+        .filter-btn.hub-kb-focus {
+            outline: 2px solid var(--accent, #6c8cff) !important;
+            outline-offset: 2px !important;
+            box-shadow: 0 0 0 4px rgba(var(--accent-rgb, 108, 140, 255), 0.25), 0 0 14px rgba(var(--accent-rgb, 108, 140, 255), 0.5) !important;
+            color: var(--text, #e2e8f0) !important;
+            transform: translateY(-1px) !important;
+            position: relative !important;
+            z-index: 5 !important;
+        }
+        .cat-pagination-wrap.hub-kb-focus,
+        .cat-activate-pag-btn.hub-kb-focus,
+        .category-header.hub-kb-focus {
+            outline: 2px solid var(--accent, #6c8cff) !important;
+            outline-offset: 2px !important;
+            border-radius: 10px !important;
+            box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 108, 140, 255), 0.25), 0 0 12px rgba(var(--accent-rgb, 108, 140, 255), 0.45) !important;
+        }
+        .module-card.hub-kb-focus,
+        button.tab.hub-kb-focus {
+            outline: 2px solid var(--accent, #6c8cff) !important;
+            outline-offset: 2px !important;
+            border-color: var(--accent, #6c8cff) !important;
+            background: var(--bg3, #1c2033) !important;
+            color: var(--text, #e2e8f0) !important;
+            box-shadow: 0 0 0 4px rgba(var(--accent-rgb, 108, 140, 255), 0.25), 0 6px 18px rgba(var(--accent-rgb, 108, 140, 255), 0.35) !important;
+            transform: translateY(-3px) !important;
+            z-index: 5 !important;
+        }
     `;
     if (document.head) document.head.appendChild(st);
 })();
 
 window.renderHubCatPagination = function(catId, page, totalPages, isPaginated) {
-    const defaultSize = window.HUB_DEFAULT_PAGE_SIZE || 6;
+    const defaultSize = window.HUB_DEFAULT_PAGE_SIZE || 5;
     const hasOverride = !!(window.HUB_CAT_PER_PAGE && window.HUB_CAT_PER_PAGE[catId]);
     const catPageSize = window.hubGetCatPageSize(catId);
     const pageLabel   = _hubT('hub_page', 'page');
@@ -521,7 +578,7 @@ window.renderHubCatPagination = function(catId, page, totalPages, isPaginated) {
         const pageWord = safeTotalPages === 1 ? _hubT('hub_page', 'page') : _hubT('hub_pages', 'pages');
         const countInfo = safeTotalPages > 1 ? ` (${safeTotalPages} ${pageWord})` : '';
         return `
-            <button class="cat-activate-pag-btn" onclick="event.stopPropagation(); hubCatTogglePagination('${catId}')" title="${_hubT('hub_paginate_cat_tip', 'Paginate this category')}">
+            <button type="button" class="cat-activate-pag-btn" data-pag-cat="${catId}" onclick="event.stopPropagation(); hubCatTogglePagination('${catId}')" title="${_hubT('hub_paginate_cat_tip', 'Paginate this category')}">
                 <i class="fas fa-layer-group" style="font-size:9px;"></i> ${_hubT('hub_paginate', 'Paginate')}${countInfo}
             </button>
         `;
@@ -531,7 +588,7 @@ window.renderHubCatPagination = function(catId, page, totalPages, isPaginated) {
     let pills = '';
     if (safeTotalPages <= 5) {
         for (let i = 1; i <= safeTotalPages; i++) {
-            pills += `<button class="cat-page-pill ${page === i ? 'active' : ''}" onclick="event.stopPropagation(); hubCatSetPage('${catId}', ${i})">${i}</button>`;
+            pills += `<button type="button" class="cat-page-pill ${page === i ? 'active' : ''}" onclick="event.stopPropagation(); hubCatSetPage('${catId}', ${i})">${i}</button>`;
         }
     } else {
         let pages = [1];
@@ -544,7 +601,7 @@ window.renderHubCatPagination = function(catId, page, totalPages, isPaginated) {
 
         pills = pages.map(p => {
             if (p === '...') return `<span class="cat-page-dots" style="font-size:10px;color:var(--muted);padding:0 2px;">…</span>`;
-            return `<button class="cat-page-pill ${page === p ? 'active' : ''}" onclick="event.stopPropagation(); hubCatSetPage('${catId}', ${p})">${p}</button>`;
+            return `<button type="button" class="cat-page-pill ${page === p ? 'active' : ''}" onclick="event.stopPropagation(); hubCatSetPage('${catId}', ${p})">${p}</button>`;
         }).join('');
     }
 
@@ -560,74 +617,580 @@ window.renderHubCatPagination = function(catId, page, totalPages, isPaginated) {
         : 'border-color:var(--accent,#6c8cff) !important; color:var(--accent,#6c8cff) !important; background:rgba(var(--accent-rgb,108,140,255),0.14) !important; box-shadow:0 0 8px rgba(var(--accent-rgb,108,140,255),0.25) !important; cursor:pointer !important;';
 
     return `
-        <div class="cat-pagination-wrap" onclick="event.stopPropagation()">
-            <button class="cat-page-arrow-btn prev" style="width:32px; height:28px; border-radius:8px; border:1.5px solid; ${prevInline} display:inline-flex; align-items:center; justify-content:center;" onclick="event.stopPropagation(); hubCatPage('${catId}', -1)" ${prevDisabled ? 'disabled' : ''} title="${_hubT('hub_prev_page', 'Previous page (Left Arrow)')}">
+        <div class="cat-pagination-wrap" data-pag-cat="${catId}" onclick="event.stopPropagation()">
+            <button type="button" class="cat-page-arrow-btn prev" style="width:32px; height:28px; border-radius:8px; border:1.5px solid; ${prevInline} display:inline-flex; align-items:center; justify-content:center;" onclick="event.stopPropagation(); hubCatPage('${catId}', -1)" ${prevDisabled ? 'disabled' : ''} title="${_hubT('hub_prev_page', 'Previous page (Left Arrow)')}">
                 <i class="fas fa-chevron-left" style="font-size:13px; font-weight:900; color:inherit;"></i>
             </button>
             <div class="cat-page-pills-pill">
                 ${pills}
             </div>
-            <button class="cat-page-arrow-btn next" style="width:32px; height:28px; border-radius:8px; border:1.5px solid; ${nextInline} display:inline-flex; align-items:center; justify-content:center;" onclick="event.stopPropagation(); hubCatPage('${catId}', 1)" ${nextDisabled ? 'disabled' : ''} title="${_hubT('hub_next_page', 'Next page (Right Arrow)')}">
+            <button type="button" class="cat-page-arrow-btn next" style="width:32px; height:28px; border-radius:8px; border:1.5px solid; ${nextInline} display:inline-flex; align-items:center; justify-content:center;" onclick="event.stopPropagation(); hubCatPage('${catId}', 1)" ${nextDisabled ? 'disabled' : ''} title="${_hubT('hub_next_page', 'Next page (Right Arrow)')}">
                 <i class="fas fa-chevron-right" style="font-size:13px; font-weight:900; color:inherit;"></i>
             </button>
-            <button class="cat-show-all-btn" onclick="event.stopPropagation(); hubCatTogglePagination('${catId}')" title="${_hubT('hub_show_all_tip', 'Show all cards (disable pagination)')}">
+            <button type="button" class="cat-show-all-btn" onclick="event.stopPropagation(); hubCatTogglePagination('${catId}')" title="${_hubT('hub_show_all_tip', 'Show all cards (disable pagination)')}">
                 ${_hubT('hub_show_all', 'Show All')}
             </button>
             <select class="cat-page-size-select" onchange="event.stopPropagation(); hubSetCatPageSize('${catId}', this.value);" title="${_hubT('hub_cards_per_page', 'Cards per page')}">
                 <option value="default" ${!hasOverride ? 'selected' : ''}>Default (${defaultSize})</option>
-                <option value="4" ${hasOverride && catPageSize === 4 ? 'selected' : ''}>4 / ${pageLabel}</option>
-                <option value="6" ${hasOverride && catPageSize === 6 ? 'selected' : ''}>6 / ${pageLabel}</option>
-                <option value="8" ${hasOverride && catPageSize === 8 ? 'selected' : ''}>8 / ${pageLabel}</option>
-                <option value="12" ${hasOverride && catPageSize === 12 ? 'selected' : ''}>12 / ${pageLabel}</option>
-                <option value="18" ${hasOverride && catPageSize === 18 ? 'selected' : ''}>18 / ${pageLabel}</option>
-                <option value="24" ${hasOverride && catPageSize === 24 ? 'selected' : ''}>24 / ${pageLabel}</option>
+                <option value="5" ${hasOverride && catPageSize === 5 ? 'selected' : ''}>5 / ${pageLabel}</option>
+                <option value="10" ${hasOverride && catPageSize === 10 ? 'selected' : ''}>10 / ${pageLabel}</option>
+                <option value="15" ${hasOverride && catPageSize === 15 ? 'selected' : ''}>15 / ${pageLabel}</option>
+                <option value="20" ${hasOverride && catPageSize === 20 ? 'selected' : ''}>20 / ${pageLabel}</option>
+                <option value="25" ${hasOverride && catPageSize === 25 ? 'selected' : ''}>25 / ${pageLabel}</option>
             </select>
         </div>
     `;
 };
 
-// Keyboard ArrowLeft / ArrowRight navigation
+// ── Hub 2D Keyboard Navigation (Filters ↔ Pagination ↔ Cards/Tabs) ──────────
+if (!window.HUB_KB_STATE) {
+    window.HUB_KB_STATE = {
+        active: false,       // true ONLY when user explicitly clicked inside Hub navigation zones
+        visible: false,      // true once user presses an arrow key (shows .hub-kb-focus ring)
+        zone: null,          // 'filters' | 'pagination' | 'cards'
+        filterCat: null,     // 'ALL' | catId
+        catId: null,         // category ID for 'pagination' or 'cards'
+        moduleId: null       // module ID for 'cards'
+    };
+}
+
+function _getActiveHubContainer() {
+    const wall = document.getElementById('config-wall');
+    const tabs = document.getElementById('config-tabs-bar');
+    if (typeof viewMode !== 'undefined' && viewMode === 'wall') return wall;
+    if (wall && wall.offsetParent !== null) return wall;
+    return tabs;
+}
+
+function _getHubFilterButtons() {
+    const container = document.getElementById('config-filter-tabs');
+    if (!container || container.offsetParent === null) return [];
+    return Array.from(container.querySelectorAll('.filter-btn[data-filter-cat]'));
+}
+
+function _getHubCategoryGroups() {
+    const hubEl = _getActiveHubContainer();
+    if (!hubEl || hubEl.offsetParent === null) return [];
+    return Array.from(hubEl.querySelectorAll('.category-group[data-cat-id]'));
+}
+
+function _hasGroupPagControls(group) {
+    if (!group) return false;
+    return !!group.querySelector('.cat-pagination-wrap, .cat-activate-pag-btn');
+}
+
+function _getHubGroupItems(group) {
+    if (!group || group.classList.contains('collapsed')) return [];
+    return Array.from(group.querySelectorAll('.module-card[data-mod-id], button.tab[data-mod-id]'))
+        .filter(el => el.offsetParent !== null);
+}
+
+function _getHubVisualRows(items) {
+    const rows = [];
+    const ROW_TOLERANCE_PX = 18;
+    items.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        const centerY = rect.top + rect.height / 2;
+        const centerX = rect.left + rect.width / 2;
+        let row = rows.find(r => Math.abs(r.centerY - centerY) <= ROW_TOLERANCE_PX);
+        if (!row) {
+            row = { centerY, entries: [] };
+            rows.push(row);
+        }
+        row.entries.push({ el, centerX, centerY, modId: el.dataset.modId });
+    });
+    rows.sort((a, b) => a.centerY - b.centerY);
+    rows.forEach(r => r.entries.sort((a, b) => a.centerX - b.centerX));
+    return rows;
+}
+
+function _pickClosestInRow(row, targetX) {
+    let best = row.entries[0];
+    let bestDist = Math.abs(best.centerX - targetX);
+    for (let i = 1; i < row.entries.length; i++) {
+        const d = Math.abs(row.entries[i].centerX - targetX);
+        if (d < bestDist) {
+            best = row.entries[i];
+            bestDist = d;
+        }
+    }
+    return best;
+}
+
+function _isAnyHubOverlayOpen() {
+    if (document.getElementById('hwp-overlay')) return true;
+    const overlaySelectors = [
+        '#hdcs-overlay',
+        '#zs-results',
+        '#zs-settings-panel',
+        '.hks-modal',
+        '.hecos-gallery-overlay',
+        '.modal.open',
+        '[role="dialog"]'
+    ];
+    for (const sel of overlaySelectors) {
+        const els = document.querySelectorAll(sel);
+        for (const el of els) {
+            if (!el || el.offsetParent === null) continue;
+            const cs = window.getComputedStyle(el);
+            if (cs.display !== 'none' && cs.visibility !== 'hidden') return true;
+        }
+    }
+    return false;
+}
+
+window.hubClearKbFocus = function() {
+    if (window.HUB_KB_STATE) {
+        window.HUB_KB_STATE.active = false;
+        window.HUB_KB_STATE.visible = false;
+    }
+    document.querySelectorAll('.hub-kb-focus').forEach(el => el.classList.remove('hub-kb-focus'));
+};
+
+window.syncHubKbFocus = function(scrollToTarget = false) {
+    document.querySelectorAll('.hub-kb-focus').forEach(el => el.classList.remove('hub-kb-focus'));
+    const st = window.HUB_KB_STATE;
+    if (!st || !st.active || !st.visible) return;
+
+    let targetEl = null;
+
+    if (st.zone === 'filters') {
+        const fc = st.filterCat || window.activeCategoryFilter || 'ALL';
+        targetEl = document.querySelector(`#config-filter-tabs .filter-btn[data-filter-cat="${fc}"]`)
+                || document.querySelector('#config-filter-tabs .filter-btn[data-filter-cat]');
+    } else {
+        const hubContainer = _getActiveHubContainer();
+        if (hubContainer) {
+            if (st.zone === 'pagination' && st.catId) {
+                const grp = hubContainer.querySelector(`.category-group[data-cat-id="${st.catId}"]`);
+                if (grp) {
+                    targetEl = grp.querySelector('.cat-pagination-wrap, .cat-activate-pag-btn')
+                            || grp.querySelector('.category-header');
+                }
+            } else if (st.zone === 'cards') {
+                if (st.moduleId) {
+                    targetEl = hubContainer.querySelector(
+                        `.module-card[data-mod-id="${st.moduleId}"], button.tab[data-mod-id="${st.moduleId}"]`
+                    );
+                }
+                if (!targetEl && st.catId) {
+                    const grp = hubContainer.querySelector(`.category-group[data-cat-id="${st.catId}"]`);
+                    const items = _getHubGroupItems(grp);
+                    if (items.length > 0) {
+                        targetEl = items[0];
+                        st.moduleId = targetEl.dataset.modId;
+                    }
+                }
+            }
+        }
+    }
+
+    if (targetEl) {
+        targetEl.classList.add('hub-kb-focus');
+        if (scrollToTarget) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        }
+    }
+};
+
+function _enterHubGroupFromTop(group, preferredX = null) {
+    const st = window.HUB_KB_STATE;
+    const cid = group.dataset.catId;
+    window.HUB_LAST_ACTIVE_CAT = cid;
+
+    if (_hasGroupPagControls(group) || group.classList.contains('collapsed')) {
+        st.zone = 'pagination';
+        st.catId = cid;
+        st.moduleId = null;
+        return;
+    }
+
+    const items = _getHubGroupItems(group);
+    if (items.length > 0) {
+        st.zone = 'cards';
+        st.catId = cid;
+        if (preferredX !== null) {
+            const rows = _getHubVisualRows(items);
+            st.moduleId = _pickClosestInRow(rows[0], preferredX).modId;
+        } else {
+            st.moduleId = items[0].dataset.modId;
+        }
+    } else {
+        st.zone = 'pagination';
+        st.catId = cid;
+        st.moduleId = null;
+    }
+}
+
+function _enterHubGroupFromBottom(group, preferredX = null) {
+    const st = window.HUB_KB_STATE;
+    const cid = group.dataset.catId;
+    window.HUB_LAST_ACTIVE_CAT = cid;
+
+    const items = _getHubGroupItems(group);
+    if (items.length > 0) {
+        const rows = _getHubVisualRows(items);
+        const lastRow = rows[rows.length - 1];
+        st.zone = 'cards';
+        st.catId = cid;
+        st.moduleId = (preferredX !== null)
+            ? _pickClosestInRow(lastRow, preferredX).modId
+            : lastRow.entries[0].modId;
+    } else {
+        st.zone = 'pagination';
+        st.catId = cid;
+        st.moduleId = null;
+    }
+}
+
 if (!window._hubKeyNavAttached) {
     window._hubKeyNavAttached = true;
 
-    // Track hovered category for keyboard navigation
+    // Track hovered category for convenience
     document.addEventListener('mouseover', (e) => {
-        const group = e.target.closest?.('.category-group');
-        if (group && group.dataset && group.dataset.catId) {
+        const group = e.target.closest?.('.category-group[data-cat-id]');
+        if (group && group.dataset.catId) {
             window.HUB_LAST_ACTIVE_CAT = group.dataset.catId;
         }
     });
 
-    document.addEventListener('keydown', (e) => {
-        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    // Strict contextual activation/deactivation via mouse pointer
+    document.addEventListener('mousedown', (e) => {
+        const t = e.target;
+        if (!t || typeof t.closest !== 'function') return;
 
-        // Skip if typing in an input / textarea / select
-        const activeEl = document.activeElement;
-        const tag = (activeEl && activeEl.tagName) || '';
-        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || activeEl?.isContentEditable) return;
+        // Never hijack native selects/inputs (including .cat-page-size-select)
+        if (t.closest('select, input, textarea, [contenteditable="true"]')) {
+            window.hubClearKbFocus();
+            return;
+        }
+
+        // Zone 1: Category Filter Pills
+        const filterBtn = t.closest('#config-filter-tabs .filter-btn[data-filter-cat]');
+        if (filterBtn) {
+            const fc = filterBtn.dataset.filterCat;
+            window.HUB_KB_STATE = {
+                active: true,
+                visible: false,
+                zone: 'filters',
+                filterCat: fc,
+                catId: fc !== 'ALL' ? fc : null,
+                moduleId: null
+            };
+            document.querySelectorAll('.hub-kb-focus').forEach(el => el.classList.remove('hub-kb-focus'));
+            return;
+        }
+
+        // Zone 2: Category Pagination / Header
+        const pagOrHdr = t.closest(
+            '#config-tabs-bar .cat-pagination-wrap, #config-tabs-bar .cat-activate-pag-btn, #config-tabs-bar .category-header, ' +
+            '#config-wall .cat-pagination-wrap, #config-wall .cat-activate-pag-btn, #config-wall .category-header'
+        );
+        if (pagOrHdr) {
+            const grp = pagOrHdr.closest('.category-group[data-cat-id]');
+            const cid = grp ? grp.dataset.catId : null;
+            if (cid) {
+                window.HUB_LAST_ACTIVE_CAT = cid;
+                window.HUB_KB_STATE = {
+                    active: true,
+                    visible: false,
+                    zone: 'pagination',
+                    filterCat: window.activeCategoryFilter || 'ALL',
+                    catId: cid,
+                    moduleId: null
+                };
+                document.querySelectorAll('.hub-kb-focus').forEach(el => el.classList.remove('hub-kb-focus'));
+                return;
+            }
+        }
+
+        // Zone 3: Module Cards (Wall) or Tabs (Tabs bar)
+        const cardOrTab = t.closest('#config-wall .module-card[data-mod-id], #config-tabs-bar button.tab[data-mod-id]');
+        if (cardOrTab) {
+            const modId = cardOrTab.dataset.modId;
+            const cid = cardOrTab.dataset.modCat || cardOrTab.closest('.category-group[data-cat-id]')?.dataset.catId || null;
+            if (cid) window.HUB_LAST_ACTIVE_CAT = cid;
+            window.HUB_KB_STATE = {
+                active: true,
+                visible: false,
+                zone: 'cards',
+                filterCat: window.activeCategoryFilter || 'ALL',
+                catId: cid,
+                moduleId: modId
+            };
+            document.querySelectorAll('.hub-kb-focus').forEach(el => el.classList.remove('hub-kb-focus'));
+            return;
+        }
+
+        // Any click outside Hub zones (e.g. inside #panel-container, search bar, header, save-bar) immediately releases Hub nav
+        window.hubClearKbFocus();
+    }, true);
+
+    // Release Hub keyboard focus immediately if focus moves into config panels or any form control
+    document.addEventListener('focusin', (e) => {
+        const t = e.target;
+        if (!t || typeof t.closest !== 'function') return;
+        const tag = (t.tagName || '').toUpperCase();
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || t.isContentEditable) {
+            window.hubClearKbFocus();
+            return;
+        }
+        if (t.closest('#panel-container, #hecos-search-bar, header, .save-bar')) {
+            window.hubClearKbFocus();
+        }
+    });
+
+    // Main 2D Keyboard Navigator
+    document.addEventListener('keydown', (e) => {
+        const st = window.HUB_KB_STATE;
+        if (!st || !st.active) return;
+
+        const navKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', ' ', 'Escape'];
+        if (!navKeys.includes(e.key)) return;
         if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
 
-        // Determine target category
-        let targetCat = null;
-        if (window.activeCategoryFilter && window.activeCategoryFilter !== 'ALL') {
-            targetCat = window.activeCategoryFilter;
-        } else if (window.HUB_LAST_ACTIVE_CAT) {
-            targetCat = window.HUB_LAST_ACTIVE_CAT;
-        } else if (window.activeTab && window.CONFIG_HUB && window.CONFIG_HUB.modules) {
-            const m = window.CONFIG_HUB.modules.find(mod => mod.id === window.activeTab);
-            if (m && m.cat) targetCat = m.cat;
+        const activeEl = document.activeElement;
+        const tag = ((activeEl && activeEl.tagName) || '').toUpperCase();
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || activeEl?.isContentEditable) {
+            window.hubClearKbFocus();
+            return;
+        }
+        if (activeEl && activeEl.closest?.('#panel-container, #hecos-search-bar, header, .save-bar')) {
+            window.hubClearKbFocus();
+            return;
+        }
+        if (_isAnyHubOverlayOpen()) return;
+
+        // Escape: release Hub keyboard focus
+        if (e.key === 'Escape') {
+            if (st.visible) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            window.hubClearKbFocus();
+            return;
         }
 
-        if (!targetCat && window.CONFIG_HUB && window.CONFIG_HUB.categories) {
-            const allCats = Object.keys(window.CONFIG_HUB.categories);
-            targetCat = allCats.find(c => window.HUB_PAGINATED_CATS && window.HUB_PAGINATED_CATS.has(c)) || allCats[0];
+        // Enter / Space: execute action on focused element ONLY if keyboard ring is visible
+        if (e.key === 'Enter' || e.key === ' ') {
+            if (!st.visible) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (st.zone === 'cards' && st.moduleId) {
+                if (typeof window.showTab === 'function') window.showTab(st.moduleId);
+            } else if (st.zone === 'pagination' && st.catId) {
+                const hubEl = _getActiveHubContainer();
+                const grp = hubEl ? hubEl.querySelector(`.category-group[data-cat-id="${st.catId}"]`) : null;
+                if (grp && _hasGroupPagControls(grp)) {
+                    window.hubCatTogglePagination(st.catId);
+                } else if (grp && typeof window.toggleCategory === 'function') {
+                    window.toggleCategory(st.catId);
+                }
+                window.syncHubKbFocus(true);
+            } else if (st.zone === 'filters') {
+                const fc = st.filterCat || window.activeCategoryFilter || 'ALL';
+                if (typeof window.setCategoryFilter === 'function') window.setCategoryFilter(fc);
+                window.syncHubKbFocus(true);
+            }
+            return;
         }
 
-        if (!targetCat) return;
-
-        const delta = (e.key === 'ArrowRight') ? 1 : -1;
+        // Arrow Keys: prevent native page scroll & blur any stale Hub <button> focus
         e.preventDefault();
-        window.hubCatPage(targetCat, delta);
+        e.stopPropagation();
+        if (activeEl && activeEl !== document.body && typeof activeEl.blur === 'function') {
+            activeEl.blur();
+        }
+
+        // ── ZONE 1: Category Filters ──────────────────────────────────────────
+        if (st.zone === 'filters') {
+            const btns = _getHubFilterButtons();
+            if (btns.length === 0) return;
+            const curFilter = st.filterCat || window.activeCategoryFilter || 'ALL';
+            let idx = btns.findIndex(b => b.dataset.filterCat === curFilter);
+            if (idx === -1) idx = 0;
+
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                const delta = (e.key === 'ArrowRight') ? 1 : -1;
+                const nextIdx = (idx + delta + btns.length) % btns.length;
+                const nextCat = btns[nextIdx].dataset.filterCat;
+                st.visible = true;
+                st.filterCat = nextCat;
+                st.catId = (nextCat !== 'ALL') ? nextCat : null;
+                st.moduleId = null;
+                if (typeof window.setCategoryFilter === 'function') {
+                    window.setCategoryFilter(nextCat);
+                }
+                window.syncHubKbFocus(true);
+            } else if (e.key === 'ArrowDown') {
+                if (!window.activeCategoryFilter && typeof window.setCategoryFilter === 'function') {
+                    window.setCategoryFilter(curFilter);
+                }
+                const groups = _getHubCategoryGroups();
+                if (groups.length > 0) {
+                    st.visible = true;
+                    _enterHubGroupFromTop(groups[0]);
+                    window.syncHubKbFocus(true);
+                }
+            } else if (e.key === 'ArrowUp') {
+                st.visible = true;
+                window.syncHubKbFocus(true);
+            }
+            return;
+        }
+
+        // ── ZONE 2: Category Pagination / Header ──────────────────────────────
+        if (st.zone === 'pagination') {
+            const groups = _getHubCategoryGroups();
+            if (groups.length === 0) {
+                st.zone = 'filters';
+                st.visible = true;
+                window.syncHubKbFocus(true);
+                return;
+            }
+            let gIdx = groups.findIndex(g => g.dataset.catId === st.catId);
+            if (gIdx === -1) {
+                gIdx = 0;
+                st.catId = groups[0].dataset.catId;
+            }
+            const group = groups[gIdx];
+            st.visible = true;
+
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                const delta = (e.key === 'ArrowRight') ? 1 : -1;
+                if (_hasGroupPagControls(group)) {
+                    if (!window.HUB_PAGINATED_CATS.has(st.catId)) {
+                        window.hubCatTogglePagination(st.catId);
+                    } else {
+                        window.hubCatPage(st.catId, delta);
+                    }
+                }
+                window.syncHubKbFocus(true);
+            } else if (e.key === 'ArrowDown') {
+                const items = _getHubGroupItems(group);
+                if (items.length > 0) {
+                    st.zone = 'cards';
+                    st.moduleId = items[0].dataset.modId;
+                } else if (gIdx + 1 < groups.length) {
+                    _enterHubGroupFromTop(groups[gIdx + 1]);
+                }
+                window.syncHubKbFocus(true);
+            } else if (e.key === 'ArrowUp') {
+                if (gIdx > 0) {
+                    _enterHubGroupFromBottom(groups[gIdx - 1]);
+                } else {
+                    st.zone = 'filters';
+                    st.filterCat = window.activeCategoryFilter || 'ALL';
+                    st.moduleId = null;
+                }
+                window.syncHubKbFocus(true);
+            }
+            return;
+        }
+
+        // ── ZONE 3: Cards / Module Tabs ───────────────────────────────────────
+        if (st.zone === 'cards') {
+            const groups = _getHubCategoryGroups();
+            if (groups.length === 0) {
+                st.zone = 'filters';
+                st.visible = true;
+                window.syncHubKbFocus(true);
+                return;
+            }
+            let gIdx = groups.findIndex(g => g.dataset.catId === st.catId);
+            if (gIdx === -1 && st.moduleId) {
+                gIdx = groups.findIndex(g => !!g.querySelector(`[data-mod-id="${st.moduleId}"]`));
+            }
+            if (gIdx === -1) gIdx = 0;
+
+            const group = groups[gIdx];
+            st.catId = group.dataset.catId;
+            window.HUB_LAST_ACTIVE_CAT = st.catId;
+
+            const items = _getHubGroupItems(group);
+            if (items.length === 0) {
+                st.zone = 'pagination';
+                st.moduleId = null;
+                st.visible = true;
+                window.syncHubKbFocus(true);
+                return;
+            }
+
+            let itemIdx = items.findIndex(el => el.dataset.modId === st.moduleId);
+            if (itemIdx === -1) itemIdx = 0;
+            st.visible = true;
+
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                const delta = (e.key === 'ArrowRight') ? 1 : -1;
+                const nextIdx = itemIdx + delta;
+
+                if (nextIdx >= 0 && nextIdx < items.length) {
+                    st.moduleId = items[nextIdx].dataset.modId;
+                    window.syncHubKbFocus(true);
+                } else if (window.HUB_PAGINATED_CATS.has(st.catId)) {
+                    const curPage = parseInt(group.dataset.curPage, 10) || (window.HUB_CAT_PAGES[st.catId] || 1);
+                    const totalPages = parseInt(group.dataset.totalPages, 10) || 1;
+                    if (delta > 0 && curPage < totalPages) {
+                        window.HUB_CAT_PAGES[st.catId] = curPage + 1;
+                        st.moduleId = null;
+                        renderConfigHub(typeof viewMode !== 'undefined' ? viewMode : 'tabs');
+                        const newHub = _getActiveHubContainer();
+                        const newGrp = newHub ? newHub.querySelector(`.category-group[data-cat-id="${st.catId}"]`) : null;
+                        const newItems = _getHubGroupItems(newGrp);
+                        if (newItems.length > 0) st.moduleId = newItems[0].dataset.modId;
+                        window.syncHubKbFocus(true);
+                    } else if (delta < 0 && curPage > 1) {
+                        window.HUB_CAT_PAGES[st.catId] = curPage - 1;
+                        st.moduleId = null;
+                        renderConfigHub(typeof viewMode !== 'undefined' ? viewMode : 'tabs');
+                        const newHub = _getActiveHubContainer();
+                        const newGrp = newHub ? newHub.querySelector(`.category-group[data-cat-id="${st.catId}"]`) : null;
+                        const newItems = _getHubGroupItems(newGrp);
+                        if (newItems.length > 0) st.moduleId = newItems[newItems.length - 1].dataset.modId;
+                        window.syncHubKbFocus(true);
+                    } else {
+                        window.syncHubKbFocus(true);
+                    }
+                } else {
+                    window.syncHubKbFocus(true);
+                }
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                const rows = _getHubVisualRows(items);
+                let rIdx = 0;
+                let curEntry = rows[0].entries[0];
+                for (let r = 0; r < rows.length; r++) {
+                    const found = rows[r].entries.find(en => en.modId === st.moduleId);
+                    if (found) {
+                        rIdx = r;
+                        curEntry = found;
+                        break;
+                    }
+                }
+
+                if (e.key === 'ArrowDown') {
+                    if (rIdx + 1 < rows.length) {
+                        st.moduleId = _pickClosestInRow(rows[rIdx + 1], curEntry.centerX).modId;
+                    } else if (gIdx + 1 < groups.length) {
+                        _enterHubGroupFromTop(groups[gIdx + 1], curEntry.centerX);
+                    }
+                } else {
+                    if (rIdx - 1 >= 0) {
+                        st.moduleId = _pickClosestInRow(rows[rIdx - 1], curEntry.centerX).modId;
+                    } else if (_hasGroupPagControls(group)) {
+                        st.zone = 'pagination';
+                        st.moduleId = null;
+                    } else if (gIdx > 0) {
+                        _enterHubGroupFromBottom(groups[gIdx - 1], curEntry.centerX);
+                    } else {
+                        st.zone = 'filters';
+                        st.filterCat = window.activeCategoryFilter || 'ALL';
+                        st.moduleId = null;
+                    }
+                }
+                window.syncHubKbFocus(true);
+            }
+        }
     });
 }
 
@@ -759,11 +1322,12 @@ function renderConfigHub(mode = 'tabs') {
             const _catPageSize    = window.hubGetCatPageSize(currentTabCat);
             const _catTotalPages  = Math.ceil(_catTotal / _catPageSize);
             const _catPage        = Math.max(1, Math.min(window.HUB_CAT_PAGES[currentTabCat] || 1, _catTotalPages || 1));
+            window.HUB_CAT_PAGES[currentTabCat] = _catPage;
             const _isPaginated    = window.HUB_PAGINATED_CATS.has(currentTabCat);
-            const _needsPag       = _isPaginated || _catTotal > 4;
+            const _needsPag       = _isPaginated || _catTotal > 5;
             const _pagHtml        = _needsPag ? window.renderHubCatPagination(currentTabCat, _catPage, _catTotalPages, _isPaginated) : '';
             tabsHtml += `
-                <div class="category-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${currentTabCat}">
+                <div class="category-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${currentTabCat}" data-cur-page="${_catPage}" data-total-pages="${_catTotalPages}">
                     <div class="category-header" onclick="toggleCategory('${currentTabCat}')">
                         <span class="cat-toggle">${isCollapsed ? '⊕' : '⊖'}</span>
                         <span class="cat-label">${catData.icon} ${window.t ? window.t(catData.label) : catData.label}</span>
@@ -790,7 +1354,7 @@ function renderConfigHub(mode = 'tabs') {
         const isNew       = newPanels.includes(m.id);
         const badgeHtml   = isNew ? `<span class="new-badge" style="margin-left:6px; background:var(--accent); color:white; font-size:9px; padding:2px 5px; border-radius:10px; font-weight:800; animation:hpmPulse 2s infinite;">NEW</span>` : '';
         const typeBadge   = window.hpmGetModuleTypeBadge(m, true);
-        if (_mVisible) tabsHtml += `<button class="tab ${activeClass}" onclick="showTab('${m.id}')">${icon} ${window.t ? window.t(m.label) : m.label} ${typeBadge} ${badgeHtml}</button>`;
+        if (_mVisible) tabsHtml += `<button type="button" class="tab ${activeClass}" data-mod-id="${m.id}" data-mod-cat="${currentTabCat}" onclick="showTab('${m.id}')">${icon} ${window.t ? window.t(m.label) : m.label} ${typeBadge} ${badgeHtml}</button>`;
     });
     if (filteredModules.length > 0) tabsHtml += `</div></div>`;
     tabsBar.innerHTML = tabsHtml;
@@ -810,11 +1374,12 @@ function renderConfigHub(mode = 'tabs') {
             const _catPageSizeWall    = window.hubGetCatPageSize(currentCat);
             const _catTotalPagesWall  = Math.ceil(_catTotalWall / _catPageSizeWall);
             const _catPageWall        = Math.max(1, Math.min(window.HUB_CAT_PAGES[currentCat] || 1, _catTotalPagesWall || 1));
+            window.HUB_CAT_PAGES[currentCat] = _catPageWall;
             const _isPaginatedWall    = window.HUB_PAGINATED_CATS.has(currentCat);
-            const _needsPagWall       = _isPaginatedWall || _catTotalWall > 4;
+            const _needsPagWall       = _isPaginatedWall || _catTotalWall > 5;
             const _pagHtmlWall        = _needsPagWall ? window.renderHubCatPagination(currentCat, _catPageWall, _catTotalPagesWall, _isPaginatedWall) : '';
             wallHtml += `
-                <div class="category-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${currentCat}">
+                <div class="category-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${currentCat}" data-cur-page="${_catPageWall}" data-total-pages="${_catTotalPagesWall}">
                     <div class="category-header" onclick="toggleCategory('${currentCat}')">
                         <span class="cat-toggle">${isCollapsed ? '⊕' : '⊖'}</span>
                         <span class="cat-label">${currentCatData.icon} ${window.t ? window.t(currentCatData.label) : currentCatData.label}</span>
@@ -843,7 +1408,7 @@ function renderConfigHub(mode = 'tabs') {
         const typeBadge   = window.hpmGetModuleTypeBadge(m, false);
         if (_mVisibleWall) {
             wallHtml += `
-                <div class="module-card ${activeClass}" onclick="showTab('${m.id}')" style="position:relative;">
+                <div class="module-card ${activeClass}" data-mod-id="${m.id}" data-mod-cat="${currentCat}" onclick="showTab('${m.id}')" style="position:relative;">
                     ${badgeHtml}
                     ${typeBadge}
                     <div class="m-icon">${icon}</div>
@@ -863,7 +1428,131 @@ function renderConfigHub(mode = 'tabs') {
     if (defSel && window.HUB_DEFAULT_PAGE_SIZE) {
         defSel.value = String(window.HUB_DEFAULT_PAGE_SIZE);
     }
+    // Restore virtual keyboard highlight across DOM re-renders without scroll jumps
+    if (typeof window.syncHubKbFocus === 'function') {
+        window.syncHubKbFocus(false);
+    }
+    // Ensure Central Hub card/tab floating tooltips are initialized
+    if (typeof window.initHubModuleTooltips === 'function') {
+        window.initHubModuleTooltips();
+    }
 }
+
+// ── Central Hub Floating Module Tooltips (delegates to global HecosTooltip) ──
+(function initHubTooltipEngine() {
+    let _bound = false;
+
+    function _cleanDescription(raw) {
+        if (!raw) return '';
+        const paragraphs = String(raw).split(/\r?\n\s*\r?\n/);
+        let text = '';
+        for (const p of paragraphs) {
+            const trimmed = p.trim();
+            if (trimmed) { text = trimmed; break; }
+        }
+        text = text
+            .replace(/\r?\n/g, ' ')
+            .replace(/^\s{0,3}#{1,6}\s+/g, '')
+            .replace(/\*\*([^*]+)\*\*/g, '$1')
+            .replace(/__([^_]+)__/g, '$1')
+            .replace(/`([^`]+)`/g, '$1')
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            .replace(/\s+/g, ' ')
+            .trim();
+        const MAX_LEN = 200;
+        if (text.length > MAX_LEN) {
+            const cut = text.slice(0, MAX_LEN - 1);
+            const lastSp = cut.lastIndexOf(' ');
+            text = (lastSp > 120 ? cut.slice(0, lastSp) : cut).replace(/[.,;:\s]+$/, '') + '…';
+        }
+        return text;
+    }
+
+    function _resolveModuleDescription(m) {
+        if (!m) return '';
+        let desc = '';
+        if (m.descKey) desc = _hubT(m.descKey, '');
+        if (!desc) desc = m.description || m.desc || '';
+        return _cleanDescription(desc);
+    }
+
+    function _resolveModuleTypePill(m) {
+        let type = (m.moduleType || '').toLowerCase().trim();
+        if (m.isCore) type = 'core_module';
+        if (!type && m.isHpm) type = 'plugin';
+        const meta = (window.HPM_TYPE_META && (window.HPM_TYPE_META[type] || window.HPM_TYPE_META.other))
+            || { shortLabel: 'Module', color: '#6c8cff' };
+        const baseLabel = _hubT(meta.shortLabel, meta.shortLabel || 'Module');
+        const ver = (!m.isCore && m.version) ? ` · v${String(m.version).replace(/^v/i, '')}` : '';
+        return {
+            text: `${baseLabel}${ver}`,
+            color: meta.color || '#6c8cff',
+        };
+    }
+
+    function _showForAnchor(anchorEl) {
+        if (!window.HecosTooltip || !anchorEl || !document.body.contains(anchorEl)) return;
+        const modId = anchorEl.getAttribute('data-mod-id');
+        const modules = (window.CONFIG_HUB && window.CONFIG_HUB.modules) || [];
+        const m = modules.find(item => item && item.id === modId);
+        if (!m) return;
+
+        const desc = _resolveModuleDescription(m);
+        if (!desc) {
+            window.HecosTooltip.hide(true);
+            return;
+        }
+        const title = window.t ? window.t(m.label) : m.label;
+        const iconHtml = window.getIconForModule ? window.getIconForModule(m.id, m.label, m.icon) : (m.icon || '');
+        const pill = _resolveModuleTypePill(m);
+        window.HecosTooltip.showRich(anchorEl, {
+            title,
+            iconHtml,
+            badge: pill.text,
+            badgeColor: pill.color,
+            body: desc,
+        });
+    }
+
+    function _findAnchor(target) {
+        if (!target || typeof target.closest !== 'function') return null;
+        return target.closest('#config-wall .module-card[data-mod-id], #config-tabs-bar button.tab[data-mod-id]');
+    }
+
+    window.initHubModuleTooltips = function() {
+        if (_bound) return;
+        _bound = true;
+
+        document.addEventListener('mouseover', (e) => {
+            const anchor = _findAnchor(e.target);
+            if (!anchor || !window.HecosTooltip) return;
+            window.HecosTooltip.schedule(anchor, () => _showForAnchor(anchor), 220);
+        }, true);
+
+        document.addEventListener('mouseout', (e) => {
+            const anchor = _findAnchor(e.target);
+            if (!anchor || !window.HecosTooltip) return;
+            if (e.relatedTarget && anchor.contains(e.relatedTarget)) return;
+            window.HecosTooltip.hide(false);
+        }, true);
+
+        document.addEventListener('focusin', (e) => {
+            const anchor = _findAnchor(e.target);
+            if (!anchor || !window.HecosTooltip) return;
+            window.HecosTooltip.schedule(anchor, () => _showForAnchor(anchor), 120);
+        }, true);
+
+        document.addEventListener('focusout', (e) => {
+            const anchor = _findAnchor(e.target);
+            if (!anchor || !window.HecosTooltip) return;
+            window.HecosTooltip.hide(true);
+        }, true);
+    };
+
+    window.hideHubModuleTooltip = () => { if (window.HecosTooltip) window.HecosTooltip.hide(true); };
+    window._hubCleanDescription = _cleanDescription;
+    window._hubResolveModuleDescription = _resolveModuleDescription;
+})();
 
 window.renderConfigHub  = renderConfigHub;
 window.renderFilterTabs = renderFilterTabs;

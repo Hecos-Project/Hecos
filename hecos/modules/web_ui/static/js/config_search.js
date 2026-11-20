@@ -54,12 +54,11 @@
                     <i class="fas fa-layer-group" style="font-size:11px;color:var(--accent);"></i>
                     <span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">Cards / page:</span>
                     <select id="hub-default-page-size-select" style="background:transparent;border:none;color:var(--text);font-size:11.5px;font-weight:700;cursor:pointer;outline:none;padding:0 2px;" onchange="window.hubSetDefaultPageSize ? window.hubSetDefaultPageSize(this.value) : (localStorage.setItem('hub_default_page_size', this.value));" title="Default cards per page">
-                        <option value="4" style="background:var(--bg2,#141726);color:var(--text);">4</option>
-                        <option value="6" style="background:var(--bg2,#141726);color:var(--text);">6</option>
-                        <option value="8" style="background:var(--bg2,#141726);color:var(--text);">8</option>
-                        <option value="12" style="background:var(--bg2,#141726);color:var(--text);">12</option>
-                        <option value="18" style="background:var(--bg2,#141726);color:var(--text);">18</option>
-                        <option value="24" style="background:var(--bg2,#141726);color:var(--text);">24</option>
+                        <option value="5" style="background:var(--bg2,#141726);color:var(--text);">5</option>
+                        <option value="10" style="background:var(--bg2,#141726);color:var(--text);">10</option>
+                        <option value="15" style="background:var(--bg2,#141726);color:var(--text);">15</option>
+                        <option value="20" style="background:var(--bg2,#141726);color:var(--text);">20</option>
+                        <option value="25" style="background:var(--bg2,#141726);color:var(--text);">25</option>
                     </select>
                 </div>
                 <div style="position:relative;">
@@ -76,7 +75,7 @@
 
         const defSel = document.getElementById('hub-default-page-size-select');
         if (defSel) {
-            defSel.value = String(window.HUB_DEFAULT_PAGE_SIZE || localStorage.getItem('hub_default_page_size') || '6');
+            defSel.value = String(window.HUB_DEFAULT_PAGE_SIZE || localStorage.getItem('hub_default_page_size') || '5');
         }
 
         // Events

@@ -52,6 +52,7 @@ function populateSystemUI() {
     setCheck('cog-memory-enabled', cog.memory_enabled ?? true);
     setCheck('cog-episodic', cog.episodic_memory ?? true);
     setCheck('cog-clear-restart', cog.clear_on_restart ?? false);
+    setCheck('cog-include-thinking', cog.include_thinking_in_history ?? false);
     setCheck('cog-identity', cog.include_identity_context ?? true);
     setCheck('cog-awareness', cog.include_self_awareness ?? true);
     setVal('cog-max-history', cog.max_history_messages ?? 20);
@@ -105,6 +106,7 @@ function buildSystemPayload() {
             memory_enabled:          getC('cog-memory-enabled', cog.memory_enabled ?? true),
             episodic_memory:         getC('cog-episodic', cog.episodic_memory ?? true),
             clear_on_restart:        getC('cog-clear-restart', cog.clear_on_restart ?? false),
+            include_thinking_in_history: getC('cog-include-thinking', cog.include_thinking_in_history ?? false),
             include_identity_context:getC('cog-identity', cog.include_identity_context ?? true),
             include_self_awareness:  getC('cog-awareness', cog.include_self_awareness ?? true),
             max_history_messages:    parseInt(getV('cog-max-history', cog.max_history_messages)) || 20,
@@ -215,6 +217,14 @@ async function refreshModels() {
       // (called by populateUI inside initAll) sees the correct model list.
       window.sysOptions = window.sysOptions || {};
       window.sysOptions.ollama_models = ollamaModels;
+      if (window.cfg && window.cfg.backend && window.cfg.backend.ollama) {
+        const avail = {};
+        ollamaModels.forEach((m, i) => { avail[String(i + 1)] = m; });
+        window.cfg.backend.ollama.available_models = avail;
+      }
+      if (typeof window.invalidateRichModelsCache === 'function') {
+        window.invalidateRichModelsCache();
+      }
       if (data.cloud_models) {
         window.sysOptions.cloud_models = data.cloud_models;
         window.sysOptions.all_cloud = Object.values(data.cloud_models).flat();

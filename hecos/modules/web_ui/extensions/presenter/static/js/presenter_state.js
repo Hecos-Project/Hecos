@@ -7,6 +7,7 @@
     window.HBSPresenterState = {
         displayMode: 'collapsed',
         presenterEnabled: true,
+        contextActive: false,
         hideTimeout: null,
         feedHistory: [],
         MAX_FEED: 50,
@@ -37,7 +38,9 @@
             coach_advice:    { icon: 'fas fa-chalkboard-teacher',   color: '#f59e0b', tooltip: 'Coach Suggestion' },
             coach_evaluation:{ icon: 'fas fa-clipboard-check',     color: '#14b8a6', tooltip: 'Coach Evaluation' },
             progress_milestone:{ icon: 'fas fa-tasks',              color: '#38bdf8', tooltip: 'System Operation' },
-            default:         { icon: 'fas fa-bullhorn',             color: '#ff512f', tooltip: 'Notification' }
+            search_milestone:  { icon: 'fas fa-search',             color: '#38bdf8', tooltip: 'Search Milestone' },
+            search_commentary: { icon: 'fas fa-comment-dots',       color: '#c084fc', tooltip: 'Search Commentary' },
+            default:         { icon: 'fas fa-tower-broadcast',      color: '#ff512f', tooltip: 'Notification' }
         }
     };
 })();

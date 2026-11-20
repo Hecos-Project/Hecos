@@ -3,6 +3,37 @@
  * Handles backend notification streams (/api/events)
  */
 
+window.areVoicePhrasesSimilar = function(phrase1, phrase2, threshold = 0.65) {
+  if (!phrase1 || !phrase2) return false;
+  const clean = (s) => {
+    const numMap = {'zero':'0','uno':'1','una':'1','un':'1','due':'2','tre':'3','quattro':'4','cinque':'5','sei':'6','sette':'7','otto':'8','nove':'9','dieci':'10'};
+    return (s || '')
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(t => numMap[t] || t);
+  };
+  const t1 = clean(phrase1);
+  const t2 = clean(phrase2);
+  if (!t1.length || !t2.length) return false;
+  if (t1.join(' ') === t2.join(' ')) return true;
+
+  const s1 = new Set(t1);
+  const s2 = new Set(t2);
+  let intersectionCount = 0;
+  for (const item of s1) {
+    if (s2.has(item)) intersectionCount++;
+  }
+  const unionSize = new Set([...s1, ...s2]).size;
+  const jaccard = unionSize > 0 ? (intersectionCount / unionSize) : 0;
+  const minLen = Math.min(s1.size, s2.size);
+  const overlapRatio = minLen > 0 ? (intersectionCount / minLen) : 0;
+
+  return (jaccard >= threshold || overlapRatio >= 0.75);
+};
+
 window.initEvents = function() {
   const evtSrc = new EventSource('/api/events');
   evtSrc.onmessage = (e) => {
@@ -76,12 +107,22 @@ window.initEvents = function() {
       }
       
       window.isBackendPTTActive = ev.active;
+      if (window.HecosAudioBus && typeof window.HecosAudioBus.notifyBackendPtt === 'function') {
+          window.HecosAudioBus.notifyBackendPtt(ev.active, ev.source);
+      }
       
       if (ev.active) {
+          window.lastBackendPTTStartTime = Date.now();
+          // Cancel any active browser WebAudio recording immediately to prevent dual mic capture
+          if (window.isWebAudioRecording && typeof window.cancelWebAudioRecording === 'function') {
+              console.log("[WebAudio] Backend hardware PTT active. Cancelling concurrent browser WebAudio capture.");
+              window.cancelWebAudioRecording();
+          }
           if (window.UnifiedToast) {
               window.UnifiedToast.show('🎙️ Listening...', 'fas fa-microphone', 0, 'rgba(235, 75, 75, 0.9)');
           }
       } else {
+          window.lastBackendPTTEndTime = Date.now();
           if (window.UnifiedToast) window.UnifiedToast.hide();
       }
       
@@ -90,9 +131,17 @@ window.initEvents = function() {
       voiceCmd = voiceCmd.replace(/^(slash\s+|barra\s+|\/\s*)/i, '/');
       if (!voiceCmd) return;
 
-      // Deduplication safeguard: avoid processing identical voice commands within debounce window
       const now = Date.now();
-      if (window._lastVoiceCmdText === voiceCmd && (now - (window._lastVoiceCmdTime || 0)) < 3500) {
+      const timeSinceLastVoice = now - (window._lastVoiceCmdTime || 0);
+
+      // Deduplication safeguard: avoid processing duplicate/similar voice commands within debounce window
+      const isDuplicate = (
+          (timeSinceLastVoice < 8000 && window.areVoicePhrasesSimilar && window.areVoicePhrasesSimilar(window._lastVoiceCmdText, voiceCmd)) ||
+          (window.isStreaming && timeSinceLastVoice < 15000 && window.areVoicePhrasesSimilar && window.areVoicePhrasesSimilar(window._lastVoiceCmdText, voiceCmd)) ||
+          (window.isStreaming && timeSinceLastVoice < 4000)
+      );
+
+      if (isDuplicate) {
           console.warn("[Audio] Duplicate voice_detected ignored within debounce window:", voiceCmd);
           return;
       }
@@ -122,6 +171,10 @@ window.initEvents = function() {
           window.isStreaming = true;
           if (window.sendBtn) window.sendBtn.disabled = true;
           if (window.showStopVoiceBtn) window.showStopVoiceBtn(true);
+          if (window.HecosChatStatus) {
+              const sid = ev.session_id || window.chatHistoryState?.activeSessionId;
+              if (sid) window.HecosChatStatus.markStreamStart(sid);
+          }
           if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
       }
 
@@ -147,6 +200,10 @@ window.initEvents = function() {
       window.isStreaming = false;
       if (window.sendBtn) window.sendBtn.disabled = false;
       if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
+      if (window.HecosChatStatus) {
+          const sid = ev.session_id || window.chatHistoryState?.activeSessionId;
+          if (sid) window.HecosChatStatus.markStreamEnd(sid, 'done');
+      }
       
       // Save voice message to input history (ev.user is the transcribed text from backend PTT)
       if (ev.user && typeof window.saveInputHistory === 'function') window.saveInputHistory(ev.user);
@@ -156,10 +213,25 @@ window.initEvents = function() {
 
     } else if (ev.type === 'audio_ready') {
       console.log("[Audio] Global audio ready from backend", ev);
+      if (ev.tab_id && ev.tab_id === window.hecosTabId) {
+        return; // Already handled by this tab's /api/stream listener
+      }
+      const activeSid = window.chatHistoryState?.activeSessionId || null;
+      if (ev.session_id && activeSid && ev.session_id !== activeSid) {
+        console.log(`[Audio] Ignoring global audio_ready for inactive session ${ev.session_id} (viewing ${activeSid})`);
+        if (window.HecosChatStatus && typeof window.HecosChatStatus.noteRemoteOrBackgroundAudio === 'function') {
+          window.HecosChatStatus.noteRemoteOrBackgroundAudio(ev.session_id, ev);
+        }
+        return;
+      }
       const targetBubble = window._lastAiBubble;
       if (targetBubble && window.tryLoadAudio) {
         if (ev.audio_id) targetBubble.dataset.audioId = ev.audio_id;
-        window.tryLoadAudio(targetBubble, true);
+        window.tryLoadAudio(targetBubble, true, null, {
+          sessionId: ev.session_id || activeSid,
+          sessionTitle: ev.session_title || '',
+          personaName: ev.persona_name || ''
+        });
       }
 
     } else if (ev.type === 'chat_background_append') {
@@ -217,6 +289,10 @@ window.initEvents = function() {
       // 2. Control Room refresh (Panel Mode)
       if (window.controlRoom && window.controlRoom.refresh) {
         window.controlRoom.refresh();
+      }
+      // 3. Soul Forge live tools catalog refresh (Granular Tool Selector)
+      if (ev.type !== 'widgets_refresh' && typeof window.sfRefreshToolsCatalog === 'function') {
+        window.sfRefreshToolsCatalog(false);
       }
     }
   };

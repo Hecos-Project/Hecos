@@ -70,7 +70,7 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
 
     # Inject translation system, version (with start timestamp to bust browser cache on updates), and HPM helper into Jinja2 templates
     import time
-    app.jinja_env.globals.update(t=t, version=f"{VERSION}_{int(time.time())}", is_hpm_installed=_is_hpm_installed)
+    app.jinja_env.globals.update(t=t, version=f"{VERSION}_{int(time.time())}", core_version=VERSION, is_hpm_installed=_is_hpm_installed)
 
     # ── Extend Jinja loader to include WEB_UI extension template dirs ──
     try:
@@ -101,10 +101,18 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     @app.before_request
     def require_login():
         if request.headers.get("X-Hecos-Internal") == "backup": return
+        if (request.remote_addr in ("127.0.0.1", "::1")
+                and request.path.startswith("/api/audio/engines/")):
+            try:
+                from hecos.core.audio.tts.process_registry import verify_local_control_token
+                if verify_local_control_token(request.headers.get("X-Hecos-Local-Token", "")):
+                    return
+            except Exception:
+                pass
         exempt_paths = [
             '/login', '/logout', '/static', '/assets', '/favicon.ico', '/ext', '/hpm_plugin',
             '/api/open_media_folder', '/hecos/api/media/open-folder', '/api/media/open-folder',
-            '/api/system/explorer/open-folder'
+            '/api/system/explorer/open-folder', '/api/hsearch/media_proxy'
         ]
         if any(request.path.startswith(p) for p in exempt_paths): return
         
@@ -182,6 +190,9 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
 
     from .routes_history import history_bp
     app.register_blueprint(history_bp)
+
+    from .chat_search import chat_search_bp
+    app.register_blueprint(chat_search_bp)
 
 
     # Contacts API registration removed (handled by HPM loader or conditionally)

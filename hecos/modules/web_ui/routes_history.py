@@ -44,7 +44,7 @@ def create_session():
     try:
         data = request.get_json(silent=True) or {}
         title        = data.get("title")
-        privacy_mode = data.get("privacy_mode", "normal")
+        privacy_mode = _pm().normalize_mode(data.get("privacy_mode", "normal"))
         
         session_id = _sm().create_session(title=title, privacy_mode=privacy_mode)
         # Set the new session as active in the privacy manager
@@ -90,7 +90,7 @@ def set_active_session():
         if not session:
             return jsonify({"ok": False, "error": "Session not found"}), 404
         
-        mode = data.get("privacy_mode", session.get("privacy_mode", "normal"))
+        mode = _pm().normalize_mode(data.get("privacy_mode", session.get("privacy_mode", "normal")))
         _pm().set_session(session_id, mode)
         return jsonify({"ok": True, "session_id": session_id, "mode": mode})
     except Exception as e:
@@ -217,10 +217,11 @@ def set_privacy():
     """Sets the privacy mode for the current session. Body: {mode}"""
     try:
         data = request.get_json(silent=True) or {}
-        mode = data.get("mode", "normal")
-        if mode not in ("normal", "auto_wipe", "incognito"):
+        raw_mode = data.get("mode", "normal")
+        if raw_mode not in ("normal", "auto_wipe", "incognito"):
             return jsonify({"ok": False, "error": "Invalid mode"}), 400
         pm = _pm()
+        mode = pm.normalize_mode(raw_mode)
         session_id = pm.get_session_id() or "default"
         
         # 1. Instruct session_manager to move it between DB/RAM if necessary
@@ -393,4 +394,147 @@ def restore_chat_history():
     except Exception as e:
         logger.error(f"[HISTORY] restore_chat_history error: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# SINGLE MESSAGE DELETE / EDIT (Inline Chat Actions)
+# ──────────────────────────────────────────────────────────────────────────────
+
+@history_bp.route("/api/chat/messages/delete", methods=["POST"])
+def delete_single_message():
+    """Deletes a single message from the active session (DB or RAM)."""
+    import os
+    import sqlite3
+    from hecos.memory.session_state import _ram_sessions
+    from hecos.memory.brain_interface import _db_path
+
+    try:
+        data = request.get_json(silent=True) or {}
+        session_id = data.get("session_id") or _pm().get_session_id()
+        idx = data.get("index")
+        role = data.get("role")
+        if role == "ai":
+            role = "assistant"
+        content = (data.get("content") or "").strip()
+
+        if not session_id:
+            return jsonify({"ok": False, "error": "session_id required"}), 400
+
+        # 1. RAM session check
+        if session_id in _ram_sessions:
+            msgs = _ram_sessions[session_id].get("messages", [])
+            if isinstance(idx, int) and 0 <= idx < len(msgs):
+                msgs.pop(idx)
+                return jsonify({"ok": True, "deleted": True})
+            if content:
+                for i in range(len(msgs) - 1, -1, -1):
+                    m_role = "assistant" if msgs[i].get("role") in ("ai", "assistant") else "user"
+                    if (not role or m_role == role) and (msgs[i].get("message") or "").strip() == content:
+                        msgs.pop(i)
+                        return jsonify({"ok": True, "deleted": True})
+            return jsonify({"ok": True, "deleted": False})
+
+        # 2. SQLite DB check
+        try:
+            from flask_login import current_user
+            uid = current_user.username if current_user and current_user.is_authenticated else "admin"
+        except Exception:
+            uid = "admin"
+
+        db_path = _db_path(uid)
+        if not os.path.exists(db_path):
+            return jsonify({"ok": True, "deleted": False})
+
+        deleted = False
+        with sqlite3.connect(db_path, timeout=15) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT id, role, message FROM history WHERE session_id = ? ORDER BY id ASC",
+                (session_id,)
+            )
+            rows = cur.fetchall()
+            target_id = None
+
+            if isinstance(idx, int) and 0 <= idx < len(rows):
+                row_id, row_role, _ = rows[idx]
+                norm_row_role = "assistant" if row_role in ("ai", "assistant") else "user"
+                if not role or norm_row_role == role:
+                    target_id = row_id
+
+            if target_id is None and content:
+                for row_id, row_role, row_msg in reversed(rows):
+                    norm_row_role = "assistant" if row_role in ("ai", "assistant") else "user"
+                    if (not role or norm_row_role == role) and (row_msg or "").strip() == content:
+                        target_id = row_id
+                        break
+
+            if target_id is not None:
+                cur.execute("DELETE FROM history WHERE id = ?", (target_id,))
+                conn.commit()
+                deleted = True
+
+        return jsonify({"ok": True, "deleted": deleted})
+    except Exception as e:
+        logger.error(f"[HISTORY] delete_single_message error: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@history_bp.route("/api/chat/messages/edit", methods=["POST"])
+def edit_single_message():
+    """Updates the text of a single message in the active session (DB or RAM)."""
+    import os
+    import sqlite3
+    from hecos.memory.session_state import _ram_sessions
+    from hecos.memory.brain_interface import _db_path
+
+    try:
+        data = request.get_json(silent=True) or {}
+        session_id = data.get("session_id") or _pm().get_session_id()
+        idx = data.get("index")
+        role = data.get("role")
+        if role == "ai":
+            role = "assistant"
+        new_content = (data.get("content") or "").strip()
+
+        if not session_id or not new_content:
+            return jsonify({"ok": False, "error": "session_id and content required"}), 400
+
+        if session_id in _ram_sessions:
+            msgs = _ram_sessions[session_id].get("messages", [])
+            if isinstance(idx, int) and 0 <= idx < len(msgs):
+                msgs[idx]["message"] = new_content
+                return jsonify({"ok": True, "updated": True})
+            return jsonify({"ok": True, "updated": False})
+
+        try:
+            from flask_login import current_user
+            uid = current_user.username if current_user and current_user.is_authenticated else "admin"
+        except Exception:
+            uid = "admin"
+
+        db_path = _db_path(uid)
+        if not os.path.exists(db_path):
+            return jsonify({"ok": True, "updated": False})
+
+        updated = False
+        with sqlite3.connect(db_path, timeout=15) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT id, role FROM history WHERE session_id = ? ORDER BY id ASC",
+                (session_id,)
+            )
+            rows = cur.fetchall()
+            if isinstance(idx, int) and 0 <= idx < len(rows):
+                row_id, row_role = rows[idx]
+                norm_row_role = "assistant" if row_role in ("ai", "assistant") else "user"
+                if not role or norm_row_role == role:
+                    cur.execute("UPDATE history SET message = ? WHERE id = ?", (new_content, row_id))
+                    conn.commit()
+                    updated = True
+
+        return jsonify({"ok": True, "updated": updated})
+    except Exception as e:
+        logger.error(f"[HISTORY] edit_single_message error: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
 

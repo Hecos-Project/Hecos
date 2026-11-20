@@ -99,3 +99,19 @@
   })();
 </script>
 <script src="/static/js/audio_encoder.js"></script>
+<script>
+  (function() {
+    if (typeof window.refreshTTSEnginesRuntime === 'function') {
+      window.refreshTTSEnginesRuntime(false);
+    } else {
+      var s = document.createElement('script');
+      s.src = '/static/js/config_audio/ca_engine_runtime.js?v=' + (window.VERSION || Date.now()) + '-tts-v2';
+      s.onload = function() {
+        if (typeof window.refreshTTSEnginesRuntime === 'function') {
+          window.refreshTTSEnginesRuntime(false);
+        }
+      };
+      document.head.appendChild(s);
+    }
+  })();
+</script>

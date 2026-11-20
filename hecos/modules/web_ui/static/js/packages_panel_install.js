@@ -84,8 +84,22 @@ window.hpmInstallFile = function(file, forceAllowUnsigned = false, skipDepCheck 
 
 window._hpmInstallQueue = [];
 window._hpmInstallRunning = false;
+window._hpmAutoRebootTimer = null;
+
+window.hpmCancelAutoReboot = function() {
+  if (window._hpmAutoRebootTimer) {
+    clearInterval(window._hpmAutoRebootTimer);
+    window._hpmAutoRebootTimer = null;
+  }
+  const banner = document.getElementById('hpm-auto-reboot-banner');
+  if (banner) {
+    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
+    banner.innerHTML = `<span style="color:var(--muted);font-size:0.88em;"><i class="fas fa-pause-circle" style="margin-right:6px;color:#f59e0b;"></i>${_ti('Automatic restart canceled — use the yellow Restart button when ready.', 'Riavvio automatico annullato — usa i pulsanti gialli di riavvio quando vuoi.', 'Reinicio automático cancelado.')}</span>`;
+  }
+};
 
 window.hpmInstallBatch = async function(fileList, forceAllowUnsigned = false, forceSkipDepCheck = false) {
+  window.hpmCancelAutoReboot();
   const files = Array.from(fileList).filter(f => f.name.endsWith('.hpkg') || f.name.endsWith('.zip'));
   if (files.length === 0) {
     if (window.showToast) window.showToast('No valid .hpkg packages selected', 'error');
@@ -384,6 +398,30 @@ function _hpmShowFinalSummary() {
     
     const mainIconColor = (failed === 0 && canceled === 0) ? 'var(--accent, #6366f1)' : (succeeded > 0 ? '#f59e0b' : '#ef4444');
     const mainIcon = (failed === 0 && canceled === 0) ? 'fa-check-circle' : (succeeded > 0 ? 'fa-exclamation-circle' : 'fa-times-circle');
+    const batchStatsHtml = !isSingle
+        ? `<div style="font-size:0.85em; color:var(--muted); margin-top:4px;">${succeeded} ${_ti('installed','installati','instalados')}${failed ? ` · <span style="color:#ef4444;">${failed} ${_ti('failed','falliti','fallidos')}</span>` : ''}${canceled ? ` · ${canceled} ${_ti('canceled','annullati','cancelados')}` : ''}</div>`
+        : '';
+
+    const restartMode = (typeof window.hpmGetRestartMode === 'function')
+        ? window.hpmGetRestartMode()
+        : (window._hpmRestartMode || window.cfg?.hpm?.restart_mode || 'manual');
+    const willAutoReboot = !!(needsRestartPkg && succeeded > 0 && restartMode === 'auto_batch' && !window._hpmInstallQueue.some(i => i.status === 'pending'));
+
+    const autoRebootBannerHtml = willAutoReboot ? `
+      <div id="hpm-auto-reboot-banner" style="margin-top:14px; padding:12px 14px; border-radius:10px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.38); text-align:center;">
+        <div style="font-size:0.92em; font-weight:600; color:#fbbf24; margin-bottom:10px;">
+          <i class="fas fa-sync-alt fa-spin" style="margin-right:6px;"></i>
+          ${_ti('Restarting Hecos in', 'Riavvio automatico di Hecos tra', 'Reiniciando Hecos en')} <span id="hpm-auto-reboot-sec">5</span>s…
+        </div>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+          <button type="button" id="hpm-auto-reboot-now" class="btn btn-sm" style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; border:none; font-weight:700; cursor:pointer; padding:6px 14px; border-radius:7px;">
+            <i class="fas fa-power-off" style="margin-right:5px;"></i>${_ti('Restart now', 'Riavvia ora', 'Reiniciar ahora')}
+          </button>
+          <button type="button" id="hpm-auto-reboot-cancel" class="btn btn-sm btn-secondary" style="cursor:pointer; padding:6px 14px; border-radius:7px;">
+            ${_ti('Cancel', 'Annulla', 'Cancelar')}
+          </button>
+        </div>
+      </div>` : '';
     
     const titleEl = document.getElementById('hpm-progress-title');
     if (titleEl) titleEl.textContent = lblSuccess;
@@ -403,12 +441,14 @@ function _hpmShowFinalSummary() {
           <b style="font-size:1.1em; color:var(--text)">${lblSuccess}</b>
           ${batchStatsHtml}
           ${extraHTML}
+          ${autoRebootBannerHtml}
           ${hintHTML}
       </div>`, 100);
     
     const container = document.getElementById('hpm-install-progress');
     if (container) {
         container.ondblclick = () => {
+            window.hpmCancelAutoReboot();
             window.hpmSetProgress(false);
             window._hpmInstallQueue = []; // Clear queue on close
         };
@@ -419,13 +459,36 @@ function _hpmShowFinalSummary() {
        window.showToast(`Batch finished with ${failed} error(s)`, 'warning');
     }
 
-    if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
+    if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages(true);
     if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
     if (typeof window.loadWidgetsPanel === 'function') window.loadWidgetsPanel();
 
     // ── Restart Required signal ──────────────────────────────────────────────
     if (needsRestartPkg && typeof window.hpmSignalRestartPending === 'function') {
         window.hpmSignalRestartPending();
+    }
+
+    if (willAutoReboot) {
+        const triggerCleanReboot = () => {
+            window.hpmCancelAutoReboot();
+            if (typeof window._hpmDoRestart === 'function') {
+                window._hpmDoRestart();
+            } else if (typeof window.rebootSystem === 'function') {
+                window.rebootSystem();
+            }
+        };
+        document.getElementById('hpm-auto-reboot-now')?.addEventListener('click', triggerCleanReboot);
+        document.getElementById('hpm-auto-reboot-cancel')?.addEventListener('click', () => window.hpmCancelAutoReboot());
+
+        let remaining = 5;
+        window._hpmAutoRebootTimer = setInterval(() => {
+            remaining -= 1;
+            const secEl = document.getElementById('hpm-auto-reboot-sec');
+            if (secEl) secEl.textContent = String(Math.max(0, remaining));
+            if (remaining <= 0) {
+                triggerCleanReboot();
+            }
+        }, 1000);
     }
 }
 

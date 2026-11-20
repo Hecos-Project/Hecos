@@ -32,6 +32,10 @@ DEFAULT_PRESETS = {
     "uncensored_max": InferencePreset(
         temperature=1.5, top_p=0.99, repeat_penalty=0.9, num_predict=4096,
         description="Maximum creative freedom, zero filters"
+    ),
+    "coding": InferencePreset(
+        temperature=0.15, top_p=0.9, repeat_penalty=1.05, num_predict=4096, num_ctx=16384,
+        description="Deterministic, structured code generation and debugging"
     )
 }
 
@@ -44,9 +48,17 @@ def list_inference_presets() -> Dict[str, InferencePreset]:
         
     try:
         model = load_yaml(PRESETS_PATH, InferencePresetsFile)
-        # Ensure defaults exist if file is empty
+        # Ensure built-in defaults (including newly added presets such as 'coding') exist
+        changed = False
         if not model.presets:
-            model.presets = DEFAULT_PRESETS
+            model.presets = dict(DEFAULT_PRESETS)
+            changed = True
+        else:
+            for k, v in DEFAULT_PRESETS.items():
+                if k not in model.presets:
+                    model.presets[k] = v
+                    changed = True
+        if changed:
             save_yaml(PRESETS_PATH, model)
         return model.presets
     except Exception as e:

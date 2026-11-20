@@ -237,6 +237,12 @@ class KokoroEngine(BaseTTSEngine):
     def __init__(self):
         self._pipeline = None        # Active KPipeline instance
         self._pipeline_lang = None   # lang_code of the loaded pipeline
+        self._loaded_voice = None    # Last voice resolved/warmed up
+        self._device = "cpu"         # Active PyTorch device ('cuda' or 'cpu')
+        self._is_loading = False
+        self._preload_lock = threading.Lock()
+        self._ram_mb = 0.0
+        self._vram_mb = 0.0
         self._lock = threading.Lock()
         self._is_speaking = False
         self._stop_flag = False
@@ -291,9 +297,12 @@ class KokoroEngine(BaseTTSEngine):
     def _evict_pipeline(self):
         """Unload the current pipeline and free memory."""
         if self._pipeline is not None:
-            logger.info("KOKORO", f"Evicting pipeline for lang='{self._pipeline_lang}' to free RAM.")
+            logger.info("KOKORO", f"Evicting pipeline for lang='{self._pipeline_lang}' to free RAM/VRAM.")
             self._pipeline = None
             self._pipeline_lang = None
+            self._loaded_voice = None
+            self._ram_mb = 0.0
+            self._vram_mb = 0.0
             gc.collect()
             try:
                 import torch
@@ -301,6 +310,103 @@ class KokoroEngine(BaseTTSEngine):
                     torch.cuda.empty_cache()
             except Exception:
                 pass
+
+    def is_loaded(self) -> bool:
+        return self._pipeline is not None
+
+    def preload(self, delay: float = 0.5, blocking: bool = False):
+        """Preloads the configured Kokoro KPipeline, voice tensor, and G2P warm-up pass."""
+        if not self.is_available():
+            return False
+        if self._pipeline is not None and not self._is_loading:
+            return True
+
+        def _do_load() -> bool:
+            with self._preload_lock:
+                if self._pipeline is not None:
+                    return True
+                if delay > 0:
+                    time.sleep(delay)
+                voice = self._get_voice({})
+                blend_voice = self._get_blend_voice({})
+                alpha = self._get_alpha({})
+                beta = self._get_beta({})
+                lang_code = self._get_lang_code({}, voice)
+                pipeline = self._get_pipeline(lang_code)
+                if not pipeline:
+                    fallback_lang = voice[0] if (voice and voice[0] in "abefhijpz" and voice[0] != lang_code) else ("i" if _espeak_available() else "a")
+                    if fallback_lang != lang_code:
+                        lang_code = fallback_lang
+                        pipeline = self._get_pipeline(lang_code)
+                if not pipeline:
+                    return False
+                try:
+                    voice_target = self._resolve_voice_tensor(pipeline, voice, blend_voice, alpha, beta)
+                    self._loaded_voice = voice
+                    if not self._is_speaking:
+                        for _ in pipeline("Ok.", voice=voice_target, speed=1.0, split_pattern=r"\n+"):
+                            break
+                    logger.info(
+                        "KOKORO",
+                        f"✅ Kokoro preloaded & warmed up (voice='{voice}', lang='{lang_code}', device='{self._device.upper()}')."
+                    )
+                except Exception as wu_err:
+                    logger.debug("KOKORO", f"Warm-up pass non-fatal notice: {wu_err}")
+                return True
+
+        if blocking:
+            return _do_load()
+
+        if self._is_loading:
+            return None
+        t = threading.Thread(target=_do_load, daemon=True, name="KokoroPreloadThread")
+        t.start()
+        return t
+
+    def unload(self) -> bool:
+        """Stops playback and evicts the in-memory Kokoro PyTorch pipeline to free RAM/VRAM."""
+        self.stop()
+        with self._lock:
+            self._evict_pipeline()
+        return True
+
+    def get_runtime_status(self) -> dict:
+        loaded = self._pipeline is not None
+        if loaded:
+            state = "online"
+        elif self._is_loading:
+            state = "starting"
+        else:
+            state = "offline"
+
+        voice_label = self._loaded_voice
+        if not voice_label:
+            try:
+                from hecos.core.audio.device_manager import get_audio_config
+                voice_label = get_audio_config().get("kokoro", {}).get("voice", "af_heart")
+            except Exception:
+                voice_label = "af_heart"
+
+        dev_label = self._device.upper() if loaded else "—"
+        if not loaded:
+            try:
+                import torch
+                dev_label = "CUDA" if torch.cuda.is_available() else "CPU"
+            except Exception:
+                dev_label = "CPU"
+
+        return {
+            "status": state,
+            "loaded": loaded,
+            "installed": self.is_available(),
+            "mode": "in-process",
+            "pid": os.getpid() if loaded else None,
+            "port": None,
+            "device": dev_label,
+            "ram_mb": self._ram_mb if loaded else 0.0,
+            "vram_mb": self._vram_mb if loaded else 0.0,
+            "model": f"Kokoro-82M ({voice_label})",
+        }
 
     def _get_pipeline(self, lang_code: str):
         """
@@ -332,12 +438,27 @@ class KokoroEngine(BaseTTSEngine):
             if self._pipeline is not None:
                 self._evict_pipeline()
 
+            self._is_loading = True
             try:
                 _ensure_kokoro_compat()
                 from kokoro import KPipeline
                 from hecos.core.audio.device_manager import get_audio_config
                 cfg = get_audio_config()
                 model_path = cfg.get("kokoro", {}).get("model_path", "").strip()
+
+                rss_before = 0
+                vram_before = 0
+                try:
+                    import psutil
+                    rss_before = psutil.Process(os.getpid()).memory_info().rss
+                except Exception:
+                    pass
+                try:
+                    import torch
+                    if torch.cuda.is_available():
+                        vram_before = torch.cuda.memory_allocated()
+                except Exception:
+                    pass
 
                 lang_name = _LANG_NAMES.get(lang_code, lang_code)
                 logger.info("KOKORO", f"Loading Kokoro pipeline for '{lang_name}'…")
@@ -376,11 +497,30 @@ class KokoroEngine(BaseTTSEngine):
                     pipeline = KPipeline(lang_code=lang_code)
                 self._pipeline = pipeline
                 self._pipeline_lang = lang_code
-                logger.info("KOKORO", f"Kokoro pipeline ready for '{lang_name}'.")
+                try:
+                    import torch
+                    if hasattr(pipeline, "model") and pipeline.model is not None:
+                        p_param = next(pipeline.model.parameters(), None)
+                        self._device = str(p_param.device).split(":")[0] if p_param is not None else ("cuda" if torch.cuda.is_available() else "cpu")
+                    else:
+                        self._device = "cuda" if torch.cuda.is_available() else "cpu"
+                    if torch.cuda.is_available():
+                        self._vram_mb = max(0.0, round((torch.cuda.memory_allocated() - vram_before) / (1024 * 1024), 1))
+                except Exception:
+                    self._device = "cpu"
+                try:
+                    import psutil
+                    rss_after = psutil.Process(os.getpid()).memory_info().rss
+                    self._ram_mb = max(0.0, round((rss_after - rss_before) / (1024 * 1024), 1))
+                except Exception:
+                    pass
+                logger.info("KOKORO", f"Kokoro pipeline ready for '{lang_name}' on {self._device.upper()}.")
                 return pipeline
             except Exception as e:
                 logger.error("KOKORO", f"Failed to load Kokoro pipeline (lang='{lang_code}'): {e}")
                 return None
+            finally:
+                self._is_loading = False
 
     # ── Voice resolution ──────────────────────────────────────────────────────
 

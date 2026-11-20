@@ -13,7 +13,7 @@ from hecos.modules.web_ui.routes_packages_helpers import (
     _refresh_jinja_loader,
     _hpm_event_broadcast
 )
-from hecos.modules.web_ui.routes_packages_manage_status import _invalidate_all_caches
+from hecos.modules.web_ui.routes_packages_manage_status import _invalidate_all_caches, _hot_reload_registry
 
 def register_manage_uninstall_routes(app, _hecos_src: str, cfg_mgr, log):
     @app.route("/api/packages/<pkg_id>", methods=["DELETE"])
@@ -101,8 +101,9 @@ def register_manage_uninstall_routes(app, _hecos_src: str, cfg_mgr, log):
                 except Exception as _purge_e:
                     log.warning(f"[HPM] Extension purge failed: {_purge_e}")
 
-                _hpm_event_broadcast("hpm:package_uninstalled", {"id": pkg_id})
                 _invalidate_all_caches()
+                _hot_reload_registry(cfg_mgr, log)
+                _hpm_event_broadcast("hpm:package_uninstalled", {"id": pkg_id})
                 return jsonify({
                     "ok": True,
                     "id": pkg_id,
@@ -174,7 +175,6 @@ def register_manage_uninstall_routes(app, _hecos_src: str, cfg_mgr, log):
                     except Exception as _purge_e:
                         log.warning(f"[HPM:Batch] Extension purge failed for {pkg_id}: {_purge_e}")
 
-                    _hpm_event_broadcast("hpm:package_uninstalled", {"id": pkg_id})
                     results.append({
                         "id": pkg_id,
                         "ok": True,
@@ -197,6 +197,9 @@ def register_manage_uninstall_routes(app, _hecos_src: str, cfg_mgr, log):
         if any_cache_invalidate:
             _invalidate_all_caches()
             _hot_reload_registry(cfg_mgr, log)
+            for res in results:
+                if res.get("ok"):
+                    _hpm_event_broadcast("hpm:package_uninstalled", {"id": res["id"]})
             try:
                 from hecos.modules.web_ui.routes_config_core import clear_hpm_panel_cache
                 clear_hpm_panel_cache()

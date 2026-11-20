@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="{{ zconfig.get('language', 'en') if zconfig else 'en' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hecos Workspace Runner</title>
+  <link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/core/variables.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/chat_media_preview.css?v={{ version }}&t=20261116_fit2">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg, #0d0f17);
+      color: var(--text, #e2e8f0);
+      min-height: 100vh;
+    }
+    .ws-page-header {
+      height: 58px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+      background: var(--bg2, #131622);
+    }
+    .ws-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .ws-logo img { width: 28px; height: 28px; border-radius: 6px; }
+    .ws-logo span { color: var(--accent, #6c8cff); font-weight: 600; }
+    .ws-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .ws-nav a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 11px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text, #e2e8f0);
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .ws-nav a:hover {
+      background: rgba(108, 140, 255, 0.14);
+      border-color: rgba(108, 140, 255, 0.45);
+    }
+  </style>
+</head>
+<body>
+<script>
+  (function() {
+    var autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
+    var savedTheme = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
+    var theme = autoTheme ? 'native' : savedTheme;
+    if (theme && theme !== 'default') {
+      document.body.classList.add('theme-' + theme);
+    }
+  })();
+</script>
+
+<header class="ws-page-header">
+  <div class="ws-logo">
+    <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png" alt="Hecos">
+    <div>Hecos <span>Workspace Runner</span></div>
+  </div>
+  <nav class="ws-nav">
+    <a href="/chat" title="Return to Hecos Chat"><i class="fas fa-comment-dots"></i> {{ t('webui_nav_chat', 'Chat') }}</a>
+    <a href="/drive/editor?workspace={{ (workspace_dir or 'C:/Hecos/hecos/media/workspace') | urlencode }}" target="_blank" rel="noopener noreferrer" id="ws-nav-monaco-btn" title="Open Workspace root in Monaco IDE (live file &amp; folder explorer)"><i class="fas fa-code"></i> Monaco IDE</a>
+    <a href="/drive" title="Open Hecos Drive + Monaco IDE"><i class="fas fa-hdd"></i> Drive</a>
+    <a href="/hecos/logs" target="_blank" rel="noopener noreferrer" title="Open live Hecos System Log Viewer"><i class="fas fa-scroll"></i> System Logs</a>
+    <a href="/hecos/config/ui" title="Open Central Hub"><i class="fas fa-cog"></i> Central Hub</a>
+  </nav>
+</header>
+
+<main id="ws-standalone-root"></main>
+
+<script src="/static/js/workspace_console.js?v={{ version }}&t=20261117_wr2"></script>
+<script src="/static/js/workspace_modal.js?v={{ version }}&t=20261117_wr2"></script>
+<script src="/static/js/workspace_runner.js?v={{ version }}&t=20261116_ws4"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.WorkspaceRunner && typeof window.WorkspaceRunner.mountStandalonePage === 'function') {
+      window.WorkspaceRunner.mountStandalonePage('#ws-standalone-root');
+    }
+  });
+</script>
+</body>
+</html>

@@ -19,9 +19,29 @@ def _kill_child_tree(proc):
     """Recursively terminates a child process and all its descendants (e.g. Fish Speech server) on Windows."""
     if not proc or proc.poll() is not None:
         return
+    # 1. Primary: silent, in-memory process tree kill via psutil (no console windows)
+    try:
+        import psutil
+        p = psutil.Process(proc.pid)
+        for child in p.children(recursive=True):
+            try:
+                child.kill()
+            except Exception:
+                pass
+        p.kill()
+        return
+    except Exception:
+        pass
+
+    # 2. Fallback
     try:
         if sys.platform == "win32":
-            subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True, timeout=5)
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                capture_output=True,
+                timeout=5,
+                creationflags=subprocess.CREATE_NO_WINDOW
+            )
         else:
             proc.terminate()
             proc.wait(timeout=3)
@@ -126,6 +146,29 @@ def get_file_timestamp(path):
         return os.path.getmtime(path)
     return 0
 
+_MONITOR_IGNORED_DIRS_ANYWHERE = frozenset({"venv", ".venv", "__pycache__", ".git", "node_modules"})
+_MONITOR_IGNORED_DIRS_TOP_LEVEL = frozenset({"media", "tmp", "logs", "memory", "data"})
+
+
+def get_max_py_mtime(folder):
+    """Return the newest .py mtime under folder, excluding runtime/user-data folders."""
+    base_norm = os.path.normcase(os.path.abspath(folder))
+    max_t = 0
+    for root, dirs, files in os.walk(folder):
+        at_top = os.path.normcase(os.path.abspath(root)) == base_norm
+        dirs[:] = [
+            d for d in dirs
+            if d not in _MONITOR_IGNORED_DIRS_ANYWHERE
+            and not (at_top and d in _MONITOR_IGNORED_DIRS_TOP_LEVEL)
+        ]
+        for f in files:
+            if f.endswith(".py"):
+                t = get_file_timestamp(os.path.join(root, f))
+                if t > max_t:
+                    max_t = t
+    return max_t
+
+
 def start_and_monitor(script_to_run):
     # For module-style runs (like hecos.modules.web_ui.server), we don't check file existence directly if it contains dots
     is_module = ("." in script_to_run and not script_to_run.endswith(".py"))
@@ -142,17 +185,18 @@ def start_and_monitor(script_to_run):
     env = os.environ.copy()
     env["PYTHONPATH"] = _ROOT + os.pathsep + env.get("PYTHONPATH", "")
 
-    # Monitor .py files in hecos/ folder
+    # Monitor .py files in hecos/ folder (excluding runtime virtualenvs)
     hecos_folder = os.path.join(_ROOT, "hecos")
-    
-    def get_max_py_mtime(folder):
-        max_t = 0
-        for root, dirs, files in os.walk(folder):
-            for f in files:
-                if f.endswith(".py"):
-                    t = get_file_timestamp(os.path.join(root, f))
-                    if t > max_t: max_t = t
-        return max_t
+    hpm_run_dir = os.path.join(hecos_folder, "data", "run")
+    hpm_installing_flag = os.path.join(hpm_run_dir, ".hpm_installing")
+    hpm_code_flag = os.path.join(hpm_run_dir, ".hpm_code_updated_by_app")
+
+    # Clear any stale HPM install lock left behind by an unclean previous shutdown
+    try:
+        if os.path.exists(hpm_installing_flag):
+            os.remove(hpm_installing_flag)
+    except Exception:
+        pass
 
     last_code_time = get_max_py_mtime(hecos_folder)
     
@@ -224,8 +268,17 @@ def start_and_monitor(script_to_run):
 
             # 2. Code files check (.py) - Every 10 seconds (5 * 2s)
             if iterations % 5 == 0:
+                installing_ts = get_file_timestamp(hpm_installing_flag)
+                if installing_ts > 0 and (time.time() - installing_ts) < 300:
+                    continue
+
                 current_code_time = get_max_py_mtime(hecos_folder)
                 if current_code_time > last_code_time + 2:
+                    hpm_flag_mtime = get_file_timestamp(hpm_code_flag)
+                    if hpm_flag_mtime > 0 and hpm_flag_mtime >= (last_code_time - 2.0) and current_code_time <= (hpm_flag_mtime + 2.0):
+                        monitor_log("HPM package operation acknowledged (ignoring watchdog restart).")
+                        last_code_time = max(current_code_time, hpm_flag_mtime)
+                        continue
                     monitor_log(f"Code change detected in hecos/ folder. Restarting...")
                     _kill_child_tree(process)
                     _current_child_process = None
@@ -284,4 +337,14 @@ if __name__ == "__main__":
         # Final safety kill for the child process and its entire tree before exiting
         if _current_child_process and _current_child_process.poll() is None:
             _kill_child_tree(_current_child_process)
+        try:
+            from hecos.core.audio.tts.process_registry import reap_orphan_tts_processes
+            reap_orphan_tts_processes(force_all=True)
+        except Exception:
+            pass
+        try:
+            from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
+            OllamaLifecycleManager.get_instance().stop_server()
+        except Exception:
+            pass
         instance_lock.release_lock(lock_name)

@@ -22,6 +22,7 @@ _PANEL_MAP = {
     'media':           'modules/config_media.html',
     'webui':           'modules/config_utils.html',
     'executor':        'modules/config_utils.html',
+    'action-plans':    'modules/config_action_plans.html',
     'sysnet':          'modules/config_sysnet.html',
     'users':           'modules/config_users.html',
     'payload':         'modules/config_payload.html',
@@ -132,12 +133,14 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
             zconfig_data  = cfg_mgr.config
             from flask import make_response
             from hecos.core.system.version import _get_version
+            ver_tag = app.jinja_env.globals.get("version") or _get_version()
             rendered = render_template(
                 "index.html",
                 zconfig=zconfig_data,
                 zoptions={},
                 translations=translations,
-                version=_get_version(),
+                version=ver_tag,
+                core_version=_get_version(),
             )
             _ui_cache[cache_key] = (now_ts, rendered)
             if len(_ui_cache) > 10:
@@ -256,7 +259,7 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
                     "plugin_tag":  manifest.get("tag", pkg["id"].upper()),
                     "version":     pkg.get("version", ""),
                     "type":        pkg.get("type") or manifest.get("type", "plugin"),
-                    "description": pkg.get("description", ""),
+                    "description": pkg.get("description") or manifest.get("description", ""),
                     "js_file":     js_url_legacy,   # legacy — kept for compat
                     "js_files":    js_urls,          # NEW: full ordered list
                     "css_file":    css_url,

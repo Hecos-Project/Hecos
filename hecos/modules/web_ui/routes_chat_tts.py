@@ -91,8 +91,10 @@ def sanitize_text_for_tts(text: str, engine: str = None) -> str:
         text = re.sub(r'\[[a-zA-Z\s_-]+\]', _save_tag, text)
         text = text.replace("...", "\uE000FISHELLIPSIS\uE001")
 
-    # 1. Remove think/thought blocks leaked from reasoning models
+    # 1. Remove think/thought blocks leaked from reasoning models (including bare </think>)
     text = re.sub(r'<think>[\s\S]*?</think>', '', text, flags=re.IGNORECASE)
+    if re.search(r'</think>', text, flags=re.IGNORECASE):
+        text = re.sub(r'^[\s\S]*?</think>\s*', '', text, flags=re.IGNORECASE)
     text = re.sub(r'<thought>[\s\S]*?</thought>', '', text, flags=re.IGNORECASE)
     text = re.sub(r'\[(THINK|THOUGHT|REASONING)\][\s\S]*?\[/(THINK|THOUGHT|REASONING)\]', '', text, flags=re.IGNORECASE)
     text = re.sub(r'⚙️[\s\S]*?Response formulated\.?', '', text, flags=re.IGNORECASE)

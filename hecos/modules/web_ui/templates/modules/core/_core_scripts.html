@@ -46,9 +46,16 @@
         const _initSSE = () => {
             const evtSrc = new EventSource('/api/events');
             evtSrc.onmessage = (e) => {
-                const ev = JSON.parse(e.data);
-                if (ev.type === 'widgets_refresh') {
-                    console.log('[HUB-SYNC] SSE refresh signal received.');
+                try {
+                    const ev = JSON.parse(e.data);
+                    if (ev.type === 'widgets_refresh') {
+                        console.log('[HUB-SYNC] SSE refresh signal received.');
+                    }
+                    if (ev.type && window._hecosSSEHandlers && typeof window._hecosSSEHandlers[ev.type] === 'function') {
+                        window._hecosSSEHandlers[ev.type](ev);
+                    }
+                } catch (err) {
+                    console.warn('[HUB-SYNC] SSE parse/dispatch warning:', err);
                 }
             };
             evtSrc.onerror = () => {

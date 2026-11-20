@@ -16,7 +16,9 @@ from .module_state import (
     _plugin_config_schemas,
     _loaded_plugins,
     _loaded_legacy_plugins,
-    _lazy_plugins_paths
+    _lazy_plugins_paths,
+    _lazy_tool_schemas,
+    _lazy_llm_callable
 )
 
 def update_capability_registry(config=None, debug_log=True):
@@ -26,8 +28,8 @@ def update_capability_registry(config=None, debug_log=True):
     If config is passed, it uses it to check the 'enabled' flag.
     """
     
-    def _is_enabled(tag, config, module_type, manifest_id=None):
-        if module_type == "hpm":
+    def _is_enabled(tag, config, module_type, manifest_id=None, plugin_dir=None):
+        if module_type in ("hpm", "core_module"):
             try:
                 from hecos.core.package_manager.registry import PackageRegistry
                 import os
@@ -35,10 +37,12 @@ def update_capability_registry(config=None, debug_log=True):
                 base = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
                 data_dir = os.path.join(base, "data")
                 reg = PackageRegistry(data_dir)
-                pkg_id = manifest_id if manifest_id else tag.lower()
-                pkg_info = reg.get(pkg_id)
-                if pkg_info:
-                    return pkg_info.get("status") == "installed"
+                for candidate in (manifest_id, plugin_dir, tag.lower()):
+                    if not candidate:
+                        continue
+                    pkg_info = reg.get(candidate)
+                    if pkg_info:
+                        return pkg_info.get("status") == "installed"
             except Exception:
                 pass
         return config.get('plugins', {}).get(tag, {}).get('enabled', True)
@@ -47,6 +51,8 @@ def update_capability_registry(config=None, debug_log=True):
     _loaded_plugins.clear()
     _loaded_legacy_plugins.clear()
     _lazy_plugins_paths.clear()
+    _lazy_tool_schemas.clear()
+    _lazy_llm_callable.clear()
     skills_map = {}
 
     # If we don't have config, load it (for backward compatibility)
@@ -175,7 +181,7 @@ def update_capability_registry(config=None, debug_log=True):
                             manifest_data = json.load(f)
 
                         tag = manifest_data.get("tag", plugin_dir.upper()).upper()
-                        plugin_enabled = _is_enabled(tag, config, module_type, manifest_data.get("id"))
+                        plugin_enabled = _is_enabled(tag, config, module_type, manifest_data.get("id"), plugin_dir=plugin_dir)
                         if not plugin_enabled:
                             if debug_log: logger.debug("LOADER", f"HPM module {plugin_dir} disabled by config.")
                             continue
@@ -220,7 +226,7 @@ def update_capability_registry(config=None, debug_log=True):
                     
                     tag = manifest_data.get("tag", "").upper()
                     if tag:
-                        plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
+                        plugin_enabled = _is_enabled(tag, config, module_type, manifest_data.get("id"), plugin_dir=plugin_dir)
                         if not plugin_enabled:
                             if debug_log: logger.debug("LOADER", f"Module {plugin_dir} disabled by config.")
                             continue
@@ -243,8 +249,10 @@ def update_capability_registry(config=None, debug_log=True):
                             }
                             
                             _lazy_plugins_paths[tag] = os.path.abspath(main_file)
-                            from .module_state import _lazy_tool_schemas
                             _lazy_tool_schemas[tag] = manifest_data.get("tool_schema", [])
+                            # llm_callable=true means this plugin's schemas are sent to the LLM
+                            # even while dormant (the JIT awakener will load it when called)
+                            _lazy_llm_callable[tag] = manifest_data.get("llm_callable", False)
                             
                             if debug_log: logger.debug("LOADER", f"Module {plugin_dir} registered efficiently (Lazy Load).")
                             continue
@@ -276,7 +284,7 @@ def update_capability_registry(config=None, debug_log=True):
                     # --- NEW CLASS-BASED SYSTEM (FUNCTION CALLING) ---
                     tools_instance = module.tools
                     tag = tools_instance.tag
-                    plugin_enabled = _is_enabled(tag, config, module_type)
+                    plugin_enabled = _is_enabled(tag, config, module_type, plugin_dir=plugin_dir)
                     if not plugin_enabled:
                         if debug_log: logger.debug("LOADER", f"Plugin {plugin_dir} disabled by config.")
                         continue
@@ -327,7 +335,7 @@ def update_capability_registry(config=None, debug_log=True):
                     plugin_info = module.info()
                     tag = plugin_info['tag']
                     # Check enabled flag
-                    plugin_enabled = _is_enabled(tag, config, module_type)
+                    plugin_enabled = _is_enabled(tag, config, module_type, plugin_dir=plugin_dir)
                     if not plugin_enabled:
                         if debug_log: logger.debug("LOADER", f"Plugin {plugin_dir} disabled by config.")
                         continue

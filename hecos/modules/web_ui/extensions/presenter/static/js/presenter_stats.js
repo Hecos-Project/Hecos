@@ -33,10 +33,31 @@
         }
     }
 
+    function syncFromDOM() {
+        const emb = document.getElementById('hbs-presenter-embedded');
+        if (!emb) return false;
+        const lines = emb.querySelectorAll('.hbs-presenter-line');
+        if (!lines || lines.length === 0) return false;
+
+        for (let key in counts) {
+            delete counts[key];
+        }
+        lines.forEach(line => {
+            const type = line.dataset.logType || 'system_info';
+            counts[type] = (counts[type] || 0) + 1;
+        });
+
+        if (window.HBSPresenterStatsUI && typeof window.HBSPresenterStatsUI.render === 'function') {
+            window.HBSPresenterStatsUI.render();
+        }
+        return true;
+    }
+
     window.HBSPresenterStats = {
         increment,
         getCounts,
-        clear
+        clear,
+        syncFromDOM
     };
 
 })();

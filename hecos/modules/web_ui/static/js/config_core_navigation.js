@@ -12,6 +12,9 @@
  * Subsequent clicks served from DOM (no fetch).
  */
 async function showTab(name, skipScroll = false) {
+  if (name && typeof name === "string" && name.startsWith("tab-")) {
+    name = name.slice(4);
+  }
   let targetId = name;
   const hub = window.CONFIG_HUB;
   const mod = (hub && hub.modules) ? hub.modules.find(m => m.id === name) : null;
@@ -154,6 +157,14 @@ async function showTab(name, skipScroll = false) {
   if (name === 'builder' && typeof window.builderRefreshSources === 'function') window.builderRefreshSources();
   if (name === 'hpm-settings' && typeof window.hpmLoadSettingsRepos === 'function') window.hpmLoadSettingsRepos();
   if (name === 'packages' && typeof window.hpmLoadRepositories === 'function') window.hpmLoadRepositories();
+  if ((name === 'netsearch' || targetId === 'netsearch') && typeof window.loadNetSearchPanelConfig === 'function') window.loadNetSearchPanelConfig();
+  if ((name === 'presenter' || targetId === 'presenter') && typeof window.loadPresenterConfig === 'function') window.loadPresenterConfig();
+  if ((name === 'action-plans' || targetId === 'action-plans') && window.ActionPlansHub && typeof window.ActionPlansHub.refresh === 'function') {
+      window.ActionPlansHub.refresh();
+  }
+  if (name === 'voice' || targetId === 'voice' || name === 'audio' || targetId === 'audio') {
+      if (typeof window.refreshTTSEnginesRuntime === 'function') window.refreshTTSEnginesRuntime(false);
+  }
   
   // Scroll panel container to top
   if (!skipScroll) {
@@ -318,7 +329,12 @@ function setCategoryFilter(cat) {
         activeTab = '';
         uiState.collapsedCategories = [];
         const mainWrapper = document.getElementById('config-main-ui-wrapper');
-        if (mainWrapper) mainWrapper.style.display = 'block';
+        if (mainWrapper) {
+            mainWrapper.style.removeProperty('display');
+            mainWrapper.style.setProperty('display', 'block', 'important');
+        }
+        const tBar = document.getElementById('tabs-bar-container');
+        if (tBar && viewMode === 'tabs') tBar.style.display = 'block';
         const wall = document.getElementById('config-wall');
         if (wall && viewMode === 'wall') wall.style.display = 'flex';
     }

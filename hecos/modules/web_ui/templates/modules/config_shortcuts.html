@@ -235,10 +235,10 @@
             const bindings = window.HKS_BINDINGS.getAll();
             const actions  = window.HKS_ACTIONS.getAll();
 
-            // Show only F-key and important shortcuts in quick grid
+            // Show F-keys and key global shortcuts in quick reference grid
             const quickActions = actions.filter(a => {
                 const combo = bindings[a.id];
-                return combo && (combo.startsWith('f') || combo === '?' || combo === 'ctrl+,');
+                return combo && (combo.startsWith('f') || combo === '?' || combo === 'ctrl+,' || a.id === 'ui.chat_search');
             });
 
             if (quickActions.length === 0) {

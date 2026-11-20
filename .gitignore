@@ -621,9 +621,29 @@ hecos/config/data/browser_automation.toml
 # Net Search module (HPM Package)
 hecos/modules/net_search/
 hecos/config/data/net_search.toml
+hecos/config/data/net_search*.json
 hecos/hpm/net_search/
 hecos/data/tor/
 hecos/data/searxng/
+hecos/data/stream_hunter_cache/
+hecos/data/search_history.db*
+hecos/modules/web_ui/templates/modules/search.html
+hecos/modules/web_ui/templates/modules/search_viewer.html
+hecos/modules/web_ui/templates/modules/config_netsearch.html
+hecos/modules/web_ui/templates/cyber_map/
+hecos/modules/web_ui/templates/netsearch_hub/
+hecos/modules/web_ui/templates/search_partials/
+hecos/modules/web_ui/templates/stream_hunter/
+hecos/modules/web_ui/static/css/search.css
+hecos/modules/web_ui/static/css/search_*.css
+hecos/modules/web_ui/static/css/cyber_map/
+hecos/modules/web_ui/static/css/stream_hunter/
+hecos/modules/web_ui/static/css/netsearch_panel.css
+hecos/modules/web_ui/static/js/netsearch_panel.js
+hecos/modules/web_ui/static/js/search/
+hecos/modules/web_ui/static/js/cyber_map/
+hecos/modules/web_ui/static/js/stream_hunter/
+hecos/modules/web_ui/static/vendor/cyber_map/
 
 # Telemetry Widget (HPM Package)
 hecos/modules/web_ui/extensions/telemetry_widget/
@@ -718,6 +738,18 @@ hecos/config/data/document_reader*.json
 hecos/data/docreader_config.json
 hecos/data/document_reader*.json
 
+# Voice Forge (HPM Package)
+hecos/hpm/voice_forge/
+hecos/modules/web_ui/templates/modules/config_voice_forge.html
+hecos/modules/web_ui/static/css/voice_forge.css
+hecos/modules/web_ui/static/js/vf_*.js
+hecos/modules/web_ui/static/sampling/
+
+# Voice Clones (Privacy - User cloned voices, companion transcripts, metadata)
+hecos/assets/voice_clones/*
+!hecos/assets/voice_clones/README.md
+!hecos/assets/voice_clones/.gitkeep
+
 # HPM Store Cache
 hecos/data/store_cache*.json
 
@@ -725,7 +757,25 @@ hecos/data/store_cache*.json
 hecos/data/hpm_auth.json
 hecos/data/*_auth.json
 hecos/data/*_token*
+hecos/data/run/
 *.env
 .env.*
 
 hecos/engines/fish_speech/
+hecos/data/stream_lists.sqlite*
+hecos/data/stream_hunter_cache/
+
+# Entire Runtime Media Directory (audio, images, video, sandbox, downloads, workspace, etc.)
+hecos/media/
+
+# Isolated external CLI sidecars (e.g. Aider venv managed via uv)
+tools/
+
+# Action Plans, Agent/Flow Checkpoints & Preset Usage Telemetry (Privacy - local user runtime state)
+hecos/data/action_plans/*
+!hecos/data/action_plans/.gitkeep
+hecos/data/agent_checkpoints/*
+!hecos/data/agent_checkpoints/.gitkeep
+hecos/data/flow_checkpoints/*
+!hecos/data/flow_checkpoints/.gitkeep
+hecos/data/global_presets_usage.json

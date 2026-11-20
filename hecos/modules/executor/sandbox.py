@@ -49,10 +49,11 @@ class SecurityAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def run_python_code_tool(code: str, workspace_dir: str, tag: str) -> str:
+def run_python_code_tool(code: str, workspace_dir: str, tag: str, projects_workspace_dir: str = "") -> str:
     """
     Executes a block of Python code safely after strict Static Analysis (AST).
-    Use for math, data manipulation, and algorithm building.
+    Stores the ephemeral runner script in workspace_dir (sandbox), while keeping
+    projects_workspace_dir on sys.path and as cwd so workspace modules import cleanly.
     :param code: The Python script to execute.
     """
     cmd_preview = "Python Code Sandbox:\n" + code[:100] + ("..." if len(code) > 100 else "")
@@ -71,6 +72,7 @@ def run_python_code_tool(code: str, workspace_dir: str, tag: str) -> str:
         AgentTracer.emit_action(tag, cmd_preview, err)
         return err
 
+    os.makedirs(workspace_dir, exist_ok=True)
     script_path = os.path.join(workspace_dir, "ai_last_script.py")
     try:
         with open(script_path, "w", encoding="utf-8") as f:
@@ -87,13 +89,22 @@ def run_python_code_tool(code: str, workspace_dir: str, tag: str) -> str:
         timeout = 10
 
     try:
+        # Ensure projects_workspace_dir is importable even under embeddable Python (_pth omits cwd/script dir)
+        import_root = os.path.abspath(projects_workspace_dir or workspace_dir)
+        script_abs = os.path.abspath(script_path)
+        runner_code = (
+            "import sys, runpy; "
+            f"sys.path.insert(0, {import_root!r}); "
+            f"sys.argv[0] = {script_abs!r}; "
+            f"runpy.run_path({script_abs!r}, run_name='__main__')"
+        )
         process = subprocess.Popen(
-            [sys.executable, script_path],
+            [sys.executable, "-c", runner_code],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
             encoding="utf-8",
-            cwd=workspace_dir
+            cwd=import_root
         )
         output, _ = process.communicate(timeout=timeout)
         final_out = output[-2000:] if len(output or "") > 2000 else (output or "")

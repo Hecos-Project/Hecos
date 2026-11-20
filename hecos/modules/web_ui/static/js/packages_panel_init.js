@@ -5,6 +5,13 @@
  */
 
 window.hpmInit = function () {
+  if (typeof window.hpmSyncRestartModeUI === 'function' && typeof window.hpmGetRestartMode === 'function') {
+    window.hpmSyncRestartModeUI(window.hpmGetRestartMode());
+    fetch('/api/hpm/settings/restart_mode')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && d.ok && d.restart_mode) window.hpmSyncRestartModeUI(d.restart_mode); })
+      .catch(() => {});
+  }
   if (typeof window.hpmLoadRepositories === 'function') {
     window.hpmLoadRepositories();
   }

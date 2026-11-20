@@ -1,4 +1,4 @@
-/* ⚡ SOUL FORGE: gp_xtts.js */
+/* ⚡ PRESET MANAGER: gp_xtts.js */
 
 window.sfSaveNewXttsInferencePreset = function() {
     window.hecosPrompt("Enter the name for the new XTTS Inference Preset:", async function(name) {

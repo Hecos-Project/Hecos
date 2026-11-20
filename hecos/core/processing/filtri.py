@@ -101,9 +101,8 @@ def remove_emoji(text):
 
 def clean_for_video(text):
     """
-    Sanitizes text for safe terminal output on Windows.
-    Converts non-cp1252 characters (emojis, extended unicode) to '?' instead of crashing.
-    This is the safe path for ALL text displayed on screen.
+    Sanitizes text for safe terminal and UI output while preserving rich media
+    tokens ([[IMG:...]], [[HSEARCH:...]], [[HMEDIA:...]], Markdown links).
     """
     if not text:
         return ""
@@ -112,6 +111,14 @@ def clean_for_video(text):
     if not text:
         return ""
     
+    # Protect fenced/inline code blocks, UI media tokens, and Markdown links before applying bracket/asterisk filters
+    _protected = {}
+    _prot_pattern = r'```[\s\S]*?```|`[^`\r\n]+`|\[\[(?:IMG|HSEARCH|HMEDIA):[^\]]+\]\]|!?\[[^\]]*\]\([^\)]+\)'
+    for idx, tok in enumerate(re.findall(_prot_pattern, text)):
+        marker = f"__VID_MEDIA_{idx}__"
+        _protected[marker] = tok
+        text = text.replace(tok, marker, 1)
+
     # Check user-configured text filters for visible text
     conf = load_filter_config()
     
@@ -129,6 +136,9 @@ def clean_for_video(text):
     # 3. Handle square brackets
     if should_filter(conf.get("remove_square_brackets", "none"), "text"):
         text = re.sub(r"\[.*?\]", "", text)
+
+    for marker, tok in _protected.items():
+        text = text.replace(marker, tok)
         
     return text
 
@@ -157,6 +167,12 @@ def clean_for_voice(text):
     text = remove_think_tags(text)
     if not text:
         return ""
+
+    # 0b. Strip UI media tags, raw HTML/PDF paths, and markdown image/file URLs before TTS
+    text = re.sub(r'\[\[(?:IMG|HSEARCH|HMEDIA):[^\]]+\]\]', '', text)
+    text = re.sub(r'(?m)^\s*(?:HTML|PDF):\s*[^\r\n]+$', '', text)
+    text = re.sub(r'!\[[^\]]*\]\([^\)]+\)', '', text)
+    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
 
     # 1b. Remove emojis and special characters
     text = remove_emoji(text)

@@ -26,6 +26,18 @@ os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+
+# ── Silence third-party console stderr spam (tqdm, HuggingFace Hub, LiteLLM) ──
+# Keep LiteLLM's internal stderr StreamHandler at WARNING during import; file-based
+# debug logging is controlled separately by hecos.core.logging.logger.init_logger().
+os.environ["LITELLM_LOG"] = "WARNING"
+os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+os.environ.setdefault("HF_HUB_VERBOSITY", "error")
+os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+os.environ.setdefault("TRANSFORMERS_NO_ADVISORY_WARNINGS", "1")
+if os.environ.get("HECOS_BOOT_MODE", "console").lower() != "webui":
+    os.environ.setdefault("TQDM_DISABLE", "1")
 # ────────────────────────────────────────────────────────────────────────────────
 
 # Force UTF-8 output encoding on Windows (prevents UnicodeEncodeError with box-drawing characters)
@@ -34,6 +46,8 @@ if sys.platform == "win32":
         import ctypes
         # SEM_FAILCRITICALERRORS (0x0001) | SEM_NOGPFAULTERRORBOX (0x0002) | SEM_NOOPENFILEERRORBOX (0x8000)
         ctypes.windll.kernel32.SetErrorMode(0x0001 | 0x0002 | 0x8000)
+        ctypes.windll.kernel32.SetConsoleOutputCP(65001)
+        ctypes.windll.kernel32.SetConsoleCP(65001)
     except Exception:
         pass
     try:
@@ -57,8 +71,21 @@ def main():
     try:
         app.run()
     finally:
+        # Restore terminal scroll region and cursor cleanly
+        try:
+            from hecos.ui.viewport import get_viewport
+            get_viewport().teardown()
+        except Exception:
+            pass
         # Ensures all external log consoles are closed in any case
         logger.close_all_consoles()
+        # Gracefully stop Ollama on normal application exit
+        try:
+            from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
+            _cfg = getattr(getattr(app, "config_manager", None), "config", {})
+            OllamaLifecycleManager.get_instance().on_application_exit(_cfg)
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     if not os.environ.get("HECOS_MONITORED_PROCESS"):

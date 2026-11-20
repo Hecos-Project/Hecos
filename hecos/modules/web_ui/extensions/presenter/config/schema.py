@@ -28,6 +28,7 @@ class PresenterConfig(BaseModel):
     
     live_commentary: bool = True
     commentary_on_messages: bool = True
+    commentary_on_search: bool = True
     commentary_mode: str = "full"  # "full" = comment user + AI separately, "exchange" = comment only after AI response
     verbosity: str = "normal"
     log_level: str = "warning"

@@ -75,14 +75,14 @@ if (!window.openMediaFolder) {
       const res = await fetch('/hecos/api/media/open-folder', { method: 'POST', credentials: 'include' });
       const data = await res.json();
       if (data.ok) {
-        if (window.showToast) window.showToast('📂 Cartella Media aperta');
+        if (window.showToast) window.showToast('📂 Media folder opened');
       } else {
         console.error("Error opening folder:", data.error);
-        if (window.showToast) window.showToast('⚠️ ' + (data.error || 'Impossibile aprire la cartella'), 'error');
+        if (window.showToast) window.showToast('⚠️ ' + (data.error || 'Unable to open Media folder'), 'error');
       }
     } catch (err) {
       console.error("Failed to call API:", err);
-      if (window.showToast) window.showToast('⚠️ Errore apertura cartella', 'error');
+      if (window.showToast) window.showToast('⚠️ Error opening Media folder', 'error');
     }
   };
 }

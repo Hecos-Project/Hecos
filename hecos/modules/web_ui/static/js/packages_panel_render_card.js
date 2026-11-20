@@ -35,7 +35,7 @@ window.hpmRenderWallCard = function (pkg, meta) {
   const btnActive   = 'font-size:13px;padding:6px 10px;background:var(--bg3);border:1px solid var(--border-color);color:var(--text);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s;flex:1;';
   const btnGhost    = 'font-size:13px;padding:6px 10px;background:transparent;border:1px solid rgba(255,255,255,0.07);color:var(--muted);border-radius:8px;cursor:default;display:inline-flex;align-items:center;justify-content:center;opacity:0.35;flex:1;';
   const btnDanger   = 'font-size:13px;padding:6px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s;flex:1;';
-  const btnRestart  = 'font-size:13px;padding:6px 10px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#fff;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;animation:hpmPulse 2s ease-in-out infinite;flex:1;';
+  const btnRestart  = 'font-size:11px;font-weight:700;padding:6px 10px;gap:4px;background:linear-gradient(135deg,#f59e0b,#d97706);border:1px solid #facc15;color:#fff;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;animation:hpmPulse 2s ease-in-out infinite;flex:1;white-space:nowrap;';
 
   // ── ROW 1 – Always-present action buttons (top) ────────────────────────────
   let row1 = '';
@@ -68,12 +68,12 @@ window.hpmRenderWallCard = function (pkg, meta) {
   </button>`;
 
   // Hot reload / Restart (ghost if tag missing or broken/disabled)
-  if (pkg.tag && !isDisabled && !isBroken) {
+  if (!isDisabled && !isBroken && (pkg.requires_restart || pkg.tag)) {
     if (pkg.requires_restart) {
-      row1 += `<button type="button" style="${btnRestart}"
+      row1 += `<button type="button" class="hpm-restart-required-btn" style="${btnRestart}"
         onclick="event.stopPropagation();window._hpmDoRestart()"
         title="${_ti('Restart required to activate','Riavvio richiesto per attivare','Reinicio requerido para activar')}">
-        <i class="fas fa-power-off"></i>
+        <i class="fas fa-power-off"></i> ${_ti('Restart','Riavvia','Reiniciar')}
       </button>`;
     } else {
       row1 += `<button type="button" style="${btnActive}"

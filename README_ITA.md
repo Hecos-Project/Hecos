@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo Hecos">
 </p>
 
-# Hecos - Versione 0.54.0 (Fase II: Ghost Fire)
+# Hecos - Versione 0.55.0 (Fase II: Ghost Fire)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -18,7 +18,7 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
-> **Stato: Fase II (Ghost Fire)**: Hecos è attualmente in `v0.54.0`. Questo è un Helping Companion System che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root.
+> **Stato: Fase II (Ghost Fire)**: Hecos è attualmente in `v0.55.0`. Questo è un Helping Companion System che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root.
 >
 > ⚠️ **Avviso Importante**: A partire da questa major release (0.50.0+), lo sviluppo primario e l'ambiente target migrano ufficialmente a **Windows 11**.
 
@@ -31,11 +31,11 @@ Costruito sui nostri pilastri fondamentali:
 * ⚡ **Velocità Estrema** — Architettura nativa ottimizzata e sistema di plugin ad alte prestazioni per una reattività istantanea.
 * 🧊 **Semplicità Assoluta** — Dashboard professionale e design modulare che rende intuitiva l'orchestrazione IA avanzata.
 
-Ora completamente migrato a una **architettura stabile Fase II: Ghost Fire**, Hecos 0.54.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, Llama.cpp, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale (Kokoro, Piper, Fish Speech ed XTTS).
+Ora completamente migrato a una **architettura stabile Fase II: Ghost Fire**, Hecos 0.55.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, Llama.cpp, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale (Kokoro, Piper, Fish Speech ed XTTS).
 
 ---
 
-## ✨ Caratteristiche Principali (v0.54.0)
+## ✨ Caratteristiche Principali (v0.55.0)
 * 🎙️ **Voice Forge Studio** — Studio avanzato per la creazione e modellazione vocale con analisi acustica in tempo reale (formanti, grafico radar del profilo vocale, spettrogramma) e miscelazione di preset.
 * 🐟 **Fish Speech SOTA Zero-Shot TTS** — Motore neurale di sintesi vocale di ultima generazione con clonazione zero-shot immediata in esecuzione locale tramite daemon e server dedicato.
 * 🧬 **Clonazione Vocale Kokoro & Voice Manager** — Clonazione vocale integrata per Kokoro TTS con pannello di gestione cloni e ascolto di prova in tempo reale.
@@ -43,9 +43,10 @@ Ora completamente migrato a una **architettura stabile Fase II: Ghost Fire**, He
 * 📑 **Paginazione & Ricerca nel Config Hub** — Hub centrale dei moduli con paginazione configurabile globale e per singola categoria, ricerca istantanea avanzata ed evidenziazione badge con scadenza automatica a 3 giorni (TTL).
 * 📊 **Motore di Progresso Unificato** — Framework standardizzato per il tracciamento dei task asincroni (`hecos.core.progress`) per download, installazioni pip e routine in background sia da CLI che da WebUI.
 * 📦 **Motore HPM SemVer & Badge Visivi** — Confronto semantico delle versioni per evitare falsi aggiornamenti e downgrade, arricchito da badge chiari che mostrano la versione installata rispetto a quella dello store.
-* 📢 **Presenter & Playbook (Training, Coach, Roleplay)** — Motore interattivo integrato nativamente nel Core per annunci di sistema, notifiche e narrazione vocale in tempo reale. Grazie al modulo pacchettizzato **Playbook**, Hecos si trasforma in un potente sistema di training interattivo: può operare come personal coach, condurre sessioni di roleplay e simulazioni guidate, facilitare l'apprendimento di una nuova lingua e guidare l'utente passo-passo in qualsiasi percorso operativo.
-* 🌐 **Preset Globali (Soul Profiles)** — Infinite possibilità di creazione combinando liberamente personalità AI, motori e voci audio TTS, backend testuali e preset di inferenza in profili master coesi.
-* 🎭 **Override Chat in Linea e Personalità Infinite** — Sovrascrivi il modello AI, la Persona e la Voce direttamente nell'interfaccia della chat al volo. Crea personalità infinite all'istante per ogni singola sessione di conversazione.
+* 📡 **Presenter & Playbook (Training, Coach, Roleplay)** — Motore interattivo integrato nel Core per annunci di sistema, notifiche e narrazione vocale in tempo reale (con controlli separati di Show/Hide dalla toolbar, apertura header e ON/OFF contesto). Insieme al modulo pacchettizzato **Playbook**, trasforma Hecos in una piattaforma interattiva di coaching, simulazione e apprendimento.
+* 🎚️ **Preset Manager & Global Presets (`F3`)** — Pannello unificato ricercabile con contatore totale preset, statistiche di creazione e utilizzo, bozze live immediate, toggle **Enable Thinking** e **Selezione Granulare dei Tool** (con stima token in tempo reale) per combinare modelli IA, Persona, voci TTS e payload.
+* 📋 **Multimodal Action Plans** — Motore agnostico di **Pianificazione Architect First (`Plan First` / `/plan`) & Ripresa Esecuzione** per **sviluppo software** (`Hecos Coder`), **shooting fotografici & storyboard sequenziali** (`Hecos Storyboard & Photo Director` + `IMAGE_GEN`), **itinerari di viaggio, ricerche e workflow** (`Hecos Action Planner` + `NETSEARCH`). Include revisione interattiva con versioning (`v1`, `v2`…), **`Esegui Piano`** / **`Prossimo Step`** / spunta manuale, selettore **`Esegui con Preset`**, checkpoint automatici (**`AgentResume`**), pannello ridimensionabile stile Presenter, finestra flottante (**Float**) & **Pop-out** multi-monitor live, salvataggio automatico Markdown in `hecos/media/action_plans/` ed export/import nativo (`.md`, `.html` stampabile lossless, `.yaml`, `.json`).
+* 💻 **Hecos Coder & Workspace Runner (`system_app` modulare)** — Pacchetto opzionale per lo sviluppo software (`coder`) con **Workspace Runner** interattivo, **Monaco Workspace Explorer** integrato, **Aider Sidecar** isolato, AST Repo Map (Tree-Sitter), checkpoint Git non distruttivi, Watchdog dei processi OS e CLI Windows native (automaticamente nascosto ai non sviluppatori quando disabilitato).
 * 📦 **Architettura HPM 0.40** — Migrazione completa a configurazioni Pydantic+TOML, introducendo vincoli di versione per le dipendenze e `pip_requirements` bloccati.
 * 🛠️ **External Dependency Manager (EDM)** — Nuovo sistema che rileva automaticamente le dipendenze principali mancanti (Node, Tesseract, VC++), consentendo download con un clic direttamente dalla WebUI.
 * 🛡️ **HPM Integrity Verification** — Nuova API `/verify` e UI della Control Room per convalidare crittograficamente i file dei pacchetti installati rispetto ai loro hash manifest firmati Ed25519.
@@ -64,7 +65,7 @@ Ora completamente migrato a una **architettura stabile Fase II: Ghost Fire**, He
 * 🧠 **RAG ad Alte Prestazioni (FastEmbed)** — Memoria vettoriale multi-tenant nativa per CPU, con ONNX e LanceDB per un'ingestione istantanea dei documenti.
 * 🔐 **Isolamento Vault per Utente** — Architettura di memoria consolidata che garantisce l'assoluta separazione della privacy per i dati semantici e la cronologia per ciascun profilo.
 * 🛡️ **Architettura Privacy a 3 Livelli** — Gestione sessioni unificata con le modalità **Normale**, **Auto-Wipe** (RAM-only, cancellazione all'uscita) e **Incognito** (modalità fantasma).
-* 📦 **Hecos Package Manager (HPM)** — Il tassello definitivo per l'estensibilità universale. Un installatore centralizzato e dinamico che supporta pacchetti standalone `.hpkg`. Installa facilmente plugin di terze parti, widget e pannelli di configurazione con drag-and-drop, configurazioni isolate e firme digitali Ed25519.
+* 📦 **Hecos Module Manager (HPM)** — Centro di controllo unificato per l'estensibilità universale, organizzato in **Package Library**, **Core System**, **Widget Layout** e **Store**. Installa facilmente plugin, System App, widget, persona e pannelli via drag-and-drop con pacchetti `.hpkg` isolati e firmati Ed25519.
 * 🔌 **Universal Tool Hub (MCP Bridge)** — Supporto nativo per il **Model Context Protocol**. Collegati a migliaia di tool AI esterni con un solo click.
 * 🔭 **Deep MCP Discovery** — Explorer avanzato con ricerca multi-registry (Smithery, MCPSkills, GitHub) e installazione immediata.
 * 🔒 **Hecos PKI Professionale (HTTPS)** — Certificazione Root CA self-signed integrata per un'esperienza "Green Lock" (lucchetto verde) di sicurezza su tutti i dispositivi della LAN.
@@ -120,6 +121,16 @@ Grazie all'integrazione con il modulo pacchettizzato **Playbook**, Hecos va oltr
 * 🎓 **Sistema di Training & Coaching Interattivo** — Guida l'utente passo-passo attraverso procedure operative, task tecnici complessi o percorsi di studio strutturati.
 * 🗣️ **Apprendimento Linguistico** — Esercitati in conversazioni in lingua straniera con correzioni dal vivo, feedback grammaticali e pronuncia guidata.
 * 🎭 **Roleplay & Scenari Dinamici** — Simula colloqui di lavoro, negoziazioni commerciali o avventure narrative con personaggi IA governati da direttive e condizioni d'innesco precise.
+
+---
+
+### 📋 Multimodal Action Plans: Codice, Storyboard & Workflow
+
+Il sottosistema **Multimodal Action Plans** collega la **progettazione strutturata** all'**esecuzione autonoma step-by-step** in qualunque dominio creativo, tecnico o operativo:
+* 📐 **Modalità Architetto (`Plan First` / `/plan`):** Progetta e revisiona Blueprint Markdown ricchi (`title`, `goal`, specifiche tecniche o *Continuity Bible* fotografiche e step numerati) *prima* di scrivere file o generare immagini.
+* 🎯 **Agnostico per Natura + Preset Dedicati:** Abbina qualsiasi piano al Global Preset ideale tramite **`Esegui con Preset`** — `Hecos Coder` per il codice, `Hecos Storyboard & Photo Director` per sequenze `IMAGE_GEN`, o `Hecos Action Planner` per viaggi, ricerche e scalette operative.
+* ⏭️ **Controllo Granulare & Ripresa:** Esegui tutto il piano in sequenza (**`Esegui Piano`**), uno scatto/step alla volta (**`Prossimo Step`**) oppure spunta a mano gli step — con protezione anti-interruzioni e ripresa **`AgentResume`**.
+* 🪟 **Workspace Staccabile & Salvataggio Automatico:** Ridimensiona con controlli righe stile Presenter, stacca la finestra (**Float**) o aprila su un secondo monitor (**Pop-out** su `/action-plan-viewer`), ritrova tutti i piani salvati in `hecos/media/action_plans/` ed esporta/importa nativamente in **Markdown (`.md`)**, **`.html`** standalone stampabile, **`.yaml`** o **`.json`**.
 
 ---
 
@@ -255,7 +266,7 @@ Plugin inclusi:
 * **Controllo media e Cambio modello**
 * **Gestione della memoria**
 
-Puoi installare nuovi pacchetti dinamicamente trascinando i file `.hpkg` nel **Package Manager** all'interno della WebUI. Questi pacchetti standalone contengono la propria logica, pannelli UI e schemi di configurazione. Tutti i pacchetti sono verificati tramite firme digitali Ed25519 per la massima sicurezza.
+Puoi installare nuovi pacchetti dinamicamente trascinando i file `.hpkg` nel **Module Manager** all'interno della WebUI. Questi pacchetti standalone contengono la propria logica, pannelli UI e schemi di configurazione. Tutti i pacchetti sono verificati tramite firme digitali Ed25519 per la massima sicurezza.
 
 ---
 

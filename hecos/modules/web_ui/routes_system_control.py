@@ -31,11 +31,14 @@ def init_system_control_routes(app, logger, get_sm):
     def system_stop():
         """Interrupts any ongoing backend generation (Console/Voice input)."""
         try:
+            from hecos.core.agent.turn_control import cancel_all_turns
+
             sm = _sm()
             if sm:
                 sm.webui_stop_requested = True
-            logger.info("[WebUI] User requested generation stop.")
-            return jsonify({"ok": True, "message": "Stop requested."})
+            cancelled_count = cancel_all_turns(by_user=True)
+            logger.info(f"[WebUI] User requested generation stop (cancelled {cancelled_count} active turn(s)).")
+            return jsonify({"ok": True, "message": "Stop requested.", "cancelled_turns": cancelled_count})
         except Exception as exc:
             return jsonify({"ok": False, "error": str(exc)}), 500
 

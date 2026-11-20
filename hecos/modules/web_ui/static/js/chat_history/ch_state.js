@@ -63,11 +63,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log(`[HISTORY] Server lost active session. Attempting to reclaim: ${localSid}`);
         const reclaim = await _historyPost('/api/chat/sessions/active', { session_id: localSid });
         if (!reclaim.ok) {
-            await _historyPost('/api/chat/sessions', { title: null, privacy_mode: 'normal' });
+            const defMode = window.getDefaultPrivacyMode ? window.getDefaultPrivacyMode() : 'normal';
+            await _historyPost('/api/chat/sessions', { title: null, privacy_mode: defMode });
         }
     } else {
-        // No session anywhere, create fresh
-        await _historyPost('/api/chat/sessions', { title: null, privacy_mode: 'normal' });
+        // No session anywhere, create fresh using configured default privacy mode
+        const defMode = window.getDefaultPrivacyMode ? window.getDefaultPrivacyMode() : 'normal';
+        await _historyPost('/api/chat/sessions', { title: null, privacy_mode: defMode });
     }
 
     if (window.loadChatSessions) await window.loadChatSessions();

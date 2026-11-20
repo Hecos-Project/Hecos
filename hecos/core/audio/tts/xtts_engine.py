@@ -6,6 +6,7 @@ DESCRIPTION: Implementation for Coqui XTTSv2 using the TTS library.
              Best with a dedicated GPU; CPU is very slow.
 """
 
+import gc
 import os
 import time
 import threading
@@ -61,6 +62,11 @@ class XttsEngine(BaseTTSEngine):
 
     def __init__(self):
         self._tts = None      # Lazy-loaded TTS instance
+        self._device = "cpu"
+        self._is_loading = False
+        self._preload_lock = threading.Lock()
+        self._ram_mb = 0.0
+        self._vram_mb = 0.0
         self._lock = threading.Lock()
         self._is_speaking = False
         self._stop_flag = False
@@ -96,7 +102,21 @@ class XttsEngine(BaseTTSEngine):
         with self._lock:
             if self._tts is not None:
                 return True
+            self._is_loading = True
             try:
+                rss_before = 0
+                vram_before = 0
+                try:
+                    import psutil
+                    rss_before = psutil.Process(os.getpid()).memory_info().rss
+                except Exception:
+                    pass
+                try:
+                    import torch
+                    if torch.cuda.is_available():
+                        vram_before = torch.cuda.memory_allocated()
+                except Exception:
+                    pass
                 import os
                 import sys
                 if sys.platform == "win32":
@@ -154,14 +174,23 @@ class XttsEngine(BaseTTSEngine):
                         logger.info("XTTS", "CUDA not detected — running on CPU. For faster synthesis install PyTorch with CUDA support.")
 
                 self._tts = TTS(model_name, gpu=use_gpu)
+                self._device = "cuda" if use_gpu else "cpu"
+                try:
+                    import psutil
+                    rss_after = psutil.Process(os.getpid()).memory_info().rss
+                    self._ram_mb = max(0.0, round((rss_after - rss_before) / (1024 * 1024), 1))
+                except Exception:
+                    pass
                 if use_gpu:
                     gpu_name = "unknown"
                     try:
                         gpu_name = torch.cuda.get_device_name(0)
+                        self._vram_mb = max(0.0, round((torch.cuda.memory_allocated() - vram_before) / (1024 * 1024), 1))
                     except Exception:
                         pass
                     logger.info("XTTS", f"✅ XTTSv2 model loaded on GPU ({gpu_name}).")
                 else:
+                    self._vram_mb = 0.0
                     logger.info("XTTS", "✅ XTTSv2 model loaded on CPU.")
                 
                 logger.info("XTTS", "All default XTTS voices are built-in and ready.")
@@ -169,6 +198,89 @@ class XttsEngine(BaseTTSEngine):
             except Exception as e:
                 logger.error("XTTS", f"Failed to load XTTSv2 model: {e}")
                 return False
+            finally:
+                self._is_loading = False
+
+    def is_loaded(self) -> bool:
+        return self._tts is not None
+
+    def preload(self, delay: float = 0.5, blocking: bool = False, force_download: bool = False):
+        """Preloads XTTSv2 into RAM/VRAM if installed and weights are already downloaded."""
+        if not self.is_available():
+            return False
+        if not force_download and not self.model_ready():
+            logger.info("XTTS", "Skipping boot preload: XTTSv2 weights (~1.8 GB) are not yet downloaded on disk.")
+            return False
+        if self._tts is not None:
+            return True
+
+        def _do_load() -> bool:
+            with self._preload_lock:
+                if self._tts is not None:
+                    return True
+                if delay > 0:
+                    time.sleep(delay)
+                return self._ensure_model()
+
+        if blocking:
+            return _do_load()
+
+        if self._is_loading:
+            return None
+        t = threading.Thread(target=_do_load, daemon=True, name="XttsPreloadThread")
+        t.start()
+        return t
+
+    def unload(self) -> bool:
+        """Stops synthesis/playback and unloads XTTSv2 weights from RAM/VRAM."""
+        self.stop()
+        with self._lock:
+            if self._tts is not None:
+                logger.info("XTTS", "Unloading XTTSv2 model from memory to free RAM/VRAM...")
+                del self._tts
+                self._tts = None
+                self._ram_mb = 0.0
+                self._vram_mb = 0.0
+                gc.collect()
+                try:
+                    import torch
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                except Exception:
+                    pass
+        return True
+
+    def get_runtime_status(self) -> dict:
+        loaded = self._tts is not None
+        if loaded:
+            state = "online"
+        elif self._is_loading:
+            state = "starting"
+        else:
+            state = "offline"
+
+        dev_label = self._device.upper() if loaded else "—"
+        if not loaded:
+            try:
+                import torch
+                dev_label = "CUDA" if torch.cuda.is_available() else "CPU"
+            except Exception:
+                dev_label = "CPU"
+
+        return {
+            "status": state,
+            "loaded": loaded,
+            "installed": self.is_available() and self.model_ready(),
+            "package_installed": self.is_available(),
+            "weights_ready": self.model_ready(),
+            "mode": "in-process",
+            "pid": os.getpid() if loaded else None,
+            "port": None,
+            "device": dev_label,
+            "ram_mb": self._ram_mb if loaded else 0.0,
+            "vram_mb": self._vram_mb if loaded else 0.0,
+            "model": "Coqui XTTSv2",
+        }
 
     def _get_xtts_params(self, kwargs: dict):
         """Resolve params from kwargs / audio config."""

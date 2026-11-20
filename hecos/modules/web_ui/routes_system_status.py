@@ -1,132 +1,376 @@
 """
+
 routes_system_status.py
+
 ────────────────────────────────────────────────────────────────────────────
+
 Hecos WebUI — System Status API
+
 Registers: GET /hecos/status
+
 ────────────────────────────────────────────────────────────────────────────
+
 """
+
 import os
+
 import yaml
+
 import urllib.parse
+
 from datetime import datetime
-from flask import jsonify
+
+from flask import jsonify, request
+
+
+
 
 
 def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache, get_vram_usage):
+
     """Register the /hecos/status endpoint."""
 
+
+
     def _sm():
+
         return get_sm() if callable(get_sm) else get_sm
 
+
+
     @app.route("/hecos/status", methods=["GET"])
+
     def get_status():
+
         try:
+
             import psutil
+
             cfg     = cfg_mgr.config
+
             backend = cfg.get("backend", {}).get("type", "?")
+
             if   backend == "cloud":  model = cfg.get("backend", {}).get("cloud",  {}).get("model", "?")
+
             elif backend == "ollama": model = cfg.get("backend", {}).get("ollama", {}).get("model", "?")
+
             elif backend == "kobold": model = cfg.get("backend", {}).get("kobold", {}).get("model", "?")
+
             elif backend == "llama_cpp": model = cfg.get("backend", {}).get("llama_cpp", {}).get("model", "?")
+
             elif backend == "hybrid":
+
                 # Show the currently-active source, not just "hybrid"
+
                 active_source = cfg.get("backend", {}).get("active_model_source", "cloud")
+
                 backend = active_source  # override so sidebar shows "CLOUD" or "OLLAMA"
+
                 if   active_source == "cloud":     model = cfg.get("backend", {}).get("cloud",  {}).get("model", "?")
+
                 elif active_source == "ollama":    model = cfg.get("backend", {}).get("ollama", {}).get("model", "?")
+
                 elif active_source == "kobold":    model = cfg.get("backend", {}).get("kobold", {}).get("model", "?")
+
                 elif active_source == "llama_cpp": model = cfg.get("backend", {}).get("llama_cpp", {}).get("model", "?")
+
                 else:
+
                     # Fallback: prefer cloud then ollama
+
                     cloud_m  = cfg.get("backend", {}).get("cloud",  {}).get("model", "")
+
                     ollama_m = cfg.get("backend", {}).get("ollama", {}).get("model", "")
+
                     model = cloud_m or ollama_m or "?"
+
             else: model = "?"
 
 
 
+
+
+
+
             sm = _sm()
+
             last_tool = None
+
             tokens_p = 0
+
             tokens_c = 0
+
             last_model_live = None
 
+
+
             ptt_on = False
+
             if sm is not None:
+
                 mic_on          = sm.listening_status
+
                 tts_on          = sm.voice_status
+
                 ptt_on          = sm.push_to_talk
+
                 last_tool       = sm.last_tool
+
                 tokens_p        = sm.last_tokens_prompt
+
                 tokens_c        = sm.last_tokens_completion
+
                 last_model_live = sm.last_model
+
             else:
+
                 from hecos.core.audio.device_manager import get_audio_config
+
                 acfg   = get_audio_config()
+
                 mic_on = acfg.get("listening_status", False)
+
                 tts_on = acfg.get("voice_status", False)
+
                 ptt_on = acfg.get("push_to_talk", False)
 
+
+
             # Enforce PTT dependency: PTT cannot be ON if MIC is OFF
+
             if not mic_on:
+
                 ptt_on = False
 
+
+
             active_model = model
+
             mic_status   = "ON" if mic_on else "OFF"
+
             tts_status   = "ON" if tts_on else "OFF"
+
             ptt_status   = "ON" if ptt_on else "OFF"
 
+
+
             config_path = cfg_mgr.yaml_path
+
             mtime = os.path.getmtime(config_path) if os.path.exists(config_path) else 0
+
             ts    = datetime.fromtimestamp(mtime).strftime("%H:%M:%S") if mtime else "?"
+
+
 
             persona = cfg.get("ai", {}).get("active_personality", "Hecos_System_Soul")
 
+
+
             # If a global preset is active, use its persona instead of system.yaml
+
             # (system.yaml may lag behind the in-memory preset activation)
+
             active_preset_id = cfg.get("ai", {}).get("active_global_preset")
+
             if active_preset_id:
+
                 try:
+
                     from hecos.core.global_presets import get_soul
+
                     active_soul = get_soul(active_preset_id)
-                    if active_soul and active_soul.persona.soul_file:
-                        persona = active_soul.persona.soul_file
+
+                    if active_soul:
+
+                        if active_soul.persona and active_soul.persona.soul_file:
+
+                            persona = active_soul.persona.soul_file
+
+                        if active_soul.model and active_soul.model.backend_type:
+
+                            backend = active_soul.model.backend_type
+
+                            if active_soul.model.model_name:
+
+                                active_model = active_soul.model.model_name
+
                 except Exception:
+
                     pass  # Fall back to system.yaml value
 
+
+
             if persona.endswith(".yaml"):
+
                 persona = persona[:-5]
 
+
+
             # Telemetry is now stateless - the endpoint provides the data,
+
             # and the frontend widget decides what to display based on its autonomous config.
+
             
+
             from hecos.core.persona.persona_media import PersonaMediaManager
+
             avatar_info = PersonaMediaManager.resolve_avatar(persona)
+
             avatar_path = avatar_info.get("url", "/assets/Hecos_Logo_NBG.png")
 
+
+
+            # Resolve Payload Control / Tool Mode (global -> active preset -> optional session override)
+
+            pctrl = dict(cfg.get("payload_control", {}) or {})
+
+            if active_preset_id:
+
+                try:
+
+                    from hecos.core.global_presets import get_soul
+
+                    active_soul = get_soul(active_preset_id)
+
+                    soul_pc = (getattr(active_soul, "payload", None) or getattr(active_soul, "payload_control", None)) if active_soul else None
+
+                    if soul_pc:
+
+                        soul_dict = soul_pc.model_dump(exclude_none=True) if hasattr(soul_pc, "model_dump") else dict(soul_pc)
+
+                        pctrl.update(soul_dict)
+
+                except Exception:
+
+                    pass
+
+
+
+            sid = request.args.get("session_id")
+
+            if sid:
+
+                try:
+
+                    from hecos.memory.session_config_db import get_session_config
+
+                    sess_ov = get_session_config(sid) or {}
+
+                    sess_pc = sess_ov.get("payload_control")
+
+                    if isinstance(sess_pc, dict):
+
+                        pctrl.update(sess_pc)
+
+                except Exception:
+
+                    pass
+
+
+
+            disable_tools = cfg.get("disable_tools", False)
+
+            send_tools = pctrl.get("send_tools", True)
+
+            tool_selection_mode = str(pctrl.get("tool_selection_mode") or "all").strip().lower()
+
+            if tool_selection_mode != "custom":
+
+                tool_selection_mode = "all"
+
+            selected_tools_list = pctrl.get("selected_tools") or []
+
+            if disable_tools:
+
+                tool_mode = "disabled"
+
+            elif send_tools:
+
+                tool_mode = "custom" if tool_selection_mode == "custom" else "native"
+
+            else:
+
+                tool_mode = "direct"
+
+
+
             cpu_val = cpu_cache.get("value", 0)
+
             ram_val = psutil.virtual_memory().percent
+
             vram_val = get_vram_usage()
 
+
+
+            pending_restart_list = []
+
+            try:
+
+                from hecos.modules.web_ui.routes_packages_helpers import get_pending_restart_ids
+
+                pending_restart_list = sorted(get_pending_restart_ids())
+
+            except Exception:
+
+                pass
+
+
+
             return jsonify({
+
                 "backend":    backend.upper(),
+
                 "model":      active_model,
+
                 "persona":    persona,
+
                 "avatar":     avatar_path,
+
                 "avatar_size": cfg.get("ai", {}).get("avatar_size", "medium"),
+
                 "avatar_animate": cfg.get("ai", {}).get("avatar_animate", True),
+
                 "mic":        mic_status,
+
                 "tts":        tts_status,
+
                 "ptt":        ptt_status,
+
                 "cpu":        cpu_val,
+
                 "ram":        ram_val,
+
                 "vram":       vram_val,
+
                 "config":     f"last save {ts}",
+
                 "last_tool":  last_tool,
+
                 "tokens_p":   tokens_p,
+
                 "tokens_c":   tokens_c,
+
                 "show_reasoning":      cfg.get("routing_engine", {}).get("show_reasoning", True),
+
                 "reasoning_collapsed": cfg.get("routing_engine", {}).get("reasoning_collapsed", True),
+
+                "tool_mode":            tool_mode,
+
+                "send_tools":           send_tools,
+
+                "tool_selection_mode":  tool_selection_mode,
+
+                "selected_tools_count": len(selected_tools_list),
+
+                "disable_tools":        disable_tools,
+
+                "pending_restart":     bool(pending_restart_list),
+
+                "pending_restart_packages": pending_restart_list,
+
             })
+
         except Exception as exc:
+
             return jsonify({"error": str(exc)}), 500
+

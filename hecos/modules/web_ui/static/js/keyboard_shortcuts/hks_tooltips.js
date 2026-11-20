@@ -1,5 +1,5 @@
 /**
- * hks_tooltips.js — Hecos Dynamic Shortcut Tooltips
+ * hks_tooltips.js ï¿½ Hecos Dynamic Shortcut Tooltips
  * -----------------------------------------------------------------------------
  * Reads current keyboard bindings from HKS_BINDINGS and applies them as
  * descriptive 	itle attributes on all relevant UI buttons and links.
@@ -70,13 +70,15 @@
 
         // Sidebar action buttons
         _setTitle('sidebar-expand-btn',    'Open Control Room',                  'ui.toggle_room');
-        _setTitle('sidebar-hpm-btn',       'Install and manage modules',         'nav.packages');
+        _setTitle('sidebar-hpm-btn',       'Open Module Manager (Core System & Packages)', 'nav.packages');
 
         // History panel
+        _setTitle('cs-sidebar-search-btn', 'Search conversations',                 'ui.chat_search');
         _setTitle('ch-new-chat-btn',       'Start a new chat session',           'ui.new_chat');
 
-        // Quick Config status pills (no stable IDs, use selector)
-        _setTitleAll('.status-pill.clickable', 'Open Global Defaults',              'ui.global_defaults');
+        // Preset Manager status pills (no stable IDs, use selector)
+        _setTitleAll('.status-pill.clickable:not(:has(#sb-global-defaults))', 'Open Preset Manager', 'ui.global_defaults');
+        if (window.sfUpdateTooltip && window.sfState && window.sfState.globalDefaultSoul) window.sfUpdateTooltip(window.sfState.globalDefaultSoul);
 
         // -- CENTRAL HUB (config_panel & core_header) -------------------------
         _setTitle('hdr-nav-chat',      'Open Chat',             'nav.chat');

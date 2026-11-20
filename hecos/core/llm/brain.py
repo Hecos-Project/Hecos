@@ -46,7 +46,10 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         return translator.t("error")
     
     # 2. Model resolution
-    from app.model_manager import ModelManager
+    try:
+        from app.model_manager import ModelManager
+    except ImportError:
+        from hecos.app.model_manager import ModelManager
     effective_backend_type, effective_default_model = ModelManager.get_effective_model_info(config)
     
     backend_config = config.get('backend', {}).get(effective_backend_type, {}).copy() # Copy to not pollute global config
@@ -70,7 +73,14 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     
     # 4. LiteLLM Invocation
     logger.debug("BRAIN", f"LiteLLM call ({backend_config['backend_type']}) with model: {backend_config['model']}")
-    tools = get_tools_schema()
+    payload_ctrl = config.get("payload_control") or {}
+    send_tools = payload_ctrl.get("send_tools", True)
+    if config.get("disable_tools", False) or not send_tools:
+        tools = None
+        logger.info("[BRAIN] PayloadControl: Tools schema injection DISABLED.")
+    else:
+        tools = get_tools_schema(payload_control=payload_ctrl, config=config)
+    backend_config["payload_control"] = payload_ctrl
     
     response = client.generate(
         system_prompt, 

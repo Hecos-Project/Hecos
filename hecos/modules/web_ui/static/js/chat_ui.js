@@ -175,11 +175,17 @@ window.clearInput = function() {
   if (window.userInput) {
     window.userInput.value = '';
     window.autoResize(window.userInput);
-    window.userInput.focus();
+    if (!window.isMobile && window.innerWidth > 768) {
+      window.userInput.focus();
+    }
   }
 };
 
 window.stopAudioPlayback = function() {
+  if (window._hecosAckAudio) {
+    try { window._hecosAckAudio.pause(); } catch (_) {}
+    window._hecosAckAudio = null;
+  }
   if (window.currentAudio) {
     window.currentAudio.pause();
     // Only clear src for the global singleton player. Historical players must retain their src to be re-playable.
@@ -201,6 +207,7 @@ window.stopTTS = function() {
   let hadAudio = !!(window.currentAudio && !window.currentAudio.paused);
   console.log("[Audio] stopTTS triggered, hadAudio:", hadAudio);
   window.stopAudioPlayback();
+  if (window.HecosAudioBus) window.HecosAudioBus.stopAll('main_chat');
   
   if (window.DocReader && typeof window.DocReader.isReading === 'function' && window.DocReader.isReading()) {
     window.DocReader.stop();
@@ -223,6 +230,10 @@ window.stopGeneration = function() {
 
   try { fetch('/api/system/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
   
+  if (window.HecosChatStatus && window.chatHistoryState?.activeSessionId) {
+    window.HecosChatStatus.markStreamEnd(window.chatHistoryState.activeSessionId, 'stopped');
+  }
+  if (window.AgentUI) window.AgentUI.finalize();
   window.isStreaming = false;
   if (sendBtn) sendBtn.disabled = false;
   if (window._liveBackendAiBubble) {
@@ -242,6 +253,7 @@ window.stopAll = function() {
 
   // Stop audio
   window.stopAudioPlayback();
+  if (window.HecosAudioBus) window.HecosAudioBus.stopAll('main_chat');
   if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
 
   // Stop backend generation
@@ -249,6 +261,13 @@ window.stopAll = function() {
   try { fetch('/api/system/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
 
   // Reset chat state unconditionally to recover from any stuck state
+  if (window.HecosChatStatus) {
+    if (window.chatHistoryState?.activeSessionId) {
+      window.HecosChatStatus.markStreamEnd(window.chatHistoryState.activeSessionId, 'stopped');
+    }
+    window.HecosChatStatus.clearSpeakingLocal();
+  }
+  if (window.AgentUI) window.AgentUI.finalize();
   window.isStreaming = false;
   if (sendBtn) sendBtn.disabled = false;
   if (window._liveBackendAiBubble) {
@@ -357,18 +376,44 @@ window.refreshStatus = async function() {
     }
     if (sbS) sbS.textContent = d.persona || '—';
 
+    // Only a per-session override (Quick Config draft or session preset) should prevent /hecos/status
+    // from updating the persona/avatar/tool_mode.
+    const sessionOverrideActive = !!(window.sfState && window.sfState.sessionHasDraft);
+
+    // Tool-mode pill: once Quick Config is initialized (baselineState set), always read the
+    // sf-payload-tools checkbox directly. sessionHasDraft only tracks *user edits* vs baseline,
+    // so a soul with send_tools:false as its own default would have diff=0 → sessionHasDraft=false,
+    // letting the server poll (system.yaml) overwrite the pill with the wrong value.
+    // Fix: trust the live UI checkbox once QC is loaded; fall back to server only as bootstrap.
+    if (d.tool_mode !== undefined && window.updateToolModeBadge) {
+        // If tools are disabled at system level, that always wins
+        if (d.disable_tools) {
+            window.updateToolModeBadge('disabled');
+        } else {
+            const sfInitialized = !!(window.sfState && window.sfState.baselineState);
+            const sfToolsEl = document.getElementById('sf-payload-tools');
+            if (sfInitialized && sfToolsEl) {
+                // QC loaded — read actual checkbox + scope mode, never the stale server value
+                const isCustom = (window.sfState?.toolSelectionMode === 'custom');
+                window.updateToolModeBadge(sfToolsEl.checked ? (isCustom ? 'custom' : 'native') : 'direct');
+            } else if (!sfInitialized) {
+                // QC not yet loaded — server value is the only source of truth
+                window.updateToolModeBadge(d.tool_mode);
+            }
+            // sfInitialized but sfToolsEl not in DOM: panel not rendered yet — skip
+        }
+    }
+
     if (d.persona) window._globalPersonaName = d.persona;
     if (d.avatar) window._globalAvatar = d.avatar;
-
-    const pSel = document.getElementById('chat-persona-select');
-    const sessionPersona = pSel ? pSel.value : null;
-    // Check if a Soul Forge global preset is active (either via Chat Overrides or global panel)
-    const soulForgeActive = !!(window.soState && window.soState.activeSoulId)
-                         || !!(window.sfState && window.sfState.activeSoulId);
     
-    if (!sessionPersona && !soulForgeActive) {
+    if (!sessionOverrideActive) {
+        const changed = (window.HecosAvatar !== d.avatar || window.HecosPersonaName !== d.persona);
         window.HecosPersonaName = d.persona || 'Hecos';
         if (d.avatar) window.HecosAvatar = d.avatar;
+        if (changed && window.HecosWelcome && typeof window.HecosWelcome.show === 'function') {
+            window.HecosWelcome.show(true);
+        }
     }
 
     const isConnected = !!d.model;
@@ -453,7 +498,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadPlugins();
     setInterval(window.refreshStatus, 4000);
     
-    if (window.userInput) window.userInput.focus();
+    if (window.userInput && !window.isMobile && window.innerWidth > 768) {
+      window.userInput.focus();
+    }
     
     // Heartbeat
     setInterval(() => {
@@ -464,3 +511,52 @@ document.addEventListener('DOMContentLoaded', () => {
       }).catch(() => {});
     }, 5000);
 });
+
+
+
+window.updateToolModeBadge = function(mode) {
+    const chip = document.getElementById('tb-tool-mode-chip');
+    const icon = document.getElementById('tb-tool-mode-icon');
+    const label = document.getElementById('tb-tool-mode-label');
+    if (!chip || !icon || !label) return;
+
+    chip.classList.remove('tool-mode-native', 'tool-mode-direct', 'tool-mode-disabled');
+    if (mode === 'direct' || mode === false) {
+        chip.classList.add('tool-mode-direct');
+        icon.className = 'fas fa-bolt';
+        label.textContent = 'Direct Commands';
+        chip.title = 'Direct Commands Mode: Tool schemas stripped for maximum speed (~8k tokens saved). Lazy-loaded plugins (IMAGE_GEN, CALENDAR, etc.) cannot be auto-triggered — use /img for images. Direct /img and /search commands active. Open Preset Manager to configure.';
+    } else if (mode === 'disabled') {
+        chip.classList.add('tool-mode-disabled');
+        icon.className = 'fas fa-comments';
+        label.textContent = 'Chat Only';
+        chip.title = 'Chat Only Mode: Tool execution disabled at system level. Open Preset Manager to configure.';
+    } else if (mode === 'custom') {
+        chip.classList.add('tool-mode-native');
+        icon.className = 'fas fa-sliders-h';
+        const selCount = (window.sfState?.selectedTools || []).length;
+        label.textContent = `Tools: Granular${selCount ? ' (' + selCount + ')' : ''}`;
+        chip.title = 'Granular Tool Selection Mode: Only selected modules/tools are exposed to the LLM in this chat/preset. Open Preset Manager to configure.';
+    } else {
+        chip.classList.add('tool-mode-native');
+        icon.className = 'fas fa-toolbox';
+        label.textContent = 'Tools: ON';
+        chip.title = 'Native Tool Calling Mode: JSON function schemas loaded in model payload. Open Preset Manager to configure.';
+    }
+};
+
+window.openPayloadConfig = function() {
+    if (typeof window.sfTogglePanel === 'function') {
+        window.sfTogglePanel(true);
+        const drawer = document.getElementById('sf-payload-drawer');
+        const btn = document.getElementById('sf-toggle-payload-btn');
+        if (drawer && (drawer.style.display === 'none' || !drawer.style.display)) {
+            if (typeof window.sfToggleDrawer === 'function') {
+                window.sfToggleDrawer('sf-payload-drawer', btn);
+            }
+        }
+        setTimeout(() => {
+            if (drawer) drawer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 150);
+    }
+};

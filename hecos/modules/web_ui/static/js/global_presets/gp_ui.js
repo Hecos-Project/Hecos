@@ -1,8 +1,9 @@
-/* ⚡ SOUL FORGE: gp_ui.js */
+/* ⚡ PRESET MANAGER: gp_ui.js — Unified Panel UI, Diff Engine & Topbar Sync */
 
-window.sfTogglePanel = function(force, mode = 'global') {
-    const panel = document.getElementById('soul-forge-panel');
-    const overlay = document.getElementById('soul-forge-overlay');
+window.sfTogglePanel = function(force) {
+    const panel = document.getElementById('preset-manager-panel') || document.getElementById('soul-forge-panel');
+    const overlay = document.getElementById('preset-manager-overlay') || document.getElementById('soul-forge-overlay');
+    if (!panel || !overlay) return;
     const isOpen = panel.classList.contains('open');
     
     const shouldOpen = force !== undefined ? force : !isOpen;
@@ -10,43 +11,42 @@ window.sfTogglePanel = function(force, mode = 'global') {
     if (shouldOpen) {
         try {
             const audio = new Audio('/assets/sounds/beep-6.mp3');
-            audio.volume = 1.0; // Fixed at system volume
-            audio.play().catch(e => console.log('Audio play prevented:', e));
+            audio.volume = 1.0;
+            audio.play().catch(() => {});
         } catch(e) {}
 
-        // Update Title and Description based on mode
-        const titleEl = document.getElementById('sf-panel-title');
-        const descEl = document.getElementById('sf-panel-desc');
-        
-        if (mode === 'chat') {
-            if (titleEl) titleEl.textContent = 'Chat Overrides';
-            if (descEl) descEl.innerHTML = 'These are the <b>Chat Overrides</b>. Changes here do not overwrite the Global Defaults unless you explicitly choose to overwrite them.';
-        } else {
-            if (titleEl) titleEl.textContent = 'Global Defaults';
-            if (descEl) descEl.innerHTML = "These are the system's <b>Global Defaults</b>. Settings saved here are automatically applied as the foundation for every new chat and are independent of Chat Overrides.";
-        }
-        
-        // We will dynamically fetch the system config and update the fallbacks to show the actual fallback values.
         window.sfUpdateFallbackLabels();
-        
+        panel.style.display = 'flex';
         panel.classList.add('open');
         overlay.style.display = 'block';
         window.sfLoadData();
+        setTimeout(() => {
+            const soulBtn = document.getElementById('sf-soul-picker-btn');
+            if (soulBtn && panel.classList.contains('open')) {
+                soulBtn.focus({ preventScroll: true });
+            }
+        }, 40);
     } else {
         panel.classList.remove('open');
+        panel.style.display = 'none';
         overlay.style.display = 'none';
-        if (window.sfState.isDirty) {
-            if (window.sfState.activeSoulId) {
-                window.hecosConfirm("You have unsaved changes. Do you want to update the active Global Preset?", function() {
-                    if (window.sfSaveInlineToActive) window.sfSaveInlineToActive();
-                }, function() {
-                    // Do nothing, just lose changes
-                    window.sfState.isDirty = false;
-                });
-            } else {
-                window.sfState.isDirty = false;
-            }
-        }
+        if (window.sfCloseSoulPicker) window.sfCloseSoulPicker();
+        if (window.sfCloseModelPicker) window.sfCloseModelPicker();
+        if (window.sfStopVoicePreview) window.sfStopVoicePreview();
+    }
+};
+
+// Backwards-compatible aliases
+window.soTogglePanel = window.sfTogglePanel;
+window.pmTogglePanel = window.sfTogglePanel;
+
+window.sfToggleDrawer = function(drawerId, btnEl) {
+    const drawer = document.getElementById(drawerId);
+    if (!drawer) return;
+    const isHidden = drawer.style.display === 'none' || !drawer.style.display;
+    drawer.style.display = isHidden ? 'block' : 'none';
+    if (btnEl) {
+        btnEl.classList.toggle('open', isHidden);
     }
 };
 
@@ -63,6 +63,7 @@ window.sfUpdateFallbackLabels = async function() {
         
         if (cfgRes.ok) {
             const cfg = await cfgRes.json();
+            window.HecosSystemConfig = cfg;
             pName = cfg.ai?.active_personality || 'unknown';
             
             bType = cfg.backend?.type || 'ollama';
@@ -89,6 +90,8 @@ window.sfUpdateFallbackLabels = async function() {
                 tVoice = aud.kokoro?.voice || 'unknown';
             } else if (tEngine === 'xtts2') {
                 tVoice = aud.xtts?.speaker || 'unknown';
+            } else if (tEngine === 'fish_speech') {
+                tVoice = aud.fish_speech?.reference_audio || 'default';
             }
         }
         
@@ -99,268 +102,1230 @@ window.sfUpdateFallbackLabels = async function() {
             tts_engine: tEngine,
             tts_voice: tVoice
         };
+        window.soSystemFallbacks = window.sfSystemFallbacks;
         
     } catch (e) {
-        console.error("Failed to fetch system fallbacks for Global Defaults UI", e);
+        console.error("Failed to fetch system fallbacks for Soul Forge UI", e);
+    }
+};
+
+window.sfComputeDiff = function() {
+    const base = window.sfState.baselineState;
+    const result = { total: 0, instructions: false, inference: false, voice: false, payload: false, model: false, persona: false };
+    if (!base) return result;
+
+    const curr = window.sfCollectUIState();
+    const eq = (a, b) => {
+        if ((a === null || a === undefined || a === "") && (b === null || b === undefined || b === "")) return true;
+        if (typeof a === 'number' && typeof b === 'number') return Math.abs(a - b) < 0.001;
+        return a === b;
+    };
+
+    if (!eq(curr.persona?.soul_file, base.persona?.soul_file)) { result.persona = true; result.total++; }
+    for (const k of ['use_global_direct_instructions', 'use_global_safety_instructions', 'custom_instructions', 'user_notes', 'send_notes_to_ai']) {
+        if (!eq(curr.persona?.[k], base.persona?.[k])) { result.instructions = true; result.total++; }
+    }
+    for (const k of ['backend_type', 'model_name']) {
+        if (!eq(curr.model?.[k], base.model?.[k])) { result.model = true; result.total++; }
+    }
+    for (const k of ['preset_name', 'temperature', 'top_p', 'repeat_penalty', 'num_predict', 'num_ctx', 'n_gpu_layers']) {
+        if (!eq(curr.inference?.[k], base.inference?.[k])) { result.inference = true; result.total++; }
+    }
+    for (const k of ['send_tools', 'send_personality', 'send_memory', 'include_thinking_in_history', 'enable_thinking', 'tool_selection_mode']) {
+        if (!eq(curr.payload?.[k], base.payload?.[k])) { result.payload = true; result.total++; }
+    }
+    const _normSel = (arr) => Array.isArray(arr) ? [...new Set(arr.map(String))].sort().join('|') : '';
+    if (_normSel(curr.payload?.selected_tools) !== _normSel(base.payload?.selected_tools)) {
+        result.payload = true;
+        result.total++;
+    }
+    const voiceKeys = [
+        'tts_engine', 'tts_voice',
+        'xtts_preset', 'xtts_inference_preset', 'xtts_speaker_wav', 'xtts_temperature', 'xtts_speed', 'xtts_top_k', 'xtts_repetition_penalty', 'xtts_top_p', 'xtts_length_penalty',
+        'fish_preset', 'fish_inference_preset', 'fish_reference_audio', 'fish_temperature', 'fish_top_p', 'fish_repetition_penalty', 'fish_chunk_length', 'fish_max_new_tokens',
+        'kokoro_preset', 'kokoro_inference_preset', 'kokoro_blend_voice', 'kokoro_speed', 'kokoro_silence', 'kokoro_alpha', 'kokoro_beta', 'kokoro_volume'
+    ];
+    for (const k of voiceKeys) {
+        if (!eq(curr.voice?.[k], base.voice?.[k])) { result.voice = true; result.total++; }
+    }
+    return result;
+};
+
+window.sfRefreshUIVisibilityAndSummaries = function() {
+    // 1. Toggle TTS Engine controls visibility
+    const ttsEngine = document.getElementById('sf-tts-engine-select')?.value || 'piper';
+    const showEl = (id, cond) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = cond ? 'block' : 'none';
+    };
+    showEl('sf-xtts-controls', ttsEngine === 'xtts2');
+    showEl('sf-xtts-fine', ttsEngine === 'xtts2');
+    showEl('sf-fish-controls', ttsEngine === 'fish_speech' || ttsEngine === 'fish');
+    showEl('sf-fish-fine', ttsEngine === 'fish_speech' || ttsEngine === 'fish');
+    showEl('sf-kokoro-controls', ttsEngine === 'kokoro');
+    showEl('sf-kokoro-fine', ttsEngine === 'kokoro');
+    showEl('sf-piper-fine', ttsEngine === 'piper');
+
+    // 2. Check and update clone / preset disabled state on voice select
+    if (window.sfUpdateCloneState) window.sfUpdateCloneState();
+
+    // 3. Update compact inline summaries
+    const infSummary = document.getElementById('sf-inference-summary');
+    if (infSummary) {
+        const t = document.getElementById('sf-temp')?.value ?? '0.7';
+        const tp = document.getElementById('sf-topp')?.value ?? '0.9';
+        const ctx = document.getElementById('sf-ctx')?.value;
+        const ctxStr = (!ctx || ctx == 0) ? 'Auto' : `${Math.round(ctx / 1024)}k`;
+        infSummary.textContent = `Temp ${t} · TopP ${tp} · Ctx ${ctxStr}`;
+    }
+
+    const scopePanel = document.getElementById('sf-tools-scope-panel');
+    const paySummary = document.getElementById('sf-payload-summary');
+    const toolsBadge = document.getElementById('sf-payload-tools-badge');
+    const tOn = document.getElementById('sf-payload-tools')?.checked !== false;
+    if (scopePanel) scopePanel.classList.toggle('sf-tools-disabled', !tOn);
+
+    const tMode = (window.sfState?.toolSelectionMode === 'custom') ? 'custom' : 'all';
+    const telemetry = window.sfComputeToolsTelemetry ? window.sfComputeToolsTelemetry() : null;
+    const fmtTok = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n}`);
+
+    if (toolsBadge) {
+        if (!tOn) {
+            toolsBadge.textContent = 'OFF';
+        } else if (tMode === 'custom' && telemetry) {
+            toolsBadge.textContent = `${telemetry.selectedCount}/${telemetry.totalCount} tools · ~${fmtTok(telemetry.selectedTokens)} tok`;
+        } else if (telemetry) {
+            toolsBadge.textContent = `All · ~${fmtTok(telemetry.eagerTokens)} tok`;
+        } else {
+            toolsBadge.textContent = 'Auto';
+        }
+    }
+
+    if (paySummary) {
+        const sOn = document.getElementById('sf-payload-soul')?.checked !== false;
+        const mOn = document.getElementById('sf-payload-memory')?.checked !== false;
+        const thOn = document.getElementById('sf-payload-thinking')?.checked === true;
+        let tDesc = 'OFF';
+        if (tOn) {
+            tDesc = (tMode === 'custom' && telemetry)
+                ? `${telemetry.selectedCount}/${telemetry.totalCount} (~${fmtTok(telemetry.selectedTokens)} tok)`
+                : 'ON (All)';
+        }
+        paySummary.textContent = `Tools ${tDesc} · Soul ${sOn ? 'ON' : 'OFF'} · Mem ${mOn ? 'ON' : 'OFF'}${thOn ? ' · <think>' : ''}`;
+        // Only update the pill if not in the middle of a bulk soul populate,
+        // to prevent flickering when sf-payload-tools is momentarily reset.
+        if (window.updateToolModeBadge && !window._sfApplyingSoul) {
+            window.updateToolModeBadge(tOn ? (tMode === 'custom' ? 'custom' : 'native') : 'direct');
+        }
+    }
+
+    // 4. Compute diff & update status badges
+    const diff = window.sfComputeDiff();
+    const presetDiffersFromGlobal = (window.sfState.activeSoulId || null) !== (window.sfState.globalDefaultSoulId || null);
+    window.sfState.isDirty = diff.total > 0;
+    window.sfState.sessionHasDraft = diff.total > 0 || presetDiffersFromGlobal;
+
+    const getPresetName = (id) => {
+        if (!id) return 'Base Configuration';
+        const found = (window.sfState.souls || []).find(s => s.meta.id === id);
+        return found ? `${found.meta.icon || '⚡'} ${found.meta.name}` : id;
+    };
+
+    const chatLabel = document.getElementById('sf-chat-preset-label');
+    if (chatLabel) {
+        const baseName = getPresetName(window.sfState.activeSoulId);
+        chatLabel.textContent = diff.total > 0 ? `${baseName} (modified)` : baseName;
+    }
+    const globalLabel = document.getElementById('sf-global-preset-label');
+    if (globalLabel) {
+        globalLabel.textContent = getPresetName(window.sfState.globalDefaultSoulId);
+    }
+
+    const badge = document.getElementById('sf-draft-badge');
+    if (badge) {
+        if (diff.total > 0) {
+            badge.textContent = `● Live draft (${diff.total} mod.)`;
+            badge.classList.add('dirty');
+        } else if (presetDiffersFromGlobal) {
+            badge.textContent = window.sfState.activeSoulId ? `● Session Preset` : `● Base Configuration (No Preset)`;
+            badge.classList.add('dirty');
+        } else {
+            badge.textContent = `✓ Synced with Defaults`;
+            badge.classList.remove('dirty');
+        }
+    }
+
+    const setDot = (id, show) => {
+        const d = document.getElementById(id);
+        if (d) d.style.display = show ? 'inline-block' : 'none';
+    };
+    setDot('sf-dot-instructions', diff.instructions);
+    setDot('sf-dot-inference', diff.inference);
+    setDot('sf-dot-voice', diff.voice);
+    setDot('sf-dot-payload', diff.payload);
+
+    // Enable preset-specific action buttons only when a Global Preset is selected
+    const hasActiveSoul = !!window.sfState.activeSoulId;
+    const topSaveBtn = document.getElementById('sf-top-save-btn');
+    if (topSaveBtn) {
+        topSaveBtn.disabled = !hasActiveSoul;
+        topSaveBtn.style.opacity = hasActiveSoul ? '1' : '0.45';
+    }
+    const dupBtn = document.getElementById('sf-duplicate-preset-btn');
+    if (dupBtn) {
+        dupBtn.disabled = !hasActiveSoul;
+        dupBtn.style.opacity = hasActiveSoul ? '1' : '0.45';
+    }
+
+    if (window.sfUpdateTooltip) {
+        window.sfUpdateTooltip(window.sfCollectUIState(), window.sfState.activeSoulId);
+    }
+};
+
+window.sfSyncActivePersonaAvatar = function() {
+    const pVal = document.getElementById('sf-persona-select')?.value || "";
+    if (window._lastSfPersonaVal === pVal) return;
+    window._lastSfPersonaVal = pVal;
+
+    const effectivePVal = pVal || (window.sfSystemFallbacks?.persona) || "";
+    if (effectivePVal && effectivePVal !== 'unknown') {
+        window.HecosPersonaName = effectivePVal.replace(/\.yaml$/i, '');
+        fetch(`/api/persona/avatar?persona=${encodeURIComponent(effectivePVal)}`)
+            .then(r => r.json())
+            .then(d => { 
+                if (d.ok && d.avatar_path) {
+                    window.HecosAvatar = d.avatar_path;
+                    window.HecosAvatarType = d.avatar_type || 'image';
+                }
+                if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+            })
+            .catch(() => {
+                if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
+            });
+    } else {
+        window.HecosPersonaName = 'Hecos_System_Soul';
+        window.HecosAvatar = null;
+        window.HecosAvatarType = 'image';
+        if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
     }
 };
 
 window.sfDirty = function() {
-    if (window.sfUpdateCloneState) window.sfUpdateCloneState();
-    window.sfState.isDirty = true;
-    
-    const topBtn = document.getElementById('sf-top-save-btn');
-    if (topBtn) {
-        if (window.sfState.activeSoulId) {
-            topBtn.innerHTML = '<i class="fas fa-save"></i>';
-            topBtn.style.backgroundColor = 'var(--accent1, #00d2ff)';
-            topBtn.style.color = '#000';
-            topBtn.onclick = window.sfSaveInlineToActive;
-        }
-    }
-    
-    // Toggle XTTS settings visibility
-    const ttsEngine = document.getElementById('sf-tts-engine-select').value;
-    document.getElementById('sf-xtts-controls').style.display = (ttsEngine === 'xtts2') ? 'block' : 'none';
-    const fishControls = document.getElementById('sf-fish-controls');
-    if (fishControls) fishControls.style.display = (ttsEngine === 'fish_speech' || ttsEngine === 'fish') ? 'block' : 'none';
-    const kokoroControls = document.getElementById('sf-kokoro-controls');
-    if (kokoroControls) kokoroControls.style.display = (ttsEngine === 'kokoro') ? 'block' : 'none';
+    window.sfRefreshUIVisibilityAndSummaries();
+    window.sfSyncActivePersonaAvatar();
 
-    // Check and update clone / preset disabled state on voice select
-    if (window.sfUpdateCloneState) window.sfUpdateCloneState();
-    
-    // Instantly update the welcome screen if the current chat session is using the global default
-    const chatPersonaSel = document.getElementById('chat-persona-select');
-    if (!chatPersonaSel || !chatPersonaSel.value) {
-        const pVal = document.getElementById('sf-persona-select')?.value || "";
-        if (window._lastSfPersonaVal !== pVal) {
-            window._lastSfPersonaVal = pVal;
-            // Use actual persona from select; if empty, fall back to the system-default
-            // persona from sfSystemFallbacks (i.e. the value in config/active_personality).
-            // Never blindly reset to the hardcoded 'Hecos' string.
-            const effectivePVal = pVal || (window.sfSystemFallbacks?.persona) || "";
-            if (effectivePVal) {
-                window.HecosPersonaName = effectivePVal.replace('.yaml', '').replace(/_/g, ' ');
-                window._globalPersonaName = window.HecosPersonaName;
-                fetch(`/api/persona/avatar?persona=${encodeURIComponent(effectivePVal)}`)
-                    .then(r => r.json())
-                    .then(d => { 
-                        if (d.ok && d.avatar_path) {
-                            window.HecosAvatar = d.avatar_path;
-                            window._globalAvatar = d.avatar_path;
-                            window.HecosAvatarType = d.avatar_type || 'image';
-                        }
-                        if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
-                    })
-                    .catch(()=>{
-                        if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
-                    });
-            } else {
-                // Truly no persona configured anywhere — show Hecos logo
-                window.HecosPersonaName = 'Hecos System Soul';
-                window._globalPersonaName = 'Hecos System Soul';
-                window.HecosAvatar = null;
-                window._globalAvatar = null;
-                window.HecosAvatarType = 'image';
-                if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
-            }
+    // Live auto-apply to current chat session (debounced 200ms)
+    clearTimeout(window._sfDraftSaveTimeout);
+    window._sfDraftSaveTimeout = setTimeout(() => {
+        if (window.sfSaveDraftToSession) {
+            window.sfSaveDraftToSession();
         }
-    }
-    
-    // Auto-save to base config if no global preset is active (instant application)
-    if (!window.sfState.activeSoulId) {
-        clearTimeout(window._sfBaseSaveTimeout);
-        window._sfBaseSaveTimeout = setTimeout(() => {
-            const data = window.sfCollectUIState();
-            // Assign dummy meta to pass validation
-            data.meta = { id: "", name: "Base Defaults", icon: "⚙️" };
-            fetch('/api/souls/activate', {
-                method: 'POST',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ soul_id: "", session_id: 'global', soul: data })
-            }).catch(e => console.error("Failed to auto-save global config", e));
-            
-            if (window.sfUpdateTooltip) window.sfUpdateTooltip(data);
-        }, 300);
-    } else {
-        if (window.sfUpdateTooltip) window.sfUpdateTooltip(window.sfCollectUIState());
-    }
+    }, 200);
 };
 
+window.soDirty = window.sfDirty;
+
+window.sfSyncToTopbar = function() {
+    if (window.sfUpdateTooltip) {
+        window.sfUpdateTooltip(window.sfCollectUIState(), window.sfState.activeSoulId);
+    }
+};
 
 window.sfUpdateSliderVal = function(el, spanId) {
-    document.getElementById(spanId).textContent = el.value;
+    const span = document.getElementById(spanId);
+    if (span && el) span.textContent = el.value;
 };
 
+window.soUpdateSliderVal = window.sfUpdateSliderVal;
 
 window.sfPopulateDropdowns = function(optData) {
     const soulSel = document.getElementById('sf-active-soul-select');
-    const quickSel = document.getElementById('sf-quick-preset-select');
+    if (soulSel) soulSel.innerHTML = '<option value="">-- Base Configuration (No Preset) --</option>';
     
-    soulSel.innerHTML = '<option value="">-- No active global preset --</option>';
-    if (quickSel) quickSel.innerHTML = '<option value="">⚡ Preset...</option>';
-    
-    window.sfState.souls.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.meta.id;
-        opt.textContent = `${s.meta.icon} ${s.meta.name}`;
-        soulSel.appendChild(opt);
-        
-        if (quickSel) {
-            const qOpt = document.createElement('option');
-            qOpt.value = s.meta.id;
-            qOpt.textContent = `⚡ ${s.meta.name}`;
-            quickSel.appendChild(qOpt);
+    const sortedSouls = [...(window.sfState.souls || [])].sort((a, b) =>
+        String(a?.meta?.name || a?.meta?.id || '').localeCompare(String(b?.meta?.name || b?.meta?.id || ''), undefined, { sensitivity: 'base' })
+    );
+    window.sfState.sortedSouls = sortedSouls;
+
+    sortedSouls.forEach(s => {
+        if (soulSel) {
+            const opt = document.createElement('option');
+            opt.value = s.meta.id;
+            opt.textContent = `${s.meta.icon || '⚡'} ${s.meta.name}`;
+            soulSel.appendChild(opt);
         }
     });
+    if (window.sfSyncSoulPickerUI) window.sfSyncSoulPickerUI();
     
     const infSel = document.getElementById('sf-inference-preset-select');
-    infSel.innerHTML = '<option value="">-- No preset selected --</option>';
-    Object.keys(window.sfState.inferencePresets).forEach(k => {
-        const opt = document.createElement('option');
-        opt.value = k;
-        opt.textContent = k;
-        infSel.appendChild(opt);
-    });
-    
-    const xttsSel = document.getElementById('sf-xtts-preset-select');
-    if (xttsSel) {
-        xttsSel.innerHTML = '<option value="">-- No XTTS Preset --</option>';
-        Object.keys(window.sfState.xttsPresets || {}).forEach(k => {
+    if (infSel) {
+        infSel.innerHTML = '<option value="">-- No preset (Manual values / Default) --</option>';
+        Object.keys(window.sfState.inferencePresets || {}).forEach(k => {
             const opt = document.createElement('option');
             opt.value = k;
             opt.textContent = k;
-            xttsSel.appendChild(opt);
-        });
-    }
-
-    const fishSel = document.getElementById('sf-fish-preset-select');
-    if (fishSel) {
-        fishSel.innerHTML = '<option value="">-- No Fish Preset --</option>';
-        Object.keys(window.sfState.fishSpeechPresets || {}).forEach(k => {
-            const opt = document.createElement('option');
-            opt.value = k;
-            opt.textContent = k;
-            fishSel.appendChild(opt);
+            infSel.appendChild(opt);
         });
     }
     
-    const xttsInfSel = document.getElementById('sf-xtts-inference-preset-select');
-    if (xttsInfSel) {
-        xttsInfSel.innerHTML = '<option value="">-- No Inference Preset --</option>';
-        Object.keys(window.sfState.xttsInferencePresets || {}).forEach(k => {
+    const populatePresetSel = (id, placeholder, mapObj) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = `<option value="">${placeholder}</option>`;
+        Object.keys(mapObj || {}).forEach(k => {
             const opt = document.createElement('option');
             opt.value = k;
             opt.textContent = k;
-            xttsInfSel.appendChild(opt);
+            el.appendChild(opt);
         });
-    }
+    };
 
-    const fishInfSel = document.getElementById('sf-fish-inference-preset-select');
-    if (fishInfSel) {
-        fishInfSel.innerHTML = '<option value="">-- No Inference Preset --</option>';
-        Object.keys(window.sfState.fishSpeechInferencePresets || {}).forEach(k => {
-            const opt = document.createElement('option');
-            opt.value = k;
-            opt.textContent = k;
-            fishInfSel.appendChild(opt);
-        });
-    }
-
-    const kokoroSel = document.getElementById('sf-kokoro-preset-select');
-    if (kokoroSel) {
-        kokoroSel.innerHTML = '<option value="">-- No Kokoro Preset --</option>';
-        Object.keys(window.sfState.kokoroPresets || {}).forEach(k => {
-            const opt = document.createElement('option');
-            opt.value = k;
-            opt.textContent = k;
-            kokoroSel.appendChild(opt);
-        });
-    }
-
-    const kokoroInfSel = document.getElementById('sf-kokoro-inference-preset-select');
-    if (kokoroInfSel) {
-        kokoroInfSel.innerHTML = '<option value="">-- No Inference Preset --</option>';
-        Object.keys(window.sfState.kokoroInferencePresets || {}).forEach(k => {
-            const opt = document.createElement('option');
-            opt.value = k;
-            opt.textContent = k;
-            kokoroInfSel.appendChild(opt);
-        });
-    }
+    populatePresetSel('sf-xtts-preset-select', '-- No XTTS Preset --', window.sfState.xttsPresets);
+    populatePresetSel('sf-fish-preset-select', '-- No Fish Preset --', window.sfState.fishSpeechPresets);
+    populatePresetSel('sf-xtts-inference-preset-select', '-- No Inference Preset --', window.sfState.xttsInferencePresets);
+    populatePresetSel('sf-fish-inference-preset-select', '-- No Inference Preset --', window.sfState.fishSpeechInferencePresets);
+    populatePresetSel('sf-kokoro-preset-select', '-- No Kokoro Preset --', window.sfState.kokoroPresets);
+    populatePresetSel('sf-kokoro-inference-preset-select', '-- No Inference Preset --', window.sfState.kokoroInferencePresets);
     
     if (optData && optData.ok) {
         const pSel = document.getElementById('sf-persona-select');
-        pSel.innerHTML = '';
-        optData.personas.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p;
-            opt.textContent = p.replace('.yaml', '');
-            pSel.appendChild(opt);
-        });
-        
+        if (pSel) {
+            pSel.innerHTML = '';
+            (optData.personas || []).forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p.replace('.yaml', '');
+                pSel.appendChild(opt);
+            });
+        }
         window.sfState.allModels = optData.models;
         window.sfUpdateModelsDropdown();
     }
 };
 
+const _SF_CAP_META = {
+    thinking: {
+        icon: '💭',
+        label: 'Thinking',
+        title: 'Thinking / Reasoning',
+        desc: 'Supports internal <think> reasoning chains (controllable via Enable Thinking toggle).'
+    },
+    tools: {
+        icon: '⚙️',
+        label: 'Tools',
+        title: 'Tools / Function Calling',
+        desc: 'Supports structured tool calling, web search, memory & Hecos module actions.'
+    },
+    vision: {
+        icon: '👁️',
+        label: 'Vision',
+        title: 'Vision / Multimodal',
+        desc: 'Includes vision projector / multimodal weights for analyzing images and screenshots.'
+    }
+};
+
+function _sfEscHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function _sfFormatSizeBytes(bytes) {
+    if (!bytes || bytes <= 0) return '';
+    if (bytes >= 1024 * 1024 * 1024) {
+        return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+    }
+    return Math.round(bytes / (1024 * 1024)) + ' MB';
+}
+
+function _sfBuildModelDisplay(m) {
+    const prefix = (m.type === 'cloud') ? '☁️ ' : (m.type === 'local' ? '🖥️ ' : '');
+    const specParts = [];
+    if (m.parameter_size) {
+        let p = m.parameter_size;
+        if (m.quantization_level) p += ' ' + m.quantization_level;
+        specParts.push(p);
+    } else if (m.quantization_level) {
+        specParts.push(m.quantization_level);
+    }
+    const sizeHuman = _sfFormatSizeBytes(m.size_bytes);
+    if (sizeHuman) specParts.push(sizeHuman.replace(' ', ''));
+
+    const sizeTag = specParts.length ? ` [${specParts.join(' | ')}]` : '';
+    const caps = Array.isArray(m.capabilities) ? m.capabilities : [];
+    const icons = caps.map(c => _SF_CAP_META[c]?.icon).filter(Boolean).join('');
+    const descs = caps.map(c => _SF_CAP_META[c]?.title || c).filter(Boolean);
+
+    let tooltipText = `${m.name}${sizeTag}`;
+    if (m.family) tooltipText += `\nFamily: ${m.family}`;
+    if (sizeHuman) tooltipText += `\nDisk size: ${sizeHuman}`;
+    if (descs.length) tooltipText += `\nCapabilities: ${descs.join(', ')}`;
+    if (m.description) tooltipText += `\n${m.description}`;
+
+    return {
+        prefix,
+        sizeTag,
+        specCompact: specParts.join(' · '),
+        sizeHuman,
+        caps,
+        icons,
+        descs,
+        tooltipText,
+        optionLabel: prefix + m.name + sizeTag + (icons ? ' ' + icons : '')
+    };
+}
+
+function _sfFindSelectedModel(modelId) {
+    const all = window.sfState.allModels || [];
+    if (!modelId) return null;
+    const bType = document.getElementById('sf-backend-select')?.value;
+    return (
+        all.find(m => m.id === modelId && (!bType || (bType === 'cloud' ? m.type === 'cloud' : m.provider === bType))) ||
+        all.find(m => m.id === modelId) ||
+        null
+    );
+}
+
+window.sfUpdateModelHoverCard = function(m) {
+    const card = document.getElementById('sf-model-hover-card');
+    if (!card) return;
+    if (!m) {
+        card.style.display = 'none';
+        return;
+    }
+    const d = _sfBuildModelDisplay(m);
+    const providerLabel = m.type === 'cloud'
+        ? `Cloud (${m.provider || 'api'})`
+        : `Local (${m.provider || 'ollama'})`;
+
+    const specBits = [];
+    if (m.family) specBits.push(`Family: ${m.family}`);
+    if (m.parameter_size) specBits.push(`Params: ${m.parameter_size}`);
+    if (m.quantization_level) specBits.push(`Quant: ${m.quantization_level}`);
+    if (d.sizeHuman) specBits.push(`Disk: ${d.sizeHuman}`);
+    if (m.context_length > 0) specBits.push(`Ctx: ${Math.round(m.context_length / 1024)}k`);
+    if (m.has_projector) specBits.push('Projector: Multimodal');
+
+    const capBadges = d.caps.map(c => {
+        const meta = _SF_CAP_META[c] || { icon: '•', title: c, desc: '' };
+        return `<span class="sf-mib-pill cap-${_sfEscHtml(c)}" title="${_sfEscHtml(meta.desc)}">${meta.icon} ${_sfEscHtml(meta.title)}</span>`;
+    }).join('');
+
+    card.innerHTML = `
+        <div class="sf-mhc-title">
+            <span>${d.prefix}${_sfEscHtml(m.name)}</span>
+            <span style="font-size:10px; color:#94a3b8; font-weight:500;">${_sfEscHtml(providerLabel)}</span>
+        </div>
+        ${specBits.length ? `<div class="sf-mhc-specs">${_sfEscHtml(specBits.join(' · '))}</div>` : ''}
+        ${capBadges ? `<div class="sf-mhc-caps">${capBadges}</div>` : `<div class="sf-mhc-specs">Standard text generation model</div>`}
+    `;
+    card.style.display = 'block';
+};
+
+window.sfRenderModelPickerList = function(filterText = '') {
+    const listEl = document.getElementById('sf-model-picker-list');
+    if (!listEl) return;
+    const filtered = window.sfState.filteredModels || [];
+    const curVal = document.getElementById('sf-model-select')?.value || '';
+    const q = (filterText || '').trim().toLowerCase();
+
+    const visible = q
+        ? filtered.filter(m =>
+            (m.name || '').toLowerCase().includes(q) ||
+            (m.family || '').toLowerCase().includes(q) ||
+            (m.capabilities || []).some(c => c.toLowerCase().includes(q))
+        )
+        : filtered;
+
+    listEl.innerHTML = '';
+    if (!visible.length) {
+        listEl.innerHTML = `<div style="padding:10px; font-size:11.5px; color:var(--text-muted); text-align:center;">No models match filter</div>`;
+        window.sfUpdateModelHoverCard(null);
+        return;
+    }
+
+    visible.forEach(m => {
+        const d = _sfBuildModelDisplay(m);
+        const item = document.createElement('div');
+        item.className = 'sf-mp-item' + (m.id === curVal ? ' selected' : '');
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', m.id === curVal ? 'true' : 'false');
+        item.dataset.modelId = m.id;
+        item._sfModelObj = m;
+        item.title = d.tooltipText;
+
+        const capIconsHtml = d.caps.map(c => {
+            const meta = _SF_CAP_META[c];
+            if (!meta) return '';
+            return `<span title="${_sfEscHtml(meta.title + ' — ' + meta.desc)}">${meta.icon}</span>`;
+        }).join('');
+
+        item.innerHTML = `
+            <div class="sf-mp-item-left">
+                <span>${d.prefix.trim()}</span>
+                <span class="sf-mp-item-name">${_sfEscHtml(m.name)}</span>
+            </div>
+            <div class="sf-mp-item-right">
+                ${d.specCompact ? `<span class="sf-mp-spec-tag">${_sfEscHtml(d.specCompact)}</span>` : ''}
+                ${capIconsHtml ? `<span class="sf-mp-cap-icons">${capIconsHtml}</span>` : ''}
+            </div>
+        `;
+
+        item.addEventListener('mouseenter', () => {
+            listEl.querySelectorAll('.sf-mp-item.sf-mp-hovered').forEach(el => el.classList.remove('sf-mp-hovered'));
+            item.classList.add('sf-mp-hovered');
+            window.sfUpdateModelHoverCard(m);
+        });
+
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const mSel = document.getElementById('sf-model-select');
+            if (mSel) {
+                mSel.value = m.id;
+            }
+            window.sfCloseModelPicker();
+            if (window.sfSyncModelUI) window.sfSyncModelUI();
+            if (window.sfDirty) window.sfDirty();
+            document.getElementById('sf-model-picker-btn')?.focus({ preventScroll: true });
+        });
+
+        listEl.appendChild(item);
+    });
+
+    const initialItem = listEl.querySelector('.sf-mp-item.selected') || listEl.querySelector('.sf-mp-item');
+    if (initialItem) {
+        initialItem.classList.add('sf-mp-hovered');
+        if (typeof initialItem.scrollIntoView === 'function') {
+            initialItem.scrollIntoView({ block: 'nearest' });
+        }
+        window.sfUpdateModelHoverCard(initialItem._sfModelObj || null);
+    } else {
+        window.sfUpdateModelHoverCard(null);
+    }
+};
+
+window.sfFilterModelPicker = function(val) {
+    window.sfRenderModelPickerList(val);
+};
+
+window.sfToggleModelPicker = function(force) {
+    const menu = document.getElementById('sf-model-picker-menu');
+    const btn = document.getElementById('sf-model-picker-btn');
+    if (!menu || !btn) return;
+    const isOpen = menu.style.display !== 'none';
+    const open = force !== undefined ? force : !isOpen;
+    if (open) {
+        if (window.sfCloseSoulPicker) window.sfCloseSoulPicker();
+        const searchEl = document.getElementById('sf-model-search');
+        if (searchEl) searchEl.value = '';
+        window.sfRenderModelPickerList('');
+        menu.style.display = 'block';
+        btn.setAttribute('aria-expanded', 'true');
+        if (searchEl) setTimeout(() => searchEl.focus(), 20);
+    } else {
+        menu.style.display = 'none';
+        btn.setAttribute('aria-expanded', 'false');
+    }
+};
+
+window.sfCloseModelPicker = function() {
+    window.sfToggleModelPicker(false);
+};
+
+window.sfSyncModelUI = function() {
+    const mSel = document.getElementById('sf-model-select');
+    const labelEl = document.getElementById('sf-model-picker-label');
+    const metaEl = document.getElementById('sf-model-picker-meta');
+    const infoBar = document.getElementById('sf-model-info-bar');
+    if (!mSel) return;
+
+    const val = mSel.value;
+    const m = _sfFindSelectedModel(val);
+
+    if (labelEl && metaEl) {
+        if (m) {
+            const d = _sfBuildModelDisplay(m);
+            labelEl.textContent = d.prefix + m.name;
+            labelEl.title = d.tooltipText;
+            const metaBadges = [];
+            if (d.specCompact) metaBadges.push(`<span class="sf-mp-spec-tag">${_sfEscHtml(d.specCompact)}</span>`);
+            if (d.icons) metaBadges.push(`<span class="sf-mp-cap-icons">${d.icons}</span>`);
+            metaEl.innerHTML = metaBadges.join('');
+        } else {
+            const fallbackTxt = mSel.options[mSel.selectedIndex]?.textContent || val || '(Select model)';
+            labelEl.textContent = fallbackTxt;
+            labelEl.title = fallbackTxt;
+            metaEl.innerHTML = '';
+        }
+    }
+
+    if (infoBar) {
+        if (!m) {
+            infoBar.style.display = 'none';
+            infoBar.innerHTML = '';
+        } else {
+            const d = _sfBuildModelDisplay(m);
+            const pills = [];
+
+            const provTip = m.type === 'local'
+                ? `Local offline model executed via ${m.provider || 'ollama'} on your hardware.`
+                : `Cloud API model via ${m.provider || 'cloud'}.`;
+            const provName = m.type === 'local'
+                ? `Local (${m.provider === 'llama_cpp' ? 'GGUF' : (m.provider || 'Ollama')})`
+                : `Cloud (${m.provider || 'API'})`;
+            pills.push(`<span class="sf-mib-pill" data-sf-tip="${_sfEscHtml(provTip)}" title="${_sfEscHtml(provTip)}">${d.prefix.trim()} ${_sfEscHtml(provName)}</span>`);
+
+            if (m.parameter_size || m.quantization_level) {
+                const pqText = [m.parameter_size, m.quantization_level].filter(Boolean).join(' · ');
+                const pqTip = `Architecture spec: ${m.parameter_size || 'unknown'} parameters` +
+                    (m.quantization_level ? `, ${m.quantization_level} quantization` : '') +
+                    (m.family ? ` (${m.family} family)` : '') + '.';
+                pills.push(`<span class="sf-mib-pill spec-param" data-sf-tip="${_sfEscHtml(pqTip)}" title="${_sfEscHtml(pqTip)}">🧠 ${_sfEscHtml(pqText)}</span>`);
+            }
+
+            if (d.sizeHuman) {
+                const diskTip = `Disk footprint: ${d.sizeHuman} (${(m.size_bytes / (1024 * 1024)).toFixed(0)} MB on disk).`;
+                pills.push(`<span class="sf-mib-pill spec-disk" data-sf-tip="${_sfEscHtml(diskTip)}" title="${_sfEscHtml(diskTip)}">💾 ${_sfEscHtml(d.sizeHuman)}</span>`);
+            }
+
+            if (m.family) {
+                const famTip = `Model architecture family: ${m.family}.`;
+                pills.push(`<span class="sf-mib-pill" data-sf-tip="${_sfEscHtml(famTip)}" title="${_sfEscHtml(famTip)}">🧬 ${_sfEscHtml(m.family)}</span>`);
+            }
+
+            if (m.context_length > 0) {
+                const kCtx = m.context_length >= 1024 ? `${Math.round(m.context_length / 1024)}k` : `${m.context_length}`;
+                const ctxTip = `Native maximum context window reported by Ollama: ${m.context_length} tokens.`;
+                pills.push(`<span class="sf-mib-pill" data-sf-tip="${_sfEscHtml(ctxTip)}" title="${_sfEscHtml(ctxTip)}">📐 ${_sfEscHtml(kCtx)} ctx</span>`);
+            }
+
+            d.caps.forEach(c => {
+                const meta = _SF_CAP_META[c] || { icon: '•', label: c, title: c, desc: '' };
+                const tip = `${meta.title}: ${meta.desc}`;
+                pills.push(`<span class="sf-mib-pill cap-${_sfEscHtml(c)}" data-sf-tip="${_sfEscHtml(tip)}" title="${_sfEscHtml(tip)}">${meta.icon} ${_sfEscHtml(meta.label)}</span>`);
+            });
+
+            const descLine = m.description
+                ? `<div class="sf-mib-desc">${_sfEscHtml(m.description)}</div>`
+                : '';
+
+            infoBar.innerHTML = `<div class="sf-mib-pills">${pills.join('')}</div>${descLine}`;
+            infoBar.style.display = 'flex';
+        }
+    }
+};
+
+// ── Keyboard Stepping & Accessible Picker Navigation (Global Preset + Model) ──
+
+window.sfStepSoul = function(step) {
+    const sel = document.getElementById('sf-active-soul-select');
+    if (!sel || !sel.options || sel.options.length <= 1) return false;
+
+    const len = sel.options.length;
+    const curIdx = Math.max(0, sel.selectedIndex);
+    let nextIdx;
+    if (step === 'first') {
+        nextIdx = 0;
+    } else if (step === 'last') {
+        nextIdx = len - 1;
+    } else {
+        nextIdx = (curIdx + step + len) % len;
+    }
+    if (nextIdx === curIdx) return false;
+
+    const nextVal = sel.options[nextIdx].value;
+    sel.value = nextVal;
+    if (window.sfState) window.sfState.activeSoulId = nextVal || null;
+    if (window.sfSyncSoulPickerUI) window.sfSyncSoulPickerUI();
+
+    clearTimeout(window._sfStepSoulTimer);
+    window._sfStepSoulTimer = setTimeout(() => {
+        if (window.sfSelectSessionSoul) window.sfSelectSessionSoul(nextVal);
+    }, 180);
+    return true;
+};
+
+window.sfStepModel = function(step) {
+    const mSel = document.getElementById('sf-model-select');
+    if (!mSel || !mSel.options || mSel.options.length <= 1) return false;
+
+    const len = mSel.options.length;
+    const curIdx = Math.max(0, mSel.selectedIndex);
+    let nextIdx;
+    if (step === 'first') {
+        nextIdx = 0;
+    } else if (step === 'last') {
+        nextIdx = len - 1;
+    } else {
+        nextIdx = (curIdx + step + len) % len;
+    }
+    if (nextIdx === curIdx) return false;
+
+    mSel.value = mSel.options[nextIdx].value;
+    if (window.sfSyncModelUI) window.sfSyncModelUI();
+    if (window.sfDirty) window.sfDirty();
+    return true;
+};
+
+function _sfMovePickerHighlight(listEl, delta, onHighlight) {
+    if (!listEl) return;
+    const items = Array.from(listEl.querySelectorAll('.sf-mp-item'));
+    if (!items.length) return;
+
+    let curIdx = items.findIndex(el => el.classList.contains('sf-mp-hovered'));
+    if (curIdx === -1) curIdx = items.findIndex(el => el.classList.contains('selected'));
+
+    let nextIdx;
+    if (delta === 'first') {
+        nextIdx = 0;
+    } else if (delta === 'last') {
+        nextIdx = items.length - 1;
+    } else if (curIdx === -1) {
+        nextIdx = delta > 0 ? 0 : items.length - 1;
+    } else {
+        nextIdx = (curIdx + delta + items.length) % items.length;
+    }
+
+    items.forEach(el => el.classList.remove('sf-mp-hovered'));
+    const target = items[nextIdx];
+    target.classList.add('sf-mp-hovered');
+    if (typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ block: 'nearest' });
+    }
+    if (typeof onHighlight === 'function') onHighlight(target);
+}
+
+function _sfIsPresetManagerOpen() {
+    const panel = document.getElementById('preset-manager-panel') || document.getElementById('soul-forge-panel');
+    if (!panel || !panel.classList.contains('open')) return false;
+    if (panel.style.display === 'none') return false;
+    // Yield if a confirm/prompt modal is open on top
+    const confirmModal = document.getElementById('hecos-confirm-modal');
+    const promptModal = document.getElementById('hecos-prompt-modal');
+    if (confirmModal && confirmModal.style.display !== 'none' && confirmModal.style.display !== '') return false;
+    if (promptModal && promptModal.style.display !== 'none' && promptModal.style.display !== '') return false;
+    return true;
+}
+
+if (!window._sfModelPickerEventsBound) {
+    window._sfModelPickerEventsBound = true;
+    document.addEventListener('click', (e) => {
+        const picker = document.getElementById('sf-model-picker');
+        if (picker && !picker.contains(e.target)) {
+            if (window.sfCloseModelPicker) window.sfCloseModelPicker();
+        }
+        const soulPicker = document.getElementById('sf-soul-picker');
+        if (soulPicker && !soulPicker.contains(e.target)) {
+            if (window.sfCloseSoulPicker) window.sfCloseSoulPicker();
+        }
+    });
+
+    // Capture-phase keydown handler so open picker menus handle Escape/Arrows before HKS
+    document.addEventListener('keydown', (e) => {
+        if (!_sfIsPresetManagerOpen()) return;
+
+        const soulMenu = document.getElementById('sf-soul-picker-menu');
+        const modelMenu = document.getElementById('sf-model-picker-menu');
+        const soulOpen = !!(soulMenu && soulMenu.style.display !== 'none');
+        const modelOpen = !!(modelMenu && modelMenu.style.display !== 'none');
+        const active = document.activeElement;
+
+        // 1. Open Global Preset picker menu navigation
+        if (soulOpen) {
+            const listEl = document.getElementById('sf-soul-picker-list');
+            const searchEl = document.getElementById('sf-soul-search');
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                window.sfCloseSoulPicker();
+                document.getElementById('sf-soul-picker-btn')?.focus({ preventScroll: true });
+                return;
+            }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                e.stopPropagation();
+                _sfMovePickerHighlight(listEl, e.key === 'ArrowDown' ? 1 : -1, (item) => {
+                    window.sfUpdateSoulHoverCard(item._sfSoulObj || null);
+                });
+                return;
+            }
+            if ((e.key === 'Home' || e.key === 'End') && (!searchEl || !searchEl.value)) {
+                e.preventDefault();
+                e.stopPropagation();
+                _sfMovePickerHighlight(listEl, e.key === 'Home' ? 'first' : 'last', (item) => {
+                    window.sfUpdateSoulHoverCard(item._sfSoulObj || null);
+                });
+                return;
+            }
+            if (e.key === 'Enter') {
+                const target = listEl?.querySelector('.sf-mp-item.sf-mp-hovered')
+                    || listEl?.querySelector('.sf-mp-item.selected')
+                    || listEl?.querySelector('.sf-mp-item');
+                if (target) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    target.click();
+                }
+                return;
+            }
+            return;
+        }
+
+        // 2. Open Model Name picker menu navigation
+        if (modelOpen) {
+            const listEl = document.getElementById('sf-model-picker-list');
+            const searchEl = document.getElementById('sf-model-search');
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                window.sfCloseModelPicker();
+                document.getElementById('sf-model-picker-btn')?.focus({ preventScroll: true });
+                return;
+            }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                e.stopPropagation();
+                _sfMovePickerHighlight(listEl, e.key === 'ArrowDown' ? 1 : -1, (item) => {
+                    window.sfUpdateModelHoverCard(item._sfModelObj || null);
+                });
+                return;
+            }
+            if ((e.key === 'Home' || e.key === 'End') && (!searchEl || !searchEl.value)) {
+                e.preventDefault();
+                e.stopPropagation();
+                _sfMovePickerHighlight(listEl, e.key === 'Home' ? 'first' : 'last', (item) => {
+                    window.sfUpdateModelHoverCard(item._sfModelObj || null);
+                });
+                return;
+            }
+            if (e.key === 'Enter') {
+                const target = listEl?.querySelector('.sf-mp-item.sf-mp-hovered')
+                    || listEl?.querySelector('.sf-mp-item.selected')
+                    || listEl?.querySelector('.sf-mp-item');
+                if (target) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    target.click();
+                }
+                return;
+            }
+            return;
+        }
+
+        // 3. Closed Model Name picker button: arrows / Home / End / Alt+Down
+        if (active && active.id === 'sf-model-picker-btn') {
+            if (e.altKey && e.key === 'ArrowDown') {
+                e.preventDefault();
+                window.sfToggleModelPicker(true);
+                return;
+            }
+            if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    window.sfStepModel(-1);
+                    return;
+                }
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    window.sfStepModel(1);
+                    return;
+                }
+                if (e.key === 'Home') {
+                    e.preventDefault();
+                    window.sfStepModel('first');
+                    return;
+                }
+                if (e.key === 'End') {
+                    e.preventDefault();
+                    window.sfStepModel('last');
+                    return;
+                }
+            }
+            return;
+        }
+
+        // 4. Closed Global Preset picker button: arrows / Home / End / Alt+Down
+        if (active && active.id === 'sf-soul-picker-btn') {
+            if (e.altKey && e.key === 'ArrowDown') {
+                e.preventDefault();
+                window.sfToggleSoulPicker(true);
+                return;
+            }
+            if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    window.sfStepSoul(-1);
+                    return;
+                }
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    window.sfStepSoul(1);
+                    return;
+                }
+                if (e.key === 'Home') {
+                    e.preventDefault();
+                    window.sfStepSoul('first');
+                    return;
+                }
+                if (e.key === 'End') {
+                    e.preventDefault();
+                    window.sfStepSoul('last');
+                    return;
+                }
+            }
+            return;
+        }
+
+        // 5. Panel-wide Left / Right Global Preset switching (when not editing text/select/slider)
+        if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
+            if (active && active !== document.body && active !== document.documentElement) {
+                const tag = (active.tagName || '').toUpperCase();
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active.isContentEditable) {
+                    return;
+                }
+            }
+            e.preventDefault();
+            window.sfStepSoul(e.key === 'ArrowRight' ? 1 : -1);
+        }
+    }, { capture: true });
+}
+
+// ── Global Preset Searchable Picker (matches Model Picker UI) ────────────────
+
+function _sfFormatPresetDate(rawIso, mode = 'date') {
+    const clean = String(rawIso || '').trim();
+    if (!clean) return mode === 'last_short' ? 'Never' : '—';
+    const norm = clean.includes('T') ? clean : clean.replace(' ', 'T');
+    const dt = new Date(norm);
+    if (Number.isNaN(dt.getTime())) {
+        return mode === 'full' ? clean.replace('T', ' ').slice(0, 16) : clean.slice(0, 10);
+    }
+    const pad = (n) => String(n).padStart(2, '0');
+    const yyyy = dt.getFullYear();
+    const yy = String(yyyy).slice(-2);
+    const mm = pad(dt.getMonth() + 1);
+    const dd = pad(dt.getDate());
+    const hh = pad(dt.getHours());
+    const min = pad(dt.getMinutes());
+    if (mode === 'full') return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+    if (mode === 'last_short') return `${dd}/${mm} ${hh}:${min}`;
+    return `${dd}/${mm}/${yy}`;
+}
+
+function _sfGetSoulStats(s) {
+    const createdAt = s?.meta?.created_at || '';
+    const chatCount = Math.max(0, Number(s?.usage?.chat_count ?? s?.meta?.chat_count ?? 0) || 0);
+    const messageCount = Math.max(0, Number(s?.usage?.message_count ?? s?.usage?.use_count ?? s?.meta?.use_count ?? 0) || 0);
+    const lastUsedAt = s?.usage?.last_used_at || s?.meta?.last_used_at || '';
+    const hasUsage = chatCount > 0 || messageCount > 0;
+    const chatWord = chatCount === 1 ? 'chat' : 'chats';
+    const msgWord = messageCount === 1 ? 'message' : 'messages';
+    return {
+        createdAt,
+        createdCompact: _sfFormatPresetDate(createdAt, 'date'),
+        createdFull: createdAt ? _sfFormatPresetDate(createdAt, 'full') : 'Unknown',
+        chatCount,
+        messageCount,
+        useCount: messageCount,
+        hasUsage,
+        usageCompact: `💬 ${chatCount} · ✉️ ${messageCount}`,
+        usageTooltip: `${chatCount} ${chatWord} · ${messageCount} ${msgWord}`,
+        lastUsedAt,
+        lastCompact: (hasUsage && lastUsedAt) ? _sfFormatPresetDate(lastUsedAt, 'last_short') : 'Never',
+        lastFull: (hasUsage && lastUsedAt) ? _sfFormatPresetDate(lastUsedAt, 'full') : 'Never used',
+    };
+}
+
+window.sfUpdateSoulHoverCard = function(s) {
+    const card = document.getElementById('sf-soul-hover-card');
+    if (!card) return;
+    if (!s) {
+        card.style.display = 'block';
+        card.innerHTML = `
+            <div class="sf-mhc-title">
+                <span>⚙️ Base Configuration (No Preset)</span>
+                <span style="font-size:10px; color:#94a3b8; font-weight:500;">System Fallback</span>
+            </div>
+            <div class="sf-mhc-specs">Uses Hecos system defaults without applying a Global Preset overlay.</div>
+        `;
+        return;
+    }
+
+    const st = _sfGetSoulStats(s);
+    const sid = s.meta?.id || '';
+    const isGlobalDef = sid && window.sfState?.globalDefaultSoulId === sid;
+    const badgeBits = [];
+    if (s.model?.model_name) badgeBits.push(`<span class="sf-mib-pill">🤖 ${_sfEscHtml(s.model.model_name)}</span>`);
+    if (s.persona?.soul_file) badgeBits.push(`<span class="sf-mib-pill">👤 ${_sfEscHtml(s.persona.soul_file)}</span>`);
+    if (s.voice?.tts_engine) badgeBits.push(`<span class="sf-mib-pill">🔊 ${_sfEscHtml(s.voice.tts_engine)}</span>`);
+    if (s.inference?.preset_name) badgeBits.push(`<span class="sf-mib-pill">⚙️ ${_sfEscHtml(s.inference.preset_name)}</span>`);
+
+    const rightTag = isGlobalDef ? '⭐ Global Default' : sid;
+    const descHtml = s.meta?.description
+        ? `<div class="sf-mhc-specs" style="margin-top:4px;margin-bottom:0;color:#cbd5e1;">${_sfEscHtml(s.meta.description)}</div>`
+        : '';
+
+    card.innerHTML = `
+        <div class="sf-mhc-title">
+            <span>${_sfEscHtml(s.meta?.icon || '⚡')} ${_sfEscHtml(s.meta?.name || sid)}</span>
+            <span style="font-size:10px; color:#94a3b8; font-weight:500;">${_sfEscHtml(rightTag)}</span>
+        </div>
+        <div class="sf-mhc-specs">Created: ${_sfEscHtml(st.createdFull)} · Chats: ${st.chatCount} · Messages: ${st.messageCount} · Last used: ${_sfEscHtml(st.lastFull)}</div>
+        ${badgeBits.length ? `<div class="sf-mhc-caps">${badgeBits.join('')}</div>` : ''}
+        ${descHtml}
+    `;
+    card.style.display = 'block';
+};
+
+window.sfRenderSoulPickerList = function(filterText = '') {
+    const listEl = document.getElementById('sf-soul-picker-list');
+    if (!listEl) return;
+
+    const souls = window.sfState.sortedSouls || window.sfState.souls || [];
+    const curVal = document.getElementById('sf-active-soul-select')?.value || '';
+    const q = (filterText || '').trim().toLowerCase();
+
+    const visible = q
+        ? souls.filter(s => {
+            const m = s.meta || {};
+            const hay = [
+                m.name, m.id, m.description,
+                Array.isArray(m.tags) ? m.tags.join(' ') : '',
+                s.persona?.soul_file,
+                s.model?.model_name,
+            ].filter(Boolean).join(' ').toLowerCase();
+            return hay.includes(q);
+        })
+        : souls;
+
+    const totalSouls = souls.length;
+    const totalWord = totalSouls === 1 ? 'preset' : 'presets';
+    const searchCountEl = document.getElementById('sf-soul-search-count');
+    if (searchCountEl) {
+        searchCountEl.textContent = q ? `${visible.length} / ${totalSouls}` : `${totalSouls} ${totalWord}`;
+        searchCountEl.title = q
+            ? `Showing ${visible.length} of ${totalSouls} Global Presets`
+            : `Total saved Global Presets: ${totalSouls}`;
+    }
+    const totalBadge = document.getElementById('sf-preset-total-badge');
+    if (totalBadge) {
+        totalBadge.textContent = `${totalSouls} ${totalWord}`;
+        totalBadge.title = `Total saved Global Presets: ${totalSouls}`;
+    }
+
+    listEl.innerHTML = '';
+
+    // Always include Base Configuration option when not filtered out or matching "base" / "default"
+    if (!q || 'base configuration default no preset'.includes(q)) {
+        const baseItem = document.createElement('div');
+        baseItem.className = 'sf-mp-item' + (curVal === '' ? ' selected' : '');
+        baseItem.setAttribute('role', 'option');
+        baseItem.setAttribute('aria-selected', curVal === '' ? 'true' : 'false');
+        baseItem.dataset.soulId = '';
+        baseItem._sfSoulObj = null;
+        baseItem.innerHTML = `
+            <div class="sf-mp-item-left">
+                <span>⚙️</span>
+                <span class="sf-mp-item-name">-- Base Configuration (No Preset) --</span>
+            </div>
+            <div class="sf-mp-item-right">
+                <span class="sf-mp-spec-tag sf-sp-stat-pill">System fallback</span>
+            </div>
+        `;
+        baseItem.addEventListener('mouseenter', () => {
+            listEl.querySelectorAll('.sf-mp-item.sf-mp-hovered').forEach(el => el.classList.remove('sf-mp-hovered'));
+            baseItem.classList.add('sf-mp-hovered');
+            window.sfUpdateSoulHoverCard(null);
+        });
+        baseItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const sel = document.getElementById('sf-active-soul-select');
+            if (sel) sel.value = '';
+            window.sfCloseSoulPicker();
+            if (window.sfSyncSoulPickerUI) window.sfSyncSoulPickerUI();
+            if (window.sfSelectSessionSoul) window.sfSelectSessionSoul('');
+            document.getElementById('sf-soul-picker-btn')?.focus({ preventScroll: true });
+        });
+        listEl.appendChild(baseItem);
+    }
+
+    if (!visible.length && q) {
+        const emptyEl = document.createElement('div');
+        emptyEl.style.cssText = 'padding:10px; font-size:11.5px; color:var(--text-muted); text-align:center;';
+        emptyEl.textContent = 'No presets match filter';
+        listEl.appendChild(emptyEl);
+        window.sfUpdateSoulHoverCard(null);
+        return;
+    }
+
+    visible.forEach(s => {
+        const sid = s.meta?.id || '';
+        const st = _sfGetSoulStats(s);
+        const isGlobalDef = sid && window.sfState?.globalDefaultSoulId === sid;
+        const icon = s.meta?.icon || '⚡';
+        const name = s.meta?.name || sid;
+
+        const item = document.createElement('div');
+        item.className = 'sf-mp-item' + (sid === curVal ? ' selected' : '');
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', sid === curVal ? 'true' : 'false');
+        item.dataset.soulId = sid;
+        item._sfSoulObj = s;
+        item.title = `${name} (${sid})\nCreated: ${st.createdFull}\nChats: ${st.chatCount} · Messages: ${st.messageCount}\nLast used: ${st.lastFull}`;
+
+        item.innerHTML = `
+            <div class="sf-mp-item-left">
+                <span>${_sfEscHtml(icon)}</span>
+                <span class="sf-mp-item-name">${_sfEscHtml(name)}${isGlobalDef ? ' ⭐' : ''}</span>
+            </div>
+            <div class="sf-mp-item-right">
+                <span class="sf-mp-spec-tag sf-sp-stat-pill" title="Created: ${_sfEscHtml(st.createdFull)}">📅 ${_sfEscHtml(st.createdCompact)}</span>
+                <span class="sf-mp-spec-tag sf-sp-stat-pill${st.hasUsage ? ' uses-hot' : ''}" title="Used in ${_sfEscHtml(st.usageTooltip)}">${st.usageCompact}</span>
+                <span class="sf-mp-spec-tag sf-sp-stat-pill" title="Last used: ${_sfEscHtml(st.lastFull)}">🕒 ${_sfEscHtml(st.lastCompact)}</span>
+            </div>
+        `;
+
+        item.addEventListener('mouseenter', () => {
+            listEl.querySelectorAll('.sf-mp-item.sf-mp-hovered').forEach(el => el.classList.remove('sf-mp-hovered'));
+            item.classList.add('sf-mp-hovered');
+            window.sfUpdateSoulHoverCard(s);
+        });
+
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const sel = document.getElementById('sf-active-soul-select');
+            if (sel) sel.value = sid;
+            window.sfCloseSoulPicker();
+            if (window.sfSyncSoulPickerUI) window.sfSyncSoulPickerUI();
+            if (window.sfSelectSessionSoul) window.sfSelectSessionSoul(sid);
+            document.getElementById('sf-soul-picker-btn')?.focus({ preventScroll: true });
+        });
+
+        listEl.appendChild(item);
+    });
+
+    const initialItem = listEl.querySelector('.sf-mp-item.selected') || listEl.querySelector('.sf-mp-item');
+    if (initialItem) {
+        initialItem.classList.add('sf-mp-hovered');
+        if (typeof initialItem.scrollIntoView === 'function') {
+            initialItem.scrollIntoView({ block: 'nearest' });
+        }
+        window.sfUpdateSoulHoverCard(initialItem._sfSoulObj || null);
+    } else {
+        window.sfUpdateSoulHoverCard(null);
+    }
+};
+
+window.sfFilterSoulPicker = function(val) {
+    window.sfRenderSoulPickerList(val);
+};
+
+window.sfToggleSoulPicker = function(force) {
+    const menu = document.getElementById('sf-soul-picker-menu');
+    const btn = document.getElementById('sf-soul-picker-btn');
+    if (!menu || !btn) return;
+    const isOpen = menu.style.display !== 'none';
+    const open = force !== undefined ? force : !isOpen;
+    if (open) {
+        if (window.sfCloseModelPicker) window.sfCloseModelPicker();
+        const searchEl = document.getElementById('sf-soul-search');
+        if (searchEl) searchEl.value = '';
+        window.sfRenderSoulPickerList('');
+        menu.style.display = 'block';
+        btn.setAttribute('aria-expanded', 'true');
+        if (searchEl) setTimeout(() => searchEl.focus(), 20);
+    } else {
+        menu.style.display = 'none';
+        btn.setAttribute('aria-expanded', 'false');
+    }
+};
+
+window.sfCloseSoulPicker = function() {
+    window.sfToggleSoulPicker(false);
+};
+
+window.sfSyncSoulPickerUI = function() {
+    const sel = document.getElementById('sf-active-soul-select');
+    const labelEl = document.getElementById('sf-soul-picker-label');
+    const metaEl = document.getElementById('sf-soul-picker-meta');
+    const souls = window.sfState.souls || [];
+    const totalSouls = souls.length;
+    const totalWord = totalSouls === 1 ? 'preset' : 'presets';
+    const totalBadge = document.getElementById('sf-preset-total-badge');
+    if (totalBadge) {
+        totalBadge.textContent = `${totalSouls} ${totalWord}`;
+        totalBadge.title = `Total saved Global Presets: ${totalSouls}`;
+    }
+    const searchCountEl = document.getElementById('sf-soul-search-count');
+    if (searchCountEl) {
+        searchCountEl.textContent = `${totalSouls} ${totalWord}`;
+        searchCountEl.title = `Total saved Global Presets: ${totalSouls}`;
+    }
+    if (!sel || !labelEl) return;
+
+    const val = sel.value || '';
+    if (!val) {
+        labelEl.textContent = '-- Base Configuration (No Preset) --';
+        labelEl.title = 'System Base Configuration (No Preset)';
+        if (metaEl) metaEl.innerHTML = '';
+        return;
+    }
+
+    const s = souls.find(item => item.meta?.id === val);
+    if (s) {
+        const st = _sfGetSoulStats(s);
+        const icon = s.meta?.icon || '⚡';
+        const name = s.meta?.name || val;
+        labelEl.textContent = `${icon} ${name}`;
+        labelEl.title = `${name}\nCreated: ${st.createdFull}\nChats: ${st.chatCount} · Messages: ${st.messageCount}\nLast used: ${st.lastFull}`;
+        if (metaEl) {
+            metaEl.innerHTML =
+                `<span class="sf-mp-spec-tag sf-sp-stat-pill" title="Created: ${_sfEscHtml(st.createdFull)}">📅 ${_sfEscHtml(st.createdCompact)}</span>` +
+                `<span class="sf-mp-spec-tag sf-sp-stat-pill${st.hasUsage ? ' uses-hot' : ''}" title="Used in ${_sfEscHtml(st.usageTooltip)}">${st.usageCompact}</span>`;
+        }
+    } else {
+        const optTxt = sel.options[sel.selectedIndex]?.textContent || val;
+        labelEl.textContent = optTxt;
+        labelEl.title = optTxt;
+        if (metaEl) metaEl.innerHTML = '';
+    }
+};
 
 window.sfUpdateModelsDropdown = function() {
-    const bType = document.getElementById('sf-backend-select').value;
+    const bType = document.getElementById('sf-backend-select')?.value;
     const mSel = document.getElementById('sf-model-select');
+    if (!mSel || !window.sfState.allModels) return;
+    const prevModel = mSel.value;
     mSel.innerHTML = '';
-    
-    if (!window.sfState.allModels) return;
     
     const filtered = window.sfState.allModels.filter(m => {
         if (!bType) return true;
         if (bType === 'cloud' && m.type === 'cloud') return true;
         if (bType === 'ollama' && m.type === 'local' && !m.id.includes('.gguf')) return true;
         if (bType === 'llama_cpp' && m.id.includes('.gguf')) return true;
+        if (bType === 'kobold' && m.provider === 'kobold') return true;
         return false;
     });
+
+    window.sfState.filteredModels = filtered;
     
     filtered.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m.id;
-        
-        let prefix = (m.type === 'cloud') ? '☁️ ' : (m.type === 'local' ? '🖥️ ' : '');
-        let suffix = '';
-        let sizeTag = '';
-        if (m.parameter_size || m.size_bytes) {
-            sizeTag = ' [';
-            let parts = [];
-            if (m.parameter_size) {
-                let p = m.parameter_size;
-                if (m.quantization_level) p += ' ' + m.quantization_level;
-                parts.push(p);
-            }
-            if (m.size_bytes) {
-                let gb = (m.size_bytes / (1024*1024*1024)).toFixed(1);
-                parts.push(gb + 'GB');
-            }
-            sizeTag += parts.join(' | ') + ']';
-        }
-        let tooltipText = m.name + sizeTag;
-        
-        if (m.capabilities && m.capabilities.length > 0) {
-            const iconMap = { 'tools': '⚙️', 'vision': '👁️', 'thinking': '💭' };
-            const descMap = { 'tools': 'Tools/Function Calling', 'vision': 'Vision/Multimodal', 'thinking': 'Thinking/Reasoning' };
-            
-            const icons = m.capabilities.map(c => iconMap[c]).filter(Boolean).join('');
-            if (icons) suffix = ' ' + icons;
-            
-            const descs = m.capabilities.map(c => descMap[c]).filter(Boolean).join(', ');
-            if (descs) tooltipText += '\nCapabilities: ' + descs;
-        }
-        
-        opt.textContent = prefix + m.name + sizeTag + suffix;
-        opt.title = tooltipText;
+        const d = _sfBuildModelDisplay(m);
+        opt.textContent = d.optionLabel;
+        opt.title = d.tooltipText;
         mSel.appendChild(opt);
     });
-};
 
+    if (prevModel && Array.from(mSel.options).some(o => o.value === prevModel)) {
+        mSel.value = prevModel;
+    }
+
+    if (window.sfSyncModelUI) window.sfSyncModelUI();
+};
 
 window.sfUpdateVoicesDropdown = async function() {
     const engine = document.getElementById('sf-tts-engine-select')?.value;
@@ -400,14 +1365,25 @@ window.sfUpdateVoicesDropdown = async function() {
     } catch(e) {}
 };
 
-
 window.sfApplySoulToUI = async function(soul) {
     if (!soul) return;
+    window._sfApplyingSoul = true;  // suppress pill update during bulk-populate
     
     const fallbacks = window.sfSystemFallbacks || {};
     
     // Persona
-    document.getElementById('sf-persona-select').value = soul.persona?.soul_file || fallbacks.persona || "";
+    const pSel = document.getElementById('sf-persona-select');
+    const targetPersona = soul.persona?.soul_file || fallbacks.persona || "";
+    if (pSel && targetPersona && targetPersona !== 'unknown') {
+        let opt = Array.from(pSel.options).find(o => o.value === targetPersona || o.value === targetPersona + '.yaml');
+        if (!opt) {
+            opt = document.createElement('option');
+            opt.value = targetPersona;
+            opt.textContent = targetPersona.replace('.yaml', '');
+            pSel.appendChild(opt);
+        }
+        pSel.value = opt.value;
+    }
     
     document.getElementById('sf-use-global-direct').checked = soul.persona?.use_global_direct_instructions !== false;
     document.getElementById('sf-use-global-safety').checked = soul.persona?.use_global_safety_instructions !== false;
@@ -415,13 +1391,31 @@ window.sfApplySoulToUI = async function(soul) {
     document.getElementById('sf-user-notes').value = soul.persona?.user_notes || "";
     document.getElementById('sf-send-notes-ai').checked = soul.persona?.send_notes_to_ai === true;
     
+    // Payload & Tools Control
+    const payloadTools = document.getElementById('sf-payload-tools');
+    if (payloadTools) payloadTools.checked = soul.payload?.send_tools !== false;
+    const payloadSoul = document.getElementById('sf-payload-soul');
+    if (payloadSoul) payloadSoul.checked = soul.payload?.send_personality !== false;
+    const payloadMem = document.getElementById('sf-payload-memory');
+    if (payloadMem) payloadMem.checked = soul.payload?.send_memory !== false;
+    const payloadThinking = document.getElementById('sf-payload-thinking');
+    if (payloadThinking) payloadThinking.checked = soul.payload?.include_thinking_in_history === true;
+    const payloadEnableThinking = document.getElementById('sf-payload-enable-thinking');
+    if (payloadEnableThinking) payloadEnableThinking.checked = soul.payload?.enable_thinking !== false;
+    window.sfState.toolSelectionMode = (soul.payload?.tool_selection_mode === 'custom') ? 'custom' : 'all';
+    window.sfState.selectedTools = Array.isArray(soul.payload?.selected_tools) ? [...soul.payload.selected_tools] : [];
+    if (window.sfSyncToolsSelectorUI) window.sfSyncToolsSelectorUI();
+
     // Model
     document.getElementById('sf-backend-select').value = soul.model?.backend_type || fallbacks.backend || "ollama";
     window.sfUpdateModelsDropdown();
     document.getElementById('sf-model-select').value = soul.model?.model_name || fallbacks.model || "";
+    if (window.sfSyncModelUI) window.sfSyncModelUI();
     
     // Voice
-    const currentEng = soul.voice?.tts_engine || fallbacks.tts_engine || "piper";
+    const currentEng = (soul.voice?.tts_engine && soul.voice.tts_engine !== 'unknown')
+        ? soul.voice.tts_engine
+        : ((fallbacks.tts_engine && fallbacks.tts_engine !== 'unknown') ? fallbacks.tts_engine : "piper");
     document.getElementById('sf-tts-engine-select').value = currentEng;
     await window.sfUpdateVoicesDropdown();
     
@@ -434,15 +1428,11 @@ window.sfApplySoulToUI = async function(soul) {
     }
     const voiceSel = document.getElementById('sf-tts-voice-select');
     if (voiceSel) {
-        if (targetVoice) {
+        if (targetVoice && targetVoice !== 'unknown') {
             let match = Array.from(voiceSel.options).find(o => o.value === targetVoice || o.value.split(/[/\\]/).pop() === targetVoice);
-            if (match) {
-                voiceSel.value = match.value;
-            } else {
-                voiceSel.value = targetVoice;
-            }
-        } else {
-            voiceSel.value = "";
+            voiceSel.value = match ? match.value : targetVoice;
+        } else if (voiceSel.options.length > 0) {
+            voiceSel.selectedIndex = 0;
         }
     }
     
@@ -456,37 +1446,40 @@ window.sfApplySoulToUI = async function(soul) {
         }
     };
     
-    setVal('sf-temp', soul.inference?.temperature);
-    setVal('sf-topp', soul.inference?.top_p);
-    setVal('sf-reppen', soul.inference?.repeat_penalty);
-    setVal('sf-predict', soul.inference?.num_predict);
+    setVal('sf-temp', soul.inference?.temperature ?? 0.7);
+    setVal('sf-topp', soul.inference?.top_p ?? 0.9);
+    setVal('sf-reppen', soul.inference?.repeat_penalty ?? 1.1);
+    setVal('sf-predict', soul.inference?.num_predict ?? 1024);
 
     const ctxEl = document.getElementById('sf-ctx');
     if (ctxEl) {
         ctxEl.value = (soul.inference?.num_ctx !== undefined && soul.inference?.num_ctx !== null) ? soul.inference.num_ctx : 0;
-        ctxEl.dispatchEvent(new Event('input'));
+        const valEl = document.getElementById('sf-val-ctx');
+        if (valEl) valEl.textContent = ctxEl.value == 0 ? 'Auto' : ctxEl.value;
     }
     
     const gpuEl = document.getElementById('sf-gpu');
     if (gpuEl) {
         gpuEl.value = (soul.inference?.n_gpu_layers !== undefined && soul.inference?.n_gpu_layers !== null) ? soul.inference.n_gpu_layers : -2;
-        gpuEl.dispatchEvent(new Event('input'));
+        const valEl = document.getElementById('sf-val-gpu');
+        if (valEl) {
+            let txt = gpuEl.value;
+            if (gpuEl.value == -2) txt = 'Auto';
+            else if (gpuEl.value == -1) txt = 'Max (-1)';
+            valEl.textContent = txt;
+        }
     }
     
     document.getElementById('sf-xtts-preset-select').value = soul.voice?.xtts_preset || "";
-    
     const xttsInfSel = document.getElementById('sf-xtts-inference-preset-select');
-    if (xttsInfSel) {
-        xttsInfSel.value = soul.voice?.xtts_inference_preset || "";
-    }
-    
+    if (xttsInfSel) xttsInfSel.value = soul.voice?.xtts_inference_preset || "";
     document.getElementById('sf-xtts-speaker-wav').value = soul.voice?.xtts_speaker_wav || "";
-    setVal('sf-xtts-temp', soul.voice?.xtts_temperature);
-    setVal('sf-xtts-speed', soul.voice?.xtts_speed);
-    setVal('sf-xtts-topk', soul.voice?.xtts_top_k);
-    setVal('sf-xtts-reppen', soul.voice?.xtts_repetition_penalty);
-    setVal('sf-xtts-topp', soul.voice?.xtts_top_p);
-    setVal('sf-xtts-length-penalty', soul.voice?.xtts_length_penalty);
+    setVal('sf-xtts-temp', soul.voice?.xtts_temperature ?? 0.75);
+    setVal('sf-xtts-speed', soul.voice?.xtts_speed ?? 1.0);
+    setVal('sf-xtts-topk', soul.voice?.xtts_top_k ?? 50);
+    setVal('sf-xtts-reppen', soul.voice?.xtts_repetition_penalty ?? 5.0);
+    setVal('sf-xtts-topp', soul.voice?.xtts_topp ?? 0.85);
+    setVal('sf-xtts-length-penalty', soul.voice?.xtts_length_penalty ?? 1.0);
 
     const sfFishPresetSel = document.getElementById('sf-fish-preset-select');
     if (sfFishPresetSel) sfFishPresetSel.value = soul.voice?.fish_preset || "";
@@ -501,7 +1494,10 @@ window.sfApplySoulToUI = async function(soul) {
     setVal('sf-fish-max-tokens', soul.voice?.fish_max_new_tokens ?? 1024);
 
     const sfKokoroPresetSel = document.getElementById('sf-kokoro-preset-select');
-    if (sfKokoroPresetSel) sfKokoroPresetSel.value = soul.voice?.kokoro_preset || "";
+    if (sfKokoroPresetSel) {
+        const kp = soul.voice?.kokoro_preset || "";
+        sfKokoroPresetSel.value = (kp && Array.from(sfKokoroPresetSel.options).some(o => o.value === kp)) ? kp : "";
+    }
     const sfKokoroInfSel = document.getElementById('sf-kokoro-inference-preset-select');
     if (sfKokoroInfSel) sfKokoroInfSel.value = soul.voice?.kokoro_inference_preset || "";
     const sfKokoroBlendSel = document.getElementById('sf-kokoro-blend-voice');
@@ -512,36 +1508,170 @@ window.sfApplySoulToUI = async function(soul) {
     setVal('sf-kokoro-beta', soul.voice?.kokoro_beta ?? 1.0);
     setVal('sf-kokoro-volume', soul.voice?.kokoro_volume ?? 1.0);
     
-    window.sfUpdateCloneState();
-    window.sfDirty();
-    if (window.sfUpdateCloneState) window.sfUpdateCloneState();
-    window.sfState.isDirty = false; // reset dirty flag as we just loaded
-    
-    const topBtn = document.getElementById('sf-top-save-btn');
-    if (topBtn) {
-        topBtn.innerHTML = '<i class="fas fa-save"></i>';
-        topBtn.style.backgroundColor = '';
-        topBtn.style.color = '';
-        topBtn.onclick = window.sfOverwriteSoul;
-    }
-    
-    window.sfUpdateTooltip(soul);
+    window._sfApplyingSoul = false;
+    window.sfRefreshUIVisibilityAndSummaries();
 };
 
-window.sfUpdateTooltip = function(soul) {
+window.sfApplySessionOverridesToUI = async function(cfg) {
+    if (!cfg) return;
+
+    const pFile = cfg.persona?.soul_file || cfg.ai?.active_personality;
+    if (pFile) {
+        const pSel = document.getElementById('sf-persona-select');
+        if (pSel) pSel.value = pFile;
+    }
+
+    const pObj = cfg.persona || {};
+    if (pObj.use_global_direct_instructions !== undefined) {
+        document.getElementById('sf-use-global-direct').checked = pObj.use_global_direct_instructions !== false;
+    }
+    if (pObj.use_global_safety_instructions !== undefined) {
+        document.getElementById('sf-use-global-safety').checked = pObj.use_global_safety_instructions !== false;
+    }
+    if (pObj.custom_instructions !== undefined && pObj.custom_instructions !== null) {
+        document.getElementById('sf-custom-instructions').value = pObj.custom_instructions;
+    }
+    if (pObj.user_notes !== undefined && pObj.user_notes !== null) {
+        document.getElementById('sf-user-notes').value = pObj.user_notes;
+    }
+    if (pObj.send_notes_to_ai !== undefined && pObj.send_notes_to_ai !== null) {
+        document.getElementById('sf-send-notes-ai').checked = pObj.send_notes_to_ai === true;
+    }
+
+    // Payload Control (check both payload_control and payload)
+    const pCtrl = Object.assign({}, cfg.payload || {}, cfg.payload_control || {});
+    if (pCtrl.send_tools !== undefined) document.getElementById('sf-payload-tools').checked = pCtrl.send_tools !== false;
+    if (pCtrl.send_personality !== undefined) document.getElementById('sf-payload-soul').checked = pCtrl.send_personality !== false;
+    if (pCtrl.send_memory !== undefined) document.getElementById('sf-payload-memory').checked = pCtrl.send_memory !== false;
+    if (pCtrl.include_thinking_in_history !== undefined) document.getElementById('sf-payload-thinking').checked = pCtrl.include_thinking_in_history === true;
+    if (pCtrl.enable_thinking !== undefined) {
+        const elTh = document.getElementById('sf-payload-enable-thinking');
+        if (elTh) elTh.checked = pCtrl.enable_thinking !== false;
+    }
+    if (pCtrl.tool_selection_mode !== undefined) {
+        window.sfState.toolSelectionMode = (pCtrl.tool_selection_mode === 'custom') ? 'custom' : 'all';
+    }
+    if (pCtrl.selected_tools !== undefined) {
+        window.sfState.selectedTools = Array.isArray(pCtrl.selected_tools) ? [...pCtrl.selected_tools] : [];
+    }
+    if (window.sfSyncToolsSelectorUI) window.sfSyncToolsSelectorUI();
+
+    // Model / Backend
+    const bType = cfg.model?.backend_type || cfg.backend?.type;
+    if (bType) {
+        document.getElementById('sf-backend-select').value = bType;
+        window.sfUpdateModelsDropdown();
+        const mName = cfg.model?.model_name || cfg.backend?.[bType]?.model;
+        if (mName) document.getElementById('sf-model-select').value = mName;
+        if (window.sfSyncModelUI) window.sfSyncModelUI();
+    }
+
+    // TTS Engine & Voice
+    const ttsEng = cfg.voice?.tts_engine || cfg.ai?.tts_engine;
+    if (ttsEng) {
+        document.getElementById('sf-tts-engine-select').value = ttsEng;
+        await window.sfUpdateVoicesDropdown();
+    }
+    const ttsV = cfg.voice?.tts_voice || cfg.ai?.tts_voice;
+    if (ttsV) {
+        const voiceSel = document.getElementById('sf-tts-voice-select');
+        if (voiceSel) {
+            const match = Array.from(voiceSel.options).find(o => o.value === ttsV || o.value.split(/[/\\]/).pop() === ttsV);
+            voiceSel.value = match ? match.value : ttsV;
+        }
+    }
+
+    // Inference
+    const setVal = (id, val) => {
+        if (val !== undefined && val !== null) {
+            const el = document.getElementById(id);
+            if (el) { el.value = val; window.sfUpdateSliderVal(el, id.replace('sf-', 'sf-val-')); }
+        }
+    };
+    if (cfg.inference) {
+        if (cfg.inference.preset_name !== undefined) document.getElementById('sf-inference-preset-select').value = cfg.inference.preset_name || "";
+        setVal('sf-temp', cfg.inference.temperature);
+        setVal('sf-topp', cfg.inference.top_p);
+        setVal('sf-reppen', cfg.inference.repeat_penalty);
+        setVal('sf-predict', cfg.inference.num_predict);
+        if (cfg.inference.num_ctx !== undefined) {
+            const ctxEl = document.getElementById('sf-ctx');
+            if (ctxEl) {
+                ctxEl.value = cfg.inference.num_ctx || 0;
+                const valEl = document.getElementById('sf-val-ctx');
+                if (valEl) valEl.textContent = ctxEl.value == 0 ? 'Auto' : ctxEl.value;
+            }
+        }
+        if (cfg.inference.n_gpu_layers !== undefined) {
+            const gpuEl = document.getElementById('sf-gpu');
+            if (gpuEl) {
+                gpuEl.value = (cfg.inference.n_gpu_layers !== null && cfg.inference.n_gpu_layers !== undefined) ? cfg.inference.n_gpu_layers : -2;
+                const valEl = document.getElementById('sf-val-gpu');
+                if (valEl) {
+                    let txt = gpuEl.value;
+                    if (gpuEl.value == -2) txt = 'Auto';
+                    else if (gpuEl.value == -1) txt = 'Max (-1)';
+                    valEl.textContent = txt;
+                }
+            }
+        }
+    }
+
+    // Voice fine parameters
+    if (cfg.voice) {
+        if (cfg.voice.xtts_preset !== undefined) document.getElementById('sf-xtts-preset-select').value = cfg.voice.xtts_preset || "";
+        if (cfg.voice.xtts_inference_preset !== undefined) document.getElementById('sf-xtts-inference-preset-select').value = cfg.voice.xtts_inference_preset || "";
+        if (cfg.voice.xtts_speaker_wav !== undefined) document.getElementById('sf-xtts-speaker-wav').value = cfg.voice.xtts_speaker_wav || "";
+        setVal('sf-xtts-temp', cfg.voice.xtts_temperature);
+        setVal('sf-xtts-speed', cfg.voice.xtts_speed);
+        setVal('sf-xtts-topk', cfg.voice.xtts_top_k);
+        setVal('sf-xtts-reppen', cfg.voice.xtts_repetition_penalty);
+        setVal('sf-xtts-topp', cfg.voice.xtts_top_p);
+        setVal('sf-xtts-length-penalty', cfg.voice.xtts_length_penalty);
+
+        if (cfg.voice.fish_preset !== undefined) document.getElementById('sf-fish-preset-select').value = cfg.voice.fish_preset || "";
+        if (cfg.voice.fish_inference_preset !== undefined) document.getElementById('sf-fish-inference-preset-select').value = cfg.voice.fish_inference_preset || "";
+        if (cfg.voice.fish_reference_audio || cfg.voice.fish_speaker_wav) {
+            document.getElementById('sf-fish-speaker-wav').value = cfg.voice.fish_reference_audio || cfg.voice.fish_speaker_wav;
+        }
+        if (cfg.voice.fish_reference_text !== undefined) document.getElementById('sf-fish-ref-text').value = cfg.voice.fish_reference_text || "";
+        setVal('sf-fish-temp', cfg.voice.fish_temperature);
+        setVal('sf-fish-topp', cfg.voice.fish_top_p);
+        setVal('sf-fish-reppen', cfg.voice.fish_repetition_penalty);
+        setVal('sf-fish-chunk-length', cfg.voice.fish_chunk_length);
+        setVal('sf-fish-max-tokens', cfg.voice.fish_max_new_tokens);
+
+        if (cfg.voice.kokoro_preset !== undefined) document.getElementById('sf-kokoro-preset-select').value = cfg.voice.kokoro_preset || "";
+        if (cfg.voice.kokoro_inference_preset !== undefined) document.getElementById('sf-kokoro-inference-preset-select').value = cfg.voice.kokoro_inference_preset || "";
+        if (cfg.voice.kokoro_blend_voice !== undefined) document.getElementById('sf-kokoro-blend-voice').value = cfg.voice.kokoro_blend_voice || "";
+        setVal('sf-kokoro-speed', cfg.voice.kokoro_speed);
+        setVal('sf-kokoro-silence', cfg.voice.kokoro_silence);
+        setVal('sf-kokoro-alpha', cfg.voice.kokoro_alpha);
+        setVal('sf-kokoro-beta', cfg.voice.kokoro_beta);
+        setVal('sf-kokoro-volume', cfg.voice.kokoro_volume);
+    }
+};
+
+window.sfUpdateTooltip = function(soul, explicitSoulId) {
     if (!soul) return;
     const sbGD = document.getElementById('sb-global-defaults');
     const sbGDLabel = document.getElementById('sb-global-defaults-label');
     const sbGDBtn = sbGD ? sbGD.closest('.status-pill') : null;
+    const soulId = explicitSoulId !== undefined ? explicitSoulId : window.sfState.globalDefaultSoulId;
     
     if (sbGD && sbGDLabel) {
-        const isPreset = !!window.sfState.activeSoulId;
+        const isPreset = !!soulId;
+        const foundSoul = isPreset ? (window.sfState.souls || []).find(s => s.meta.id === soulId) : null;
+        const presetDisplayName = (soul.meta && soul.meta.name)
+            ? soul.meta.name
+            : (foundSoul?.meta?.name || soulId || 'Preset');
+        const isModified = !!(window.sfState && window.sfState.isDirty);
         let lines = [];
         
         if (isPreset) {
-            lines.push(`🎭 Global Preset: ${window.sfState.activeSoulId}`);
+            lines.push(`🎭 Global Preset: ${presetDisplayName}${isModified ? ' (modified)' : ''}`);
         } else {
-            lines.push(`🎭 Active Configuration (Default)`);
+            lines.push(`🎭 Active Configuration (${isModified ? 'Modified Draft' : 'Default'})`);
         }
         
         const modelName = soul.model?.model_name || 'System Default';
@@ -551,131 +1681,85 @@ window.sfUpdateTooltip = function(soul) {
         const soulFile = soul.persona?.soul_file || window.sfSystemFallbacks?.persona || 'System Default';
         lines.push(`👤 Soul: ${soulFile}`);
         
-        const temp = soul.inference?.temperature !== undefined && soul.inference.temperature !== null ? soul.inference.temperature : '?';
-        const topP = soul.inference?.top_p !== undefined && soul.inference.top_p !== null ? soul.inference.top_p : '?';
-        const repPen = soul.inference?.repeat_penalty !== undefined && soul.inference.repeat_penalty !== null ? soul.inference.repeat_penalty : '?';
+        const temp = soul.inference?.temperature ?? '?';
+        const topP = soul.inference?.top_p ?? '?';
+        const repPen = soul.inference?.repeat_penalty ?? '?';
         lines.push(`⚙ Temp: ${temp} | Top P: ${topP} | Rep Pen: ${repPen}`);
         
-        const btype = soul.model?.backend_type || window.HecosSystemConfig?.backend?.type || 'ollama';
-        const fallbackBackendCfg = window.HecosSystemConfig?.backend?.[btype] || {};
-
-        const numCtxVal = soul.inference?.num_ctx !== undefined && soul.inference.num_ctx !== null ? soul.inference.num_ctx : (fallbackBackendCfg.num_ctx || fallbackBackendCfg.n_ctx || '?');
-        const numPredict = soul.inference?.num_predict !== undefined && soul.inference.num_predict !== null ? soul.inference.num_predict : '?';
-        const gpuVal = soul.inference?.n_gpu_layers !== undefined && soul.inference.n_gpu_layers !== null ? soul.inference.n_gpu_layers : (fallbackBackendCfg.num_gpu || fallbackBackendCfg.n_gpu_layers || '?');
-        lines.push(`📊 Ctx: ${numCtxVal} | Predict: ${numPredict} | GPU: ${gpuVal}`);
-        
         if (soul.voice?.tts_engine) {
-            let voiceDisplay = '';
-            if (soul.voice.tts_engine === 'fish_speech' || soul.voice.tts_engine === 'fish') {
-                if (soul.voice.fish_preset && soul.voice.fish_preset !== 'default') {
-                    voiceDisplay = soul.voice.fish_preset;
-                } else {
-                    const ref = soul.voice.fish_reference_audio || soul.voice.tts_voice;
-                    if (ref && ref !== 'default') {
-                        voiceDisplay = ref.split(/[/\\]/).pop().replace(/\.wav$/i, '');
-                    } else {
-                        voiceDisplay = 'Default Voice';
-                    }
-                }
-            } else if (soul.voice.tts_engine === 'xtts2') {
-                if (soul.voice.xtts_preset && soul.voice.xtts_preset !== 'default') {
-                    voiceDisplay = soul.voice.xtts_preset;
-                } else if (soul.voice.xtts_speaker_wav) {
-                    voiceDisplay = `Clone: ${soul.voice.xtts_speaker_wav.split(/[/\\]/).pop().replace(/\.wav$/i, '')}`;
-                } else if (soul.voice.tts_voice) {
-                    voiceDisplay = soul.voice.tts_voice.split(/[/\\]/).pop().replace(/\.wav$/i, '');
-                } else {
-                    voiceDisplay = 'Default Voice';
-                }
-            } else if (soul.voice.tts_engine === 'kokoro') {
-                if (soul.voice.kokoro_preset && soul.voice.kokoro_preset !== 'default') {
-                    voiceDisplay = soul.voice.kokoro_preset;
-                } else if (soul.voice.tts_voice) {
-                    voiceDisplay = soul.voice.tts_voice.split(/[/\\]/).pop().replace(/\.pt$/i, '');
-                } else {
-                    voiceDisplay = 'af_heart';
-                }
-            } else {
-                let v = soul.voice.tts_voice || '';
-                if (v && (v.includes('/') || v.includes('\\'))) {
-                    v = v.split(/[/\\]/).pop().replace(/\.wav$/i, '');
-                }
-                voiceDisplay = v || 'Default Voice';
-            }
-            const voiceStr = voiceDisplay ? ` / ${voiceDisplay}` : '';
-            lines.push(`🔊 TTS: ${soul.voice.tts_engine}${voiceStr}`);
+            lines.push(`🔊 TTS: ${soul.voice.tts_engine} / ${soul.voice.tts_voice || 'Default'}`);
         }
         
+        let shortcutKey = 'F3';
+        if (window.HKS_BINDINGS && typeof window.HKS_BINDINGS.get === 'function') {
+            const raw = window.HKS_BINDINGS.get('ui.global_defaults');
+            if (raw) shortcutKey = raw.toUpperCase();
+        }
+        lines.push(`\n⚡ Click to open Preset Manager (${shortcutKey})`);
+        
         const titleText = lines.join('\n');
+        const modSuffix = isModified ? ' ●' : '';
         
         if (isPreset) {
             sbGDLabel.innerHTML = '<i class="fas fa-cog"></i> Global Preset';
-            sbGD.textContent = window.sfState.activeSoulId;
+            sbGD.textContent = presetDisplayName + modSuffix;
             if (sbGDBtn) sbGDBtn.title = titleText;
         } else {
-            sbGDLabel.innerHTML = '<i class="fas fa-cog"></i> Active Config';
-            sbGD.textContent = 'Configure';
+            sbGDLabel.innerHTML = '<i class="fas fa-cog"></i> Preset Manager';
+            sbGD.textContent = 'Configure' + modSuffix;
             if (sbGDBtn) sbGDBtn.title = titleText;
-        }
-    }
-    
-    // ── Update chat avatar & persona globals when system default changes ──
-    // Always update the global defaults — the global preset is the system authority.
-    // Session overrides (soApplySoulToUI / soSyncToTopbar) will re-override if needed.
-    const sfPersona = soul.persona?.soul_file;
-    if (sfPersona) {
-        window.HecosPersonaName = sfPersona;
-        window._globalPersonaName = window.HecosPersonaName;
-        fetch(`/api/persona/avatar?persona=${encodeURIComponent(sfPersona)}`)
-            .then(r => r.json())
-            .then(d => {
-                if (d.ok && d.avatar_path) {
-                    window.HecosAvatar = d.avatar_path;
-                    window._globalAvatar = d.avatar_path;
-                    window.HecosAvatarType = d.avatar_type || 'image';
-                }
-                if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
-            })
-            .catch(() => {
-                if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
-            });
-    } else {
-        // No soul_file in this preset/config — fall back to the raw system default
-        const fallbackPersona = window.sfSystemFallbacks?.persona || '';
-        if (fallbackPersona) {
-            window.HecosPersonaName = fallbackPersona.replace('.yaml', '').replace(/_/g, ' ');
-            window._globalPersonaName = window.HecosPersonaName;
-            fetch(`/api/persona/avatar?persona=${encodeURIComponent(fallbackPersona)}`)
-                .then(r => r.json())
-                .then(d => {
-                    if (d.ok && d.avatar_path) {
-                        window.HecosAvatar = d.avatar_path;
-                        window._globalAvatar = d.avatar_path;
-                        window.HecosAvatarType = d.avatar_type || 'image';
-                    }
-                    if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
-                })
-                .catch(() => {
-                    if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
-                });
-        } else {
-            window.HecosPersonaName = 'Hecos System Soul';
-            window._globalPersonaName = 'Hecos System Soul';
-            window.HecosAvatar = null;
-            window._globalAvatar = null;
-            window.HecosAvatarType = 'image';
-            if (window.HecosWelcome && window.HecosWelcome.show) window.HecosWelcome.show(true);
         }
     }
 };
 
-
 window.sfCollectUIState = function() {
     const getVal = (id) => { const el = document.getElementById(id); return el ? (el.value === "" ? null : el.value) : null; };
-    const getNum = (id) => { const el = document.getElementById(id); return (el && el.value) ? parseFloat(el.value) : null; };
+    const getNum = (id) => { const el = document.getElementById(id); return (el && el.value !== "") ? parseFloat(el.value) : null; };
     const getCheck = (id) => { const el = document.getElementById(id); return el ? el.checked : false; };
     
+    const resolvedVoice = (() => {
+        const eng = getVal('sf-tts-engine-select');
+        const rawVoice = getVal('sf-tts-voice-select');
+        const cleanVoice = (rawVoice === 'CLONE' || rawVoice === 'MIXED' || rawVoice === 'KOKORO_PRESET') ? '' : rawVoice;
+        if (eng === 'fish_speech' || eng === 'fish') {
+            return getVal('sf-fish-speaker-wav') || cleanVoice || 'default';
+        }
+        if (eng === 'xtts2' && getVal('sf-xtts-speaker-wav')) {
+            return getVal('sf-xtts-speaker-wav');
+        }
+        if (eng === 'kokoro') {
+            const pName = getVal('sf-kokoro-preset-select');
+            if (pName && window.sfState?.kokoroPresets?.[pName]) {
+                const p = window.sfState.kokoroPresets[pName];
+                return p.voice || cleanVoice;
+            }
+        }
+        return cleanVoice;
+    })();
+
+    const bType = getVal('sf-backend-select');
+    const mName = getVal('sf-model-select');
+    const payloadObj = {
+        send_tools: getCheck('sf-payload-tools'),
+        send_personality: getCheck('sf-payload-soul'),
+        send_memory: getCheck('sf-payload-memory'),
+        include_thinking_in_history: getCheck('sf-payload-thinking'),
+        enable_thinking: getCheck('sf-payload-enable-thinking'),
+        tool_selection_mode: (window.sfState?.toolSelectionMode === 'custom') ? 'custom' : 'all',
+        selected_tools: Array.isArray(window.sfState?.selectedTools) ? [...window.sfState.selectedTools] : []
+    };
+
+    const backendObj = bType ? { type: bType, [bType]: { model: mName } } : {};
+
     return {
+        active_global_preset: window.sfState ? window.sfState.activeSoulId : null,
+        ai: {
+            tts_engine: getVal('sf-tts-engine-select'),
+            tts_voice: resolvedVoice,
+            active_personality: getVal('sf-persona-select')
+        },
+        backend: backendObj,
+        payload_control: Object.assign({}, payloadObj),
         persona: { 
             soul_file: getVal('sf-persona-select'),
             use_global_direct_instructions: getCheck('sf-use-global-direct'),
@@ -684,7 +1768,8 @@ window.sfCollectUIState = function() {
             user_notes: getVal('sf-user-notes'),
             send_notes_to_ai: getCheck('sf-send-notes-ai')
         },
-        model: { backend_type: getVal('sf-backend-select'), model_name: getVal('sf-model-select') },
+        model: { backend_type: bType, model_name: mName },
+        payload: payloadObj,
         inference: {
             preset_name: getVal('sf-inference-preset-select'),
             temperature: getNum('sf-temp'),
@@ -696,25 +1781,7 @@ window.sfCollectUIState = function() {
         },
         voice: {
             tts_engine: getVal('sf-tts-engine-select'),
-            tts_voice: (() => {
-                const eng = getVal('sf-tts-engine-select');
-                const rawVoice = getVal('sf-tts-voice-select');
-                const cleanVoice = (rawVoice === 'CLONE' || rawVoice === 'MIXED') ? '' : rawVoice;
-                if (eng === 'fish_speech' || eng === 'fish') {
-                    return getVal('sf-fish-speaker-wav') || cleanVoice || 'default';
-                }
-                if (eng === 'xtts2' && getVal('sf-xtts-speaker-wav')) {
-                    return getVal('sf-xtts-speaker-wav');
-                }
-                if (eng === 'kokoro') {
-                    const pName = getVal('sf-kokoro-preset-select');
-                    if (pName && window.sfState?.kokoroPresets?.[pName]) {
-                        const p = window.sfState.kokoroPresets[pName];
-                        return p.voice || cleanVoice;
-                    }
-                }
-                return cleanVoice;
-            })(),
+            tts_voice: resolvedVoice,
             xtts_preset: getVal('sf-xtts-preset-select'),
             xtts_inference_preset: getVal('sf-xtts-inference-preset-select'),
             xtts_speaker_wav: getVal('sf-xtts-speaker-wav'),
@@ -740,7 +1807,7 @@ window.sfCollectUIState = function() {
                 if (pName && window.sfState?.kokoroPresets?.[pName]) {
                     return window.sfState.kokoroPresets[pName].blend_voice || '';
                 }
-                return '';
+                return getVal('sf-kokoro-blend-voice') || '';
             })(),
             kokoro_speed: getNum('sf-kokoro-speed'),
             kokoro_silence: getNum('sf-kokoro-silence'),
@@ -751,9 +1818,13 @@ window.sfCollectUIState = function() {
     };
 };
 
+window.soCollectUIState = window.sfCollectUIState;
 
 window.sfApplyInferencePreset = function(presetName) {
-    if (!presetName || !window.sfState.inferencePresets[presetName]) return;
+    if (!presetName || !window.sfState.inferencePresets[presetName]) {
+        window.sfDirty();
+        return;
+    }
     const p = window.sfState.inferencePresets[presetName];
     
     const setVal = (id, val) => {
@@ -770,7 +1841,6 @@ window.sfApplyInferencePreset = function(presetName) {
     
     window.sfDirty();
 };
-
 
 window.sfApplyXttsPreset = function(presetName) {
     if (!presetName || !window.sfState.xttsPresets || !window.sfState.xttsPresets[presetName]) {
@@ -798,7 +1868,6 @@ window.sfApplyXttsPreset = function(presetName) {
     
     document.getElementById('sf-xtts-speaker-wav').value = p.speaker_wav || "";
 
-    // Try to match sliders with an inference preset to update the dropdown
     let matchedInf = "";
     if (window.sfState.xttsInferencePresets) {
         for (const [k, inf] of Object.entries(window.sfState.xttsInferencePresets)) {
@@ -814,14 +1883,11 @@ window.sfApplyXttsPreset = function(presetName) {
         }
     }
     const xttsInfSel = document.getElementById('sf-xtts-inference-preset-select');
-    if (xttsInfSel) {
-        xttsInfSel.value = matchedInf;
-    }
+    if (xttsInfSel) xttsInfSel.value = matchedInf;
     
     window.sfUpdateCloneState();
     window.sfDirty();
 };
-
 
 window.sfApplyXttsInferencePreset = function(presetName) {
     if (!presetName || !window.sfState.xttsInferencePresets[presetName]) return;
@@ -846,7 +1912,6 @@ window.sfApplyXttsInferencePreset = function(presetName) {
 
 window.sfApplyFishPreset = function(presetName) {
     if (!presetName || !window.sfState.fishSpeechPresets || !window.sfState.fishSpeechPresets[presetName]) {
-        // User selected "-- No Fish Preset --"
         if (document.getElementById('sf-fish-speaker-wav')) document.getElementById('sf-fish-speaker-wav').value = "";
         if (document.getElementById('sf-fish-ref-text')) document.getElementById('sf-fish-ref-text').value = "";
         const fishInfSel = document.getElementById('sf-fish-inference-preset-select');
@@ -886,9 +1951,7 @@ window.sfApplyFishPreset = function(presetName) {
         }
     }
     const fishInfSel = document.getElementById('sf-fish-inference-preset-select');
-    if (fishInfSel) {
-        fishInfSel.value = matchedInf;
-    }
+    if (fishInfSel) fishInfSel.value = matchedInf;
 
     window.sfUpdateCloneState();
     window.sfDirty();
@@ -913,7 +1976,6 @@ window.sfApplyFishInferencePreset = function(presetName) {
     
     window.sfDirty();
 };
-
 
 window.sfUpdateCloneState = function() {
     const engine = document.getElementById('sf-tts-engine-select')?.value;
@@ -960,15 +2022,18 @@ window.sfUpdateCloneState = function() {
                 const vName = (p && p.voice) ? p.voice : 'Preset Voice';
                 titleDesc = `Kokoro Preset '${presetName}' (Voice: ${vName})`;
                 customOptionLabel = `-- Preset Voice (${vName}) --`;
-                customOptionValue = vName;
+                customOptionValue = "KOKORO_PRESET";
             }
         }
     }
 
     if (isCloneOrPreset) {
+        if (voiceSelect.value && !['CLONE', 'MIXED', 'KOKORO_PRESET'].includes(voiceSelect.value)) {
+            voiceSelect.dataset.prevRealVoice = voiceSelect.value;
+        }
         voiceSelect.disabled = true;
         voiceSelect.title = titleDesc;
-        let opt = Array.from(voiceSelect.options).find(o => o.value === customOptionValue || o.dataset?.virtual === "true");
+        let opt = Array.from(voiceSelect.options).find(o => o.dataset?.virtual === "true" || ['CLONE', 'MIXED', 'KOKORO_PRESET'].includes(o.value));
         if (!opt) {
             opt = document.createElement('option');
             opt.dataset.virtual = "true";
@@ -978,12 +2043,358 @@ window.sfUpdateCloneState = function() {
         opt.textContent = customOptionLabel;
         voiceSelect.value = customOptionValue;
     } else {
+        const wasVirtual = ['CLONE', 'MIXED', 'KOKORO_PRESET'].includes(voiceSelect.value);
         voiceSelect.disabled = false;
         voiceSelect.title = "";
         Array.from(voiceSelect.options).forEach(o => {
-            if (o.dataset?.virtual === "true" || o.value === "CLONE" || o.value === "MIXED") {
+            if (o.dataset?.virtual === "true" || o.value === "CLONE" || o.value === "MIXED" || o.value === "KOKORO_PRESET") {
                 o.remove();
             }
         });
+        if (wasVirtual) {
+            const fallbackVoice = voiceSelect.dataset.prevRealVoice || window.sfSystemFallbacks?.tts_voice || "";
+            if (fallbackVoice && Array.from(voiceSelect.options).some(o => o.value === fallbackVoice)) {
+                voiceSelect.value = fallbackVoice;
+            } else if (voiceSelect.options.length > 0) {
+                voiceSelect.selectedIndex = 0;
+            }
+        }
+    }
+};
+
+
+
+window.sfOnToolsToggle = function(isChecked) {
+    const scopePanel = document.getElementById('sf-tools-scope-panel');
+    if (scopePanel) scopePanel.classList.toggle('sf-tools-disabled', !isChecked);
+    const isCustom = (window.sfState?.toolSelectionMode === 'custom');
+    if (window.updateToolModeBadge) {
+        window.updateToolModeBadge(isChecked ? (isCustom ? 'custom' : 'native') : 'direct');
+    }
+    if (window.Presenter && typeof window.Presenter.notify === 'function') {
+        if (isChecked) {
+            window.Presenter.notify({
+                type: 'action_confirm',
+                title: 'Payload Control',
+                text: isCustom
+                    ? '🎛️ Granular Tool Selection: Only selected modules/tools are exposed to the LLM in this chat/preset.'
+                    : '🛠️ Native Tool Calling Mode: Function schemas loaded into model payload.',
+                duration: 4000
+            });
+        } else {
+            window.Presenter.notify({
+                type: 'action_confirm',
+                title: 'Payload Control',
+                text: '⚡ Direct Commands Mode: Tool schemas stripped for maximum speed (~8,000 tokens saved). Direct /img and /search active.',
+                duration: 4000
+            });
+        }
+    }
+};
+
+// ── Dynamic Granular Tool Selector Helpers ──
+
+window.sfExpandedToolModules = window.sfExpandedToolModules || new Set();
+
+function _sfEscapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function _sfGetExpandedToolState() {
+    const catalog = window.sfState?.toolsCatalog;
+    const raw = Array.isArray(window.sfState?.selectedTools) ? window.sfState.selectedTools : [];
+    const checkedNames = new Set();
+    const knownTags = new Set((catalog?.modules || []).map(m => m.tag));
+    const knownTools = new Set();
+    const wildcardTags = new Set();
+    const explicitNames = new Set();
+
+    for (const mod of (catalog?.modules || [])) {
+        for (const t of (mod.tools || [])) knownTools.add(t.name);
+    }
+
+    for (const item of raw) {
+        const s = String(item || '').trim();
+        if (!s) continue;
+        if (s.endsWith('__*')) wildcardTags.add(s.slice(0, -3));
+        else explicitNames.add(s);
+    }
+
+    const orphanSelectors = [];
+    for (const tag of wildcardTags) {
+        if (!knownTags.has(tag)) orphanSelectors.push(`${tag}__*`);
+    }
+    for (const name of explicitNames) {
+        if (!knownTools.has(name)) orphanSelectors.push(name);
+    }
+
+    for (const mod of (catalog?.modules || [])) {
+        const modWild = wildcardTags.has(mod.tag);
+        for (const t of (mod.tools || [])) {
+            if (modWild || explicitNames.has(t.name)) {
+                checkedNames.add(t.name);
+            }
+        }
+    }
+    return { checkedNames, orphanSelectors };
+}
+
+function _sfCompressSelectedTools(checkedNames, orphanSelectors = []) {
+    const catalog = window.sfState?.toolsCatalog;
+    if (!catalog || !Array.isArray(catalog.modules)) {
+        return Array.from(checkedNames);
+    }
+    const out = [];
+    for (const mod of catalog.modules) {
+        const tools = mod.tools || [];
+        if (!tools.length) continue;
+        const checkedInMod = tools.filter(t => checkedNames.has(t.name));
+        if (checkedInMod.length === tools.length) {
+            out.push(`${mod.tag}__*`);
+        } else {
+            for (const t of checkedInMod) out.push(t.name);
+        }
+    }
+    // Preserve non-present selectors only if user didn't wipe everything with "None"
+    if (orphanSelectors.length && out.length > 0) {
+        for (const o of orphanSelectors) {
+            if (!out.includes(o)) out.push(o);
+        }
+    }
+    return out;
+}
+
+window.sfComputeToolsTelemetry = function() {
+    const catalog = window.sfState?.toolsCatalog;
+    const modules = catalog?.modules || [];
+    const totalCount = catalog?.total_tools || 0;
+    const totalTokens = catalog?.total_est_tokens || 0;
+    const eagerTokens = modules
+        .filter(m => !m.is_lazy || m.loaded_in_ram)
+        .reduce((acc, m) => acc + (m.est_tokens || 0), 0);
+
+    const { checkedNames, orphanSelectors } = _sfGetExpandedToolState();
+    let selectedCount = 0;
+    let selectedChars = 0;
+    for (const mod of modules) {
+        for (const t of (mod.tools || [])) {
+            if (checkedNames.has(t.name)) {
+                selectedCount++;
+                selectedChars += (t.chars || 0);
+            }
+        }
+    }
+    const selectedTokens = selectedChars ? Math.max(1, Math.round(selectedChars / 4)) : 0;
+    return { totalCount, totalTokens, eagerTokens, selectedCount, selectedTokens, orphanSelectors };
+};
+
+window.sfUpdateToolsLiveStats = function() {
+    const statsEl = document.getElementById('sf-tools-live-stats');
+    const orphanEl = document.getElementById('sf-tools-orphan-note');
+    const t = window.sfComputeToolsTelemetry();
+    const fmtTok = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n}`);
+    if (statsEl) {
+        statsEl.textContent = `${t.selectedCount} / ${t.totalCount} tools · ~${fmtTok(t.selectedTokens)} tok`;
+    }
+    if (orphanEl) {
+        if (t.orphanSelectors.length > 0) {
+            orphanEl.style.display = 'block';
+            orphanEl.textContent = `Preset notice: ${t.orphanSelectors.length} selector(s) reference inactive or uninstalled modules (${t.orphanSelectors.slice(0, 3).join(', ')}) and will be safely ignored.`;
+        } else {
+            orphanEl.style.display = 'none';
+            orphanEl.textContent = '';
+        }
+    }
+};
+
+window.sfRenderToolsTree = function() {
+    const container = document.getElementById('sf-tools-tree');
+    if (!container) return;
+
+    const catalog = window.sfState?.toolsCatalog;
+    if (!catalog || !Array.isArray(catalog.modules)) {
+        container.innerHTML = '<div class="sf-tools-loading">Tools catalog not loaded yet. Click refresh.</div>';
+        return;
+    }
+
+    const q = (document.getElementById('sf-tools-search')?.value || '').trim().toLowerCase();
+    const { checkedNames } = _sfGetExpandedToolState();
+    const htmlParts = [];
+
+    for (const mod of catalog.modules) {
+        const modTagLower = (mod.tag || '').toLowerCase();
+        const modNameLower = (mod.name || '').toLowerCase();
+        const modMatches = q && (modTagLower.includes(q) || modNameLower.includes(q));
+        const allTools = mod.tools || [];
+        const visibleTools = (!q || modMatches)
+            ? allTools
+            : allTools.filter(t =>
+                (t.name || '').toLowerCase().includes(q) ||
+                (t.method || '').toLowerCase().includes(q) ||
+                (t.description || '').toLowerCase().includes(q)
+            );
+
+        if (q && visibleTools.length === 0) continue;
+
+        const checkedCount = allTools.filter(t => checkedNames.has(t.name)).length;
+        const allChecked = allTools.length > 0 && checkedCount === allTools.length;
+        const isPartial = checkedCount > 0 && checkedCount < allTools.length;
+        const isExpanded = Boolean(q) || window.sfExpandedToolModules.has(mod.tag);
+
+        let badgeClass = 'ram';
+        let badgeLabel = 'Core RAM';
+        if (mod.source === 'builtin') {
+            badgeClass = 'builtin';
+            badgeLabel = 'Built-in';
+        } else if (mod.is_lazy && !mod.loaded_in_ram) {
+            badgeClass = 'lazy';
+            badgeLabel = 'HPM Lazy';
+        } else if (mod.source === 'hpm') {
+            badgeClass = 'ram';
+            badgeLabel = 'HPM RAM';
+        }
+
+        const modEsc = _sfEscapeHtml(mod.tag);
+        htmlParts.push(`
+            <div class="sf-tool-mod" data-tag="${modEsc}">
+                <div class="sf-tool-mod-header" onclick="window.sfToggleToolModuleExpand('${modEsc}', event)">
+                    <span class="sf-tool-mod-caret">${isExpanded ? '▾' : '▸'}</span>
+                    <input type="checkbox"
+                           class="sf-tool-mod-cb"
+                           data-tag="${modEsc}"
+                           data-indeterminate="${isPartial ? '1' : '0'}"
+                           ${allChecked ? 'checked' : ''}
+                           onclick="event.stopPropagation(); window.sfOnModuleToolToggle('${modEsc}', this.checked)">
+                    <span class="sf-tool-mod-title">${_sfEscapeHtml(mod.name)}</span>
+                    <span class="sf-tool-mod-tag">[${modEsc}]</span>
+                    <span class="sf-tool-mod-badge ${badgeClass}">${badgeLabel}</span>
+                    <span class="sf-tool-mod-meta">${checkedCount}/${allTools.length} · ~${mod.est_tokens || 0} tok</span>
+                </div>
+                <div class="sf-tool-mod-list" style="display: ${isExpanded ? 'flex' : 'none'};">
+                    ${visibleTools.map(t => `
+                        <label class="sf-tool-item">
+                            <input type="checkbox"
+                                   class="sf-tool-item-cb"
+                                   data-tag="${modEsc}"
+                                   data-tool="${_sfEscapeHtml(t.name)}"
+                                   ${checkedNames.has(t.name) ? 'checked' : ''}
+                                   onchange="window.sfOnSingleToolToggle('${_sfEscapeHtml(t.name)}', this.checked)">
+                            <span class="sf-tool-item-main">
+                                <span class="sf-tool-item-name">${_sfEscapeHtml(t.method || t.name)}</span>
+                                <span class="sf-tool-item-desc" title="${_sfEscapeHtml(t.description)}">${_sfEscapeHtml(t.description)}</span>
+                            </span>
+                            <span class="sf-tool-item-tok">~${t.est_tokens || 1}t</span>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+        `);
+    }
+
+    container.innerHTML = htmlParts.length
+        ? htmlParts.join('')
+        : '<div class="sf-tools-empty">No modules or tools match your filter.</div>';
+
+    container.querySelectorAll('.sf-tool-mod-cb[data-indeterminate="1"]').forEach(cb => {
+        cb.indeterminate = true;
+    });
+
+    window.sfUpdateToolsLiveStats();
+};
+
+window.sfSyncToolsSelectorUI = function() {
+    const mode = (window.sfState?.toolSelectionMode === 'custom') ? 'custom' : 'all';
+    const btnAll = document.getElementById('sf-tools-mode-all');
+    const btnCustom = document.getElementById('sf-tools-mode-custom');
+    const customBody = document.getElementById('sf-tools-custom-body');
+
+    if (btnAll) btnAll.classList.toggle('active', mode === 'all');
+    if (btnCustom) btnCustom.classList.toggle('active', mode === 'custom');
+    if (customBody) customBody.style.display = (mode === 'custom') ? 'block' : 'none';
+
+    if (mode === 'custom') {
+        if (!window.sfState.toolsCatalog && window.sfRefreshToolsCatalog) {
+            window.sfRefreshToolsCatalog(false);
+        } else {
+            window.sfRenderToolsTree();
+        }
+    }
+};
+
+window.sfSetToolSelectionMode = function(mode) {
+    window.sfState.toolSelectionMode = (mode === 'custom') ? 'custom' : 'all';
+    window.sfSyncToolsSelectorUI();
+    window.sfRefreshUIVisibilityAndSummaries();
+    window.sfDirty();
+};
+
+window.sfFilterToolsTree = function() {
+    window.sfRenderToolsTree();
+};
+
+window.sfToggleToolModuleExpand = function(tag, ev) {
+    if (ev && ev.target && ev.target.tagName === 'INPUT') return;
+    if (window.sfExpandedToolModules.has(tag)) window.sfExpandedToolModules.delete(tag);
+    else window.sfExpandedToolModules.add(tag);
+    window.sfRenderToolsTree();
+};
+
+window.sfOnModuleToolToggle = function(tag, checked) {
+    const mod = (window.sfState?.toolsCatalog?.modules || []).find(m => m.tag === tag);
+    if (!mod) return;
+    const { checkedNames, orphanSelectors } = _sfGetExpandedToolState();
+    for (const t of (mod.tools || [])) {
+        if (checked) checkedNames.add(t.name);
+        else checkedNames.delete(t.name);
+    }
+    window.sfState.selectedTools = _sfCompressSelectedTools(checkedNames, orphanSelectors);
+    window.sfRenderToolsTree();
+    window.sfRefreshUIVisibilityAndSummaries();
+    window.sfDirty();
+};
+
+window.sfOnSingleToolToggle = function(toolName, checked) {
+    const { checkedNames, orphanSelectors } = _sfGetExpandedToolState();
+    if (checked) checkedNames.add(toolName);
+    else checkedNames.delete(toolName);
+    window.sfState.selectedTools = _sfCompressSelectedTools(checkedNames, orphanSelectors);
+    window.sfRenderToolsTree();
+    window.sfRefreshUIVisibilityAndSummaries();
+    window.sfDirty();
+};
+
+window.sfSelectAllTools = function(selectAll) {
+    if (!selectAll) {
+        window.sfState.selectedTools = [];
+    } else {
+        const mods = window.sfState?.toolsCatalog?.modules || [];
+        window.sfState.selectedTools = mods.map(m => `${m.tag}__*`);
+    }
+    window.sfRenderToolsTree();
+    window.sfRefreshUIVisibilityAndSummaries();
+    window.sfDirty();
+};
+
+window.sfRefreshToolsCatalog = async function(manualClick = false) {
+    const btn = document.getElementById('sf-tools-refresh-btn');
+    if (btn && manualClick) btn.classList.add('fa-spin');
+    try {
+        const res = await fetch('/api/tools/catalog', { cache: 'no-store' });
+        const data = await res.json();
+        if (data && data.ok) {
+            window.sfState.toolsCatalog = data;
+            if (window.sfState.toolSelectionMode === 'custom') {
+                window.sfRenderToolsTree();
+            }
+            window.sfRefreshUIVisibilityAndSummaries();
+        }
+    } catch (e) {
+        console.warn('sfRefreshToolsCatalog error:', e);
+    } finally {
+        if (btn && manualClick) btn.classList.remove('fa-spin');
     }
 };

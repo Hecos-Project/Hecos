@@ -1,6 +1,7 @@
 /**
  * Hecos Control Room - Sync Module
- * Handles cross-tab synchronization and local config updates.
+ * Handles cross-tab synchronization and local config updates
+ * across Chat Control Room (Module A) and Standalone Control Room (Module B).
  */
 (function (global) {
     'use strict';
@@ -23,8 +24,8 @@
                 const data = event.data;
                 if (!data) return;
 
-                // ── Structural reload (from HPM enable/disable/uninstall) ──
-                if (data.type === 'widgets_reload_request') {
+                // ── Structural reload (from HPM enable/disable/uninstall or Page mutations) ──
+                if (data.type === 'widgets_reload_request' || data.type === 'room_pages_update') {
                     if (global.controlRoomGrid) {
                         global.controlRoomGrid.debouncedRefresh();
                     }
@@ -32,7 +33,7 @@
                 }
 
                 if (data.type !== 'widget_update') return;
-                
+
                 // Snappy DOM update for aesthetics if grid exists
                 const grid = document.querySelector('#room-grid, #home-grid');
                 if (grid) {
@@ -78,6 +79,15 @@
             if (_widgetChannel) {
                 _widgetChannel.postMessage({ type: 'widget_update', id, field, value, ctx });
             }
+            if (field === 'room_visible' || field === 'room_span' || field === 'room_height' || field === 'room_order') {
+                try { localStorage.setItem('hecos_room_sync', String(Date.now())); } catch (_) {}
+            }
+        },
+        notifyPagesChanged: (action, extra = {}) => {
+            if (_widgetChannel) {
+                _widgetChannel.postMessage({ type: 'room_pages_update', action, ...extra });
+            }
+            try { localStorage.setItem('hecos_room_sync', String(Date.now())); } catch (_) {}
         },
         syncLocal: _syncLocalConfigNoBroadcast
     };

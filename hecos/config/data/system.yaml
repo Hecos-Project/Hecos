@@ -3,20 +3,10 @@ ai:
   active_personality: Urania_9800
   available_personalities:
     '1': Hecos_System_Soul
-    '2': Urania_9800
-    '3': antonio_meloni
-    '4': atlas_man
-    '5': claudia
-    '6': dummy_null
-    '7': hecos_presenter
-    '8': hecos_teacher
-    '9': jun_my_little_princess
-    '10': motoko_kusanagi
-    '11': nova_x-01
-    '12': sebastian_pro
-    '13': urania_9800_presenter
-    '14': urania_presenter
-    '15': urania_teacher
+    '2': Hecos_Coder
+    '3': Urania_9800
+    '4': antonio_meloni
+    '5': dummy_null
   save_special_instructions: true
   special_instructions: Ricorda che devi sempre parlare in italiano, non in inglese.
     Scrivi sempre e solo in lingua italiana - a meno che non si tratti della generazione
@@ -35,7 +25,7 @@ ai:
   avatar_size: medium
 backend:
   type: ollama
-  active_model_source: cloud
+  active_model_source: ollama
   cloud:
     model: gemini/gemini-2.5-flash
     temperature: 0.7
@@ -46,29 +36,36 @@ backend:
     temperature: 0.7
     top_p: 0.95
     rep_pen: 1.1
+    request_timeout_sec: 900
   ollama:
     url: http://localhost:11434
-    model: masska129/gemma-4-abliterated:12b-qat
+    model: nandhank/qwen3.5-abliterated-truthful:9b
     available_models:
       '1': masska129/gemma-4-abliterated:12b-qat
-      '2': sorc/qwen3.5-claude-4.6-opus:4b
-      '3': sorc/qwen3.5-claude-4.6-opus:latest
-      '4': nandhank/qwen3.5-abliterated-truthful:9b
-      '5': huihui_ai/Qwen3.8-abliterated:latest
-      '6': fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:9b
-      '7': qwen3.5:latest
-      '8': sorc/qwen3.5-instruct-heretic:9b
-      '9': huihui_ai/qwen3.5-abliterated:9b
-      '10': lukey03/qwen3.5-9b-abliterated:latest
-      '11': srchmnmichael/qwen3.5-9B-uncensored:latest
-    num_ctx: 4096
-    num_gpu: 33
+      '2': sorc/qwen3.5-claude-4.6-opus:latest
+      '3': nandhank/qwen3.5-abliterated-truthful:9b
+      '4': sorc/qwen3.5-instruct-heretic:9b
+      '5': srchmnmichael/qwen3.5-9B-uncensored:latest
+      '6': huihui_ai/qwen2.5-coder-abliterate:14b
+      '7': huihui_ai/qwen3-coder-abliterated:30b
+      '8': mattcapalbo1432/qwen38-obliterated-cyber:latest
+    num_ctx: 40960
+    num_gpu: 99
     num_predict: 4096
-    temperature: 0.3
-    top_p: 0.95
-    repeat_penalty: 1.1
+    temperature: 0.95
+    top_p: 0.98
+    repeat_penalty: 1.0
     keep_alive: 120m
     probe_timeout_sec: 3
+    request_timeout_sec: 900
+    binary_path: C:\Users\melon\AppData\Local\Programs\Ollama\ollama.exe
+    auto_start_server: false
+    auto_stop_server: true
+    warmup_model: true
+    warmup_keep_alive: 120m
+    adaptive_ctx: false
+    adaptive_ctx_auto: true
+    adaptive_ctx_manual_profile: BALANCED
   llama_cpp:
     model: ''
     n_gpu_layers: -1
@@ -78,6 +75,7 @@ backend:
     top_p: 0.95
     native_tool_calling: true
     text_commands_enabled: true
+    request_timeout_sec: 900
 cognition:
   memory_enabled: true
   episodic_memory: true
@@ -85,6 +83,7 @@ cognition:
   include_identity_context: true
   include_self_awareness: true
   max_history_messages: 20
+  include_thinking_in_history: false
   rag:
     enabled: true
     embedder: sentence_transformers
@@ -234,3 +233,4 @@ hpm:
     url: https://hecos-project.github.io/store/index.json
   - name: Hecos Elite
     url: https://github.com/Hecos-Project/Hecos-Elite
+  restart_mode: auto_batch

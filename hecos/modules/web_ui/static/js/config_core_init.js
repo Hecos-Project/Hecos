@@ -71,6 +71,13 @@ async function initAll(attempt = 1) {
                 if (rAgent.ok) window.cfg.agent = await rAgent.json();
             } catch(e) { console.warn('[Init] Agent config fetch failed:', e); }
         }
+        // Fetch vision config if missing (small payload, fast)
+        if (!window.cfg.vision) {
+            try {
+                const rVision = await fetchWithTimeout('/hecos/config/vision');
+                if (rVision.ok) window.cfg.vision = await rVision.json();
+            } catch(e) { console.warn('[Init] Vision config fetch failed:', e); }
+        }
 
         // ── PHASE 2: Background metadata — fully independent, non-blocking ──────
         // Each request is processed as soon as it resolves.
@@ -115,6 +122,9 @@ async function initAll(attempt = 1) {
                 if (data && data.config) {
                     audioConfig = data.config;
                     window.audioConfig = data.config;
+                    if ((_panelCache['voice'] || _panelCache['audio']) && typeof populateAudioUI === 'function') {
+                        populateAudioUI();
+                    }
                 }
             })
             .catch(() => {});
@@ -193,8 +203,9 @@ function mergeRegistry(registry) {
         const existing   = hub.modules.find(m => m.id === resolvedId || m.pluginTag === tag);
 
         if (existing) {
-            if (!existing.icon)      existing.icon      = plug.icon;
-            if (!existing.pluginTag) existing.pluginTag = tag;
+            if (!existing.icon)        existing.icon        = plug.icon;
+            if (!existing.pluginTag)   existing.pluginTag   = tag;
+            if (!existing.description && plug.description) existing.description = plug.description;
         }
     });
 }
@@ -247,16 +258,20 @@ function mergeHubPanels(panels) {
             existing.pluginTag = p.plugin_tag || panelId.toUpperCase();
             existing.isHpm = true;
             existing.moduleType = p.type || 'plugin';
+            existing.description = p.description || existing.description || '';
+            existing.version = p.version || existing.version || '';
             added++;
         } else {
             hub.modules.push({
-                id:        panelId,
-                label:     p.name || panelId,
-                icon:      iconHtml,
-                cat:       p.category || 'CONNETTIVITÀ',
-                pluginTag: p.plugin_tag || panelId.toUpperCase(),
-                isHpm:     true,
-                moduleType: p.type || 'plugin'
+                id:          panelId,
+                label:       p.name || panelId,
+                icon:        iconHtml,
+                cat:         p.category || 'CONNETTIVITÀ',
+                pluginTag:   p.plugin_tag || panelId.toUpperCase(),
+                isHpm:       true,
+                moduleType:  p.type || 'plugin',
+                description: p.description || '',
+                version:     p.version || ''
             });
             added++;
         }

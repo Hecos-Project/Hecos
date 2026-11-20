@@ -68,6 +68,8 @@ function renderPlugins(plugins) {
         desc = window.t(descAlt);
     } else if (I18N['plugin_desc_' + tag.toLowerCase()]) {
         desc = I18N['plugin_desc_' + tag.toLowerCase()];
+    } else if (m.descKey && window.t && window.t(m.descKey) !== m.descKey) {
+        desc = window.t(m.descKey);
     } else if (m.description) {
         desc = m.description;
     } else {
@@ -201,6 +203,29 @@ function syncPluginStateToMemory(tag, enabled, extId = null) {
     window.cfg.plugins[tag].enabled = enabled;
   }
   if (typeof renderConfigHub === 'function') renderConfigHub(window.viewMode);
+
+  if (tag === 'EXECUTOR' && !extId) {
+    if (typeof window.broadcastWorkspaceCodingVisibility === 'function') {
+      window.broadcastWorkspaceCodingVisibility();
+    } else {
+      const execCfg = window.cfg.plugins.EXECUTOR || {};
+      const payload = {
+        type: 'wr_coding_visibility',
+        enabled: Boolean(execCfg.enabled !== false && execCfg.coding_enabled === true),
+        tabId: 'hub_' + Date.now(),
+        seq: Date.now(),
+        ts: Date.now()
+      };
+      try {
+        if (typeof BroadcastChannel !== 'undefined') {
+          const ch = new BroadcastChannel('hecos_workspace_bus');
+          ch.postMessage(payload);
+          ch.close();
+        }
+      } catch (_) {}
+      try { localStorage.setItem('hecos_workspace_bus_event', JSON.stringify(payload)); } catch (_) {}
+    }
+  }
 
   // Auto-save silently so the backend knows and the UI responds
   if (typeof saveConfig === 'function') {

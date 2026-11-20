@@ -35,7 +35,27 @@ _HANDLER_ROUTINE = ctypes.WINFUNCTYPE(ctypes.wintypes.BOOL, ctypes.wintypes.DWOR
 def _console_ctrl_handler(ctrl_type):
     # CTRL_C=0, CTRL_BREAK=1, CTRL_CLOSE=2, CTRL_LOGOFF=5, CTRL_SHUTDOWN=6
     if ctrl_type in (0, 1, 2, 5, 6):
+        try:
+            from hecos.ui.viewport import get_viewport
+            get_viewport().teardown()
+        except Exception:
+            pass
         logger.close_all_consoles()
+        try:
+            from hecos.core.audio.tts_manager import shutdown_all_tts
+            shutdown_all_tts()
+        except Exception:
+            pass
+        # Gracefully stop Ollama on console close (X button).
+        # CTRL_CLOSE_EVENT bypasses Python atexit hooks, so we handle it here explicitly.
+        try:
+            from hecos.core.llm.ollama_lifecycle import OllamaLifecycleManager
+            import sys as _sys
+            _cfg_mgr = getattr(_sys, "hecos_config_manager", None)
+            _cfg = getattr(_cfg_mgr, "config", {}) if _cfg_mgr else {}
+            OllamaLifecycleManager.get_instance().on_application_exit(_cfg)
+        except Exception:
+            pass
     return False  # False = lascia proseguire la terminazione normale
 
 ctypes.windll.kernel32.SetConsoleCtrlHandler(_console_ctrl_handler, True)
@@ -75,7 +95,6 @@ class HecosApplication:
         self.running = True
 
 
-
     def run(self):
         """Starts the main application loop."""
         from hecos.ui.ui_updater import update_cached_L
@@ -88,16 +107,6 @@ class HecosApplication:
         input_utente = ""
         
         dashboard_mod = module_loader.get_plugin_module("DASHBOARD")
-
-        # Initial UI
-        interface.show_complete_ui(
-            config,
-            self.state_manager.voice_status,
-            self.state_manager.listening_status,
-            self.state_manager.system_status,
-            ptt_status=self.state_manager.push_to_talk
-        )
-
         is_webui_mode = self.bootstrapper._is_webui_mode
 
         if not is_webui_mode:
@@ -107,13 +116,8 @@ class HecosApplication:
                 self.state_manager.voice_status,
                 self.state_manager.listening_status,
                 self.state_manager.system_status,
-                ptt_status=self.state_manager.push_to_talk
+                ptt_status=self.state_manager.push_to_talk,
             )
-
-            if dashboard_mod:
-                ui_updater.start(self.config_manager, self.state_manager, dashboard_mod)
-            else:
-                ui_updater.stop()
 
         # [WEB_UI] Inject live managers into plugin if active, then start the Flask server.
         web_ui_mod = module_loader.get_plugin_module("WEB_UI")
@@ -144,19 +148,24 @@ class HecosApplication:
                 except Exception as _ws_e:
                     logger.warning(f"[APP] WebUI server startup error: {_ws_e}")
 
-        # Pre-load active TTS engine in the background (Fish Speech daemon or Piper) to eliminate latency on first speak()
+        # Pre-load configured TTS engines (Piper fallback + active engine if autostart enabled)
         try:
-            from hecos.core.audio.tts_manager import preload_active_engine
-            preload_active_engine(delay=2.0)
-            logger.info("[APP] Active TTS engine pre-loading scheduled (2s delay).")
+            from hecos.core.audio.tts_manager import preload_configured_engines
+            preload_configured_engines(delay=2.0)
+            logger.info("[APP] Configured TTS engine pre-loading scheduled (2s delay).")
         except Exception as _tts_e:
             logger.debug(f"[APP] TTS preload skipped: {_tts_e}")
 
-        interface.move_to_body()
+        # Render WebUI links box + initial HECOS welcome inside Zone 2 (Body)
         self.bootstrapper.show_welcome()
 
-        # Avvia bus audio PTT e thread ascolto SOLO in modalità console
+        # Avvia bus audio PTT, updater e thread ascolto SOLO in modalità console
         if not is_webui_mode:
+            if dashboard_mod:
+                ui_updater.start(self.config_manager, self.state_manager, dashboard_mod)
+            else:
+                ui_updater.stop()
+
             try:
                 from hecos.core.audio import ptt_bus
                 ptt_bus.start(state=self.state_manager)
@@ -167,12 +176,8 @@ class HecosApplication:
             ascolto_thread = AscoltoThread(self.state_manager)
             ascolto_thread.start()
 
-            # Activate readline-style prompt tracking
+            # Activate anchored Zone 3 prompt (Row H)
             interface.set_active_prompt(prefisso, "")
-            from hecos.ui.ui_updater import stdout_lock
-            with stdout_lock:
-                sys.stdout.write("\n" + prefisso)
-                sys.stdout.flush()
 
         # Main loop
         while self.running:
@@ -195,51 +200,60 @@ class HecosApplication:
                 menu_schermo_intero = ["F1", "F2", "F3", "F7"]
                 if evento in menu_schermo_intero:
                     ui_updater.stop()
-                    time.sleep(0.1)
-                    
-                self.menu_handler.handle_function_key(evento)
-                
-                # Ricarica config e ricollega plugin
-                config = self.config_manager.config
-                dashboard_mod = module_loader.get_plugin_module("DASHBOARD")
-                
-                if evento in ["F4", "F5"]:
-                    interface.update_status_bar_in_place(
-                        config,
-                        self.state_manager.voice_status,
-                        self.state_manager.listening_status,
-                        self.state_manager.system_status,
-                        ptt_status=self.state_manager.push_to_talk
-                    )
-                else:
+                    interface.enter_modal()
+                    try:
+                        self.menu_handler.handle_function_key(evento)
+                    finally:
+                        interface.exit_modal()
+
+                    # Ricarica config e ricollega plugin
+                    config = self.config_manager.config
+                    dashboard_mod = module_loader.get_plugin_module("DASHBOARD")
                     interface.show_complete_ui(
                         config,
                         self.state_manager.voice_status,
                         self.state_manager.listening_status,
                         self.state_manager.system_status,
-                        ptt_status=self.state_manager.push_to_talk
+                        ptt_status=self.state_manager.push_to_talk,
                     )
-                
-                if evento in menu_schermo_intero:
                     if dashboard_mod:
                         ui_updater.start(self.config_manager, self.state_manager, dashboard_mod)
                     else:
                         ui_updater.stop()
-                    
-                from hecos.ui.ui_updater import stdout_lock
-                with stdout_lock:
-                    sys.stdout.write(prefisso + input_utente)
-                    sys.stdout.flush()
+                else:
+                    self.menu_handler.handle_function_key(evento)
+                    config = self.config_manager.config
+                    if evento == "F5":
+                        interface.show_complete_ui(
+                            config,
+                            self.state_manager.voice_status,
+                            self.state_manager.listening_status,
+                            self.state_manager.system_status,
+                            ptt_status=self.state_manager.push_to_talk,
+                        )
+                    else:
+                        interface.update_status_bar_in_place(
+                            config,
+                            self.state_manager.voice_status,
+                            self.state_manager.listening_status,
+                            self.state_manager.system_status,
+                            ptt_status=self.state_manager.push_to_talk,
+                        )
+
+                interface.set_active_prompt(prefisso, input_utente)
             elif evento == "PROCESSED":
                 pass
             elif evento == "CLEAR":
                 input_utente = ""
-                from hecos.ui.ui_updater import stdout_lock
-                with stdout_lock:
-                    sys.stdout.write(f"\r{prefisso}")
-                    sys.stdout.flush()
+                interface.set_active_prompt(prefisso, "")
 
             time.sleep(0.025) # Optimized sleep for responsiveness and stability
+
+        try:
+            from hecos.core.audio.tts_manager import shutdown_all_tts
+            shutdown_all_tts()
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     try:

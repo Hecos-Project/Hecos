@@ -7,7 +7,7 @@ DESCRIPTION: Pydantic v2 models for config/system.yaml (core system only).
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Literal, Union
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -60,6 +60,7 @@ class KoboldBackendConfig(BaseModel):
     temperature: float = 0.8
     top_p: float = 0.92
     rep_pen: float = 1.1
+    request_timeout_sec: int = 900
 
 
 class OllamaBackendConfig(BaseModel):
@@ -74,6 +75,17 @@ class OllamaBackendConfig(BaseModel):
     repeat_penalty: float = 1.1
     keep_alive: str = "120m"
     probe_timeout_sec: int = 3
+    request_timeout_sec: int = 900
+    # ── Lifecycle / startup flags ─────────────────────────────────────────────
+    binary_path: str = ""            # Path to ollama.exe or 'ollama app.exe' (auto-detected if empty)
+    auto_start_server: bool = False  # Launch Ollama automatically if not running
+    auto_stop_server: bool = True    # Stop Ollama and release VRAM/RAM when Hecos exits
+    warmup_model: bool = False       # Pre-load the default model into GPU VRAM at boot
+    warmup_keep_alive: str = "120m"  # keep_alive duration used during warm-up
+    # ── VRAM Adaptive Engine ──────────────────────────────────────────────────
+    adaptive_ctx: bool = False                       # Enable VRAM-based dynamic num_ctx selection
+    adaptive_ctx_auto: bool = True                   # True = auto-select profile; False = use manual profile
+    adaptive_ctx_manual_profile: str = "BALANCED"    # Manual profile: HIGH_POWER | BALANCED | ECONOMY | MINIMAL
 
 class LlamaCPPBackendConfig(BaseModel):
     model: str = ""
@@ -84,6 +96,7 @@ class LlamaCPPBackendConfig(BaseModel):
     top_p: float = 0.95
     native_tool_calling: bool = True   # Pass tools as JSON to llama-server (requires a capable model)
     text_commands_enabled: bool = True  # Inject /img and text-command hints into the system prompt
+    request_timeout_sec: int = 900
 
 
 class BackendConfig(BaseModel):
@@ -116,6 +129,7 @@ class CognitionConfig(BaseModel):
     include_identity_context: bool = True
     include_self_awareness: bool = True
     max_history_messages: int = 20
+    include_thinking_in_history: bool = False
     rag: RAGConfig = Field(default_factory=RAGConfig)
 
 
@@ -237,6 +251,8 @@ class HpmConfig(BaseModel):
     ])
     # Security: token is strictly stored in local untracked hpm_auth.json, never in system.yaml
     github_token: str = Field(default="", exclude=True)
+    # Post-install restart behavior for packages requiring restart: "manual" or "auto_batch"
+    restart_mode: Literal["manual", "auto_batch"] = "manual"
 
 
 # ─── ROOT ─────────────────────────────────────────────────────────────────────

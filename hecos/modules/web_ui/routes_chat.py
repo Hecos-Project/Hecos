@@ -26,6 +26,8 @@ from hecos.modules.web_ui.routes_chat_tts import (
 def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
     from hecos.modules.web_ui.routes_chat_api   import init_chat_api_routes
     from hecos.modules.web_ui.routes_chat_media import init_chat_media_routes
+    from hecos.modules.web_ui.agent_resume      import init_agent_resume_routes
 
     init_chat_api_routes  (app, cfg_mgr, logger)
     init_chat_media_routes(app, logger)
+    init_agent_resume_routes(app, cfg_mgr, logger)

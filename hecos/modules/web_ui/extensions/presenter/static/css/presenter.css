@@ -3,7 +3,7 @@
 /* Embedded Mode */
 #hbs-presenter-embedded {
     margin: 10px 16px;
-    background: linear-gradient(135deg, rgba(var(--accent-rgb),0.04), var(--bg2));
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.04), var(--bg2));
     border: 1px solid rgba(255, 81, 47, 0.15);
     border-radius: 12px;
     padding: 12px 16px;
@@ -12,6 +12,7 @@
     gap: 8px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
 #hbs-presenter-embedded.active {
@@ -19,7 +20,8 @@
 }
 
 #hbs-presenter-embedded.collapsed .hbs-presenter-body,
-#hbs-presenter-embedded.collapsed .hbs-presenter-footer {
+#hbs-presenter-embedded.collapsed .hbs-presenter-footer,
+#hbs-presenter-embedded.collapsed #hbs-presenter-advanced {
     display: none !important;
 }
 
@@ -63,9 +65,132 @@
 .hbs-presenter-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    flex-wrap: wrap;
+    row-gap: 8px;
+    column-gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     padding-bottom: 8px;
+    box-sizing: border-box;
+}
+
+.hbs-presenter-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.hbs-presenter-spacer {
+    flex: 1 1 10px;
+    min-width: 6px;
+}
+
+.hbs-presenter-controls {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    font-size: 11px;
+}
+
+.hbs-presenter-controls>* {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.hbs-presenter-ctrl-label {
+    color: var(--muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    user-select: none;
+    font-size: 11px;
+}
+
+.hbs-presenter-max-lines-box {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 4px;
+    padding: 2px 6px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.hbs-presenter-max-lines-box span {
+    color: var(--muted);
+    margin-right: 4px;
+    white-space: nowrap;
+    user-select: none;
+    font-size: 11px;
+}
+
+.hbs-presenter-max-lines-box input#hbs-presenter-max-lines {
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 48px !important;
+    background: transparent !important;
+    border: none !important;
+    color: var(--text) !important;
+    font-size: 11px !important;
+    outline: none !important;
+    text-align: center !important;
+    padding: 0 2px !important;
+    flex-shrink: 0 !important;
+    -moz-appearance: textfield;
+}
+
+.hbs-presenter-max-lines-box button {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text);
+    font-size: 10px;
+    margin-left: 6px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.hbs-presenter-max-lines-box button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.hbs-presenter-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 4px;
+    margin-left: auto;
+}
+
+/* Multiline responsiveness for medium layouts */
+@media (max-width: 960px) and (min-width: 769px) {
+    .hbs-presenter-header {
+        row-gap: 8px;
+    }
+
+    .hbs-presenter-controls {
+        width: 100%;
+        order: 3;
+        padding-top: 4px;
+        justify-content: flex-start;
+    }
+
+    .hbs-presenter-toggle-btn {
+        order: 2;
+    }
 }
 
 .hbs-presenter-avatar {
@@ -94,6 +219,42 @@
     color: var(--text-muted, #a0a0a0);
     line-height: 1.5;
     animation: presenterFadeIn 0.3s ease;
+    padding-right: 12px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    resize: vertical;
+    min-height: 40px;
+    max-height: 50vh;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.15);
+}
+
+.hbs-presenter-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.hbs-presenter-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+}
+
+.hbs-presenter-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.hbs-presenter-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.hbs-presenter-line {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    padding-right: 6px;
 }
 
 .hbs-presenter-body i {
@@ -110,13 +271,80 @@
 }
 
 @keyframes presenterFadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Presenter Sub-bar (Playbook + Stats) ────────────────────────── */
+
+/* The sub-bar sits between the header and the advanced panel.
+   It is hidden by default (no .open class) and slides down smoothly. */
+.hbs-presenter-subbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease, padding 0.25s ease, opacity 0.2s ease;
+    opacity: 0;
+    padding: 0 12px;
+    border-bottom: 0px solid rgba(255, 255, 255, 0.06);
+}
+
+.hbs-presenter-subbar.open {
+    max-height: 120px;
+    opacity: 1;
+    padding: 5px 12px 6px 12px;
+    border-bottom-width: 1px;
+}
+
+/* Collapsed presenter: hide subbar unconditionally */
+#hbs-presenter-embedded.collapsed .hbs-presenter-subbar {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    padding: 0 12px !important;
+    border-bottom-width: 0 !important;
+}
+
+.hbs-presenter-subbar-spacer {
+    flex: 1 1 10px;
+    min-width: 6px;
+}
+
+/* Stats container inside subbar */
+.hbs-presenter-stats-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 10px;
+    color: var(--muted);
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+/* Playbook pill inside subbar — flex-shrink so it can truncate */
+#hbs-presenter-subbar .hbs-presenter-playbook-pill {
+    margin-left: 0;
+    flex-shrink: 1;
 }
 
 /* Presenter Custom UI Controls */
 #hbs-presenter-remember-size {
-    accent-color: #ff512f; /* Match Presenter accent */
+    accent-color: #ff512f;
+    /* Match Presenter accent */
     cursor: pointer;
     background-color: var(--bg3);
 }
@@ -126,13 +354,14 @@
 }
 
 /* Fallback for webkit spinners in dark mode */
-.presenter-dark-input::-webkit-inner-spin-button, 
+.presenter-dark-input::-webkit-inner-spin-button,
 .presenter-dark-input::-webkit-outer-spin-button {
     filter: invert(0.8);
     opacity: 0.5;
     cursor: pointer;
 }
-.presenter-dark-input::-webkit-inner-spin-button:hover, 
+
+.presenter-dark-input::-webkit-inner-spin-button:hover,
 .presenter-dark-input::-webkit-outer-spin-button:hover {
     opacity: 1;
 }
@@ -159,6 +388,7 @@
     text-overflow: ellipsis;
     vertical-align: middle;
 }
+
 .hbs-presenter-playbook-pill:hover {
     background: rgba(59, 130, 246, 0.22);
     border-color: rgba(59, 130, 246, 0.55);
@@ -166,6 +396,7 @@
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
 }
+
 .pb-sim-btn {
     display: inline-flex;
     align-items: center;
@@ -182,56 +413,68 @@
     transition: all 0.15s ease;
     line-height: 1.4;
 }
+
 .pb-sim-btn:hover {
     background: rgba(255, 255, 255, 0.22);
     transform: scale(1.05);
 }
+
 .pb-sim-btn-play {
     background: rgba(16, 185, 129, 0.22);
     border-color: rgba(16, 185, 129, 0.45);
     color: #34d399;
 }
+
 .pb-sim-btn-play:hover {
     background: rgba(16, 185, 129, 0.38);
     color: #6ee7b7;
 }
+
 .pb-sim-btn-stop {
     background: rgba(239, 68, 68, 0.2);
     border-color: rgba(239, 68, 68, 0.4);
     color: #f87171;
 }
+
 .pb-sim-btn-stop:hover {
     background: rgba(239, 68, 68, 0.35);
     color: #fca5a5;
 }
+
 .pb-sim-btn-pause {
     background: rgba(245, 158, 11, 0.2);
     border-color: rgba(245, 158, 11, 0.4);
     color: #fbbf24;
 }
+
 .pb-sim-btn-pause:hover {
     background: rgba(245, 158, 11, 0.35);
     color: #fde68a;
 }
+
 .pb-sim-btn-swap {
     background: rgba(192, 132, 252, 0.2);
     border-color: rgba(192, 132, 252, 0.4);
     color: #c084fc;
 }
+
 .pb-sim-btn-swap:hover {
     background: rgba(192, 132, 252, 0.35);
     color: #e9d5ff;
 }
+
 .hbs-presenter-playbook-pill.inactive {
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(255, 255, 255, 0.1);
     color: var(--muted);
 }
+
 .hbs-presenter-playbook-pill.inactive:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.18);
     color: var(--text);
 }
+
 .hbs-presenter-playbook-pill .dot-active {
     width: 6px;
     height: 6px;
@@ -241,6 +484,7 @@
     flex-shrink: 0;
     animation: pbDotPulse 2.2s infinite ease-in-out;
 }
+
 .hbs-presenter-playbook-pill .dot-inactive {
     width: 6px;
     height: 6px;
@@ -248,7 +492,236 @@
     background: #64748b;
     flex-shrink: 0;
 }
+
 @keyframes pbDotPulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.55; transform: scale(0.85); }
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.55;
+        transform: scale(0.85);
+    }
+}
+
+/* ── Mobile Adaptation (<= 768px) ────────────────────────────────── */
+@media (max-width: 768px) {
+    #hbs-presenter-embedded {
+        box-sizing: border-box !important;
+        width: calc(100% - 16px) !important;
+        max-width: calc(100% - 16px) !important;
+        margin: 4px 8px !important;
+        padding: 6px 10px !important;
+        border-radius: 10px !important;
+        gap: 4px !important;
+        max-height: 28vh !important;
+        overflow: hidden !important;
+        flex-shrink: 0 !important;
+    }
+
+    #hbs-presenter-embedded.collapsed {
+        padding: 5px 10px !important;
+        max-height: 38px !important;
+        gap: 0 !important;
+    }
+
+    /* When collapsed on mobile, hide secondary controls so it's a sleek 1-line bar */
+    #hbs-presenter-embedded.collapsed .hbs-presenter-controls {
+        display: none !important;
+    }
+
+    .hbs-presenter-header {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        row-gap: 0 !important;
+        column-gap: 4px !important;
+        padding-bottom: 4px !important;
+    }
+
+    .hbs-presenter-brand {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        flex-shrink: 0 !important;
+        min-width: 0 !important;
+    }
+
+    .hbs-presenter-avatar {
+        width: 22px !important;
+        height: 22px !important;
+        font-size: 11px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .hbs-presenter-title {
+        font-size: 12px !important;
+        white-space: nowrap !important;
+    }
+
+    #hbs-presenter-power-btn {
+        padding: 1.5px 5px !important;
+        font-size: 9px !important;
+        margin-left: 2px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .hbs-presenter-spacer {
+        display: none !important;
+    }
+
+    /* Hide desktop-only vertical resize controls on mobile */
+    .hbs-presenter-ctrl-label,
+    .hbs-presenter-max-lines-box {
+        display: none !important;
+    }
+
+    /* Controls container on mobile: compact right-aligned icons */
+    .hbs-presenter-controls {
+        display: inline-flex !important;
+        align-items: center !important;
+        width: auto !important;
+        order: 2 !important;
+        padding-top: 0 !important;
+        gap: 4px !important;
+        flex-wrap: nowrap !important;
+        margin-left: auto !important;
+        flex-shrink: 0 !important;
+        min-width: 0 !important;
+    }
+
+    /* Hide text on mobile for Reset & Advanced buttons so they become sleek icons */
+    .hbs-presenter-controls .presenter-btn-text {
+        display: none !important;
+    }
+
+    #hbs-presenter-reset-btn,
+    #hbs-presenter-advanced-toggle {
+        width: 24px !important;
+        min-width: 24px !important;
+        height: 24px !important;
+        padding: 0 !important;
+        gap: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 11px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .hbs-presenter-controls a[href*="presenter"] {
+        width: 24px !important;
+        min-width: 24px !important;
+        height: 24px !important;
+        font-size: 11px !important;
+        flex-shrink: 0 !important;
+    }
+
+    #hbs-presenter-subbar-btn {
+        width: 24px !important;
+        min-width: 24px !important;
+        height: 24px !important;
+        font-size: 11px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .hbs-presenter-toggle-btn {
+        order: 3 !important;
+        margin-left: 2px !important;
+        width: 22px !important;
+        min-width: 22px !important;
+        height: 24px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Cap Presenter body height on mobile so chat area always remains visible and interactive */
+    #hbs-presenter-embedded .hbs-presenter-body {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+        max-height: 15vh !important;
+        height: auto !important;
+        min-height: 28px !important;
+        resize: none !important;
+        font-size: 11.5px !important;
+        line-height: 1.35 !important;
+        padding-right: 4px !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+    }
+
+    /* Subbar compact single-line horizontal scroll on mobile */
+    .hbs-presenter-subbar {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+    }
+
+    .hbs-presenter-subbar.open {
+        padding: 3px 4px !important;
+        gap: 4px 6px !important;
+        max-height: 44px !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none !important;
+    }
+
+    .hbs-presenter-subbar.open::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    .hbs-presenter-playbook-pill {
+        max-width: 200px !important;
+        font-size: 10px !important;
+        padding: 2px 6px !important;
+        margin-left: 0 !important;
+        flex-shrink: 0 !important;
+    }
+
+    .hbs-presenter-stats-container {
+        font-size: 9.5px !important;
+        padding: 2px 5px !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Cap Advanced filter panel on mobile */
+    #hbs-presenter-advanced {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+        max-height: 95px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding: 4px 6px !important;
+    }
+
+    #hbs-presenter-search {
+        font-size: 11px !important;
+        padding: 3px 6px !important;
+    }
+
+    /* Toast Overlay on mobile */
+    #hbs-presenter-overlay {
+        top: 56px;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        padding: 10px 12px;
+        box-sizing: border-box;
+    }
 }

@@ -9,10 +9,13 @@
  * a yellow pulsing icon so the user can't miss it.
  */
 window.hpmSignalRestartPending = function() {
+  if (typeof window.hpmSyncRestartPending === 'function') {
+    window.hpmSyncRestartPending(true);
+    return;
+  }
   const btn = document.getElementById('btn-reboot-system');
   if (btn && !btn.classList.contains('restart-pending')) {
     btn.classList.add('restart-pending');
-    // Update tooltip with a localized hint
     const _ti = (en, it, es) => {
       const l = (document.documentElement.lang || 'en').toLowerCase();
       if (l.startsWith('it')) return it;

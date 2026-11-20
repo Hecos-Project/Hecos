@@ -134,7 +134,6 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                 except Exception as _ce:
                     log.warning(f"[HPM] Could not force-enable in live cfg_mgr: {_ce}")
 
-                _hpm_event_broadcast("hpm:package_installed", {"id": result.package_id})
                 _invalidate_all_caches()
 
                 # ── Hot-reload capability registry with live config ──
@@ -152,6 +151,8 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                     log.info(f"[HPM] Command registry reloaded after install of '{result.package_id}'")
                 except Exception as _cr_e:
                     log.warning(f"[HPM] Command registry reload failed: {_cr_e}")
+
+                _hpm_event_broadcast("hpm:package_installed", {"id": result.package_id})
 
                 pkg_meta = registry.get(result.package_id) or {}
                 snap = pkg_meta.get("manifest_snapshot", {})
@@ -340,10 +341,7 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                     needs_restart = pkg_type in _PENDING_RESTART_TYPES or has_api_routes
                     if needs_restart:
                         add_to_pending_restart(result.package_id)
-                        try:
-                            from hecos.modules.web_ui.routes_packages_list import invalidate_packages_cache
-                            invalidate_packages_cache()
-                        except: pass
+                    _invalidate_all_caches()
 
                     entry = {
                         "filename": filename,
@@ -362,8 +360,6 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                     results.append(entry)
                     succeeded += 1
 
-                    _hpm_event_broadcast("hpm:package_installed", {"id": result.package_id})
-
                 else:
                     results.append({
                         "filename": filename,
@@ -381,6 +377,19 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
 
         _invalidate_all_caches()
         if succeeded > 0:
+            try:
+                from hecos.core.system import module_loader
+                module_loader.update_capability_registry(cfg_mgr.config, debug_log=False)
+            except Exception:
+                pass
+            try:
+                from hecos.core.commands.registry import get_registry
+                get_registry(reload=True)
+            except Exception:
+                pass
+            for entry in results:
+                if entry.get("ok"):
+                    _hpm_event_broadcast("hpm:package_installed", {"id": entry["id"]})
             try:
                 from hecos.modules.web_ui.routes_config_core import clear_hpm_panel_cache
                 clear_hpm_panel_cache()

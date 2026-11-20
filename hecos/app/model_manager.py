@@ -14,6 +14,40 @@ class ModelManager:
     def __init__(self, config_manager):
         self.config_manager = config_manager
 
+    @staticmethod
+    def _scan_local_ollama_manifests(ollama_base: str = "http://localhost:11434"):
+        """Fast (<1ms) zero-network scan of local Ollama manifests directory when Ollama is local."""
+        try:
+            base_lower = (ollama_base or "").lower()
+            if not any(h in base_lower for h in ("localhost", "127.0.0.1", "0.0.0.0", "[::1]")):
+                return None
+            models_root = os.environ.get("OLLAMA_MODELS") or os.path.join(os.path.expanduser("~"), ".ollama", "models")
+            manifests_dir = os.path.join(models_root, "manifests")
+            if not os.path.isdir(manifests_dir):
+                return None
+
+            found = []
+            for root, _dirs, files in os.walk(manifests_dir):
+                for fname in files:
+                    if fname.startswith("."):
+                        continue
+                    rel_dir = os.path.relpath(root, manifests_dir).replace("\\", "/")
+                    parts = [p for p in rel_dir.split("/") if p and p != "."]
+                    if len(parts) >= 3:
+                        registry, namespace, model_name = parts[0], parts[1], "/".join(parts[2:])
+                        if registry == "registry.ollama.ai":
+                            if namespace == "library":
+                                full_name = f"{model_name}:{fname}"
+                            else:
+                                full_name = f"{namespace}/{model_name}:{fname}"
+                        else:
+                            full_name = f"{registry}/{namespace}/{model_name}:{fname}"
+                        found.append(full_name)
+            return sorted(set(found))
+        except Exception as e:
+            logger.debug(f"[ModelManager] Local Ollama manifest scan skipped: {e}")
+            return None
+
     def get_available_models(self, fast_mode=False):
         """Fetches and returns a dictionary of categorized model names (Local + Cloud)."""
         config = self.config_manager.config
@@ -24,23 +58,46 @@ class ModelManager:
         }
         
         # 1. OLLAMA Models (Local)
+        ollama_base = config.get('backend', {}).get('ollama', {}).get('url', 'http://localhost:11434').rstrip('/')
+        cache = config.get('backend', {}).get('ollama', {}).get('available_models', {}) or {}
+        cached_list = list(cache.values()) if isinstance(cache, dict) else []
+
         if fast_mode:
-            cache = config.get('backend', {}).get('ollama', {}).get('available_models', {})
-            categorized_models["Ollama (Local)"].extend(list(cache.values()))
+            disk_models = self._scan_local_ollama_manifests(ollama_base)
+            if disk_models is not None:
+                disk_set = set(disk_models)
+                reconciled = [m for m in cached_list if m in disk_set]
+                reconciled_set = set(reconciled)
+                for m in disk_models:
+                    if m not in reconciled_set:
+                        reconciled.append(m)
+                if reconciled != cached_list:
+                    new_avail = {str(i + 1): name for i, name in enumerate(reconciled)}
+                    self.config_manager.set(new_avail, 'backend', 'ollama', 'available_models')
+                    try:
+                        self.config_manager.save()
+                        logger.info(f"[ModelManager] Reconciled Ollama available_models with local manifests ({len(reconciled)} models).")
+                    except Exception as e:
+                        logger.warning(f"[ModelManager] Failed to persist reconciled Ollama models: {e}")
+                categorized_models["Ollama (Local)"].extend(reconciled)
+            else:
+                categorized_models["Ollama (Local)"].extend(cached_list)
         else:
+            models_ollama = None
             try:
-                ollama_base = config.get('backend', {}).get('ollama', {}).get('url', 'http://localhost:11434').rstrip('/')
                 response = requests.get(f"{ollama_base}/api/tags", timeout=5)
                 if response.status_code == 200:
                     models_ollama = [m['name'] for m in response.json().get('models', [])]
-                    self.config_manager.set({str(i+1): name for i, name in enumerate(models_ollama)}, 'backend', 'ollama', 'available_models')
-                    self.config_manager.save()
-                    for m_name in models_ollama:
-                        categorized_models["Ollama (Local)"].append(m_name)
-            except:
-                # Fallback on cache
-                cache = config.get('backend', {}).get('ollama', {}).get('available_models', {})
-                categorized_models["Ollama (Local)"].extend(list(cache.values()))
+            except Exception:
+                models_ollama = self._scan_local_ollama_manifests(ollama_base)
+
+            if models_ollama is not None:
+                new_avail = {str(i + 1): name for i, name in enumerate(models_ollama)}
+                self.config_manager.set(new_avail, 'backend', 'ollama', 'available_models')
+                self.config_manager.save()
+                categorized_models["Ollama (Local)"].extend(models_ollama)
+            else:
+                categorized_models["Ollama (Local)"].extend(cached_list)
 
         # 2. KOBOLD Models (Local)
         if fast_mode:

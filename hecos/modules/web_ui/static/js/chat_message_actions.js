@@ -32,9 +32,26 @@ function buildMessageActions(msgEl, role, historyIndex) {
   editBtn.title = t('chat_btn_edit');
   editBtn.onclick = () => {
     if (window.isStreaming) return;
-    toggleEditMode(msgEl, historyIndex);
+    toggleEditMode(msgEl, _resolveMsgIndex(msgEl, historyIndex));
   };
   bar.appendChild(editBtn);
+
+  // Resend button (User messages only)
+  if (role === 'user') {
+    const resendBtn = document.createElement('button');
+    resendBtn.className = 'msg-action-btn';
+    const resendLabel = t('chat_btn_resend') === 'chat_btn_resend' ? 'Resend' : t('chat_btn_resend');
+    const resendTooltip = t('chat_btn_resend_tooltip') === 'chat_btn_resend_tooltip'
+      ? 'Resend this message'
+      : t('chat_btn_resend_tooltip');
+    resendBtn.innerHTML = `🔄 ${resendLabel}`;
+    resendBtn.title = resendTooltip;
+    resendBtn.onclick = () => {
+      if (window.isStreaming) return;
+      resendUserMessage(msgEl, _resolveMsgIndex(msgEl, historyIndex));
+    };
+    bar.appendChild(resendBtn);
+  }
 
   // Regenerate (AI messages only)
   if (role === 'ai') {
@@ -44,7 +61,7 @@ function buildMessageActions(msgEl, role, historyIndex) {
     regenBtn.title = t('chat_btn_regenerate');
     regenBtn.onclick = () => {
         if (window.isStreaming) return;
-        regenerateLastResponse(historyIndex);
+        regenerateLastResponse(_resolveMsgIndex(msgEl, historyIndex), msgEl);
     };
     bar.appendChild(regenBtn);
 
@@ -273,11 +290,55 @@ function buildMessageActions(msgEl, role, historyIndex) {
   delBtn.title = t('chat_btn_delete');
   delBtn.onclick = () => {
     if (window.isStreaming) return;
-    deleteMessage(msgEl, historyIndex);
+    deleteMessage(msgEl, _resolveMsgIndex(msgEl, historyIndex));
   };
   bar.appendChild(delBtn);
 
   return bar;
+}
+
+function _reindexDomMessages() {
+  const allMsgs = document.querySelectorAll('#chat-area > .msg');
+  allMsgs.forEach((el, idx) => {
+    el.setAttribute('data-hidx', idx);
+  });
+}
+
+function _resolveMsgIndex(msgEl, fallbackIndex) {
+  if (msgEl) {
+    const allMsgs = Array.from(document.querySelectorAll('#chat-area > .msg'));
+    const domIdx = allMsgs.indexOf(msgEl);
+    if (domIdx !== -1) return domIdx;
+    const attrIdx = parseInt(msgEl.getAttribute('data-hidx'), 10);
+    if (!isNaN(attrIdx)) return attrIdx;
+  }
+  return typeof fallbackIndex === 'number' ? fallbackIndex : -1;
+}
+
+function _syncDeleteBackend(index, role, content) {
+  try {
+    const sid = (window.chatHistoryState && window.chatHistoryState.activeSessionId)
+      ? window.chatHistoryState.activeSessionId
+      : null;
+    fetch('/api/chat/messages/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sid, index, role, content })
+    }).catch(() => {});
+  } catch (e) {}
+}
+
+function _syncEditBackend(index, role, content) {
+  try {
+    const sid = (window.chatHistoryState && window.chatHistoryState.activeSessionId)
+      ? window.chatHistoryState.activeSessionId
+      : null;
+    fetch('/api/chat/messages/edit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sid, index, role, content })
+    }).catch(() => {});
+  } catch (e) {}
 }
 
 // Build the edit mode textarea area for a bubble
@@ -286,11 +347,12 @@ function buildEditArea(msgEl, historyIndex) {
   wrap.className = 'msg-edit-wrap';
 
   const t = window.t || ((k) => k);
+  const isUser = msgEl.classList.contains('user');
 
   const bubble = msgEl.querySelector('.msg-bubble');
   const textarea = document.createElement('textarea');
   textarea.className = 'msg-edit-textarea';
-  textarea.value = bubble.innerText || bubble.textContent;
+  textarea.value = msgEl.dataset.rawContent || bubble.innerText || bubble.textContent;
   textarea.rows = 3;
   wrap.appendChild(textarea);
 
@@ -302,23 +364,48 @@ function buildEditArea(msgEl, historyIndex) {
   cancelBtn.textContent = t('chat_edit_cancel');
   cancelBtn.onclick = () => wrap.classList.remove('active');
 
+  const applyEdit = () => {
+    const newText = textarea.value.trim();
+    if (!newText) return null;
+    bubble.innerHTML = window.renderMarkdown ? renderMarkdown(newText) : newText;
+    msgEl.dataset.rawContent = newText;
+    const liveIdx = _resolveMsgIndex(msgEl, historyIndex);
+    if (liveIdx >= 0 && window.chatHistory && window.chatHistory[liveIdx]) {
+      window.chatHistory[liveIdx].content = newText;
+    }
+    _syncEditBackend(liveIdx, isUser ? 'user' : 'assistant', newText);
+    wrap.classList.remove('active');
+    return { newText, liveIdx };
+  };
+
   const confirmBtn = document.createElement('button');
   confirmBtn.className = 'msg-edit-confirm';
   confirmBtn.textContent = `✓ ${t('chat_edit_save')}`;
   confirmBtn.onclick = () => {
-    const newText = textarea.value.trim();
-    if (!newText) return;
-    bubble.innerHTML = window.renderMarkdown ? renderMarkdown(newText) : newText;
-    // Update history if index is valid
-    if (typeof historyIndex === 'number' && window.chatHistory && window.chatHistory[historyIndex]) {
-        window.chatHistory[historyIndex].content = newText;
-    }
-    wrap.classList.remove('active');
+    const res = applyEdit();
+    if (!res) return;
     showToast(`✅ ${t('chat_msg_modified')}`);
   };
 
   controls.appendChild(cancelBtn);
   controls.appendChild(confirmBtn);
+
+  if (isUser) {
+    const saveResendBtn = document.createElement('button');
+    saveResendBtn.className = 'msg-edit-confirm';
+    const srLabel = t('chat_edit_save_resend') === 'chat_edit_save_resend'
+      ? 'Save & Resend'
+      : t('chat_edit_save_resend');
+    saveResendBtn.textContent = `🔄 ${srLabel}`;
+    saveResendBtn.onclick = () => {
+      if (window.isStreaming) return;
+      const res = applyEdit();
+      if (!res) return;
+      resendUserMessage(msgEl, res.liveIdx);
+    };
+    controls.appendChild(saveResendBtn);
+  }
+
   wrap.appendChild(controls);
 
   return wrap;
@@ -330,6 +417,12 @@ function toggleEditMode(msgEl, historyIndex) {
   if (!wrap) {
     wrap = buildEditArea(msgEl, historyIndex);
     msgEl.querySelector('.msg-bubble').parentNode.appendChild(wrap);
+  } else {
+    const ta = wrap.querySelector('.msg-edit-textarea');
+    const bubble = msgEl.querySelector('.msg-bubble');
+    if (ta && !wrap.classList.contains('active')) {
+      ta.value = msgEl.dataset.rawContent || (bubble ? (bubble.innerText || bubble.textContent) : '');
+    }
   }
   wrap.classList.toggle('active');
   if (wrap.classList.contains('active')) {
@@ -337,35 +430,114 @@ function toggleEditMode(msgEl, historyIndex) {
   }
 }
 
-// Delete a message from the chat (visual + history)
+// Delete a message from the chat (visual + history + DB)
 function deleteMessage(msgEl, historyIndex) {
   const t = window.t || ((k) => k);
+  const liveIdx = _resolveMsgIndex(msgEl, historyIndex);
+  const isUser = msgEl.classList.contains('user');
+  const bubble = msgEl.querySelector('.msg-bubble');
+  const rawContent = msgEl.dataset.rawContent
+    || (liveIdx >= 0 && window.chatHistory && window.chatHistory[liveIdx] ? window.chatHistory[liveIdx].content : '')
+    || (bubble ? (bubble.innerText || bubble.textContent) : '');
+
+  _syncDeleteBackend(liveIdx, isUser ? 'user' : 'assistant', rawContent);
+
   msgEl.style.opacity = '0';
   msgEl.style.transform = 'translateY(-8px)';
   msgEl.style.transition = 'all .25s';
   setTimeout(() => {
+    const idxNow = _resolveMsgIndex(msgEl, liveIdx);
     msgEl.remove();
-    if (typeof historyIndex === 'number' && window.chatHistory && window.chatHistory[historyIndex]) {
-        window.chatHistory.splice(historyIndex, 1);
+    if (idxNow >= 0 && window.chatHistory && window.chatHistory[idxNow]) {
+      window.chatHistory.splice(idxNow, 1);
     }
+    _reindexDomMessages();
     showToast(`🗑 ${t('chat_msg_deleted')}`);
   }, 250);
 }
 
-// Regenerate the last AI response (remove it and re-send the previous user message)
-async function regenerateLastResponse(historyIndex) {
+// Resend a user message:
+// - If this user message is already at the bottom of the chat (e.g. AI reply was deleted or failed),
+//   re-triggers AI generation directly below this user bubble without duplicating the user bubble.
+// - Otherwise (if followed by a normal AI response/conversation), sends the same message as a new turn at the bottom.
+async function resendUserMessage(msgEl, historyIndex) {
   const t = window.t || ((k) => k);
-  
-  if (!window.chatHistory || window.chatHistory.length < 2) {
+  if (window.isStreaming) return;
+
+  const liveIdx = _resolveMsgIndex(msgEl, historyIndex);
+  const bubble = msgEl ? msgEl.querySelector('.msg-bubble') : null;
+  const textToResend = (
+    (msgEl && msgEl.dataset.rawContent) ||
+    (liveIdx >= 0 && window.chatHistory && window.chatHistory[liveIdx] ? window.chatHistory[liveIdx].content : '') ||
+    (bubble ? (bubble.innerText || bubble.textContent) : '')
+  ).trim();
+
+  if (!textToResend) return;
+
+  const allMsgs = Array.from(document.querySelectorAll('#chat-area > .msg'));
+  const domIdx = allMsgs.indexOf(msgEl);
+  const isLastMsg = (domIdx !== -1 && domIdx === allMsgs.length - 1);
+
+  // Check if the only message after this user message is a trailing AI error/interrupted bubble
+  let hasTrailingErrorBubble = false;
+  let trailingAiEl = null;
+  if (domIdx !== -1 && domIdx === allMsgs.length - 2) {
+    const nextEl = allMsgs[domIdx + 1];
+    if (nextEl && nextEl.classList.contains('ai')) {
+      const nextBubble = nextEl.querySelector('.msg-bubble');
+      const nextTxt = (nextBubble ? (nextBubble.innerText || nextBubble.textContent) : '').trim();
+      if (!nextTxt || nextTxt.startsWith('❌') || nextTxt.startsWith('⚠️') || nextTxt === 'Stopped' || nextTxt === 'Interrotto') {
+        hasTrailingErrorBubble = true;
+        trailingAiEl = nextEl;
+      }
+    }
+  }
+
+  const resendToast = t('chat_resend_toast') === 'chat_resend_toast' ? 'Resending message...' : t('chat_resend_toast');
+  showToast(`🔄 ${resendToast}`);
+
+  if (isLastMsg || hasTrailingErrorBubble) {
+    if (trailingAiEl) {
+      const aiIdx = _resolveMsgIndex(trailingAiEl, domIdx + 1);
+      const aiBubble = trailingAiEl.querySelector('.msg-bubble');
+      const aiTxt = (aiBubble ? (aiBubble.innerText || aiBubble.textContent) : '').trim();
+      _syncDeleteBackend(aiIdx, 'assistant', aiTxt);
+      trailingAiEl.remove();
+      if (aiIdx >= 0 && window.chatHistory && window.chatHistory[aiIdx]) {
+        window.chatHistory.splice(aiIdx, 1);
+      }
+      _reindexDomMessages();
+    }
+    if (typeof window.sendInternalMessage === 'function') {
+      const resendPlanOnly = !!window.hecosPlanFirstMode && !textToResend.trim().startsWith('/');
+      await window.sendInternalMessage(textToResend, { planOnly: resendPlanOnly });
+    }
+  } else {
+    // Send as a fresh turn at the bottom of the chat
+    if (window.userInput && typeof window.sendMessage === 'function') {
+      window.userInput.value = textToResend;
+      if (typeof window.autoResize === 'function') window.autoResize(window.userInput);
+      await window.sendMessage();
+    } else if (typeof window.sendInternalMessage === 'function') {
+      await window.sendInternalMessage(textToResend);
+    }
+  }
+}
+
+// Regenerate the AI response (remove it and re-send the preceding user message)
+async function regenerateLastResponse(historyIndex, passedMsgEl) {
+  const t = window.t || ((k) => k);
+  const aiMsgEl = passedMsgEl || document.querySelector(`.msg[data-hidx="${historyIndex}"]`);
+  const liveIdx = _resolveMsgIndex(aiMsgEl, historyIndex);
+
+  if (!window.chatHistory || window.chatHistory.length < 2 || liveIdx < 1) {
     showToast(`⚠️ ${t('chat_regen_no_prev')}`);
     return;
   }
-  
-  // 1. Identify the AI message and the preceding User message
-  // Note: historyIndex is the index where the AI message is stored in window.chatHistory
-  const aiMsgObj = window.chatHistory[historyIndex];
-  const prevUserMsgObj = window.chatHistory[historyIndex - 1];
-  
+
+  const aiMsgObj = window.chatHistory[liveIdx];
+  const prevUserMsgObj = window.chatHistory[liveIdx - 1];
+
   if (!aiMsgObj || aiMsgObj.role !== 'assistant') {
     showToast(`⚠️ ${t('chat_regen_invalid')}`);
     return;
@@ -377,40 +549,26 @@ async function regenerateLastResponse(historyIndex) {
 
   const textToResend = prevUserMsgObj.content;
 
-  // 2. Remove visual AI message from DOM
-  // We don't have a direct data-history attribute on the msg element by default unless we add it
-  // But we know msgEl was passed to attachMessageActions.
-  // Actually, we can just find the bubble that was clicked.
-  // regenerateLastResponse is called by the button inside the bar inside the msgEl.
-  // However, buildMessageActions doesn't pass msgEl to regenerateLastResponse, only the index.
-  // We should find the msgEl by index if we tag it, or pass it.
-  
-  // Let's find all messages and pick the one matching the index? 
-  // No, indices might shift if items are deleted.
-  // The simplest is to find any .msg.ai that contains the button clicked.
-  // But regenerateLastResponse already has historyIndex.
-  
-  const allMsgs = document.querySelectorAll('.msg');
-  // This is risky because the order in DOM might not match history array if things were deleted/moved.
-  // But usually they match.
-  
-  // A better way: attachMessageActions should tag the msgEl with the index.
-  const aiMsgEl = document.querySelector(`.msg[data-hidx="${historyIndex}"]`);
+  // Delete old AI response from backend DB so it doesn't stay in history
+  _syncDeleteBackend(liveIdx, 'assistant', aiMsgObj.content || '');
 
   if (aiMsgEl) {
     aiMsgEl.style.opacity = '0';
-    setTimeout(() => aiMsgEl.remove(), 250);
+    setTimeout(() => {
+      aiMsgEl.remove();
+      _reindexDomMessages();
+    }, 250);
   }
 
-  // 3. Remove AI message from history array
-  window.chatHistory.splice(historyIndex, 1);
-  
-  // 4. Trigger regeneration using internal sender
+  // Remove AI message from history array
+  window.chatHistory.splice(liveIdx, 1);
+
+  // Trigger regeneration using internal sender
   showToast(`🔁 ${t('chat_regen_toast')}`);
   if (typeof window.sendInternalMessage === 'function') {
-    // Small delay to allow fade-out animation
+    const regenPlanOnly = !!window.hecosPlanFirstMode && !String(textToResend || '').trim().startsWith('/');
     setTimeout(async () => {
-      await window.sendInternalMessage(textToResend);
+      await window.sendInternalMessage(textToResend, { planOnly: regenPlanOnly });
     }, 260);
   } else {
     showToast(`❌ ${t('chat_regen_err_internal')}`);

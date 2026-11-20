@@ -4,7 +4,7 @@
       <div class="logo">
         <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}" alt="Logo" style="height: 32px;">
         <div class="logo-text">Hecos</div>
-        <span class="badge-pill" style="opacity:0.8;">v{{ version }}</span>
+        <span class="badge-pill" style="opacity:0.8;">v{{ core_version or version.split('_')[0] }}</span>
       </div>
 
       <!-- ONLINE STATUS -->
@@ -32,6 +32,9 @@
       <a id="hdr-nav-chat" href="/chat" target="_blank" class="btn btn-sm btn-secondary" style="text-decoration:none;"><i class="fas fa-comment-dots"></i> {{ t("webui_nav_chat") }}</a>
       {% if current_user.is_authenticated %}
       <a id="hdr-nav-room" href="/home" target="_blank" class="btn btn-sm btn-secondary desktop-only" style="text-decoration:none;" title="Control Room"><i class="fas fa-th-large"></i> Room</a>
+      {% if is_hpm_installed('coder') %}
+      <a id="hdr-nav-workspace" href="/workspace" target="_blank" class="btn btn-sm btn-secondary" style="text-decoration:none;" title="Hecos Coder — Workspace Runner"><i class="fas fa-terminal"></i> Workspace</a>
+      {% endif %}
       {% if is_hpm_installed('drive') %}
       <a id="hdr-nav-drive" href="/drive" target="_blank" class="btn btn-sm btn-secondary" style="text-decoration:none;"><i class="fas fa-hdd"></i> Drive</a>
       {% endif %}

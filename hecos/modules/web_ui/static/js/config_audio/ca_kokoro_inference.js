@@ -3,11 +3,18 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Frontend module for Kokoro Inference Parameters, Voice Blending (StyleTTS 2),
  * and Inference Presets management.
+ * Follows Hecos architectural standards with full preset lifecycle:
+ * New, Update (with default overwrite protection), Rename, Reset, Delete.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 (function () {
     'use strict';
+
+    const BUILTIN_KOKORO_INFERENCE_KEYS = [
+        "Standard & Balanced", "Fast & Direct", "Slow & Articulated",
+        "Hyper-Speed Assistant", "Dynamic Prosody"
+    ];
 
     function _getAudioConfig() {
         const cfg = (window.audioConfig && typeof window.audioConfig === 'object')
@@ -18,6 +25,12 @@
             try { audioConfig = cfg; } catch (_) {}
         }
         return cfg;
+    }
+
+    function _getInferencePresets() {
+        const cfg = _getAudioConfig();
+        if (!cfg.kokoro_inference_presets) cfg.kokoro_inference_presets = {};
+        return cfg.kokoro_inference_presets;
     }
 
     // ── Quick Speed Preset Setter ─────────────────────────────────────────────
@@ -95,14 +108,15 @@
 
     // ── Save Current Parameters as New Inference Preset ───────────────────────
     window.saveKokoroInferencePreset = function () {
+        const presets = _getInferencePresets();
+        const defName = window.getNextCustomPresetName ? window.getNextCustomPresetName(presets, 'custom') : 'custom_1';
         const promptFn = window.hecosPrompt || prompt;
-        promptFn("Kokoro Inference Preset Name (e.g. 'Fast & Direct', 'Expressive Dynamic'):", function (name) {
+
+        promptFn("Kokoro Inference Preset Name:", function (name) {
             if (!name || !name.trim()) return;
             name = name.trim();
-            const cfg = _getAudioConfig();
-            if (!cfg.kokoro_inference_presets) cfg.kokoro_inference_presets = {};
 
-            cfg.kokoro_inference_presets[name] = {
+            presets[name] = {
                 speed: parseFloat(document.getElementById('v-kokoro-speed')?.value || 1.0),
                 sentence_silence: parseFloat(document.getElementById('v-kokoro-silence')?.value || 0.0),
                 lang_code: document.getElementById('v-kokoro-lang')?.value || 'auto',
@@ -112,6 +126,10 @@
                 volume: parseFloat(document.getElementById('v-kokoro-volume')?.value || 1.0),
                 normalize: document.getElementById('v-kokoro-normalize')?.checked ?? true
             };
+
+            const cfg = _getAudioConfig();
+            if (!cfg.kokoro) cfg.kokoro = {};
+            cfg.kokoro.current_inference_preset = name;
 
             const sel = document.getElementById('v-kokoro-inference-preset');
             if (sel) {
@@ -133,7 +151,7 @@
                     if (window.showToast) window.showToast(`Inference Preset '${name}' saved!`, 'success');
                 });
             }
-        });
+        }, defName);
     };
 
     // ── Update Currently Selected Inference Preset ───────────────────────────
@@ -146,10 +164,43 @@
             return;
         }
 
-        const cfg = _getAudioConfig();
-        if (!cfg.kokoro_inference_presets) cfg.kokoro_inference_presets = {};
+        const presets = _getInferencePresets();
+        const isDefault = window.isDefaultPresetName ? window.isDefaultPresetName(name, BUILTIN_KOKORO_INFERENCE_KEYS) : BUILTIN_KOKORO_INFERENCE_KEYS.includes(name);
 
-        cfg.kokoro_inference_presets[name] = {
+        if (isDefault) {
+            const defName = window.getNextCustomPresetName ? window.getNextCustomPresetName(presets, 'custom') : 'custom_1';
+            const promptFn = window.hecosPrompt || prompt;
+            promptFn(`The default preset '${name}' cannot be overwritten.\nEnter a name to save as a new custom preset:`, function (customName) {
+                if (!customName || !customName.trim()) return;
+                customName = customName.trim();
+
+                presets[customName] = {
+                    speed: parseFloat(document.getElementById('v-kokoro-speed')?.value || 1.0),
+                    sentence_silence: parseFloat(document.getElementById('v-kokoro-silence')?.value || 0.0),
+                    lang_code: document.getElementById('v-kokoro-lang')?.value || 'auto',
+                    blend_voice: document.getElementById('v-kokoro-blend-voice')?.value || '',
+                    alpha: parseFloat(document.getElementById('v-kokoro-alpha')?.value || 1.0),
+                    beta: parseFloat(document.getElementById('v-kokoro-beta')?.value || 1.0),
+                    volume: parseFloat(document.getElementById('v-kokoro-volume')?.value || 1.0),
+                    normalize: document.getElementById('v-kokoro-normalize')?.checked ?? true
+                };
+
+                const cfg = _getAudioConfig();
+                if (!cfg.kokoro) cfg.kokoro = {};
+                cfg.kokoro.current_inference_preset = customName;
+
+                if (typeof window.saveAudioConfig === 'function') {
+                    window.saveAudioConfig().then(() => {
+                        if (typeof window.populateAudioUI === 'function') window.populateAudioUI();
+                        if (sel) sel.value = customName;
+                        if (window.showToast) window.showToast(`Saved as new custom preset '${customName}'!`, 'success');
+                    });
+                }
+            }, defName);
+            return;
+        }
+
+        presets[name] = {
             speed: parseFloat(document.getElementById('v-kokoro-speed')?.value || 1.0),
             sentence_silence: parseFloat(document.getElementById('v-kokoro-silence')?.value || 0.0),
             lang_code: document.getElementById('v-kokoro-lang')?.value || 'auto',
@@ -160,10 +211,109 @@
             normalize: document.getElementById('v-kokoro-normalize')?.checked ?? true
         };
 
+        const cfg = _getAudioConfig();
+        if (!cfg.kokoro) cfg.kokoro = {};
+        cfg.kokoro.current_inference_preset = name;
+
         if (typeof window.saveAudioConfig === 'function') {
             window.saveAudioConfig().then(() => {
                 if (window.showToast) window.showToast(`Inference Preset '${name}' updated!`, 'success');
             });
+        }
+    };
+
+    // ── Rename Selected Inference Preset ─────────────────────────────────────
+    window.renameKokoroInferencePreset = function () {
+        const sel = document.getElementById('v-kokoro-inference-preset');
+        const oldName = sel ? sel.value : '';
+        if (!oldName) {
+            if (window.showToast) window.showToast('No preset selected.', 'error');
+            return;
+        }
+
+        const isDefault = window.isDefaultPresetName ? window.isDefaultPresetName(oldName, BUILTIN_KOKORO_INFERENCE_KEYS) : BUILTIN_KOKORO_INFERENCE_KEYS.includes(oldName);
+        if (isDefault) {
+            if (window.showToast) window.showToast("Cannot rename a built-in default preset. Create a New preset first.", "warning");
+            else alert("Cannot rename a built-in default preset. Create a New preset first.");
+            return;
+        }
+
+        const presets = _getInferencePresets();
+        const promptFn = window.hecosPrompt || prompt;
+
+        promptFn(`Rename Kokoro Inference Preset '${oldName}' to:`, function (newName) {
+            if (!newName || !newName.trim() || newName.trim() === oldName) return;
+            newName = newName.trim();
+            if (presets[newName] && newName !== oldName) {
+                if (window.showToast) window.showToast(`A preset named '${newName}' already exists.`, "error");
+                else alert(`A preset named '${newName}' already exists.`);
+                return;
+            }
+
+            presets[newName] = presets[oldName];
+            delete presets[oldName];
+
+            const cfg = _getAudioConfig();
+            if (cfg.kokoro && cfg.kokoro.current_inference_preset === oldName) {
+                cfg.kokoro.current_inference_preset = newName;
+            }
+            // Update reference in configuration presets if present
+            if (cfg.kokoro_presets) {
+                for (const k in cfg.kokoro_presets) {
+                    if (cfg.kokoro_presets[k].inference_preset === oldName) {
+                        cfg.kokoro_presets[k].inference_preset = newName;
+                    }
+                }
+            }
+
+            if (typeof window.saveAudioConfig === 'function') {
+                window.saveAudioConfig().then(() => {
+                    if (typeof window.populateAudioUI === 'function') window.populateAudioUI();
+                    if (sel) sel.value = newName;
+                    if (window.showToast) window.showToast(`Preset renamed to '${newName}'!`, 'success');
+                });
+            }
+        }, oldName);
+    };
+
+    // ── Reset Inference Parameters to Defaults ──────────────────────────────
+    window.resetKokoroInferencePreset = function () {
+        const sel = document.getElementById('v-kokoro-inference-preset');
+        const name = sel ? sel.value : '';
+        const presets = _getInferencePresets();
+
+        const setValAndRange = (id, val) => {
+            if (val === undefined || isNaN(val)) return;
+            const input = document.getElementById(id);
+            const range = document.getElementById(id + '-range');
+            if (input) input.value = val;
+            if (range) range.value = val;
+        };
+
+        if (name && presets[name]) {
+            const p = presets[name];
+            setValAndRange('v-kokoro-speed', p.speed ?? 1.0);
+            setValAndRange('v-kokoro-silence', p.sentence_silence ?? 0.0);
+            setValAndRange('v-kokoro-alpha', p.alpha ?? 1.0);
+            setValAndRange('v-kokoro-beta', p.beta ?? 1.0);
+            setValAndRange('v-kokoro-volume', p.volume ?? 1.0);
+            if (document.getElementById('v-kokoro-lang')) document.getElementById('v-kokoro-lang').value = p.lang_code || 'auto';
+            if (document.getElementById('v-kokoro-blend-voice')) document.getElementById('v-kokoro-blend-voice').value = p.blend_voice || '';
+            if (document.getElementById('v-kokoro-normalize')) document.getElementById('v-kokoro-normalize').checked = p.normalize ?? true;
+            window.onKokoroBlendVoiceChange();
+            if (window.showToast) window.showToast(`Inference parameters reloaded from '${name}'.`, 'info');
+        } else {
+            setValAndRange('v-kokoro-speed', 0.95);
+            setValAndRange('v-kokoro-silence', 0.15);
+            setValAndRange('v-kokoro-alpha', 1.0);
+            setValAndRange('v-kokoro-beta', 1.0);
+            setValAndRange('v-kokoro-volume', 1.0);
+            if (document.getElementById('v-kokoro-lang')) document.getElementById('v-kokoro-lang').value = 'auto';
+            if (document.getElementById('v-kokoro-blend-voice')) document.getElementById('v-kokoro-blend-voice').value = '';
+            if (document.getElementById('v-kokoro-normalize')) document.getElementById('v-kokoro-normalize').checked = true;
+            if (sel) sel.value = '';
+            window.onKokoroBlendVoiceChange();
+            if (window.showToast) window.showToast("Inference parameters reset to standard defaults.", "info");
         }
     };
 
@@ -177,6 +327,13 @@
             return;
         }
 
+        const isDefault = window.isDefaultPresetName ? window.isDefaultPresetName(name, BUILTIN_KOKORO_INFERENCE_KEYS) : BUILTIN_KOKORO_INFERENCE_KEYS.includes(name);
+        if (isDefault) {
+            if (window.showToast) window.showToast("Cannot delete a built-in default preset.", "error");
+            else alert("Cannot delete a built-in default preset.");
+            return;
+        }
+
         const confirmFn = window.hecosConfirm || confirm;
         confirmFn(`Do you want to delete the Inference Preset '${name}'?`, function () {
             const cfg = _getAudioConfig();
@@ -184,6 +341,9 @@
                 delete cfg.kokoro_inference_presets[name];
                 const s = document.getElementById('v-kokoro-inference-preset');
                 if (s) s.value = '';
+                if (cfg.kokoro && cfg.kokoro.current_inference_preset === name) {
+                    cfg.kokoro.current_inference_preset = '';
+                }
                 if (typeof window.saveAudioConfig === 'function') {
                     window.saveAudioConfig().then(() => {
                         if (typeof window.populateAudioUI === 'function') window.populateAudioUI();
@@ -203,42 +363,34 @@
 
         const p = cfg.kokoro_inference_presets[name];
 
-        // Speed
         if (p.speed !== undefined) {
             if (document.getElementById('v-kokoro-speed')) document.getElementById('v-kokoro-speed').value = p.speed;
             if (document.getElementById('v-kokoro-speed-range')) document.getElementById('v-kokoro-speed-range').value = p.speed;
         }
-        // Sentence Silence
         if (p.sentence_silence !== undefined) {
             if (document.getElementById('v-kokoro-silence')) document.getElementById('v-kokoro-silence').value = p.sentence_silence;
             if (document.getElementById('v-kokoro-silence-range')) document.getElementById('v-kokoro-silence-range').value = p.sentence_silence;
         }
-        // Language Code
         if (p.lang_code !== undefined && document.getElementById('v-kokoro-lang')) {
             document.getElementById('v-kokoro-lang').value = p.lang_code;
         }
-        // Blend Voice
         if (p.blend_voice !== undefined && document.getElementById('v-kokoro-blend-voice')) {
             document.getElementById('v-kokoro-blend-voice').value = p.blend_voice;
         }
-        // Alpha (Timbre)
         if (p.alpha !== undefined) {
             if (document.getElementById('v-kokoro-alpha')) document.getElementById('v-kokoro-alpha').value = p.alpha;
             if (document.getElementById('v-kokoro-alpha-range')) document.getElementById('v-kokoro-alpha-range').value = p.alpha;
             if (document.getElementById('kokoro-alpha-label')) document.getElementById('kokoro-alpha-label').textContent = parseFloat(p.alpha).toFixed(2);
         }
-        // Beta (Prosody)
         if (p.beta !== undefined) {
             if (document.getElementById('v-kokoro-beta')) document.getElementById('v-kokoro-beta').value = p.beta;
             if (document.getElementById('v-kokoro-beta-range')) document.getElementById('v-kokoro-beta-range').value = p.beta;
             if (document.getElementById('kokoro-beta-label')) document.getElementById('kokoro-beta-label').textContent = parseFloat(p.beta).toFixed(2);
         }
-        // Volume
         if (p.volume !== undefined) {
             if (document.getElementById('v-kokoro-volume')) document.getElementById('v-kokoro-volume').value = p.volume;
             if (document.getElementById('v-kokoro-volume-range')) document.getElementById('v-kokoro-volume-range').value = p.volume;
         }
-        // Normalize
         if (p.normalize !== undefined && document.getElementById('v-kokoro-normalize')) {
             document.getElementById('v-kokoro-normalize').checked = p.normalize;
         }

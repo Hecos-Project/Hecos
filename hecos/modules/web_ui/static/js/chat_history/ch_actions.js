@@ -6,7 +6,8 @@
  */
 
 window.newChatSession = async function (mode = null) {
-    const privMode = mode || 'normal';
+    const defaultMode = window.getDefaultPrivacyMode ? window.getDefaultPrivacyMode() : 'normal';
+    const privMode = window.normalizePrivacyMode ? window.normalizePrivacyMode(mode || defaultMode) : (mode || defaultMode);
     const res = await window._historyPost('/api/chat/sessions', { privacy_mode: privMode });
     
     if (!res.ok) {
@@ -20,9 +21,6 @@ window.newChatSession = async function (mode = null) {
     localStorage.setItem('hecos_active_session_id', res.session_id);
 
     window.chatHistoryState.isUIRendered = true;
-
-    // Reset topbar dropdowns (persona, model, tts) to defaults
-    if (window.resetSessionDropdowns) window.resetSessionDropdowns();
 
     // Reset Soul Forge / overrides panel (topbar quick preset, sidebar panel, etc.)
     if (window.soLoadActiveSessionState) await window.soLoadActiveSessionState();
@@ -41,6 +39,15 @@ window.newChatSession = async function (mode = null) {
     }
 
     await window.loadChatSessions();
+    if (window.HecosChatStatus && typeof window.HecosChatStatus.syncActiveViewControls === 'function') {
+        window.HecosChatStatus.syncActiveViewControls();
+    }
+    if (window.ActionPlanChat && typeof window.ActionPlanChat.clear === 'function') {
+        window.ActionPlanChat.clear();
+    }
+    if (window.HecosChatSearch && typeof window.HecosChatSearch.clearHighlights === 'function') {
+        window.HecosChatSearch.clearHighlights();
+    }
 };
 
 
@@ -54,7 +61,8 @@ window.activateChatSession = async function (sessionId) {
     }
 
     const session = window.chatHistoryState.sessions.find(s => s.id === sessionId);
-    const mode    = session?.privacy_mode || 'normal';
+    const rawMode = session?.privacy_mode || 'normal';
+    const mode    = window.normalizePrivacyMode ? window.normalizePrivacyMode(rawMode) : rawMode;
 
     await window._historyPost('/api/chat/sessions/active', { session_id: sessionId, privacy_mode: mode });
 
@@ -76,6 +84,15 @@ window.activateChatSession = async function (sessionId) {
 
     if (window.renderHistoryMessages) window.renderHistoryMessages(res.messages || []);
     if (window.loadChatSessions) await window.loadChatSessions();
+    if (window.HecosChatStatus && typeof window.HecosChatStatus.syncActiveViewControls === 'function') {
+        window.HecosChatStatus.syncActiveViewControls();
+    }
+    if (window.AgentResume && typeof window.AgentResume.refreshBanner === 'function') {
+        window.AgentResume.refreshBanner(sessionId);
+    }
+    if (window.ActionPlanChat && typeof window.ActionPlanChat.refreshForSession === 'function') {
+        window.ActionPlanChat.refreshForSession(sessionId);
+    }
 
     const overlay = document.getElementById('mobile-overlay');
     if (overlay && overlay.classList.contains('active')) {
@@ -147,6 +164,15 @@ window.toggleShowArchived = async function() {
     }
     
     await window.loadChatSessions();
+    if (window.HecosChatStatus && typeof window.HecosChatStatus.syncActiveViewControls === 'function') {
+        window.HecosChatStatus.syncActiveViewControls();
+    }
+    if (window.ActionPlanChat && typeof window.ActionPlanChat.clear === 'function') {
+        window.ActionPlanChat.clear();
+    }
+    if (window.HecosChatSearch && typeof window.HecosChatSearch.clearHighlights === 'function') {
+        window.HecosChatSearch.clearHighlights();
+    }
 };
 
 window.deleteChatSession = async function (e, sessionId) {
