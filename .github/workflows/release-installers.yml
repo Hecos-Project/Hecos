@@ -1,0 +1,49 @@
+name: Attach Unified Installers to Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to attach installers to (leave empty for latest release)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  attach-installers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify line endings and permissions
+        run: |
+          chmod +x INSTALL_HECOS_LINUX.sh
+          file INSTALL_HECOS_WINDOWS.bat INSTALL_HECOS_LINUX.sh
+
+      - name: Package ZIP archives
+        run: |
+          zip -9 INSTALL_HECOS_WINDOWS.zip INSTALL_HECOS_WINDOWS.bat
+          zip -9 INSTALL_HECOS_LINUX.zip INSTALL_HECOS_LINUX.sh
+          ls -lh INSTALL_HECOS_WINDOWS.zip INSTALL_HECOS_LINUX.zip INSTALL_HECOS_LINUX.sh
+
+      - name: Upload installer assets to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          TARGET_TAG="${RELEASE_TAG:-$INPUT_TAG}"
+          if [ -z "$TARGET_TAG" ]; then
+            TARGET_TAG="$(gh release view --json tagName -q .tagName)"
+          fi
+          echo "Uploading installer assets to release: $TARGET_TAG"
+          gh release upload "$TARGET_TAG" \
+            INSTALL_HECOS_WINDOWS.zip \
+            INSTALL_HECOS_LINUX.zip \
+            INSTALL_HECOS_LINUX.sh \
+            --clobber
