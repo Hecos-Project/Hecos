@@ -3,11 +3,25 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
-# Hecos - Version 0.55.0 (Phase II: Ghost Fire)
+# Hecos - Version 0.55.2 (Phase II: Ghost Fire)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
 **Helping Companion System (Private, Fast, Simple)**
+
+<p align="center">
+  <a href="https://github.com/Hecos-Project/Hecos/releases/latest/download/INSTALL_HECOS_WINDOWS.zip">
+    <img src="https://img.shields.io/badge/Download_Installer-Windows_(ZIP)-00e5ff?style=for-the-badge&logo=windows&logoColor=080a12" alt="Download Hecos Installer for Windows">
+  </a>
+  &nbsp;
+  <a href="https://github.com/Hecos-Project/Hecos/releases/latest/download/INSTALL_HECOS_LINUX.zip">
+    <img src="https://img.shields.io/badge/Download_Installer-Linux_%2F_macOS_(ZIP)-5b7dff?style=for-the-badge&logo=linux&logoColor=white" alt="Download Hecos Installer for Linux and macOS">
+  </a>
+  &nbsp;
+  <a href="https://github.com/Hecos-Project/Hecos/wiki/00_introduction_en">
+    <img src="https://img.shields.io/badge/Documentation-Wiki-181c2e?style=for-the-badge&logo=bookstack&logoColor=white" alt="Hecos Wiki">
+  </a>
+</p>
 
 ---
 
@@ -16,7 +30,7 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
-> **Status: Phase II (Ghost Fire)**: Hecos is currently in `v0.55.0`. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution.
+> **Status: Phase II (Ghost Fire)**: Hecos is currently in `v0.55.2`. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution.
 >
 > ⚠️ **Important Notice**: Starting from this major release (0.50.0+), the primary development and target environment is officially **Windows 11**.
 
@@ -29,11 +43,12 @@ Built on our core pillars:
 * ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness.
 * 🧊 **Total Simplicity** — Professional dashboard and a modular design that makes advanced orchestration intuitive.
 
-Now fully migrated to a **Phase II: Ghost Fire stable architecture**, Hecos 0.55.0 brings a dedicated Web Interface (Chat + Config) and full internationalization. Powered by **LiteLLM**, it supports Ollama, Llama.cpp, KoboldCpp, and major cloud providers with real-time streaming and local TTS (Kokoro, Piper, Fish Speech, and XTTS).
+Now fully migrated to a **Phase II: Ghost Fire stable architecture**, Hecos 0.55.2 brings a dedicated Web Interface (Chat + Config), a **Unified 5-Step Graphical Installer** (Core + Tray, zero Python prerequisites), and full internationalization. Powered by **LiteLLM**, it supports Ollama, Llama.cpp, KoboldCpp, and major cloud providers with real-time streaming and local TTS (Kokoro, Piper, Fish Speech, and XTTS).
 
 ---
 
-## ✨ Key Features (v0.55.0)
+## ✨ Key Features (v0.55.2)
+* 🚀 **Unified Graphical Installer & Resilient Setup** — Official 5-step desktop Setup Wizard (`INSTALL_HECOS_WINDOWS.bat` / `INSTALL_HECOS_LINUX.sh`) that auto-provisions an isolated Portable Python 3.11 runtime (SHA256-verified, with `tkinter`), installs tested versions from `constraints.txt`, supports custom folders via shared `install.toml`, and includes built-in **System Diagnostics (`Doctor`)** and **Quick Repair**.
 * 🎙️ **Voice Forge Studio** — Advanced vocal synthesis and sculpting studio featuring real-time acoustic analysis (Formants, Radar vocal profile, Spectrogram) and multi-preset voice blending.
 * 🐟 **Fish Speech SOTA Zero-Shot TTS** — Cutting-edge neural speech synthesis with instant voice cloning running locally via dedicated daemon and server.
 * 🧬 **Kokoro Voice Cloning & Voice Manager** — Custom voice cloning integration for Kokoro TTS with a dedicated clone manager UI and live inference preview.
@@ -132,42 +147,52 @@ The **Multimodal Action Plans** subsystem bridges **structured planning** and **
 
 ---
 
-## ⚡ Quick Start (One-Click Installation)
-The easiest way to install and configure Hecos from scratch is using the **Universal Setup Wizard**.
+## ⚡ Quick Start (Official Unified Installation)
 
-### 1. Clone the repository
+### 1. Recommended — Official Graphical Installer (1-Click, No Python Needed)
+
+<p align="center">
+  <a href="https://github.com/Hecos-Project/Hecos/releases/latest/download/INSTALL_HECOS_WINDOWS.zip">
+    <img src="https://img.shields.io/badge/Download_Installer-Windows_(ZIP)-00e5ff?style=for-the-badge&logo=windows&logoColor=080a12" alt="Download Windows Installer">
+  </a>
+  &nbsp;
+  <a href="https://github.com/Hecos-Project/Hecos/releases/latest/download/INSTALL_HECOS_LINUX.zip">
+    <img src="https://img.shields.io/badge/Download_Installer-Linux_%2F_macOS_(ZIP)-5b7dff?style=for-the-badge&logo=linux&logoColor=white" alt="Download Linux/macOS Installer">
+  </a>
+</p>
+
+You do **not** need Python installed beforehand. Download the ZIP archive for your OS, extract it, and run the installer:
+
+* **Windows:** double-click **`INSTALL_HECOS_WINDOWS.bat`** *(if Windows SmartScreen shows a notice, click **More info → Run anyway**)*.
+* **Linux / macOS:** run **`bash INSTALL_HECOS_LINUX.sh`** — or directly from terminal:
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/Hecos-Project/Hecos/main/INSTALL_HECOS_LINUX.sh | bash
+  ```
+
+The **5-step graphical wizard** lets you choose **Hecos Complete (Core + Tray — Recommended)**, **Core Only**, or **Tray Only**, pick **any drive or folder** (avoiding spaces/accents/special characters), monitor live progress, run automatic **Doctor** verification, and launch Hecos immediately.
+
+### 2. Developers / Manual Clone
 ```bash
-git clone [https://github.com/Hecos-Project/Hecos.git](https://github.com/Hecos-Project/Hecos.git)
+git clone https://github.com/Hecos-Project/Hecos.git
 cd Hecos
 ```
+Then run **`INSTALL_HECOS_WINDOWS.bat`** / **`bash INSTALL_HECOS_LINUX.sh`** (for the graphical wizard) or **`scripts\windows\setup\HECOS_SETUP_WIZARD.bat`** / **`bash scripts/linux/setup/HECOS_SETUP_WIZARD.sh`** (for the CLI wizard, `--unattended`, or `--doctor`).
 
-### 2. Launch the Setup Wizard
-Run the bootstrap script for your platform. This will automatically check for Python, install dependencies, and launch the configuration wizard in your browser.
-
-**Windows:**
-```powershell
-.\START_SETUP_HERE_WIN.bat
-```
-
-**Linux:**
-```bash
-bash START_SETUP_HERE_LINUX.sh
-```
-
-### 3. Manual Components & Utility Scripts
-If you prefer to run specific components or perform maintenance manually, use these dedicated scripts:
+### 3. Launchers, CLI Setup & Utility Scripts
 
 | Platform | Script | Description |
 | :--- | :--- | :--- |
-| **All** | `main.py` | Starts the full system (Tray + WebUI + Backend) |
-| **Windows** | `RESTART_TRAY_ICON_WIN.bat` | Restore the tray icon if accidentally closed |
-| **Linux** | `RESTART_TRAY_ICON_LINUX.sh` | Restore the tray icon if accidentally closed |
-| **Windows** | `scripts\windows\run\HECOS_WEB_RUN_WIN.bat` | Launches ONLY the Web Interface & Server |
-| **Linux** | `scripts/linux/run/hecos_web_run.sh` | Launches ONLY the Web Interface & Server |
-| **Windows** | `scripts\windows\run\HECOS_CONSOLE_RUN_WIN.bat` | Launches ONLY the Terminal Console (TUI) |
-| **Linux** | `scripts/linux/run/HECOS_CONSOLE_RUN.sh` | Launches ONLY the Terminal Console (TUI) |
-| **Windows** | `scripts\windows\setup\INSTALL_HECOS_WIN.bat` | Manual dependency install & Piper setup |
-| **Linux** | `scripts/linux/setup/INSTALL_HECOS_LINUX.sh` | Manual dependency install & Piper setup |
+| **Windows** | `INSTALL_HECOS_WINDOWS.bat` | **Official Unified Graphical Installer** (Core + Tray, 5-step window) |
+| **Linux / macOS** | `INSTALL_HECOS_LINUX.sh` | **Official Unified Graphical Installer** (supports `--cli`, `--unattended`, headless fallback) |
+| **Windows** | `HECOS GLOBAL LAUNCHER.bat` | Terminal menu: Setup, WebUI, Console, Coding Studio CLI & **Doctor** |
+| **Linux / macOS** | `HECOS GLOBAL LAUNCHER.sh` | Terminal menu: Setup, WebUI, Console & **Doctor** |
+| **Windows** | `scripts\windows\setup\HECOS_SETUP_WIZARD.bat` | CLI Setup & Repair (`--unattended`, `--doctor`, `--gui`) |
+| **Linux / macOS** | `scripts/linux/setup/HECOS_SETUP_WIZARD.sh` | CLI Setup & Repair (`--unattended`, `--doctor`, `--gui`) |
+| **Windows** | `HECOS_WEBUI_RUN_WIN.bat` | Launches ONLY the Web Interface & Watchdog |
+| **Linux / macOS** | `HECOS_WEBUI_RUN_LINUX.sh` | Launches ONLY the Web Interface & Watchdog |
+| **Windows** | `scripts\windows\run\HECOS_CONSOLE_RUN_WIN.bat` | Launches ONLY the Terminal Console |
+| **Linux / macOS** | `scripts/linux/run/HECOS_CONSOLE_RUN.sh` | Launches ONLY the Terminal Console |
+| **Tray Repo** | `START_HECOS_TRAY_WIN.bat` / `START_HECOS_TRAY_LINUX.sh` | Launches Hecos Tray & Dashboard (detached) |
 
 ### 4. Configuration & First Run
 Hecos is designed for a professional "download-and-play" experience.
