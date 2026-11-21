@@ -261,7 +261,9 @@ class LlamaCppServerManager:
         logger.info(f"[LlamaCPP] Starting server: {cmd[0]} --model {model_path} ...")
 
         try:
-            log_file = open("C:\\Hecos\\hecos\\logs\\llama_server.log", "w")
+            log_dir = os.path.join(_HECOS_ROOT, "hecos", "logs")
+            os.makedirs(log_dir, exist_ok=True)
+            log_file = open(os.path.join(log_dir, "llama_server.log"), "w", encoding="utf-8")
             self.process = subprocess.Popen(
                 cmd,
                 stdout=log_file,

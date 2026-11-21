@@ -1,44 +1,80 @@
 @echo off
-echo ==================================================
-echo   HECOS CORE - ENABLE TRAY AUTOSTART
-echo ==================================================
+setlocal enabledelayedexpansion
+
+for /f %%A in ('echo prompt $E^| cmd') do set "ESC=%%A"
+set "C_CYAN=%ESC%[96m"
+set "C_MAG=%ESC%[95m"
+set "C_GREEN=%ESC%[92m"
+set "C_RED=%ESC%[91m"
+set "C_RST=%ESC%[0m"
+
+echo %C_CYAN%==================================================%C_RST%
+echo   %C_MAG%HECOS CORE - ENABLE TRAY AUTOSTART%C_RST%
+echo %C_CYAN%==================================================%C_RST%
 echo.
 
-:: Determine paths
-set SCRIPT_DIR=%~dp0
-cd /d "%SCRIPT_DIR%\..\..\.."
-set HECOS_ROOT=%CD%
+rem --- Determine Hecos Core root ---
+pushd "%~dp0..\..\.."
+set "HECOS_ROOT=!CD!"
+popd
 
-:: Smart Tray detection: exact match first, then search root
-set TRAY_RUNNER=%HECOS_ROOT%\..\Hecos-Tray\START_HECOS_TRAY_WIN.bat
-if not exist "%TRAY_RUNNER%" (
-    if exist "C:\Hecos-Tray\START_HECOS_TRAY_WIN.bat" (
-        set TRAY_RUNNER=C:\Hecos-Tray\START_HECOS_TRAY_WIN.bat
+rem --- Smart Tray detection: env -> install.toml -> sibling -> C:\Hecos-Tray ---
+set "TRAY_DIR="
+if not "%HECOS_TRAY_DIR%"=="" (
+    if exist "%HECOS_TRAY_DIR%\START_HECOS_TRAY_WIN.bat" set "TRAY_DIR=%HECOS_TRAY_DIR%"
+)
+if "!TRAY_DIR!"=="" (
+    set "REG_FILE=%LOCALAPPDATA%\Hecos\install.toml"
+    if exist "!REG_FILE!" (
+        for /f "usebackq tokens=1,* delims==" %%K in ("!REG_FILE!") do (
+            set "RK=%%~K"
+            set "RV=%%~L"
+            set "RK=!RK: =!"
+            if /i "!RK!"=="tray_path" (
+                set "RV=!RV:'=!"
+                if "!RV:~0,1!"==" " set "RV=!RV:~1!"
+                if exist "!RV!\START_HECOS_TRAY_WIN.bat" set "TRAY_DIR=!RV!"
+            )
+        )
     )
 )
+if "!TRAY_DIR!"=="" (
+    for %%P in ("!HECOS_ROOT!\..") do (
+        set "HECOS_PARENT=%%~fP"
+        if "!HECOS_PARENT:~-1!"=="\" set "HECOS_PARENT=!HECOS_PARENT:~0,-1!"
+        if exist "!HECOS_PARENT!\Hecos-Tray\START_HECOS_TRAY_WIN.bat" set "TRAY_DIR=!HECOS_PARENT!\Hecos-Tray"
+    )
+)
+if "!TRAY_DIR!"=="" (
+    if exist "C:\Hecos-Tray\START_HECOS_TRAY_WIN.bat" set "TRAY_DIR=C:\Hecos-Tray"
+)
 
-:: Normalize to full absolute path
-for %%F in ("%TRAY_RUNNER%") do set "TRAY_RUNNER=%%~fF"
-for %%F in ("%TRAY_RUNNER%\..") do set "TRAY_DIR=%%~fF"
-
-if not exist "%TRAY_RUNNER%" (
-    echo [!] ERROR: Could not find START_HECOS_TRAY_WIN.bat at:
-    echo     %TRAY_RUNNER%
-    if "%~1" neq "--silent" pause
+if "!TRAY_DIR!"=="" (
+    echo %C_RED%[FAIL]%C_RST% Could not find Hecos-Tray ^(START_HECOS_TRAY_WIN.bat^).
+    if /i not "%~1"=="--silent" pause
     exit /b 1
 )
 
-echo [*] Cleaning legacy Windows registry autostart entries...
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "HecosTray" /f 2>nul
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "ZentraTray" /f 2>nul
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "ZentraCore" /f 2>nul
+set "TRAY_RUNNER=!TRAY_DIR!\START_HECOS_TRAY_WIN.bat"
 
-echo [*] Registering Hecos Tray in Windows Startup folder...
-powershell -NoProfile -NonInteractive -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut(\"$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\HecosTray.lnk\"); $s.TargetPath = '%TRAY_RUNNER%'; $s.Arguments = '--silent'; $s.WorkingDirectory = '%TRAY_DIR%'; $s.WindowStyle = 7; if (Test-Path '%TRAY_DIR%\assets\Hecos_Logo_SQR_NBG_LogoOnly.ico') { $s.IconLocation = '%TRAY_DIR%\assets\Hecos_Logo_SQR_NBG_LogoOnly.ico,0' }; $s.Description = 'Hecos System Tray'; $s.Save()"
+echo %C_CYAN%[ .. ]%C_RST% Cleaning legacy Windows registry autostart entries...
+reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "HecosTray" /f >nul 2>&1
+reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "ZentraTray" /f >nul 2>&1
+reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "ZentraCore" /f >nul 2>&1
+
+echo %C_CYAN%[ .. ]%C_RST% Registering Hecos Tray in Windows Startup folder...
+echo        Target: !TRAY_RUNNER!
+set "PS_TRAY_RUNNER=!TRAY_RUNNER!"
+set "PS_TRAY_DIR=!TRAY_DIR!"
+powershell -NoProfile -NonInteractive -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut(\"$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\HecosTray.lnk\"); $s.TargetPath = $env:PS_TRAY_RUNNER; $s.Arguments = '--silent'; $s.WorkingDirectory = $env:PS_TRAY_DIR; $s.WindowStyle = 7; $ico = Join-Path $env:PS_TRAY_DIR 'assets\Hecos_Logo_SQR_NBG_LogoOnly.ico'; if (Test-Path $ico) { $s.IconLocation = \"$ico,0\" }; $s.Description = 'Hecos System Tray'; $s.Save()"
+if !ERRORLEVEL! NEQ 0 (
+    echo %C_RED%[FAIL]%C_RST% Failed to create Windows Startup shortcut.
+    if /i not "%~1"=="--silent" pause
+    exit /b 1
+)
 
 echo.
-echo [+] Done! The Hecos Tray Icon will now launch automatically
-echo     every time you log into Windows (Windows 10 / 11 compatible).
+echo %C_GREEN%[ OK ]%C_RST% Hecos Tray will now launch automatically at Windows login.
 echo.
-if "%~1" neq "--silent" pause
-
+if /i not "%~1"=="--silent" pause
+exit /b 0

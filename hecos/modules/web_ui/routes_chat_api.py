@@ -127,10 +127,12 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         if sm and user_msg and hasattr(sm, 'record_chat_message'):
             sm.record_chat_message(user_msg)
 
-        # Save to input history
+        # Save to input history (optional module)
         try:
             from hecos.modules.input_history import history_mgr
             history_mgr.push(user_msg, user=uid)
+        except ImportError:
+            pass
         except Exception as e:
             _chat_log.warning(f"[Chat] Failed to push input history: {e}")
 
@@ -177,6 +179,8 @@ def init_chat_api_routes(app, cfg_mgr, logger):
 
                 if delivered:
                     return jsonify({"ok": True, "intercepted": True, "session_id": None})
+        except ImportError:
+            pass
         except Exception as _ie:
             _chat_log.warning(f"[Chat] Flow intercept check failed: {_ie}")
         # ── End flow intercept ────────────────────────────────────────────────
