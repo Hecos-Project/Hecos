@@ -1,2 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Windows batch scripts require CRLF for cmd.exe labels and goto to work reliably
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Shell scripts require LF for Linux/macOS bash
+*.sh text eol=lf

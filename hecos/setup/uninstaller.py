@@ -2,7 +2,7 @@ import os
 import sys
 import subprocess
 import re
-from .utils import CWD
+from .utils import CWD, parse_pyproject_dependencies
 from .i18n import T
 
 class GlobalUninstaller:
@@ -10,30 +10,12 @@ class GlobalUninstaller:
         self.toml_path = os.path.join(CWD, "pyproject.toml")
 
     def parse_core_dependencies(self):
-        """Parse pyproject.toml to extract all dependencies for uninstallation."""
-        packages = []
-        if os.path.exists(self.toml_path):
-            try:
-                with open(self.toml_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-                deps_match = re.search(r'dependencies\s*=\s*\[(.*?)\]', content, re.DOTALL)
-                if deps_match:
-                    packages.extend(re.findall(r'"([^"]+)"', deps_match.group(1)))
-                
-                service_match = re.search(r'service\s*=\s*\[(.*?)\]', content, re.DOTALL)
-                if service_match:
-                    packages.extend(re.findall(r'"([^"]+)"', service_match.group(1)))
-            except Exception as e:
-                print(f"[-] Warning: Failed to parse pyproject.toml for uninstall: {e}")
-
-        # Clean constraints (e.g. "pydantic>=2.0" -> "pydantic")
-        cleaned_packages = []
-        for pkg in packages:
-            pkg_name = re.split(r'[;>=<~]', pkg)[0].strip()
-            if pkg_name:
-                cleaned_packages.append(pkg_name)
-                
-        return cleaned_packages
+        """Parse pyproject.toml via tomllib to extract all dependencies for uninstallation."""
+        return parse_pyproject_dependencies(
+            self.toml_path,
+            extras=("service",),
+            strip_specifiers=True,
+        )
 
     def remove_autostart(self):
         """Remove Hecos Tray from system autostart."""

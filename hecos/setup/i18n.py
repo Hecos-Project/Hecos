@@ -2,8 +2,6 @@ import os
 import sys
 import re
 
-import sys
-
 UI_LANG = "en"
 SPLASH_DONE = False
 
@@ -19,8 +17,8 @@ T_DATA = {
         "python_err": "[-] Error: Python 3.10+ is required. Found: {v}",
         "deps_check": "[*] Checking essential dependencies (pydantic, yaml)...",
         "deps_ok": "[+] Essential dependencies found.",
-        "deps_err": "[-] Missing modules: {deps}. Please run: pip install -r requirements.txt",
-        "install_deps": "[*] Installing dependencies from requirements.txt...",
+        "deps_err": "[-] Missing modules: {deps}. Please re-run the Hecos Setup Wizard.",
+        "install_deps": "[*] Installing dependencies from pyproject.toml...",
         "piper_check": "[*] Checking Piper configuration in audio.yaml...",
         "piper_ok": "[+] Piper is already configured correctly.",
         "piper_fixed": "[+] audio.yaml successfully updated with new paths.",
@@ -83,8 +81,8 @@ T_DATA = {
         "python_err": "[-] Errore: È richiesto Python 3.10+. Trovato: {v}",
         "deps_check": "[*] Controllo dipendenze essenziali (pydantic, yaml)...",
         "deps_ok": "[+] Dipendenze essenziali trovate.",
-        "deps_err": "[-] Moduli mancanti: {deps}. Esegui: pip install -r requirements.txt",
-        "install_deps": "[*] Installazione dipendenze da requirements.txt...",
+        "deps_err": "[-] Moduli mancanti: {deps}. Riesegui il Setup Wizard di Hecos.",
+        "install_deps": "[*] Installazione dipendenze da pyproject.toml...",
         "piper_check": "[*] Controllo configurazione Piper in audio.yaml...",
         "piper_ok": "[+] Piper è già configurato correttamente.",
         "piper_fixed": "[+] audio.yaml aggiornato con i nuovi percorsi.",
@@ -148,8 +146,8 @@ T_DATA = {
         "python_err": "[-] Error: Se requiere Python 3.10+. Encontrado: {v}",
         "deps_check": "[*] Comprobando dependencias esenciales (pydantic, yaml)...",
         "deps_ok": "[+] Dependencias esenciales encontradas.",
-        "deps_err": "[-] Faltan módulos: {deps}. Ejecuta: pip install -r requirements.txt",
-        "install_deps": "[*] Instalando dependencias de requirements.txt...",
+        "deps_err": "[-] Faltan módulos: {deps}. Vuelve a ejecutar el Asistente de Hecos.",
+        "install_deps": "[*] Instalando dependencias de pyproject.toml...",
         "piper_check": "[*] Comprobando configuración de Piper en audio.yaml...",
         "piper_ok": "[+] Piper ya está configurado correctamente.",
         "piper_fixed": "[+] audio.yaml actualizado con las nuevas rutas.",

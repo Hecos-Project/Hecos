@@ -10,13 +10,15 @@ import subprocess
 import importlib
 
 from .. import i18n
+from .. import utils as _setup_utils
 from ..i18n import T
+from ..install_registry import validate_install_path
 from ..utils import (
     CWD, SYSTEM_CONFIG_PATH, LOGO_PATH,
-    TRAY_DIR, TRAY_DIR_VERSIONED, TRAY_DIR_CANONICAL,
+    TRAY_DIR_CANONICAL,
 )
 from ..engine import fetch_piper_voices
-from .state import LAST_RESULTS, SETUP_LANGS
+from .state import LAST_RESULTS, SESSION_TOKEN, SETUP_LANGS
 from .styles import StyleMixin
 
 
@@ -36,49 +38,65 @@ class TemplateMixin(StyleMixin):
 
     def _render_tray_banner(self) -> str:
         """Returns an HTML banner if the Tray folder is missing or has a version suffix."""
-        if TRAY_DIR is None:
+        tray_dir = _setup_utils.TRAY_DIR
+        tray_versioned = _setup_utils.TRAY_DIR_VERSIONED
+        if tray_dir is None:
             return f"""
-            <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.35);
+            <div style="background:rgba(245,158,11,0.07); border:1px solid rgba(245,158,11,0.3);
                         border-radius:10px; padding:16px 20px; margin-bottom:24px; display:flex; gap:14px; align-items:flex-start;">
-                <span style="font-size:1.1rem; flex-shrink:0;">⚠️</span>
+                <span style="font-size:1.1rem; flex-shrink:0;">ℹ️</span>
                 <div>
-                    <div style="font-size:0.8rem; font-weight:700; color:#ef4444; margin-bottom:4px;">Hecos Tray not found</div>
+                    <div style="font-size:0.8rem; font-weight:700; color:#f59e0b; margin-bottom:4px;">Hecos Tray not detected (optional)</div>
                     <div style="font-size:0.77rem; color:#9ca3af; line-height:1.6;">
-                        The Hecos Tray folder was not found in <code style="color:#d1d5db;">C:\\</code>.<br>
-                        Make sure the folder is placed at: <code style="color:#d1d5db;">{TRAY_DIR_CANONICAL}</code>
+                        Core can run standalone via Global Launcher, or place Hecos Tray next to Core at:<br>
+                        <code style="color:#d1d5db;">{TRAY_DIR_CANONICAL}</code>
                     </div>
                 </div>
             </div>"""
-        if TRAY_DIR_VERSIONED:
+        if tray_versioned:
             return f"""
             <div style="background:rgba(245,158,11,0.07); border:1px solid rgba(245,158,11,0.3);
                         border-radius:10px; padding:16px 20px; margin-bottom:24px; display:flex; gap:14px; align-items:flex-start;">
                 <span style="font-size:1.1rem; flex-shrink:0;">📁</span>
                 <div>
-                    <div style="font-size:0.8rem; font-weight:700; color:#f59e0b; margin-bottom:4px;">Rename the Tray folder</div>
+                    <div style="font-size:0.8rem; font-weight:700; color:#f59e0b; margin-bottom:4px;">Tray folder has a version suffix</div>
                     <div style="font-size:0.77rem; color:#9ca3af; line-height:1.6;">
-                        Found: <code style="color:#d1d5db;">{TRAY_DIR}</code><br>
-                        Please rename it to: <code style="color:#d1d5db;">{TRAY_DIR_CANONICAL}</code><br>
-                        <span style="opacity:0.6;">The folder was downloaded from GitHub with a version suffix. Hecos requires the exact name <strong style="color:#d1d5db;">Hecos-Tray</strong>.</span>
+                        Found: <code style="color:#d1d5db;">{tray_dir}</code><br>
+                        Tip: renaming it to <code style="color:#d1d5db;">{TRAY_DIR_CANONICAL}</code> keeps future updates cleaner.
                     </div>
                 </div>
             </div>"""
         return ""  # all good, no banner needed
 
     def _render_core_banner(self) -> str:
-        """Returns an HTML banner if the Hecos core folder is named incorrectly (e.g. Hecos-main)."""
-        basename = os.path.basename(CWD)
-        if basename.lower() != "hecos":
+        """Returns an HTML banner if the Hecos core path violates safety rules (spaces/special chars/OneDrive)."""
+        is_valid, errors, warnings = validate_install_path(CWD)
+        if not is_valid:
+            err_html = "<br>".join(errors)
             return f"""
             <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.35);
                         border-radius:10px; padding:16px 20px; margin-bottom:24px; display:flex; gap:14px; align-items:flex-start;">
                 <span style="font-size:1.1rem; flex-shrink:0;">⚠️</span>
                 <div>
-                    <div style="font-size:0.8rem; font-weight:700; color:#ef4444; margin-bottom:4px;">Core Folder Name is Incorrect</div>
+                    <div style="font-size:0.8rem; font-weight:700; color:#ef4444; margin-bottom:4px;">Unsafe Installation Path</div>
                     <div style="font-size:0.77rem; color:#9ca3af; line-height:1.6;">
                         Current path: <code style="color:#d1d5db;">{CWD}</code><br>
-                        The core folder must be named exactly <strong style="color:#d1d5db;">Hecos</strong> (e.g. <code style="color:#d1d5db;">C:\\Hecos</code>).<br>
-                        Please rename it now, otherwise setup and launch scripts will fail!
+                        {err_html}<br>
+                        Please move Hecos to a clean path without spaces or special characters (e.g. <code style="color:#d1d5db;">C:\\Hecos</code> or <code style="color:#d1d5db;">D:\\Apps\\Hecos</code>).
+                    </div>
+                </div>
+            </div>"""
+        if warnings:
+            warn_html = "<br>".join(warnings)
+            return f"""
+            <div style="background:rgba(245,158,11,0.07); border:1px solid rgba(245,158,11,0.3);
+                        border-radius:10px; padding:16px 20px; margin-bottom:24px; display:flex; gap:14px; align-items:flex-start;">
+                <span style="font-size:1.1rem; flex-shrink:0;">⚠️</span>
+                <div>
+                    <div style="font-size:0.8rem; font-weight:700; color:#f59e0b; margin-bottom:4px;">Install Path Advisory</div>
+                    <div style="font-size:0.77rem; color:#9ca3af; line-height:1.6;">
+                        Current path: <code style="color:#d1d5db;">{CWD}</code><br>
+                        {warn_html}
                     </div>
                 </div>
             </div>"""
@@ -176,7 +194,7 @@ class TemplateMixin(StyleMixin):
 
         core_icon = "✓" if hecos_ver else "✗"
         core_color = "var(--accent)" if hecos_ver else "var(--muted)"
-        core_label = f"v{hecos_ver}" if hecos_ver else "Not detected in C:\\Hecos"
+        core_label = f"v{hecos_ver} <span style='color:var(--muted); font-weight:400;'>({CWD})</span>" if hecos_ver else f"Not detected in {CWD}"
 
         all_ok = all(s == "ok" for s, _ in key_pkgs.values())
         pkg_rows = ""
@@ -270,6 +288,7 @@ class TemplateMixin(StyleMixin):
                 <img src="/logo.png" class="logo" alt="Logo">
                 <div class="splash-title">{T('select_setup_lang')}</div>
                 <form action="/select_setup_lang" method="POST">
+                    <input type="hidden" name="csrf_token" value="{SESSION_TOKEN}">
                     <select name="lang" onchange="window.location.href='/preview_lang?lang='+this.value">
                         {lang_options}
                     </select>
@@ -362,6 +381,7 @@ class TemplateMixin(StyleMixin):
                         <p class="tip">{T('tip_lang')}</p>
                         <p class="tip-sub">{T('tip_lang_multilingual')}</p>
                         <form action="/set_lang" method="POST" style="display:flex; gap:8px; margin-top:14px;">
+                            <input type="hidden" name="csrf_token" value="{SESSION_TOKEN}">
                             <button name="lang" value="en" class="btn-lang {'btn-lang-active' if sys_lang == 'en' else ''}">English</button>
                             <button name="lang" value="it" class="btn-lang {'btn-lang-active' if sys_lang == 'it' else ''}">Italiano</button>
                         </form>
@@ -373,6 +393,7 @@ class TemplateMixin(StyleMixin):
                     <div class="section-label" style="margin-bottom:8px;">02 — INSTALL</div>
                     <p class="tip" style="margin-bottom:20px;">Installs all dependencies (Piper TTS engine, Python packages) and configures Hecos autostart.</p>
                     <form action="/onboarding" method="POST">
+                        <input type="hidden" name="csrf_token" value="{SESSION_TOKEN}">
                         <div class="section" style="margin-bottom:16px;">
                             <div class="section-label">{T('step_voice').upper()} — OPTIONAL</div>
                             <p class="tip">{T('tip_voice')}</p>
@@ -402,12 +423,12 @@ class TemplateMixin(StyleMixin):
                                     <div class="step-desc">After setup completes, right-click the tray icon and click <strong>&#9654; Start Core</strong>.</div>
                                 </div>
                             </div>
-                            ''' if TRAY_DIR else '''
+                            ''' if _setup_utils.TRAY_DIR else f'''
                             <div class="step-item">
                                 <span class="step-num">1</span>
                                 <div>
                                     <div class="step-title">Run Global Launcher</div>
-                                    <div class="step-desc">Open the <strong>C:/Hecos</strong> folder and double-click <strong>HECOS GLOBAL LAUNCHER</strong>.</div>
+                                    <div class="step-desc">Open the <strong>{CWD}</strong> folder and double-click <strong>HECOS GLOBAL LAUNCHER</strong>.</div>
                                 </div>
                             </div>
                             <div class="step-item">
@@ -440,6 +461,7 @@ class TemplateMixin(StyleMixin):
                                         Removes only the packages that Hecos installed. <strong style="color:var(--text);">Safe if you use Python for other projects</strong> — your other libraries will not be touched.
                                     </div>
                                     <form id="smart-uninstall-form" action="/uninstall_hecos" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{SESSION_TOKEN}">
                                         <button type="button" class="btn-ghost btn-danger-ghost"
                                             onclick="document.getElementById('smart-modal').classList.add('active');"
                                             style="font-size:0.78rem;">
@@ -460,6 +482,7 @@ class TemplateMixin(StyleMixin):
                                         Removes <strong style="color:var(--red-muted);">every package</strong> from the Python environment — not just Hecos. <strong style="color:var(--text);">Only use this if Python is dedicated to Hecos</strong> and you want to start with a completely clean slate.
                                     </div>
                                     <form id="wipe-form" action="/uninstall" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{SESSION_TOKEN}">
                                         <button type="button" class="btn-ghost btn-danger-ghost"
                                             onclick="document.getElementById('wipe-modal').classList.add('active');"
                                             style="font-size:0.78rem; border-color:rgba(239,68,68,0.6);">
@@ -609,13 +632,13 @@ class TemplateMixin(StyleMixin):
                             <div class="step-desc">The tray launches automatically on every login &mdash; no action needed next time.</div>
                         </div>
                     </div>
-                    ''' if TRAY_DIR else '''
+                    ''' if _setup_utils.TRAY_DIR else f'''
                     <div class="next-label" style="margin-top:10px; color:var(--text);">Via Hecos Core Standalone:</div>
                     <div class="step-item">
                         <span class="step-num" style="border-color:var(--text); color:var(--text);">&#9733;</span>
                         <div>
                             <div class="step-title">Use the Global Launcher</div>
-                            <div class="step-desc">Open the <strong>C:/Hecos</strong> folder and double-click <strong>HECOS GLOBAL LAUNCHER</strong> to access all startup options (including WebUI).</div>
+                            <div class="step-desc">Open the <strong>{CWD}</strong> folder and double-click <strong>HECOS GLOBAL LAUNCHER</strong> to access all startup options (including WebUI).</div>
                         </div>
                     </div>
                     '''
