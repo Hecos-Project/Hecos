@@ -111,56 +111,82 @@ class FishSpeechEngine(BaseTTSEngine):
         """Resolves parameters merging global config, presets, and session overrides."""
         return resolve_fish_params(kwargs)
 
-    def _synthesize_chunk(self, text: str, p: FishSpeechParams) -> Optional[bytes]:
+    def _synthesize_chunk(
+        self,
+        text: str,
+        p: FishSpeechParams,
+        bypass_cache: bool = False,
+        normalize_chunk: bool = True,
+    ) -> Optional[bytes]:
         """Sends a single synthesis request to Fish Speech API (with chunk-level cache check)."""
         vol = getattr(p, "volume", 1.0)
+        is_deterministic = bool(p.ref_audio or p.reference_id or (p.seed and p.seed > 0))
+        use_cache = (not bypass_cache) and is_deterministic
+        cache_overrides = {
+            "fish_temperature": p.temperature,
+            "fish_top_p": p.top_p,
+            "fish_repetition_penalty": p.repetition_penalty,
+            "fish_max_new_tokens": p.max_new_tokens,
+            "fish_chunk_length": p.chunk_length,
+            "fish_seed": p.seed,
+            "fish_normalize": p.normalize,
+            "fish_reference_text": p.ref_text,
+            "fish_norm": "raw_v3",
+        }
         cache = None
-        try:
-            from hecos.core.audio.tts_cache import TTSCache
-            cache = TTSCache.get_instance()
-            cached_bytes = cache.get_bytes(
-                text=text,
-                engine="fish_speech",
-                voice=p.ref_audio or p.reference_id,
-                session_overrides={"fish_temperature": p.temperature, "fish_top_p": p.top_p, "fish_chunk_length": p.chunk_length, "fish_volume": vol, "fish_norm": "v2"}
-            )
-            if cached_bytes:
-                return cached_bytes
-        except Exception as _c_err:
-            logger.debug("FISH_SPEECH", f"Chunk cache lookup notice: {_c_err}")
-
-        chunk_bytes = FishSpeechClient.synthesize_chunk(
-            text=text,
-            api_url=p.api_url,
-            api_key=p.api_key,
-            ref_audio=p.ref_audio,
-            ref_text=p.ref_text,
-            temp=p.temperature,
-            top_p=p.top_p,
-            rep_pen=p.repetition_penalty,
-            max_tokens=p.max_new_tokens,
-            chunk_length=p.chunk_length,
-            seed=p.seed,
-            normalize=p.normalize,
-            use_memory_cache=p.use_memory_cache,
-            reference_id=p.reference_id
-        )
-
-        if chunk_bytes:
-            # Normalize and amplify audio chunk to match broadcast / Piper loudness levels
-            chunk_bytes = FishSpeechAudio.normalize_wav_bytes(chunk_bytes, volume_factor=vol)
-
-        if chunk_bytes and cache:
+        chunk_bytes = None
+        if use_cache:
             try:
-                cache.put_bytes(
+                from hecos.core.audio.tts_cache import TTSCache
+                cache = TTSCache.get_instance()
+                cached_bytes = cache.get_bytes(
                     text=text,
                     engine="fish_speech",
-                    audio_bytes=chunk_bytes,
                     voice=p.ref_audio or p.reference_id,
-                    session_overrides={"fish_temperature": p.temperature, "fish_top_p": p.top_p, "fish_chunk_length": p.chunk_length, "fish_volume": vol, "fish_norm": "v2"}
+                    session_overrides=cache_overrides,
                 )
-            except Exception as _c_put_err:
-                logger.debug("FISH_SPEECH", f"Chunk cache store notice: {_c_put_err}")
+                if cached_bytes:
+                    chunk_bytes = cached_bytes
+            except Exception as _c_err:
+                logger.debug("FISH_SPEECH", f"Chunk cache lookup notice: {_c_err}")
+
+        if not chunk_bytes:
+            chunk_bytes = FishSpeechClient.synthesize_chunk(
+                text=text,
+                api_url=p.api_url,
+                api_key=p.api_key,
+                ref_audio=p.ref_audio,
+                ref_text=p.ref_text,
+                temp=p.temperature,
+                top_p=p.top_p,
+                rep_pen=p.repetition_penalty,
+                max_tokens=p.max_new_tokens,
+                chunk_length=p.chunk_length,
+                seed=p.seed,
+                normalize=p.normalize,
+                use_memory_cache=p.use_memory_cache,
+                reference_id=p.reference_id
+            )
+
+            if chunk_bytes and use_cache and cache:
+                try:
+                    cache.put_bytes(
+                        text=text,
+                        engine="fish_speech",
+                        audio_bytes=chunk_bytes,
+                        voice=p.ref_audio or p.reference_id,
+                        session_overrides=cache_overrides,
+                    )
+                except Exception as _c_put_err:
+                    logger.debug("FISH_SPEECH", f"Chunk cache store notice: {_c_put_err}")
+
+        if chunk_bytes and normalize_chunk:
+            # Preserve soft loudness for standalone whisper chunks; normalize normal speech to -14 dBFS
+            is_whisper_only = bool(re.match(r'^\s*\[(whisper|whispering|soft|softly|quiet|quietly)\]', text, re.IGNORECASE)) and not bool(
+                re.search(r'\[(excited|angry|shouting|yelling|laughing|surprised|dramatic)\]', text, re.IGNORECASE)
+            )
+            target_db = -21.0 if is_whisper_only else -14.0
+            chunk_bytes = FishSpeechAudio.normalize_wav_bytes(chunk_bytes, target_rms_db=target_db, volume_factor=vol)
 
         return chunk_bytes
 
@@ -172,7 +198,8 @@ class FishSpeechEngine(BaseTTSEngine):
             return False
 
         self._stop_flag = False
-        logger.info("FISH_SPEECH", f"generate_wav starting for: '{text[:80]}...' -> {filepath}")
+        bypass_cache = bool(kwargs.get("bypass_cache", False))
+        logger.info("FISH_SPEECH", f"generate_wav starting for: '{text[:80]}...' -> {filepath} (bypass_cache={bypass_cache})")
         p = self._get_fish_params(kwargs)
         # S2-Pro (local) and S2.1-Pro (cloud) natively support inline expressive tags [whisper], [laughing], etc.
         text = re.sub(r'\s+', ' ', text).strip()
@@ -181,7 +208,11 @@ class FishSpeechEngine(BaseTTSEngine):
             logger.warning("FISH_SPEECH", "Synthesis halted early due to stop flag.")
             return False
 
-        wav_bytes = self._synthesize_chunk(text=text, p=p)
+        # Do NOT normalize the whole WAV here: inline expressive tags ([excited], [whisper], [laughing])
+        # produce natural RMS swings across the generation. Flattening the whole buffer to a fixed
+        # target_rms_db destroys the dynamics and makes all segments sound equally loud/quiet.
+        # Volume adjustment is still applied inside _synthesize_chunk via the volume_factor param.
+        wav_bytes = self._synthesize_chunk(text=text, p=p, bypass_cache=bypass_cache, normalize_chunk=False)
         if self._stop_flag:
             logger.warning("FISH_SPEECH", "Synthesis halted early due to stop flag.")
             return False
@@ -214,11 +245,25 @@ class FishSpeechEngine(BaseTTSEngine):
             return False
 
         self._stop_flag = False
+        bypass_cache = bool(kwargs.get("bypass_cache", False))
         p = self._get_fish_params(kwargs)
         # S2-Pro (local) and S2.1-Pro (cloud) natively support inline expressive tags [whisper], [laughing], etc.
         text = re.sub(r'\s+', ' ', text).strip()
-        if p.chunk_sentences:
-            sentences = [s.strip() for s in re.split(r'(?<=[.!?。])\s+', text) if s.strip()]
+        is_zero_shot_base = not (p.ref_audio or p.reference_id)
+        if is_zero_shot_base and len(text) <= 450:
+            # In zero-shot base mode (no reference voice), splitting into separate HTTP calls would
+            # sample a different random speaker per sentence and break expressive tag transitions.
+            # S2-Pro synthesizes up to ~450 chars cleanly in a single coherent pass.
+            sentences = [text]
+            if p.chunk_sentences:
+                logger.info(
+                    "FISH_SPEECH",
+                    f"Zero-shot base voice (no reference audio): keeping {len(text)} chars in 1 coherent pass "
+                    "to preserve single speaker identity and inline expressive tags."
+                )
+        elif p.chunk_sentences:
+            # Do not split inside ellipses ('...') which are used as prosody pauses
+            sentences = [s.strip() for s in re.split(r'(?<!\.\.)(?<=[.!?。])\s+', text) if s.strip()]
         else:
             sentences = [text]
 
@@ -238,7 +283,7 @@ class FishSpeechEngine(BaseTTSEngine):
             propagated_sentences.append(s)
         sentences = propagated_sentences
 
-        logger.info("FISH_SPEECH", f"generate_wav_chunked: {len(sentences)} sentence(s) to process (chunk_sentences={p.chunk_sentences})")
+        logger.info("FISH_SPEECH", f"generate_wav_chunked: {len(sentences)} sentence(s) to process (chunk_sentences={p.chunk_sentences}, bypass_cache={bypass_cache})")
         os.makedirs(os.path.dirname(os.path.abspath(filepath)), exist_ok=True)
 
         if len(sentences) == 1:
@@ -263,9 +308,11 @@ class FishSpeechEngine(BaseTTSEngine):
             return ok
 
         # Multi-sentence: synthesize each chunk and combine
+        # Avoid per-chunk RMS normalization when merging to preserve dynamic range (e.g. [whisper] vs [excited]);
+        # _merge_wav_files normalizes the final merged WAV uniformly once.
+        normalize_each_chunk = bool(kwargs.get("_normalize_chunks", False))
         temp_files = []
         try:
-            import copy
             for i, s in enumerate(sentences):
                 if self._stop_flag:
                     logger.warning("FISH_SPEECH", "Synthesis halted early due to stop flag.")
@@ -283,7 +330,12 @@ class FishSpeechEngine(BaseTTSEngine):
                 chunk_max_tokens = min(max(len(s) * 4, 160), p.max_new_tokens or 512)
                 chunk_p = p._replace(max_new_tokens=chunk_max_tokens)
 
-                chunk_bytes = self._synthesize_chunk(text=s, p=chunk_p)
+                chunk_bytes = self._synthesize_chunk(
+                    text=s,
+                    p=chunk_p,
+                    bypass_cache=bypass_cache,
+                    normalize_chunk=normalize_each_chunk,
+                )
                 if self._stop_flag:
                     logger.warning("FISH_SPEECH", "Synthesis halted early due to stop flag.")
                     return False
@@ -393,7 +445,7 @@ class FishSpeechEngine(BaseTTSEngine):
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
                 tmp_final = tmp.name
 
-            success = self.generate_wav_chunked(text, tmp_final, on_chunk_ready=_on_chunk_ready, **kwargs)
+            success = self.generate_wav_chunked(text, tmp_final, on_chunk_ready=_on_chunk_ready, _normalize_chunks=True, **kwargs)
             if not success or self._stop_flag:
                 logger.warning("FISH_SPEECH", "speak() aborted: generation failed or stopped.")
         except Exception as e:

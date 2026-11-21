@@ -20,6 +20,15 @@ except ImportError:
     ORMSGPACK_AVAILABLE = False
 
 
+def is_local_fish_url(api_url: str) -> bool:
+    """Returns True if the configured Fish Speech API URL points to the local server."""
+    try:
+        host = (urlparse((api_url or "").strip()).hostname or "").lower()
+        return host in ("127.0.0.1", "localhost", "0.0.0.0", "::1")
+    except Exception:
+        return False
+
+
 def is_ormsgpack_available() -> bool:
     global ORMSGPACK_AVAILABLE
     if not ORMSGPACK_AVAILABLE:
@@ -74,7 +83,7 @@ class FishSpeechClient:
                 api_url = DEFAULT_FISH_URL
             api_key = cfg.get("api_key", "").strip()
 
-            if api_key:
+            if api_key and not is_local_fish_url(api_url):
                 cls._last_ready_result = True
                 return True
 
@@ -154,11 +163,19 @@ class FishSpeechClient:
                         "text": str(extra.get("text") or ""),
                     })
 
+        is_local = is_local_fish_url(api_url)
+        is_cloud = bool(api_key) and not is_local
+
         # Safeguard: Clamp temperature and max_tokens for local Fish Speech to prevent infinite generation loops.
-        effective_temp = min(temp, 0.8) if (not api_key and temp > 0.8) else temp
-        effective_top_p = min(top_p, 0.85) if (not api_key and top_p > 0.85) else top_p
+        effective_temp = min(temp, 0.8) if (not is_cloud and temp > 0.8) else temp
+        effective_top_p = min(top_p, 0.85) if (not is_cloud and top_p > 0.85) else top_p
         if text and max_tokens > 0:
-            dyn_ceiling = max(96, int(len(text) * 3.5) + 64)
+            # Count expressive tags and add bonus tokens (matches Voice Forge _estimate_fish_max_tokens).
+            # Each [tag] needs ~45 extra tokens to let S2-Pro condition the delivery style change.
+            import re as _re
+            tag_count = len(_re.findall(r'\[[a-zA-Z][^\]]{0,78}\]', text or ''))
+            tag_bonus = tag_count * 45
+            dyn_ceiling = max(180, int(len(text) * 4.5) + tag_bonus + 64)
             effective_max_tokens = min(max_tokens, dyn_ceiling)
         else:
             effective_max_tokens = max_tokens or 256
@@ -180,13 +197,21 @@ class FishSpeechClient:
             payload["reference_id"] = reference_id
         if seed and seed > 0:
             payload["seed"] = seed
+        else:
+            # S2-Pro tag conditioning requires a positive seed.
+            # seed=0 may suppress emotion/style diversity. Always send a randomised seed
+            # (matches Voice Forge behaviour which never sends seed=0).
+            import random as _random
+            payload["seed"] = _random.randint(1, 2_147_483_647)
 
         headers = {}
-        if api_key:
+        if is_cloud:
             headers["Authorization"] = f"Bearer {api_key}"
 
         has_ref_audio = any(isinstance(r.get("audio"), (bytes, bytearray)) and len(r["audio"]) > 0 for r in references)
-        use_msgpack = is_ormsgpack_available() and has_ref_audio
+        # Always prefer MessagePack when ormsgpack is available (Voice Forge always uses it).
+        # ormsgpack is more efficient and avoids JSON base64-encoding binary audio blobs.
+        use_msgpack = is_ormsgpack_available()
         if use_msgpack:
             import ormsgpack
             headers["Content-Type"] = "application/msgpack"
@@ -206,7 +231,7 @@ class FishSpeechClient:
         target_host = parsed.hostname or "127.0.0.1"
         target_port = parsed.port or (443 if parsed.scheme == "https" else 80)
 
-        if target_host in ("127.0.0.1", "localhost") and not api_key:
+        if is_local:
             try:
                 from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
                 daemon = FishSpeechDaemon.get_instance()
