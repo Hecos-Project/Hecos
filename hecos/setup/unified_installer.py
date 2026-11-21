@@ -6,7 +6,7 @@ Manages end-to-end installation of:
   - Hecos Tray only
 
 Works both when launched from inside an existing Hecos folder AND when launched
-standalone on a completely empty PC via INSTALL_HECOS.bat / install_hecos.sh.
+standalone on a completely empty PC via INSTALL_HECOS_WINDOWS.bat / INSTALL_HECOS_LINUX.sh.
 Streams structured progress and live logs to the Web App-Mode Wizard via SSE.
 """
 
@@ -309,6 +309,11 @@ def _merge_extracted_tree(
                 continue
             src_file = os.path.join(root, fn)
             shutil.copy2(src_file, dst_file)
+            if os.name != "nt" and fn.endswith(".sh"):
+                try:
+                    os.chmod(dst_file, 0o755)
+                except OSError:
+                    pass
 
 
 def _write_tray_core_path(tray_dir: str, core_dir: str) -> None:

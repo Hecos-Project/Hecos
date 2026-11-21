@@ -1,15 +1,17 @@
 #!/bin/bash
-cd "$(dirname "$0")/../../.."
+set -u
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$ROOT_DIR" || exit 1
 
-if [ -d "venv" ] && [ -f "venv/bin/python" ]; then
-    PYTHON_CMD="venv/bin/python"
-elif [ -d "python_env" ] && [ -f "python_env/bin/python" ]; then
-    PYTHON_CMD="python_env/bin/python"
-elif command -v python3 &>/dev/null; then
-    PYTHON_CMD="python3"
+if [ -x "$ROOT_DIR/python_env/bin/python3" ]; then
+    PYTHON_CMD="$ROOT_DIR/python_env/bin/python3"
+elif [ -x "$ROOT_DIR/venv/bin/python3" ]; then
+    PYTHON_CMD="$ROOT_DIR/venv/bin/python3"
+elif command -v python3 &> /dev/null; then
+    PYTHON_CMD="$(command -v python3)"
 else
     PYTHON_CMD="python"
 fi
 
-$PYTHON_CMD -m hecos.app.standalone_config_editor
-read -p "Press Enter to exit..."
+"$PYTHON_CMD" -c "from hecos.ui.config_editor.core import ConfigEditor; ConfigEditor().run()"
+read -r -p "Press Enter to exit..."

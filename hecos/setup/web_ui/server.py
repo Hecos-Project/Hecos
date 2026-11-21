@@ -264,8 +264,20 @@ def _find_chromium_app_browser() -> Optional[str]:
     return None
 
 
+def _has_graphical_display() -> bool:
+    if os.name == "nt" or sys.platform == "darwin":
+        return True
+    return bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+
+
 def _open_app_window(url: str) -> None:
     """Open the Setup Wizard in a dedicated chromeless desktop app window (with browser fallback)."""
+    if not _has_graphical_display():
+        port = url.rsplit(":", 1)[-1]
+        print("       [INFO] Headless Linux detected (no DISPLAY/WAYLAND_DISPLAY).")
+        print(f"       Open in a browser or forward via SSH: ssh -L {port}:127.0.0.1:{port} user@host")
+        return
+
     browser = _find_chromium_app_browser()
     if browser:
         try:

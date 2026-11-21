@@ -12,7 +12,7 @@ UNINSTALL_DONE = False
 SMART_UNINSTALL_DONE = False
 WIPE_DONE = False
 
-# True when launched via INSTALL_HECOS.bat outside a full Core checkout
+# True when launched via INSTALL_HECOS_WINDOWS.bat / INSTALL_HECOS_LINUX.sh outside a full Core checkout
 STANDALONE_MODE = False
 
 # Active background InstallJob (SSE streaming)

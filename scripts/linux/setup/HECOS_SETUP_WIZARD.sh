@@ -33,7 +33,7 @@ while [ $# -gt 0 ]; do
         --unattended|--silent|-s)
             UNATTENDED=1
             ;;
-        --web)
+        --web|--gui)
             LAUNCH_MODE="web"
             ;;
         --doctor)
