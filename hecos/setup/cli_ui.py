@@ -240,7 +240,7 @@ def start_cli_wizard() -> None:
             menu = Table.grid(padding=(0, 2))
             menu.add_column(style="bold bright_cyan", width=4)
             menu.add_column(style="white")
-            menu.add_row("1)", "[bold]Start Web Setup Wizard[/bold] [bright_green](Recommended — local browser UI)[/bright_green]")
+            menu.add_row("1)", "[bold]Start Unified Graphical Setup Wizard[/bold] [bright_green](Recommended — Core + Tray app window)[/bright_green]")
             menu.add_row("2)", f"{T('onboarding_header')} (CLI) [dim](Headless / advanced users)[/dim]")
             menu.add_row("3)", "System Diagnostics [dim](Doctor — check Python, deps, paths, Tray)[/dim]")
             menu.add_row("4)", "Quick Repair [dim](Reinstall missing deps, fix Piper & autostart)[/dim]")
@@ -248,7 +248,7 @@ def start_cli_wizard() -> None:
             menu.add_row("0)", "[dim]Exit[/dim]")
             _CONSOLE.print(menu)
         else:
-            print(f"  {_CYAN}1){_RESET} Start Web Setup Wizard {_GREEN}(Recommended - local browser UI){_RESET}")
+            print(f"  {_CYAN}1){_RESET} Start Unified Graphical Setup Wizard {_GREEN}(Recommended - Core + Tray){_RESET}")
             print(f"  {_CYAN}2){_RESET} {T('onboarding_header')} (CLI - headless / advanced)")
             print(f"  {_CYAN}3){_RESET} System Diagnostics (Doctor)")
             print(f"  {_CYAN}4){_RESET} Quick Repair (Deps, Piper paths, Autostart)")

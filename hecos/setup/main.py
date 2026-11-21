@@ -36,8 +36,11 @@ def main(argv: Optional[List[str]] = None) -> None:
         os.environ["HECOS_TRAY_DIR"] = tray_dir_arg
         refresh_tray_dir(override=tray_dir_arg)
 
+    standalone = "--standalone" in args
+
     # Best-effort registration of Core location in shared install.toml
-    if "--auto" not in args and "--uninstall" not in args:
+    # (skipped in --standalone mode because we are running from a temp bootstrap dir)
+    if not standalone and "--auto" not in args and "--uninstall" not in args:
         try:
             from .setup_env import register_installation
             register_installation(tray_override=tray_dir_arg)
@@ -106,10 +109,10 @@ def main(argv: Optional[List[str]] = None) -> None:
         )
         sys.exit(res["exit_code"])
 
-    # --- Web Setup Wizard ---
-    if "--web" in args:
+    # --- Unified Graphical Setup Wizard (App-Window / Web) ---
+    if "--web" in args or "--gui" in args:
         from .web_ui import start_web_setup
-        start_web_setup()
+        start_web_setup(standalone=standalone)
         return
 
     # --- Default / `menu`: Cyber CLI Wizard ---

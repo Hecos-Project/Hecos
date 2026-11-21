@@ -24,6 +24,7 @@ if /i "%~1"=="--unattended" set "UNATTENDED=1"
 if /i "%~1"=="--silent" set "UNATTENDED=1"
 if /i "%~1"=="-s" set "UNATTENDED=1"
 if /i "%~1"=="--web" set "LAUNCH_MODE=web"
+if /i "%~1"=="--gui" set "LAUNCH_MODE=web"
 if /i "%~1"=="--doctor" set "LAUNCH_MODE=doctor"
 if /i "%~1"=="--tray-dir" (
     set "ARG_TRAY_DIR=%~2"
