@@ -137,64 +137,79 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             engine = data.get("engine", None)
             session_id = data.get("session_id", None)
             preset_id = (data.get("preset_id") or data.get("soul_id") or "").strip()
+            draft_data = data.get("draft", None)
+            voice_config = data.get("voice", {}) or {}
+            bypass_cache = bool(data.get("bypass_cache", False))
+
+            # Direct Audio & Voice panel tests pass explicit `voice` controls (or `use_global_preset: false`)
+            # and MUST NOT be silently hijacked by the active Global Preset (e.g. a persona's cloned voice).
+            use_global_preset = data.get("use_global_preset", None)
+            if use_global_preset is None:
+                use_global_preset = not (bool(voice_config) and not preset_id and not session_id and not draft_data)
+            else:
+                use_global_preset = bool(use_global_preset)
 
             preset_voice_overrides = {}
-            resolved_preset_id = preset_id
-            if not resolved_preset_id or resolved_preset_id == "default":
-                try:
-                    from hecos.core.global_presets.manager import get_active_soul_id
-                    resolved_preset_id = get_active_soul_id("global") or ""
-                except Exception:
-                    resolved_preset_id = ""
-            if resolved_preset_id and resolved_preset_id != "default":
-                try:
-                    from hecos.core.global_presets.manager import get_soul
-                    soul = get_soul(resolved_preset_id)
-                    if soul and getattr(soul, "voice", None):
-                        preset_voice_overrides = soul.voice.model_dump(exclude_none=True)
-                except Exception as soul_err:
-                    logger.debug(f"[WebUI] Could not load preset voice for '{resolved_preset_id}': {soul_err}")
+            resolved_preset_id = ""
+            if use_global_preset:
+                resolved_preset_id = preset_id
+                if not resolved_preset_id or resolved_preset_id == "default":
+                    try:
+                        from hecos.core.global_presets.manager import get_active_soul_id
+                        resolved_preset_id = get_active_soul_id("global") or ""
+                    except Exception:
+                        resolved_preset_id = ""
+                if resolved_preset_id and resolved_preset_id != "default":
+                    try:
+                        from hecos.core.global_presets.manager import get_soul
+                        soul = get_soul(resolved_preset_id)
+                        if soul and getattr(soul, "voice", None):
+                            preset_voice_overrides = soul.voice.model_dump(exclude_none=True)
+                    except Exception as soul_err:
+                        logger.debug(f"[WebUI] Could not load preset voice for '{resolved_preset_id}': {soul_err}")
 
             from hecos.modules.web_ui.routes_chat_tts import generate_voice_file, set_last_audio_path
             from hecos.config.session_config_manager import merge_session_config
 
             logger.info(
                 f"[WebUI] TTS Test — engine: {engine or preset_voice_overrides.get('tts_engine') or 'active'}, "
-                f"preset: {resolved_preset_id or 'none'}, mode: {mode}, text: {text[:60]!r}"
+                f"preset: {resolved_preset_id or ('none (direct panel)' if not use_global_preset else 'none')}, "
+                f"mode: {mode}, bypass_cache: {bypass_cache}, text: {text[:60]!r}"
             )
-            
-            draft_data = data.get("draft", None)
-            merged_config = merge_session_config(cfg_mgr.config, session_id, extra_draft=draft_data) if (session_id or draft_data) else cfg_mgr.config
-            
-            ai_cfg = merged_config.get("ai", {})
-            session_overrides = {
-                "tts_engine": ai_cfg.get("tts_engine"),
-                "tts_voice": ai_cfg.get("tts_voice")
-            }
-            session_overrides.update(ai_cfg.get("voice_overrides", {}))
-            
-            ui_voice_overrides = merged_config.get("voice", {})
-            if ui_voice_overrides:
-                if "tts_engine" in ui_voice_overrides and ui_voice_overrides["tts_engine"]:
-                    session_overrides["tts_engine"] = ui_voice_overrides["tts_engine"]
-                if "tts_voice" in ui_voice_overrides and ui_voice_overrides["tts_voice"]:
-                    session_overrides["tts_voice"] = ui_voice_overrides["tts_voice"]
-                for k, v in ui_voice_overrides.items():
-                    if k.startswith("xtts_") or k.startswith("piper_") or k.startswith("kokoro_") or k.startswith("fish_"):
-                        session_overrides[k] = v
 
-            if preset_voice_overrides:
-                for k, v in preset_voice_overrides.items():
-                    if v not in (None, "", "unknown"):
-                        session_overrides[k] = v
+            session_overrides = {}
+            if use_global_preset:
+                merged_config = merge_session_config(cfg_mgr.config, session_id, extra_draft=draft_data) if (session_id or draft_data) else cfg_mgr.config
+                
+                ai_cfg = merged_config.get("ai", {})
+                session_overrides = {
+                    "tts_engine": ai_cfg.get("tts_engine"),
+                    "tts_voice": ai_cfg.get("tts_voice")
+                }
+                session_overrides.update(ai_cfg.get("voice_overrides", {}))
+                
+                ui_voice_overrides = merged_config.get("voice", {})
+                if ui_voice_overrides:
+                    if "tts_engine" in ui_voice_overrides and ui_voice_overrides["tts_engine"]:
+                        session_overrides["tts_engine"] = ui_voice_overrides["tts_engine"]
+                    if "tts_voice" in ui_voice_overrides and ui_voice_overrides["tts_voice"]:
+                        session_overrides["tts_voice"] = ui_voice_overrides["tts_voice"]
+                    for k, v in ui_voice_overrides.items():
+                        if k.startswith("xtts_") or k.startswith("piper_") or k.startswith("kokoro_") or k.startswith("fish_"):
+                            session_overrides[k] = v
+
+                if preset_voice_overrides:
+                    for k, v in preset_voice_overrides.items():
+                        if v not in (None, "", "unknown"):
+                            session_overrides[k] = v
 
             if engine:
                 session_overrides["tts_engine"] = engine
                 
-            bypass_cache = bool(data.get("bypass_cache", False))
-            voice_config = data.get("voice", {})
             if voice_config:
                 session_overrides.update(voice_config)
+                if not use_global_preset:
+                    session_overrides["_explicit_voice_config"] = True
                 if "speed" in voice_config:
                     session_overrides["kokoro_speed"] = voice_config["speed"]
                     session_overrides["piper_speed"] = voice_config["speed"]

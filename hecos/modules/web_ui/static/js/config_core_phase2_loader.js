@@ -17,7 +17,7 @@
     'use strict';
 
     const V = window.VERSION || window.HECOS_VERSION || Date.now();
-    const VER = `?v=${V}-aider-v3`;
+    const VER = `?v=${V}-fish-v4`;
 
     // ── Phase 2 script list — loaded AFTER hub menu is visible ────────────────
     // Order matters within each batch (dependency chain).

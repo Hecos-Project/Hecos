@@ -7,7 +7,17 @@ DESCRIPTION: Handles parameter resolution, preset lookups (configuration presets
 
 import os
 from typing import NamedTuple, Optional
+from urllib.parse import urlparse
 from hecos.core.logging import logger
+
+
+def is_local_api_url(api_url: str) -> bool:
+    """Returns True if the Fish Speech endpoint targets localhost / loopback."""
+    try:
+        host = (urlparse((api_url or "").strip()).hostname or "").lower()
+        return host in ("127.0.0.1", "localhost", "0.0.0.0", "::1")
+    except Exception:
+        return False
 
 
 def get_project_root() -> str:
@@ -76,9 +86,12 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
     use_memory_cache = bool(cfg.get("use_memory_cache", True))
     volume = float(cfg.get("volume", 1.0))
 
+    session = kwargs.get("session_overrides") or {}
+    explicit_panel = bool(session.get("_explicit_voice_config"))
+
     f_inf_presets = acfg.get("fish_speech_inference_presets", {})
     current_inf_preset = cfg.get("current_inference_preset")
-    if current_inf_preset and current_inf_preset in f_inf_presets:
+    if not explicit_panel and current_inf_preset and current_inf_preset in f_inf_presets:
         inf_data = f_inf_presets[current_inf_preset]
         if inf_data.get("temperature") is not None:
             temperature = float(inf_data["temperature"])
@@ -100,7 +113,6 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
             volume = float(inf_data["volume"])
 
     # Check session overrides if provided
-    session = kwargs.get("session_overrides") or {}
     if session:
         logger.debug("FISH_SPEECH", f"Applying session overrides: {list(session.keys())}")
         inf_preset_name = session.get("fish_inference_preset")
@@ -172,13 +184,18 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
         # 3. Explicit parameter overrides (highest priority)
         if session.get("fish_api_url"):
             api_url = str(session["fish_api_url"]).strip()
-        if session.get("fish_reference_id"):
-            reference_id = str(session["fish_reference_id"]).strip()
+        allow_explicit_clear = explicit_panel or not session.get("fish_preset")
+        if "fish_reference_id" in session and session["fish_reference_id"] is not None:
+            val_ref_id = str(session["fish_reference_id"]).strip()
+            if val_ref_id or allow_explicit_clear:
+                reference_id = val_ref_id
         prev_ref_audio = ref_audio
         explicit_ref_audio = ""
-        if session.get("fish_reference_audio"):
-            explicit_ref_audio = str(session["fish_reference_audio"]).strip()
-            ref_audio = explicit_ref_audio
+        if "fish_reference_audio" in session and session["fish_reference_audio"] is not None:
+            val_ref_audio = str(session["fish_reference_audio"]).strip()
+            if val_ref_audio or allow_explicit_clear:
+                explicit_ref_audio = val_ref_audio
+                ref_audio = val_ref_audio
         elif session.get("tts_voice") and session.get("tts_voice") != "default":
             explicit_ref_audio = str(session["tts_voice"]).strip()
             ref_audio = explicit_ref_audio
@@ -239,6 +256,10 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
             logger.warning("FISH_SPEECH", f"Explicit reference audio path not found: '{ref_audio}'")
             ref_audio = ""
 
+    # Clear stray transcript when no reference audio is active (zero-shot base voice)
+    if not ref_audio:
+        ref_text = ""
+
     # Auto-load companion transcript (.txt) if no text was explicitly provided
     if ref_audio and not ref_text:
         txt_path = os.path.splitext(ref_audio)[0] + ".txt"
@@ -250,10 +271,11 @@ def resolve_fish_params(kwargs: dict) -> FishSpeechParams:
             except Exception as te:
                 logger.warning("FISH_SPEECH", f"Could not read companion transcript: {te}")
 
+    is_cloud = bool(api_key) and not is_local_api_url(api_url)
     ref_basename = os.path.basename(ref_audio) if ref_audio else (f"ID:{reference_id}" if reference_id else "None (Server default voice)")
     logger.info(
         "FISH_SPEECH",
-        f"Params resolved: api_url='{api_url}', cloud_mode={bool(api_key)}, "
+        f"Params resolved: api_url='{api_url}', cloud_mode={is_cloud}, "
         f"ref='{ref_basename}', temp={temperature}, top_p={top_p}, "
         f"rep_pen={repetition_penalty}, max_tokens={max_new_tokens}, chunk_len={chunk_length}, "
         f"norm={normalize}, cache={use_memory_cache}, seed={seed}, vol={volume}"

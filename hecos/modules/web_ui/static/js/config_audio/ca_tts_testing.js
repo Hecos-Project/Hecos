@@ -53,14 +53,18 @@
         }, 100);
 
         try {
-            const reqPayload = { text: text, mode: mode, engine: activeEng, bypass_cache: true };
+            const reqPayload = { text: text, mode: mode, engine: activeEng, bypass_cache: true, use_global_preset: false };
             if (activeEng === 'fish_speech') {
                 const fishWav = (document.getElementById('v-fish-speaker-wav')?.value || document.getElementById('v-fish-clone-select')?.value || '').trim();
+                const fishApiUrl = (document.getElementById('v-fish-api-url')?.value || '').trim();
                 reqPayload.voice = {
+                    fish_preset: '',
+                    fish_inference_preset: '',
+                    fish_api_url: fishApiUrl,
                     fish_reference_audio: fishWav,
                     tts_voice: fishWav,
-                    fish_reference_id: document.getElementById('v-fish-reference-id')?.value || '',
-                    fish_reference_text: document.getElementById('v-fish-reference-text')?.value || '',
+                    fish_reference_id: (document.getElementById('v-fish-reference-id')?.value || '').trim(),
+                    fish_reference_text: fishWav ? (document.getElementById('v-fish-reference-text')?.value || '').trim() : '',
                     fish_temperature: parseFloat(document.getElementById('v-fish-temperature')?.value || 0.7),
                     fish_top_p: parseFloat(document.getElementById('v-fish-topp')?.value || 0.7),
                     fish_repetition_penalty: parseFloat(document.getElementById('v-fish-repetition')?.value || 1.2),

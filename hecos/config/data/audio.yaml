@@ -1,4 +1,4 @@
-active_engine: kokoro
+active_engine: fish_speech
 voice_status: true
 piper_autostart: true
 piper_path: C:\Hecos\bin\piper\piper.exe
@@ -108,7 +108,7 @@ kokoro_presets:
     alpha: 1
     beta: 1
     blend_voice: ''
-    inference_preset: Standard & Balanced
+    inference_preset: ''
     lang_code: auto
     model_path: ''
     normalize: true
@@ -190,7 +190,7 @@ xtts:
   autostart: true
   speed: 1.0
   language: it
-  speaker: if_sara
+  speaker: Claribel Dervla
   gpu_acceleration: auto
   chunk_sentences: true
   speaker_wav: ''
@@ -288,11 +288,10 @@ xtts_inference_presets:
 fish_speech:
   autostart: true
   api_url: http://127.0.0.1:18480/v1/tts
-  api_key: hecos
+  api_key: ''
   reference_id: ''
-  reference_audio: cine_witch.wav
-  reference_text: 'Ascoltami bene: questo è un momento straordinario, e ogni dettaglio
-    può fare davvero la differenza!'
+  reference_audio: ''
+  reference_text: ''
   temperature: 0.7
   top_p: 0.7
   repetition_penalty: 1.2

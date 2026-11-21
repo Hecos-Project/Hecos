@@ -76,15 +76,42 @@ class TTSCache:
         params: Dict[str, Any] = {}
 
         if engine_clean in ("fish_speech", "fish"):
-            voice = (
-                overrides.get("fish_reference_audio")
-                or overrides.get("fish_reference_id")
-                or overrides.get("tts_voice")
-                or ""
-            )
-            for k in ("fish_temperature", "fish_top_p", "fish_repetition_penalty", "fish_chunk_length", "fish_chunk_sentences", "fish_volume", "fish_norm"):
+            explicit_panel = bool(overrides.get("_explicit_voice_config"))
+            cfg = {}
+            if not explicit_panel:
+                try:
+                    from hecos.core.audio.device_manager import get_audio_config
+                    cfg = get_audio_config().get("fish_speech", {}) or {}
+                except Exception:
+                    cfg = {}
+
+            if explicit_panel:
+                voice = (
+                    overrides.get("fish_reference_audio")
+                    or overrides.get("fish_reference_id")
+                    or overrides.get("tts_voice")
+                    or ""
+                )
+            else:
+                voice = (
+                    overrides.get("fish_reference_audio")
+                    or overrides.get("fish_reference_id")
+                    or overrides.get("tts_voice")
+                    or cfg.get("reference_audio")
+                    or cfg.get("reference_id")
+                    or ""
+                )
+
+            for k in (
+                "fish_preset", "fish_inference_preset", "fish_reference_text",
+                "fish_temperature", "fish_top_p", "fish_repetition_penalty",
+                "fish_max_new_tokens", "fish_chunk_length", "fish_chunk_sentences",
+                "fish_seed", "fish_normalize", "fish_volume", "fish_norm",
+            ):
                 if k in overrides and overrides[k] is not None:
                     params[k] = overrides[k]
+            if "fish_seed" not in params and not explicit_panel and cfg.get("seed") is not None:
+                params["fish_seed"] = int(cfg.get("seed", 0))
         elif engine_clean in ("xtts2", "xtts"):
             voice = overrides.get("speaker_wav") or overrides.get("speaker") or overrides.get("tts_voice") or ""
             for k in ("temperature", "speed", "repetition_penalty", "top_p", "top_k"):
@@ -206,6 +233,32 @@ class TTSCache:
         serialized = json.dumps(payload, sort_keys=True, ensure_ascii=False)
         return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
+    def _should_skip_cache(
+        self,
+        engine: str,
+        voice: str = "",
+        session_overrides: Optional[dict] = None,
+    ) -> bool:
+        """
+        Skips caching for non-deterministic Fish Speech generations (no reference audio/ID
+        and random seed <= 0), so zero-shot random voices are never frozen across runs.
+        """
+        eng = (engine or "").lower().strip()
+        if eng not in ("fish_speech", "fish"):
+            return False
+        extracted_voice, extracted_params = self._extract_voice_and_params(eng, session_overrides)
+        final_voice = voice.strip() if voice else extracted_voice
+        if final_voice:
+            return False
+        # If a fish_preset is specified (and not default), it may bind a reference voice inside params.py
+        if session_overrides and session_overrides.get("fish_preset") and str(session_overrides.get("fish_preset")).strip().lower() != "default":
+            return False
+        try:
+            seed_val = int(extracted_params.get("fish_seed", 0) or 0)
+        except (ValueError, TypeError):
+            seed_val = 0
+        return seed_val <= 0
+
     # ── Cache Lookup & Store (File-based) ─────────────────────────────────────
 
     def get_to_file(
@@ -219,7 +272,7 @@ class TTSCache:
         """
         If a cached audio file exists for the request, copies it to `out_filepath` and returns True.
         """
-        if not self.is_enabled() or not text:
+        if not self.is_enabled() or not text or self._should_skip_cache(engine, voice, session_overrides):
             return False
 
         key = self.compute_key(text, engine=engine, voice=voice, session_overrides=session_overrides)
@@ -252,7 +305,7 @@ class TTSCache:
         """
         Stores an audio file into the cache.
         """
-        if not self.is_enabled() or not text:
+        if not self.is_enabled() or not text or self._should_skip_cache(engine, voice, session_overrides):
             return None
 
         if not os.path.exists(source_filepath) or os.path.getsize(source_filepath) <= 44:
@@ -302,7 +355,7 @@ class TTSCache:
         """
         Retrieves raw WAV bytes from cache if present.
         """
-        if not self.is_enabled() or not text:
+        if not self.is_enabled() or not text or self._should_skip_cache(engine, voice, session_overrides):
             return None
 
         key = self.compute_key(text, engine=engine, voice=voice, session_overrides=session_overrides)
@@ -334,7 +387,7 @@ class TTSCache:
         """
         Stores raw WAV bytes into cache.
         """
-        if not self.is_enabled() or not text or not audio_bytes or len(audio_bytes) <= 44:
+        if not self.is_enabled() or not text or not audio_bytes or len(audio_bytes) <= 44 or self._should_skip_cache(engine, voice, session_overrides):
             return None
 
         key = self.compute_key(text, engine=engine, voice=voice, session_overrides=session_overrides)

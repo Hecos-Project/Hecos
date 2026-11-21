@@ -219,6 +219,8 @@ window.onFishVoiceCloneSelect = function() {
         if (transcript !== undefined && refTextInput) {
             refTextInput.value = transcript;
         }
+    } else if (!sel.value && refTextInput) {
+        refTextInput.value = '';
     }
 
     if (typeof saveAudioConfig === 'function') saveAudioConfig();

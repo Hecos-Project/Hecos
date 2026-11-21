@@ -611,9 +611,16 @@
         const sel = document.getElementById('v-fish-inference-preset');
         const name = sel ? sel.value : '';
         const presets = _getInferencePresets();
-        if (!name || !presets[name]) return;
+        const cfg = _getAudioConfig();
+        if (!cfg.fish_speech) cfg.fish_speech = {};
+        if (!name || !presets[name]) {
+            cfg.fish_speech.current_inference_preset = '';
+            if (typeof saveAudioConfig === 'function') saveAudioConfig();
+            return;
+        }
 
         const p = presets[name];
+        cfg.fish_speech.current_inference_preset = name;
         if (document.getElementById('v-fish-temperature')) document.getElementById('v-fish-temperature').value = p.temperature ?? 0.7;
         if (document.getElementById('v-fish-temperature-range')) document.getElementById('v-fish-temperature-range').value = p.temperature ?? 0.7;
         if (document.getElementById('v-fish-topp')) document.getElementById('v-fish-topp').value = p.top_p ?? 0.7;
@@ -637,6 +644,7 @@
         document.getElementById('v-fish-repetition')?.dispatchEvent(new Event('input'));
         document.getElementById('v-fish-chunk-length')?.dispatchEvent(new Event('input'));
         document.getElementById('v-fish-max-tokens')?.dispatchEvent(new Event('input'));
+        if (typeof saveAudioConfig === 'function') saveAudioConfig();
     };
 
     // ── Expressive Emotion Tags & Test Scenarios ────────────────────────────────

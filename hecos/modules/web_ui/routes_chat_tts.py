@@ -501,13 +501,15 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None, on_chunk
                 success = TTSManager.generate_wav_chunked(
                     text, out, progress_callback,
                     on_chunk_ready=_handle_chunk_ready,
-                    session_overrides=session_overrides
+                    session_overrides=session_overrides,
+                    bypass_cache=bypass_cache,
                 )
             else:
                 success = TTSManager.generate_wav_chunked(
                     text, out,
                     on_chunk_ready=_handle_chunk_ready,
-                    session_overrides=session_overrides
+                    session_overrides=session_overrides,
+                    bypass_cache=bypass_cache,
                 )
         else:
             from hecos.core.audio.tts_manager import TTSManager
@@ -520,13 +522,15 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None, on_chunk
                 success = TTSManager.generate_wav_chunked(
                     text, out, progress_callback,
                     on_chunk_ready=_handle_chunk_ready,
-                    session_overrides=session_overrides
+                    session_overrides=session_overrides,
+                    bypass_cache=bypass_cache,
                 )
             else:
                 success = TTSManager.generate_wav_chunked(
                     text, out,
                     on_chunk_ready=_handle_chunk_ready,
-                    session_overrides=session_overrides
+                    session_overrides=session_overrides,
+                    bypass_cache=bypass_cache,
                 )
 
         if success:
@@ -534,15 +538,16 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None, on_chunk
                 _tts_jobs[job_id].update({"current": 1, "total": 1, "status": "done", "audio_id": audio_id})
             _chat_log.info(f"[Audio] WAV generation successful: {out}")
             
-            try:
-                from hecos.core.audio.tts_cache import TTSCache
-                actual_engine = _engine
-                if _engine not in ['xtts2', 'xtts', 'fish_speech', 'fish']:
-                    from hecos.core.audio.tts_manager import TTSManager
-                    actual_engine = TTSManager.get_last_used_engine()
-                TTSCache.get_instance().put_from_file(text, engine=actual_engine, source_filepath=out, session_overrides=session_overrides)
-            except Exception as _c_put_err:
-                _chat_log.debug(f"[Audio] TTS Cache store notice: {_c_put_err}")
+            if not bypass_cache:
+                try:
+                    from hecos.core.audio.tts_cache import TTSCache
+                    actual_engine = _engine
+                    if _engine not in ['xtts2', 'xtts', 'fish_speech', 'fish']:
+                        from hecos.core.audio.tts_manager import TTSManager
+                        actual_engine = TTSManager.get_last_used_engine()
+                    TTSCache.get_instance().put_from_file(text, engine=actual_engine, source_filepath=out, session_overrides=session_overrides)
+                except Exception as _c_put_err:
+                    _chat_log.debug(f"[Audio] TTS Cache store notice: {_c_put_err}")
             
             try:
                 from hecos.core.audio.device_manager import get_audio_config
