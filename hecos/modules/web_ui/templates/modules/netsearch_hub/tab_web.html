@@ -1,0 +1,104 @@
+        <!-- ═══ TAB 2: DIRECT WEB ═══ -->
+        <div id="ns-tab-pane-web" class="ns-tab-pane">
+          <!-- 2a. Custom Web & OpenSearch Engines -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-custom-clear-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-custom-clear-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-globe" style="color:var(--accent-emerald, #10b981); margin-right:6px;"></i>
+                  Custom Web &amp; OpenSearch Engines
+                  <i class="fas fa-info-circle ns-info-icon" title="Direct Clearnet search engines queried via URL templates ({q}, {api_key}) returning JSON, RSS/Atom XML, or HTML links — no SearXNG required."></i>
+                </span>
+                <span id="badge-custom-clear-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Engines</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Add a custom Clearnet web engine using protocol, host, port, query template ({q}), and optional API key"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;" onclick="window.addCustomClearEngineNode()">
+                  <i class="fas fa-plus"></i> Add Web Engine
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-custom-clear-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">
+                Direct Clearnet search engines using OpenSearch or query templates (<code>{q}</code>, <code>{api_key}</code>) supporting JSON, RSS/Atom XML, and HTML results. Assign category <strong>Files</strong> to query them automatically in <strong>File Hunter</strong>.
+              </p>
+              <div id="endp-custom-clear-wrap" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+          </div>
+
+          <!-- 2b. Open Archives & Repositories -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-archives-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-archives-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-archive" style="color:var(--accent-amber, #f59e0b); margin-right:6px;"></i>
+                  Open Archives &amp; Repositories
+                  <i class="fas fa-info-circle ns-info-icon" title="Built-in public archives (Internet Archive, Wikimedia Commons) plus any custom open repository/feed you add with structured protocol/host/port/template/API-key settings."></i>
+                </span>
+                <span id="badge-archives-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">2 Archives</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Add a custom open archive, library API, or repository endpoint (supports {q}, {api_key}, JSON/XML/HTML)"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;" onclick="window.addCustomArchiveNode()">
+                  <i class="fas fa-plus"></i> Add Archive / Repository
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-archives-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">
+                Configure built-in archive adapters (Internet Archive, Wikimedia Commons) or add custom open repositories &amp; feeds (JSON API, RSS/Atom, OpenSearch <code>{q}</code>, optional <code>{api_key}</code>). Entries with category <strong>Files</strong> automatically feed <strong>File Hunter</strong>.
+              </p>
+              <div id="endp-archives-wrap" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+          </div>
+
+          <!-- 2c. Automated Source Lists for Web / OpenSearch -->
+          <div class="endpoint-group" style="margin-bottom:0; border-color:rgba(16, 185, 129, 0.28);">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-sources-web-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-sources-web-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-rss" style="color:var(--accent-emerald, #10b981); margin-right:6px;"></i>
+                  Automated Web / OpenSearch Source Lists
+                  <i class="fas fa-info-circle ns-info-icon" title="Remote feeds or lists (OpenSearch descriptors, CSV/JSON/YAML engine catalogs) that automatically add direct web engines."></i>
+                </span>
+                <span id="badge-sources-web-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Lists</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Register or import a list of OpenSearch / Clearnet web search engines"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;"
+                  onclick="window.SearchSources && window.SearchSources.openAddFormForTab('web', 'custom_clear_engines')">
+                  <i class="fas fa-plus"></i> Add / Import Web List
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-sources-web-body">
+              <div id="endp-sources-presets-web"
+                style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; padding:8px 10px; background:var(--bg0); border-radius:6px; border:1px solid var(--border); align-items:center;"></div>
+              <div id="endp-sources-list-web" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+          </div>
+        </div>

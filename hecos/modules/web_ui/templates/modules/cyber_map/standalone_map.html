@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hecos Cyber Map &bull; Network Topology</title>
+  <link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
+  <link rel="stylesheet" href="/netsearch_static/css/cyber_map/cyber_map.css?v={{ version }}&t=20261114_cyber_map_v1">
+</head>
+<body class="cm-standalone-body">
+  <div class="cm-dock is-standalone is-open" id="cyber-map-standalone-root"></div>
+
+  <script src="/netsearch_static/js/search/cyber_map/cyber_map_bus.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
+  <script src="/netsearch_static/js/search/cyber_map/cyber_map_state.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
+  <script src="/netsearch_static/js/search/cyber_map/cyber_map_globe3d.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
+  <script src="/netsearch_static/js/search/cyber_map/cyber_map_flat2d.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
+  <script src="/netsearch_static/js/search/cyber_map/cyber_map_hud.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
+  <script src="/netsearch_static/js/search/cyber_map/cyber_map_main.js?v={{ version }}&t=20261114_cyber_map_v1"></script>
+  <script>
+    (function () {
+      const boot = () => {
+        if (window.CyberMap) {
+          const initialView = "{{ initial_view or '' }}";
+          if (initialView === '2d' || initialView === '3d') {
+            window.CyberMap.viewMode = initialView;
+          }
+          window.CyberMap.init({ standalone: true });
+        }
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+      } else {
+        boot();
+      }
+    })();
+  </script>
+</body>
+</html>

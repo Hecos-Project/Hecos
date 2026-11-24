@@ -1,0 +1,236 @@
+        <!-- ═══ TAB 7: LIVE STREAMS (STREAM HUNTER & SQLITE M3U) ═══ -->
+        <div id="ns-tab-pane-streams" class="ns-tab-pane">
+          <!-- SQLite Stream Index & Manual Nodes Summary (Identical graphically to Domains SQLite) -->
+          <div class="ns-domain-stat-grid">
+            <div class="ns-domain-stat" style="border-color:rgba(6, 182, 212, 0.32);"
+              title="Live TV &amp; IPTV channels indexed inside stream_lists.sqlite from .m3u / .m3u8 compilations">
+              <div style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700;">
+                TV / IPTV (SQLite) <i class="fas fa-info-circle ns-info-icon"></i>
+              </div>
+              <div id="stream-cnt-tv" style="font-size:18px; font-weight:700; color:#22d3ee; margin:2px 0;">0</div>
+              <div style="font-size:10px; color:var(--muted);">Indexed HLS / MPEG-TS TV streams</div>
+            </div>
+            <div class="ns-domain-stat" style="border-color:rgba(16, 185, 129, 0.32);"
+              title="World Radio, Icecast &amp; SHOUTcast audio streams indexed inside stream_lists.sqlite">
+              <div style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700;">
+                Radio &amp; Icecast (SQLite) <i class="fas fa-info-circle ns-info-icon"></i>
+              </div>
+              <div id="stream-cnt-radio" style="font-size:18px; font-weight:700; color:#34d399; margin:2px 0;">0</div>
+              <div style="font-size:10px; color:var(--muted);">Indexed MP3 / AAC / OGG radio feeds</div>
+            </div>
+            <div class="ns-domain-stat" style="border-color:rgba(245, 158, 11, 0.32);"
+              title="Public live webcams, weather cams &amp; MJPEG/HLS feeds indexed inside stream_lists.sqlite">
+              <div style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700;">
+                Live Webcams (SQLite) <i class="fas fa-info-circle ns-info-icon"></i>
+              </div>
+              <div id="stream-cnt-webcam" style="font-size:18px; font-weight:700; color:#fbbf24; margin:2px 0;">0</div>
+              <div style="font-size:10px; color:var(--muted);">Indexed public MJPEG / HLS cameras</div>
+            </div>
+            <div class="ns-domain-stat" style="border-color:rgba(168, 85, 247, 0.32);"
+              title="Custom manual stream nodes (host/port/protocol) plus raw RTSP/RTMP/M3U8 streams">
+              <div style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700;">
+                Manual &amp; Raw Streams <i class="fas fa-info-circle ns-info-icon"></i>
+              </div>
+              <div id="stream-cnt-raw" style="font-size:18px; font-weight:700; color:#c084fc; margin:2px 0;">0</div>
+              <div style="font-size:10px; color:var(--muted);">Manual servers + raw RTSP / M3U8 feeds</div>
+            </div>
+          </div>
+
+          <!-- 7a. Stream Hunter Providers & Live Preview Settings -->
+          <div class="endpoint-group" style="margin-bottom:14px; border-color:rgba(6, 182, 212, 0.3);">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-streams-providers-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-streams-providers-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-broadcast-tower" style="color:#06b6d4; margin-right:6px;"></i>
+                  Stream Hunter Providers &amp; Live Frame Preview
+                  <i class="fas fa-info-circle ns-info-icon" title="Enable or disable individual built-in stream discovery engines and configure the periodic live preview snapshot interval."></i>
+                </span>
+                <span class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;">7 Providers</span>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-streams-providers-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:10px; line-height:1.45;">
+                Select which built-in discovery providers and SQLite stores are queried when scanning in <strong>📡 Live Streams</strong> mode, and configure periodic live preview frame capture.
+              </p>
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(225px, 1fr)); gap:8px; font-size:11px; color:var(--text); margin-bottom:10px;">
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="sh-src-iptv_builtin" checked onchange="window.updateStreamHunterSource('iptv_builtin', this.checked)">
+                  <span><strong>Curated World TV</strong> <span style="color:var(--muted); font-size:10px;">(Resilient 24/7 HLS)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="sh-src-iptv_org_api" checked onchange="window.updateStreamHunterSource('iptv_org_api', this.checked)">
+                  <span><strong>IPTV-Org Live API</strong> <span style="color:var(--muted); font-size:10px;">(10,000+ TV Channels)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="sh-src-radio_builtin" checked onchange="window.updateStreamHunterSource('radio_builtin', this.checked)">
+                  <span><strong>Curated World Radio</strong> <span style="color:var(--muted); font-size:10px;">(SomaFM, RAI, BBC, Swiss)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="sh-src-radio_browser_api" checked onchange="window.updateStreamHunterSource('radio_browser_api', this.checked)">
+                  <span><strong>Radio-Browser API</strong> <span style="color:var(--muted); font-size:10px;">(30,000+ Icecast/MP3)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="sh-src-webcams_builtin" checked onchange="window.updateStreamHunterSource('webcams_builtin', this.checked)">
+                  <span><strong>Public Live Webcams</strong> <span style="color:var(--muted); font-size:10px;">(NASA, Cities, Weather)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="sh-src-searxng_dorks" checked onchange="window.updateStreamHunterSource('searxng_dorks', this.checked)">
+                  <span><strong>Raw Stream Dorks</strong> <span style="color:var(--muted); font-size:10px;">(M3U8, RTSP, Icecast, Cams)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="sh-src-sqlite_stream_store" checked onchange="window.updateStreamHunterSource('sqlite_stream_store', this.checked)">
+                  <span><strong>SQLite Stream Lists</strong> <span style="color:var(--muted); font-size:10px;">(Imported .m3u/.m3u8 DB)</span></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 7b. Manual Stream Servers & Endpoints (Structured Host / Port / Protocol Cards like SearXNG) -->
+          <div class="endpoint-group" style="margin-bottom:14px; border-color:rgba(16, 185, 129, 0.3);">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-streams-nodes-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-streams-nodes-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-server" style="color:var(--accent-emerald, #10b981); margin-right:6px;"></i>
+                  Manual Stream Servers &amp; Custom Endpoints
+                  <i class="fas fa-info-circle ns-info-icon" title="Add individual TV, Radio, IP Camera (RTSP/MJPEG), or Media Server endpoints with structured Protocol (http, https, rtsp, rtmp, mms), Address/Host, Port, Path, Category, and optional API Key."></i>
+                </span>
+                <span id="badge-streams-nodes-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Nodes</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Add a structured manual stream node or IP camera (protocol, host, port, stream path, category, optional API key)"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;"
+                  onclick="window.addCustomStreamNode()">
+                  <i class="fas fa-plus"></i> Add Stream Node
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-streams-nodes-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:10px; line-height:1.45;">
+                Configure individual live stream endpoints, local LAN cameras (<code>rtsp://192.168.x.x:554/stream</code>), Icecast servers, or custom HLS relays with explicit <strong>Protocol, Host, Port, Stream Path, Category (TV / Radio / Webcam / Raw)</strong>, and optional auth token. Click <strong>Save Endpoints</strong> below after editing.
+              </p>
+              <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; padding:8px 10px; background:var(--bg0); border-radius:6px; border:1px solid var(--border); align-items:center;">
+                <span style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-right:4px;">Quick Stream Node Templates:</span>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddStreamPresetNode('NASA TV Public', 'https', 'ntv1.akamaized.net', '', '/hls/live/2014075/NASA-NTV1-HLS/master.m3u8', 'tv')">+ NASA TV HLS</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddStreamPresetNode('SomaFM DEF CON Radio', 'https', 'ice2.somafm.com', '', '/defcon-128-mp3', 'radio')">+ SomaFM DEF CON</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddStreamPresetNode('LAN RTSP IP Camera', 'rtsp', '192.168.1.100', '554', '/live/ch0', 'webcam')">+ LAN RTSP Camera</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddStreamPresetNode('Local Icecast Server', 'http', '127.0.0.1', '8000', '/stream.mp3', 'radio')">+ Local Icecast (:8000)</button>
+              </div>
+              <div id="endp-streams-nodes-wrap" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+          </div>
+
+          <!-- 7c. Ready-Made Stream Lists & SQLite Compilations (Identical graphically to Domains SQLite) -->
+          <div class="endpoint-group" style="margin-bottom:0; border-color:rgba(245, 158, 11, 0.3);">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-sources-streams-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-sources-streams-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-database" style="color:var(--accent-amber, #f59e0b); margin-right:6px;"></i>
+                  Stream Lists &amp; SQLite Compilations (.m3u / .m3u8 / .pls / JSON)
+                  <i class="fas fa-info-circle ns-info-icon" title="Import ready-made .m3u / .m3u8 IPTV playlists, .pls radio directories, or JSON/CSV stream lists into stream_lists.sqlite for instant search without slowing down the UI."></i>
+                </span>
+                <span id="badge-sources-streams-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Lists</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Add or import a remote/local .m3u, .m3u8, .pls, JSON, or CSV stream list into the SQLite Stream Index"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;"
+                  onclick="window.SearchSources && window.SearchSources.openAddFormForTab('streams', 'stream_tv')">
+                  <i class="fas fa-plus"></i> Add / Import Stream List
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-sources-streams-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:10px; line-height:1.45;">
+                Manage large stream compilations and playlists indexed in SQLite (<code>stream_lists.sqlite</code> — supports 50,000+ channels with instant filtering).
+                Use the 1-click category switch on any list to assign it to <strong>TV / IPTV</strong>, <strong>Radio / Icecast</strong>, <strong>Live Webcams</strong>, or <strong>Raw Streams</strong>.
+              </p>
+              <div id="endp-sources-presets-streams"
+                style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; padding:8px 10px; background:var(--bg0); border-radius:6px; border:1px solid var(--border); align-items:center;"></div>
+              <div id="endp-sources-list-streams" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+          </div>
+
+          <!-- 7d. AI Global Preset & Voice Control for Live Streams / TV Remote -->
+          <div class="endpoint-group" style="margin-top:14px; border-color:rgba(168, 85, 247, 0.35);">
+            <div class="endpoint-group-header" onclick="window.toggleEndpointSection(this, 'endp-streams-preset-body')" style="cursor:pointer;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="endpoint-collapse-btn"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-streams-preset-body')"
+                  title="Collapse Section (-)" aria-expanded="true">
+                  <i class="fas fa-minus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-sliders-h" style="color:#a855f7; margin-right:6px;"></i>
+                  AI Global Preset &amp; Voice Control (Live TV &amp; Remote)
+                  <i class="fas fa-info-circle ns-info-icon" title="Reuse Net Search's active Global Preset (LLM Model, TTS Voice, and Soul) when driving Live Streams via AI Copilot, Voice, or the TV Remote."></i>
+                </span>
+                <span class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;">Global Preset</span>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:block;" id="endp-streams-preset-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:10px; line-height:1.45;">
+                Control whether <strong>📡 Live Streams</strong> and the <strong>TV Remote</strong> share the single <strong>Net Search Global Preset</strong> (LLM model, TTS voice, and Soul personality) selected in the Copilot sidebar.
+              </p>
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; background:var(--bg0); border:1px solid var(--border); border-radius:6px;">
+                  <div>
+                    <div style="font-size:12px; font-weight:600; color:var(--text);">Use Global Preset for Live TV</div>
+                    <div style="font-size:10px; color:var(--muted); margin-top:2px;">Apply active Copilot Preset (Model, Voice, Soul) to AI TV commands.</div>
+                  </div>
+                  <label class="switch" title="Use Net Search Global Preset for Live Streams">
+                    <input type="checkbox" id="sh-sw-use-global-preset" checked
+                      onchange="window.updateNetSearchConfig && window.updateNetSearchConfig('stream_hunter.use_global_preset', this.checked)">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; background:var(--bg0); border:1px solid var(--border); border-radius:6px;">
+                  <div>
+                    <div style="font-size:12px; font-weight:600; color:var(--text);">Vocal Preset Announcements</div>
+                    <div style="font-size:10px; color:var(--muted); margin-top:2px;">Announce channel switches &amp; remote actions via Preset TTS voice (when Voice ON).</div>
+                  </div>
+                  <label class="switch" title="Speak channel confirmation using Global Preset voice">
+                    <input type="checkbox" id="sh-sw-preset-voice" checked
+                      onchange="window.updateNetSearchConfig && window.updateNetSearchConfig('stream_hunter.preset_voice_announcer', this.checked)">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; background:var(--bg0); border:1px solid var(--border); border-radius:6px;">
+                  <div>
+                    <div style="font-size:12px; font-weight:600; color:var(--text);">Show Preset on TV Remote LCD</div>
+                    <div style="font-size:10px; color:var(--muted); margin-top:2px;">Sync active Soul, Model &amp; Voice badge onto sidebar and pop-out Remote.</div>
+                  </div>
+                  <label class="switch" title="Display active Global Preset summary on TV Remote">
+                    <input type="checkbox" id="sh-sw-preset-remote-sync" checked
+                      onchange="window.updateNetSearchConfig && window.updateNetSearchConfig('stream_hunter.preset_remote_sync', this.checked)">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>

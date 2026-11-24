@@ -1,0 +1,82 @@
+        <!-- ═══ TAB 3: DARK WEB (.onion) ═══ -->
+        <div id="ns-tab-pane-dark" class="ns-tab-pane">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding:9px 12px; margin-bottom:14px; background:rgba(168, 85, 247, 0.08); border:1px solid rgba(168, 85, 247, 0.25); border-radius:8px; font-size:11px; color:var(--muted);">
+            <span>
+              <i class="fas fa-shield-alt" style="color:#a855f7; margin-right:6px;"></i>
+              Tor SOCKS5h ports, <code>.onion</code> Link Action and Tor Browser path are configured in the <strong>Tor Dark Web Gateway</strong> card above.
+            </span>
+            <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:3px 9px; border-radius:6px;"
+              title="Scroll up to Tor Proxy &amp; Network Ports card"
+              onclick="const el=document.getElementById('search-tor-onion-action'); if(el){el.scrollIntoView({behavior:'smooth', block:'center'}); el.focus();}">
+              <i class="fas fa-arrow-up"></i> Tor Card Settings
+            </button>
+          </div>
+
+          <!-- 3a. Built-in & Custom Onion Search Engines -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-tor-engines-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-tor-engines-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-user-secret" style="color:var(--accent-purple, #a855f7); margin-right:6px;"></i>
+                  Dark Web (.onion &amp; Gateway) Engines
+                  <i class="fas fa-info-circle ns-info-icon" title="Built-in and custom .onion search engines or clearnet gateways routed through your Tor SOCKS5h proxy when Dark Web search is triggered."></i>
+                </span>
+                <span id="badge-tor-engines-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Engines</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Add a custom .onion hidden service search engine or clearnet Tor gateway"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;" onclick="window.addCustomTorEngineNode()">
+                  <i class="fas fa-plus"></i> Add Tor Engine
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-tor-engines-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">
+                Pre-configured and custom onion search engines / clearnet gateways routed through the Tor SOCKS5h proxy.
+              </p>
+              <div id="endp-tor-engines-wrap" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+          </div>
+
+          <!-- 3b. Automated .onion Source Lists -->
+          <div class="endpoint-group" style="margin-bottom:0; border-color:rgba(168, 85, 247, 0.28);">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-sources-dark-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-sources-dark-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-rss" style="color:var(--accent-purple, #a855f7); margin-right:6px;"></i>
+                  Automated .onion Source Lists
+                  <i class="fas fa-info-circle ns-info-icon" title="Text, Markdown, GitHub, or Tor-hosted lists containing .onion search engines to automatically keep Dark Web backends updated."></i>
+                </span>
+                <span id="badge-sources-dark-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Lists</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Register or import a list of .onion engines (optionally routed over Tor)"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;"
+                  onclick="window.SearchSources && window.SearchSources.openAddFormForTab('dark', 'custom_onion_engines')">
+                  <i class="fas fa-plus"></i> Add / Import .onion List
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-sources-dark-body">
+              <div id="endp-sources-presets-dark"
+                style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; padding:8px 10px; background:var(--bg0); border-radius:6px; border:1px solid var(--border); align-items:center;"></div>
+              <div id="endp-sources-list-dark" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+          </div>
+        </div>

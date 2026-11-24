@@ -1,0 +1,197 @@
+    <!-- --   Right: Hecos AI Support Panel   -- -->
+
+    <aside class="search-copilot" id="search-copilot">
+
+      <!-- -- Resizer Handle for Sidebar Width -- -->
+
+      <div class="copilot-resizer" id="copilot-resizer" title="Drag to resize sidebar width"></div>
+
+      <div class="copilot-header">
+
+        <div class="copilot-title">
+
+          <i class="fas fa-brain"></i> HECOS AI SUPPORT
+
+        </div>
+
+        <span class="copilot-live-pill"><i class="fas fa-circle-dot"></i> LIVE</span>
+
+      </div>
+
+      <div class="copilot-body">
+
+        <!-- -- 1. Global Presets Selector -- -->
+
+        <div class="copilot-card copilot-preset-card" id="copilot-preset-card">
+
+          <div class="copilot-card-title copilot-preset-header-row">
+            <span><i class="fas fa-sliders-h"></i> Global Preset</span>
+            <button type="button" id="copilot-preset-info-btn" class="copilot-preset-info-btn"
+              title="Inspect full preset model, inference, and voice settings">
+              <i class="fas fa-circle-info"></i>
+            </button>
+          </div>
+
+          <div class="copilot-preset-wrapper">
+
+            <select id="copilot-preset-select" class="copilot-preset-select" title="Select Global Preset">
+
+              <option value="default">&#129504; Loading personalities...</option>
+
+            </select>
+
+          </div>
+
+          <div id="copilot-preset-summary" class="copilot-preset-summary"></div>
+          <div id="copilot-preset-popover" class="copilot-preset-popover" style="display:none;"></div>
+
+        </div>
+
+        <!-- -- 2. Presenter Live Commentary Feed -- -->
+
+        <!-- Unified Official Hecos Presenter Widget -->
+        <div id="hbs-presenter-embedded" class="netsearch-presenter-embedded"></div>
+        <!-- -- 3. Automated Synthesis Summary -- -->
+
+        <div class="copilot-card">
+
+          <div class="copilot-card-title"><i class="fas fa-chart-pie"></i> Intelligence Synthesis</div>
+
+          <div id="copilot-summary-content">
+
+            <span style="color:var(--text-dim); font-size:12px;">Waiting for search results to generate
+              analysis...</span>
+
+          </div>
+
+        </div>
+
+        <!-- -- 4. Interactive Search Assistant Chat -- -->
+
+        <div class="copilot-card copilot-chat-card">
+
+          <div class="copilot-card-title copilot-chat-header-row" id="copilot-chat-title">
+            <span><i class="fas fa-comments"></i> <span id="copilot-chat-title-text">Ask Hecos AI</span></span>
+            <div class="copilot-header-actions">
+              <button type="button" id="copilot-new-search-btn" class="copilot-new-search-btn"
+                title="Start a new search and reset AI Copilot conversation">
+                <i class="fas fa-plus"></i> New Search
+              </button>
+              <button type="button" id="copilot-tts-toggle" class="copilot-tts-toggle-btn is-muted"
+                title="Toggle Voice Output (auto-speak Copilot replies using the active Global Preset TTS)">
+                <i class="fas fa-volume-xmark"></i> Voice: OFF
+              </button>
+              <button type="button" id="copilot-automode-toggle" class="copilot-automode-btn is-auto"
+                title="Auto-Mode ON: AI autonomously chooses optimal mode and category tab">
+                <i class="fas fa-wand-magic-sparkles"></i> Auto-Mode: ON
+              </button>
+            </div>
+          </div>
+
+
+
+          <div class="copilot-chat-messages" id="copilot-chat-messages">
+
+            <div class="copilot-msg copilot-msg-assistant">
+
+              <div class="copilot-msg-avatar copilot-assistant-avatar" id="copilot-initial-avatar">
+
+                <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png" class="copilot-avatar-img" alt="AI">
+
+              </div>
+
+              <div class="copilot-msg-bubble">
+
+                <div class="copilot-msg-text">
+
+                  Hello! I can synthesize sources, surface top media, extract data, and analyze search findings.
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- -- Quick Prompts Chips -- -->
+
+          <div class="copilot-quick-chips">
+
+            <button class="copilot-chip" data-prompt="Summarize the key findings from these results."><i
+                class="fas fa-bolt"></i> Summarize</button>
+
+            <button class="copilot-chip" data-prompt="What are the most relevant videos or media items found?"><i
+                class="fas fa-film"></i> Find Media</button>
+
+            <button class="copilot-chip" data-prompt="Extract the main takeaways and key facts."><i
+                class="fas fa-bullseye"></i> Key Points</button>
+
+          </div>
+
+          <!-- -- Stop Voice Button (visible while TTS generating/playing) -- -->
+
+          <button type="button" id="copilot-stop-voice-btn" class="copilot-stop-voice-btn" style="display:none;"
+            title="Stop Voice Output">
+            <i class="fas fa-stop"></i> Stop Voice
+          </button>
+
+          <!-- -- Input Bar -- -->
+
+          <div class="copilot-chat-input-bar">
+
+            <input type="text" id="copilot-chat-input" class="copilot-chat-input"
+              placeholder="Type a question or search query..." autocomplete="off">
+
+            <button type="button" id="copilot-chat-mic" class="copilot-chat-mic"
+              title="Microphone: hold to talk · tap to lock (Ctrl+Shift)"
+              aria-label="Microphone — hold for PTT, tap to toggle lock">
+              <i class="fas fa-microphone" aria-hidden="true"></i>
+            </button>
+
+            <button type="button" id="copilot-chat-send" class="copilot-chat-send" title="Send message (Enter)"
+              aria-label="Send message">
+
+              <i class="fas fa-paper-plane"></i>
+
+            </button>
+
+          </div>
+
+          <div id="copilot-mic-status" class="copilot-mic-status">MIC: Hold or Ctrl+Shift to talk · Tap to lock</div>
+
+        </div>
+
+        <!-- -- 5. Quick Actions & Export -- -->
+
+        <div class="copilot-card">
+
+          <div class="copilot-card-title">Quick Actions</div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+
+            <button class="copilot-btn" onclick="SearchCopilot.exportReport()">
+
+              <i class="fas fa-file-export"></i> Export Report (.md)
+
+            </button>
+
+          </div>
+
+        </div>
+
+        <div class="copilot-card" style="background:rgba(6, 182, 212, 0.03); border-color:rgba(6, 182, 212, 0.15);">
+
+          <div class="copilot-card-title" style="color:var(--accent-cyan);">Privacy &amp; Security</div>
+
+          <div style="font-size:11px; color:var(--text-muted); line-height:1.6;">
+
+            All .onion requests are strictly routed through Tor's isolated SOCKS5h circuit.
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </aside>

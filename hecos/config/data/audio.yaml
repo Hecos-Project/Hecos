@@ -290,7 +290,7 @@ fish_speech:
   api_url: http://127.0.0.1:18480/v1/tts
   api_key: ''
   reference_id: ''
-  reference_audio: ''
+  reference_audio: Urania Voce Inglese Here for you.wav
   reference_text: ''
   temperature: 0.7
   top_p: 0.7

@@ -1,0 +1,168 @@
+  <!-- --   Components & Engines Modal   -- -->
+
+  <div class="search-modal-backdrop" id="components-modal">
+
+    <div class="search-modal" style="max-width: 860px;">
+
+      <div class="modal-header">
+
+        <div style="display:flex; align-items:center; gap:10px;">
+
+          <i class="fas fa-cubes" style="color:var(--accent-cyan); font-size:18px;"></i>
+
+          <h3 style="font-size:16px;">Search Engine Components</h3>
+
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px;">
+
+          <a href="/hecos/config/ui?tab=files#netsearch" target="_blank" class="btn btn-sm btn-secondary"
+            style="font-size:11px; text-decoration:none; padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;"
+            title="Configure File Hunter sources (Open APIs, Clearnet &amp; Tor .onion engines)">
+
+            <i class="fas fa-file-shield" style="color:#38bdf8;"></i> File Hunter Sources
+
+          </a>
+
+          <a href="/hecos/config/ui#netsearch" target="_blank" class="btn btn-sm btn-secondary"
+            style="font-size:11px; text-decoration:none; padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;"
+            title="Open Endpoints &amp; Nodes in Central Hub">
+
+            <i class="fas fa-sliders-h" style="color:var(--accent-cyan);"></i> Configure Endpoints in Hub <i
+              class="fas fa-external-link-alt" style="font-size:9px;"></i>
+
+          </a>
+
+          <button class="btn-icon" onclick="closeAllModals()"><i class="fas fa-times"></i></button>
+
+        </div>
+
+      </div>
+
+      <div class="modal-body" id="components-list">
+
+        <!-- -- Injected via search_main.js -- -->
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- --   Import Search Engines Modal   -- -->
+  <div class="search-modal-backdrop" id="engine-import-modal">
+    <div class="search-modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="modal-icon"><i class="fas fa-file-import" style="color:var(--accent-cyan);"></i></div>
+          <div>
+            <h3 style="font-size:15px; margin:0;">Import Search Engines or URLs</h3>
+            <div style="font-size:11px; color:var(--muted);">Paste JSON array of engines, YAML configuration, or raw
+              search URLs (one per line)</div>
+          </div>
+        </div>
+        <button class="btn-icon" onclick="document.getElementById('engine-import-modal').classList.remove('open')"><i
+            class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="padding:16px;">
+        <textarea id="engine-import-textarea"
+          placeholder="Paste here JSON array of engines, YAML, or list of URLs:&#10;&#10;Examples:&#10;- https://search.ononoki.org&#10;- https://searx.tiekoetter.com&#10;- google, bing, duckduckgo, reddit, arxiv&#10;&#10;Or JSON:&#10;[{&quot;name&quot;: &quot;reddit&quot;, &quot;category&quot;: &quot;social media&quot;, &quot;enabled&quot;: true}]"
+          style="width:100%; height:180px; background:var(--bg0); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:monospace; font-size:12px; padding:10px; box-sizing:border-box;"></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
+          <span id="engine-import-status" style="font-size:11px; color:var(--muted);"></span>
+          <button type="button" class="btn btn-primary" onclick="window.submitEngineImport()"
+            style="border-radius:6px; padding:6px 16px;">
+            <i class="fas fa-upload"></i> Process &amp; Import
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- --   Saved Links & Bookmarks Modal   -- -->
+
+  <div class="search-modal-backdrop" id="bookmarks-modal">
+
+    <div class="search-modal" style="max-width: 760px;">
+
+      <div class="modal-header">
+
+        <div style="display:flex; align-items:center; gap:10px;">
+
+          <i class="fas fa-star" style="color:#f59e0b; font-size:18px;"></i>
+
+          <h3 style="font-size:16px;">Saved Links &amp; Bookmarks</h3>
+
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px;">
+
+          <button type="button" class="btn btn-sm btn-secondary"
+            style="border-radius:6px; font-size:11px; padding:4px 10px;"
+            onclick="window.BookmarksManager.exportBookmarks()" title="Export bookmarks as JSON">
+
+            <i class="fas fa-download"></i> Export
+
+          </button>
+
+          <button class="btn-icon" onclick="window.BookmarksManager.close()"><i class="fas fa-times"></i></button>
+
+        </div>
+
+      </div>
+
+      <!-- -- Search & Filter Bar -- -->
+
+      <div
+        style="display:flex; gap:10px; padding:10px 20px; border-bottom:1px solid var(--border); background:var(--bg1); align-items:center; flex-wrap:wrap;">
+
+        <div
+          style="flex:1; min-width:200px; display:flex; align-items:center; background:var(--bg0); border:1px solid var(--border); border-radius:6px; padding:4px 10px;">
+
+          <i class="fas fa-search" style="color:var(--muted); font-size:11px; margin-right:8px;"></i>
+
+          <input type="text" id="bookmarks-search-input" placeholder="Search saved links..."
+            oninput="window.BookmarksManager.loadList(window.BookmarksManager.currentFilter)"
+            style="background:transparent; border:none; color:var(--text); font-size:12px; width:100%; outline:none;">
+
+        </div>
+
+        <div style="display:flex; gap:6px;">
+
+          <button type="button" class="btn btn-sm bookmark-filter-btn active" data-filter="all"
+            style="border-radius:6px; font-size:11px; padding:4px 10px;"
+            onclick="window.BookmarksManager.loadList('all')">
+
+            All Links
+
+          </button>
+
+          <button type="button" class="btn btn-sm bookmark-filter-btn" data-filter="clear"
+            style="border-radius:6px; font-size:11px; padding:4px 10px;"
+            onclick="window.BookmarksManager.loadList('clear')">
+
+            <i class="fas fa-globe"></i> ClearWeb
+
+          </button>
+
+          <button type="button" class="btn btn-sm bookmark-filter-btn" data-filter="tor"
+            style="border-radius:6px; font-size:11px; padding:4px 10px;"
+            onclick="window.BookmarksManager.loadList('tor')">
+
+            <i class="fas fa-user-secret"></i> Onion
+
+          </button>
+
+        </div>
+
+      </div>
+
+      <div class="modal-body" id="bookmarks-list-container" style="max-height: 65vh; overflow-y:auto; gap:10px;">
+
+        <!-- -- Injected via search_bookmarks.js -- -->
+
+      </div>
+
+    </div>
+
+  </div>

@@ -1,0 +1,132 @@
+<div class="sh-remote-dock-wrap" id="sh-remote-wrap" style="display:none;">
+  <div class="sh-remote-shell" id="sh-remote-shell">
+    <div class="sh-remote-topbar" id="sh-remote-drag-handle" title="Live TV Remote — Drag when detached">
+      <div class="sh-remote-brand">
+        <i class="fas fa-tv"></i>
+        <span>TV REMOTE</span>
+        <span class="sh-pill sh-pill-ready" id="sh-remote-status-pill" style="font-size:9px; padding:1px 6px;">STANDBY</span>
+      </div>
+      <div class="sh-remote-win-btns">
+        <button type="button" class="sh-rem-icon-btn" id="sh-rem-float-btn" data-sh-action="toggle_float" title="Detach / Float draggable remote">
+          <i class="fas fa-up-right-from-square"></i>
+        </button>
+        <button type="button" class="sh-rem-icon-btn" id="sh-rem-popout-btn" data-sh-action="popout" title="Extract Pop-out Remote Window (multi-monitor / over VLC)">
+          <i class="fas fa-window-restore"></i>
+        </button>
+        <button type="button" class="sh-rem-icon-btn" id="sh-rem-collapse-btn" data-sh-action="toggle_collapse" title="Collapse / Expand Remote Pad">
+          <i class="fas fa-chevron-up"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="sh-remote-body" id="sh-remote-body">
+      <!-- OLED LCD Display -->
+      <div class="sh-remote-lcd" id="sh-remote-lcd">
+        <div class="sh-lcd-row-top">
+          <span class="sh-pill sh-pill-live" id="sh-lcd-ch-pill">CH --</span>
+          <span class="sh-lcd-osd-digits" id="sh-lcd-digits"></span>
+          <span class="sh-pill sh-pill-meta" id="sh-lcd-target-pill">APP</span>
+        </div>
+        <div class="sh-lcd-title" id="sh-lcd-title">Select a channel or press CH+</div>
+        <div class="sh-lcd-meta" id="sh-lcd-meta">
+          <span id="sh-lcd-vol-label">VOL 85%</span>
+          <span>•</span>
+          <span id="sh-lcd-queue-label">0 CH</span>
+          <span id="sh-lcd-proxy-label" style="display:none;">• PROXY</span>
+        </div>
+        <div class="sh-lcd-preset-row" id="sh-lcd-preset-row" title="Active Net Search Global Preset for Live Streams">
+          <i class="fas fa-sliders-h"></i>
+          <span id="sh-lcd-preset-text">Preset: Synced</span>
+        </div>
+      </div>
+
+      <!-- Quick Utility Strip -->
+      <div class="sh-remote-util-row">
+        <button type="button" class="sh-rem-btn sh-rem-stop" data-sh-action="stop" title="Stop Stream (S)">
+          <i class="fas fa-power-off"></i>
+        </button>
+        <button type="button" class="sh-rem-btn sh-rem-pause" data-sh-action="pause" title="Play / Pause (Space)">
+          <i class="fas fa-pause"></i>
+        </button>
+        <button type="button" class="sh-rem-btn sh-rem-target" data-sh-action="target" title="Cycle Target: In-App / VLC Desktop / LibVLC">
+          <i class="fas fa-desktop"></i> <span id="sh-rem-target-txt">APP</span>
+        </button>
+        <button type="button" class="sh-rem-btn sh-rem-proxy" data-sh-action="toggle_proxy" title="Toggle Anti-CORS Proxy">
+          <i class="fas fa-shield-halved"></i>
+        </button>
+        <button type="button" class="sh-rem-btn sh-rem-vlc" data-sh-action="open_vlc" title="Open active channel in VLC Desktop (V)">
+          <i class="fas fa-play-circle"></i> VLC
+        </button>
+      </div>
+
+      <!-- Core TV Rockers + D-Pad -->
+      <div class="sh-remote-core">
+        <div class="sh-rocker-col">
+          <button type="button" class="sh-rem-btn sh-rem-rocker" data-sh-action="ch_up" title="Channel Up (ArrowUp / PageUp)">
+            <i class="fas fa-chevron-up"></i>
+            <span>CH+</span>
+          </button>
+          <button type="button" class="sh-rem-btn sh-rem-rocker" data-sh-action="ch_down" title="Channel Down (ArrowDown / PageDown)">
+            <span>CH-</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+        </div>
+
+        <div class="sh-dpad">
+          <button type="button" class="sh-rem-btn sh-dpad-up" data-sh-action="ch_up" title="Channel Up"><i class="fas fa-caret-up"></i></button>
+          <button type="button" class="sh-rem-btn sh-dpad-left" data-sh-action="vol_down" title="Vol -"><i class="fas fa-caret-left"></i></button>
+          <button type="button" class="sh-rem-btn sh-dpad-ok" data-sh-action="ok" title="Confirm Channel / Play (Enter)">OK</button>
+          <button type="button" class="sh-rem-btn sh-dpad-right" data-sh-action="vol_up" title="Vol +"><i class="fas fa-caret-right"></i></button>
+          <button type="button" class="sh-rem-btn sh-dpad-down" data-sh-action="ch_down" title="Channel Down"><i class="fas fa-caret-down"></i></button>
+        </div>
+
+        <div class="sh-rocker-col">
+          <button type="button" class="sh-rem-btn sh-rem-rocker" data-sh-action="vol_up" title="Volume Up (ArrowRight)">
+            <i class="fas fa-volume-high"></i>
+            <span>VOL+</span>
+          </button>
+          <button type="button" class="sh-rem-btn sh-rem-rocker" data-sh-action="vol_down" title="Volume Down (ArrowLeft)">
+            <span>VOL-</span>
+            <i class="fas fa-volume-low"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Volume Slider + Mute -->
+      <div class="sh-remote-vol-row">
+        <button type="button" class="sh-rem-btn sh-rem-mute" id="sh-rem-mute-btn" data-sh-action="mute" title="Mute / Unmute (M)">
+          <i class="fas fa-volume-xmark"></i>
+        </button>
+        <input type="range" min="0" max="100" value="85" class="sh-rem-vol-slider" id="sh-rem-vol-slider" title="Volume">
+      </div>
+
+      <!-- Numeric Keypad 0-9 + LAST + GO -->
+      <div class="sh-remote-keypad">
+        <button type="button" class="sh-rem-btn sh-rem-digit" data-sh-digit="1">1</button>
+        <button type="button" class="sh-rem-btn sh-rem-digit" data-sh-digit="2">2</button>
+        <button type="button" class="sh-rem-btn sh-rem-digit" data-sh-digit="3">3</button>
+        <button type="button" class="sh-rem-btn sh-rem-digit" data-sh-digit="4">4</button>
+        <button type="button" class="sh-rem-btn sh-rem-digit" data-sh-digit="5">5</button>
+        <button type="button" class="sh-rem-btn sh-rem-digit" data-sh-digit="6">6</button>
+        <button type="button" class="sh-rem-btn sh-rem-digit" data-sh-digit="7">7</button>
+        <button type="button" class="sh-rem-btn sh-rem-digit" data-sh-digit="8">8</button>
+        <button type="button" class="sh-rem-btn sh-rem-digit" data-sh-digit="9">9</button>
+        <button type="button" class="sh-rem-btn sh-rem-fn" data-sh-action="last" title="Last Channel (B / Backspace)">LAST</button>
+        <button type="button" class="sh-rem-btn sh-rem-digit" data-sh-digit="0">0</button>
+        <button type="button" class="sh-rem-btn sh-rem-fn" data-sh-action="probe" title="Probe active stream status">PROBE</button>
+      </div>
+
+      <!-- Category Shortcut Buttons -->
+      <div class="sh-remote-cat-row">
+        <button type="button" class="sh-rem-btn sh-rem-cat" data-sh-action="category" data-sh-cat="all">ALL</button>
+        <button type="button" class="sh-rem-btn sh-rem-cat" data-sh-action="category" data-sh-cat="tv">TV</button>
+        <button type="button" class="sh-rem-btn sh-rem-cat" data-sh-action="category" data-sh-cat="radio">RADIO</button>
+        <button type="button" class="sh-rem-btn sh-rem-cat" data-sh-action="category" data-sh-cat="webcam">CAM</button>
+      </div>
+
+      <div class="sh-remote-kbd-hint">
+        Keys: <b>0-9</b> ch • <b>↑↓</b> zap • <b>←→</b> vol • <b>M</b> mute • <b>V</b> VLC
+      </div>
+    </div>
+  </div>
+</div>

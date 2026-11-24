@@ -1,0 +1,48 @@
+    <!-- --   Left: Search History Sidebar   -- -->
+
+    <aside class="search-sidebar" id="search-sidebar">
+
+      <div class="sidebar-header">
+
+        <span>Search History</span>
+
+        <button class="btn-icon" style="width:24px; height:24px;"
+          onclick="window.SearchAPI.clearSessions().then(() => location.reload())" title="Clear history">
+
+          <i class="fas fa-trash-alt" style="font-size:10px;"></i>
+
+        </button>
+
+      </div>
+
+      <div class="sidebar-new-search-wrap">
+
+        <button type="button" id="sidebar-new-search-btn" class="sidebar-new-search-btn"
+          onclick="if(window.startNewSearch) window.startNewSearch('search')"
+          title="Start a fresh search and reset AI Copilot conversation">
+
+          <i class="fas fa-plus"></i> New Search
+
+        </button>
+
+      </div>
+
+      {% include 'search_partials/stream_remote_widget.html' %}
+
+      <div class="history-list" id="history-list">
+
+        <!-- -- Injected via search_main.js -- -->
+
+        <div style="text-align:center; padding:20px; color:var(--text-dim); font-size:12px;">
+
+          Loading sessions...
+
+        </div>
+
+      </div>
+
+      <!-- -- Resizer Handle for History Sidebar Width -- -->
+
+      <div class="sidebar-resizer" id="sidebar-resizer" title="Drag to resize sidebar width"></div>
+
+    </aside>

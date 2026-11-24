@@ -1,0 +1,146 @@
+        <!-- ═══ TAB 4: FILE HUNTER ═══ -->
+        <div id="ns-tab-pane-files" class="ns-tab-pane">
+          <div style="padding:11px 14px; margin-bottom:14px; background:rgba(56, 189, 248, 0.08); border:1px solid rgba(56, 189, 248, 0.28); border-radius:8px; font-size:11px; color:var(--text); line-height:1.5;">
+            <strong style="color:#38bdf8;"><i class="fas fa-file-shield" style="margin-right:6px;"></i>Where File Hunter searches (3 Tiers):</strong>
+            <div style="margin-top:5px; color:var(--muted);">
+              <strong>1. Dedicated File Engine (<code>files_dorks</code>):</strong> Direct APIs &amp; filetype dorks (below).<br>
+              <strong>2. Clearnet Web Engines:</strong> SearXNG (files/IT/science categories), DuckDuckGo/DDGS (<code>filetype:</code> batches), Brave API &amp; Custom OpenSearch/Web repos.<br>
+              <strong>3. Dark Web (.onion):</strong> When Tor is online, fans clean queries across <strong>all 9 active Tor engines</strong> (Ahmia, Torch, Excavator, Tor66, TorDex, OnionLand, Haystak, Phobos &amp; Custom <code>.onion</code>) and groups results in the <strong>Dark Web (.onion)</strong> subtab.
+            </div>
+          </div>
+
+          <!-- 4a. File Hunter Engine Scope Routing -->
+          <div class="endpoint-group" style="margin-bottom:14px; border-color:rgba(56, 189, 248, 0.25);">
+            <div class="endpoint-group-header">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-sliders-h" style="color:#38bdf8; margin-right:6px;"></i>
+                  Search Scope Routing
+                </span>
+              </div>
+              <span class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;">Auto-saved</span>
+            </div>
+            <div class="endpoint-group-body" style="padding-top:10px;">
+              <div style="display:flex; flex-direction:column; gap:10px; font-size:11.5px;">
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:var(--text);">Include All Clearnet Engines</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Fan out <code>filetype:</code> queries across SearXNG, DDG/DDGS, Brave API, and Custom Web/OpenSearch endpoints.</span>
+                  </span>
+                  <input type="checkbox" id="fh-sw-include-clear" checked
+                    onchange="window.updateNetSearchConfig('file_hunter.include_all_clear', this.checked)">
+                </label>
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:#c084fc;">Include All Tor Dark Web (.onion) Engines</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Search across all 9 Tor engines (Ahmia, Torch, Excavator, Tor66, TorDex, OnionLand, Haystak, Phobos &amp; Custom) whenever Tor is online.</span>
+                  </span>
+                  <input type="checkbox" id="fh-sw-include-dark" checked
+                    onchange="window.updateNetSearchConfig('file_hunter.include_all_dark', this.checked)">
+                </label>
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:#fbbf24;">Include SQLite Domain Directory</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Query curated SQLite Directory host compilations alongside public web and file APIs.</span>
+                  </span>
+                  <input type="checkbox" id="fh-sw-include-directory" checked
+                    onchange="window.updateNetSearchConfig('file_hunter.include_domain_directory', this.checked)">
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4b. Dedicated Built-In File API & Dork Sources (11) -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-fh-sources-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-fh-sources-body')"
+                  title="Collapse Section (-)" aria-expanded="true">
+                  <i class="fas fa-minus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-plug" style="color:#38bdf8; margin-right:6px;"></i>
+                  Dedicated Open File APIs &amp; Dorks (<code>files_dorks</code>)
+                </span>
+                <span id="badge-fh-sources-active" class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;">11/11 Active</span>
+              </div>
+            </div>
+            <div class="endpoint-group-body" id="endp-fh-sources-body" style="padding-top:10px;">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:10px;">
+                Toggle individual structured file APIs and clearnet Google/DDG dorks queried in parallel on every File Hunter search:
+              </p>
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:8px; font-size:11px;">
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-dorks_web" checked onchange="window.updateFileHunterSource('dorks_web', this.checked)">
+                  <span><strong>Web Dorks</strong> <span style="color:var(--muted); font-size:10px;">(DDG/Google/SearXNG)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-arxiv" checked onchange="window.updateFileHunterSource('arxiv', this.checked)">
+                  <span><strong>arXiv</strong> <span style="color:var(--muted); font-size:10px;">(Direct PDF Preprints)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-openalex" checked onchange="window.updateFileHunterSource('openalex', this.checked)">
+                  <span><strong>OpenAlex</strong> <span style="color:var(--muted); font-size:10px;">(OA Research PDFs)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-zenodo" checked onchange="window.updateFileHunterSource('zenodo', this.checked)">
+                  <span><strong>Zenodo</strong> <span style="color:var(--muted); font-size:10px;">(Datasets &amp; PDFs)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-openlibrary" checked onchange="window.updateFileHunterSource('openlibrary', this.checked)">
+                  <span><strong>OpenLibrary</strong> <span style="color:var(--muted); font-size:10px;">(Readable/IA eBooks)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-doaj" checked onchange="window.updateFileHunterSource('doaj', this.checked)">
+                  <span><strong>DOAJ</strong> <span style="color:var(--muted); font-size:10px;">(Open-Access Journals)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-huggingface" checked onchange="window.updateFileHunterSource('huggingface', this.checked)">
+                  <span><strong>HuggingFace</strong> <span style="color:var(--muted); font-size:10px;">(Datasets &amp; Models)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-github" checked onchange="window.updateFileHunterSource('github', this.checked)">
+                  <span><strong>GitHub</strong> <span style="color:var(--muted); font-size:10px;">(Code &amp; Releases)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-npm" checked onchange="window.updateFileHunterSource('npm', this.checked)">
+                  <span><strong>npm Registry</strong> <span style="color:var(--muted); font-size:10px;">(Tarballs &amp; Packages)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-archive_org" checked onchange="window.updateFileHunterSource('archive_org', this.checked)">
+                  <span><strong>Internet Archive</strong> <span style="color:var(--muted); font-size:10px;">(PDFs, ISOs &amp; Books)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="fh-src-wikimedia" checked onchange="window.updateFileHunterSource('wikimedia', this.checked)">
+                  <span><strong>Wikimedia Commons</strong> <span style="color:var(--muted); font-size:10px;">(Media &amp; Docs)</span></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4c. Add Custom File / .onion Sources -->
+          <div class="endpoint-group" style="margin-bottom:0;">
+            <div class="endpoint-group-header">
+              <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                <i class="fas fa-plus-circle" style="color:var(--accent-emerald, #10b981); margin-right:6px;"></i>
+                Add Custom File Repositories &amp; Dark Web Engines
+              </span>
+            </div>
+            <div class="endpoint-group-body" style="padding-top:10px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:5px 12px; border-radius:6px;"
+                onclick="window.switchNetSearchEndpointTab('web'); window.toggleEndpointSection && window.toggleEndpointSection(null, 'endp-custom-clear-body', true); window.addCustomClearEngineNode && window.addCustomClearEngineNode();">
+                <i class="fas fa-globe" style="color:var(--accent-emerald);"></i> + Add Clearnet File / OpenSearch Engine
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:5px 12px; border-radius:6px;"
+                onclick="window.switchNetSearchEndpointTab('dark'); window.toggleEndpointSection && window.toggleEndpointSection(null, 'endp-tor-engines-body', true); window.addCustomTorEngineNode && window.addCustomTorEngineNode();">
+                <i class="fas fa-user-secret" style="color:#a855f7;"></i> + Add Tor .onion Search Engine
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:5px 12px; border-radius:6px;"
+                onclick="window.switchNetSearchEndpointTab('domains'); window.toggleEndpointSection && window.toggleEndpointSection(null, 'endp-sources-domains-body', true);">
+                <i class="fas fa-database" style="color:var(--accent-amber);"></i> Manage Domain Directory
+              </button>
+            </div>
+          </div>
+        </div>

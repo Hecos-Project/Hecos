@@ -1,0 +1,151 @@
+        <!-- ═══ TAB 5: OSINT HUNT (PEOPLE / USERNAME / IDENTITY) ═══ -->
+        <div id="ns-tab-pane-osint" class="ns-tab-pane">
+          <div style="margin-bottom:12px; padding:10px 12px; border-radius:8px; background:rgba(244, 114, 182, 0.08); border:1px solid rgba(244, 114, 182, 0.25); font-size:11.5px; color:var(--text); line-height:1.45;">
+            <strong style="color:#f472b6;"><i class="fas fa-id-badge" style="margin-right:5px;"></i>OSINT Hunt Fan-Out Architecture:</strong>
+            Runs <strong>Sherlock 480+ Platform Catalog</strong> (with automatic person-name handle variants) + <strong>11 Dedicated OSINT APIs &amp; Social Dorks</strong>
+            + optionally <strong>All Clearnet Web Engines</strong>, <strong>All Tor Dark Web (.onion) Engines</strong>, and <strong>SQLite Domain Directory</strong>.
+          </div>
+
+          <!-- 5a. OSINT Engine Scope Routing -->
+          <div class="endpoint-group" style="margin-bottom:14px; border-color:rgba(244, 114, 182, 0.25);">
+            <div class="endpoint-group-header">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-sliders-h" style="color:#f472b6; margin-right:6px;"></i>
+                  OSINT Scope &amp; Sherlock Routing
+                </span>
+              </div>
+              <span class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;">Auto-saved</span>
+            </div>
+            <div class="endpoint-group-body" style="padding-top:10px;">
+              <div style="display:flex; flex-direction:column; gap:10px; font-size:11.5px;">
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:var(--text);">Include All Clearnet Engines</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Query SearXNG (local/fallback), DDG/DDGS, Brave API, and Custom Web/OpenSearch engines alongside OSINT APIs.</span>
+                  </span>
+                  <input type="checkbox" id="osint-sw-include-clear" checked
+                    onchange="window.updateNetSearchConfig('osint.include_all_clear', this.checked)">
+                </label>
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:#c084fc;">Include All Tor Dark Web (.onion) Engines</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Scan Tor .onion search engines for leaks, paste mentions, and identity references whenever Tor is online.</span>
+                  </span>
+                  <input type="checkbox" id="osint-sw-include-dark" checked
+                    onchange="window.updateNetSearchConfig('osint.include_all_dark', this.checked)">
+                </label>
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:#fbbf24;">Include SQLite Domain Directory</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Search curated SQLite Directory host lists alongside open OSINT sources.</span>
+                  </span>
+                  <input type="checkbox" id="osint-sw-include-directory" checked
+                    onchange="window.updateNetSearchConfig('osint.include_domain_directory', this.checked)">
+                </label>
+                <label style="display:flex; justify-content:space-between; align-items:center; gap:12px; cursor:pointer; padding:6px 8px; background:var(--bg0); border-radius:6px; border:1px solid var(--border);">
+                  <span>
+                    <strong style="color:#34d399;">Use Full Sherlock Site Database &amp; Person Name Variants</strong>
+                    <span style="display:block; font-size:10.5px; color:var(--muted);">Probes top Sherlock platforms with real error semantics and expands spaces into handle variants (e.g. <code>lisaellis</code>, <code>lisa.ellis</code>).</span>
+                  </span>
+                  <input type="checkbox" id="osint-sw-sherlock-db" checked
+                    onchange="window.updateNetSearchConfig('osint.use_sherlock_db', this.checked); window.updateNetSearchConfig('osint.generate_name_variants', this.checked)">
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5b. Dedicated Built-In OSINT APIs & People Dorks (11) -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-osint-sources-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-osint-sources-body')"
+                  title="Collapse Section (-)" aria-expanded="true">
+                  <i class="fas fa-minus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-fingerprint" style="color:#f472b6; margin-right:6px;"></i>
+                  Dedicated OSINT APIs &amp; People Dorks (<code>osint_sources</code>)
+                </span>
+                <span id="badge-osint-sources-active" class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;">11/11 Active</span>
+              </div>
+            </div>
+            <div class="endpoint-group-body" id="endp-osint-sources-body" style="padding-top:10px;">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:10px;">
+                Toggle individual structured OSINT APIs and multi-platform social/people dorks queried in parallel on every OSINT Hunt:
+              </p>
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:8px; font-size:11px;">
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-people_dorks" checked onchange="window.updateOsintSource('people_dorks', this.checked)">
+                  <span><strong>Social &amp; People Dorks</strong> <span style="color:var(--muted); font-size:10px;">(LinkedIn/IG/X/FB/TikTok)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-github" checked onchange="window.updateOsintSource('github', this.checked)">
+                  <span><strong>GitHub Users</strong> <span style="color:var(--muted); font-size:10px;">(Accounts &amp; Orgs)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-gitlab" checked onchange="window.updateOsintSource('gitlab', this.checked)">
+                  <span><strong>GitLab Users</strong> <span style="color:var(--muted); font-size:10px;">(Public Profiles)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-reddit" checked onchange="window.updateOsintSource('reddit', this.checked)">
+                  <span><strong>Reddit</strong> <span style="color:var(--muted); font-size:10px;">(Users &amp; Bios)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-hackernews" checked onchange="window.updateOsintSource('hackernews', this.checked)">
+                  <span><strong>HackerNews</strong> <span style="color:var(--muted); font-size:10px;">(Algolia Mentions)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-wikipedia" checked onchange="window.updateOsintSource('wikipedia', this.checked)">
+                  <span><strong>Wikipedia</strong> <span style="color:var(--muted); font-size:10px;">(Biographies &amp; Entities)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-wikidata" checked onchange="window.updateOsintSource('wikidata', this.checked)">
+                  <span><strong>Wikidata</strong> <span style="color:var(--muted); font-size:10px;">(Entity Records)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-gravatar" checked onchange="window.updateOsintSource('gravatar', this.checked)">
+                  <span><strong>Gravatar</strong> <span style="color:var(--muted); font-size:10px;">(Email Profiles)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-keybase" checked onchange="window.updateOsintSource('keybase', this.checked)">
+                  <span><strong>Keybase</strong> <span style="color:var(--muted); font-size:10px;">(Cryptographic Proofs)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-archive_org" checked onchange="window.updateOsintSource('archive_org', this.checked)">
+                  <span><strong>Internet Archive</strong> <span style="color:var(--muted); font-size:10px;">(Creators &amp; Records)</span></span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:7px 9px; background:var(--bg0); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+                  <input type="checkbox" id="osint-src-crtsh" checked onchange="window.updateOsintSource('crtsh', this.checked)">
+                  <span><strong>crt.sh</strong> <span style="color:var(--muted); font-size:10px;">(Domain Subdomains)</span></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5c. Add Custom OSINT / Dark Web Engines -->
+          <div class="endpoint-group" style="margin-bottom:0;">
+            <div class="endpoint-group-header">
+              <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                <i class="fas fa-plus-circle" style="color:var(--accent-emerald, #10b981); margin-right:6px;"></i>
+                Add Custom OSINT &amp; Dark Web Sources
+              </span>
+            </div>
+            <div class="endpoint-group-body" style="padding-top:10px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:5px 12px; border-radius:6px;"
+                onclick="window.switchNetSearchEndpointTab('web'); window.toggleEndpointSection && window.toggleEndpointSection(null, 'endp-custom-clear-body', true); window.addCustomClearEngineNode && window.addCustomClearEngineNode();">
+                <i class="fas fa-globe" style="color:var(--accent-emerald);"></i> + Add Custom Web / OSINT Engine
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:5px 12px; border-radius:6px;"
+                onclick="window.switchNetSearchEndpointTab('dark'); window.toggleEndpointSection && window.toggleEndpointSection(null, 'endp-tor-engines-body', true); window.addCustomTorEngineNode && window.addCustomTorEngineNode();">
+                <i class="fas fa-user-secret" style="color:#a855f7;"></i> + Add Tor .onion Search Engine
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:5px 12px; border-radius:6px;"
+                onclick="window.switchNetSearchEndpointTab('domains'); window.toggleEndpointSection && window.toggleEndpointSection(null, 'endp-sources-domains-body', true);">
+                <i class="fas fa-database" style="color:var(--accent-amber);"></i> Manage Domain Directory
+              </button>
+            </div>
+          </div>
+        </div>

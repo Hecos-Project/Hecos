@@ -1,0 +1,204 @@
+    <!-- Technical Parameters Grid -->
+    <div
+      style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px; margin-bottom:14px;">
+
+      <!-- Tor Technical Network Settings -->
+      <div style="padding:14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:16px;">🧅</span>
+            <strong style="font-size:13px; color:var(--text);">Tor Proxy &amp; Network Ports</strong>
+            <i class="fas fa-info-circle ns-info-icon" title="Built-in Tor daemon &amp; SOCKS5h gateway. Required for .onion engines and optional anonymous fetching of automated source lists without DNS leaks."></i>
+            <span id="tor-cfg-status-badge" class="badge-pill"
+              style="font-size:10px; padding:2px 8px; background:rgba(255,255,255,0.06); color:var(--muted);"
+              title="Live connection status of the local Tor daemon / SOCKS5h port">Checking...</span>
+            <button type="button" class="btn btn-sm btn-secondary"
+              style="font-size:10px; padding:2px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;"
+              onclick="window.torNewCircuit()" title="Request a fresh Tor exit circuit and IP identity via Control Port">
+              <i class="fas fa-random"></i> New Circuit
+            </button>
+          </div>
+          <label class="switch" title="Enable or disable Tor routing for .onion search engines and Tor-routed source lists">
+            <input type="checkbox" id="search-tor-enabled"
+              onchange="window.updateNetSearchConfig('tor.enabled', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:12px;">
+          SOCKS5h proxy configuration for .onion queries with zero DNS leaks.
+        </p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:110px;">
+            <label
+              title="Local SOCKS5h proxy port used by Hecos to route .onion requests (DNS resolved remotely through Tor). Default: 9055."
+              style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; display:block; margin-bottom:3px;">SOCKS5
+              Port <i class="fas fa-info-circle ns-info-icon"></i></label>
+            <input type="number" id="search-tor-socks-port" placeholder="9055" min="1024" max="65535"
+              title="Local SOCKS5h proxy port (1024-65535). Must match your Hecos Tor daemon or Tor Browser SOCKS port."
+              onchange="window.updateNetSearchConfig('tor.socks_port', parseInt(this.value))"
+              style="width:100%; padding:5px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-size:12px;">
+          </div>
+          <div style="flex:1; min-width:110px;">
+            <label
+              title="Tor ControlPort used to send NEWNYM signals ('New Circuit' button) and inspect daemon bootstrap status. Default: 9056."
+              style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; display:block; margin-bottom:3px;">Control
+              Port <i class="fas fa-info-circle ns-info-icon"></i></label>
+            <input type="number" id="search-tor-control-port" placeholder="9056" min="1024" max="65535"
+              title="Tor ControlPort (1024-65535) for circuit rotation and health checks."
+              onchange="window.updateNetSearchConfig('tor.control_port', parseInt(this.value))"
+              style="width:100%; padding:5px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-size:12px;">
+          </div>
+        </div>
+
+        <div style="margin-top:12px; border-top:1px dashed var(--border); padding-top:10px;">
+          <label
+            title="Choose what happens when you click a .onion result link in Search: open inside Hecos's Tor Live Viewer, launch external Tor Browser, or prompt every time."
+            style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;">Dark
+            Web (.onion) Link Opening Action <i class="fas fa-info-circle ns-info-icon"></i></label>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
+            <select id="search-tor-onion-action" onchange="window.updateNetSearchConfig('tor.onion_action', this.value)"
+              title="Default handler when opening .onion links from search results"
+              style="flex:1; min-width:200px; padding:5px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-size:12px;">
+              <option value="hecos_viewer">Hecos Tor Live Viewer (In-App Cross-Browser)</option>
+              <option value="tor_browser">External Tor Browser</option>
+              <option value="ask_menu">Always Show Choices Menu</option>
+            </select>
+          </div>
+          <div>
+            <label
+              title="Absolute path to Tor Browser executable (firefox.exe) used when External Tor Browser mode is selected."
+              style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;">Tor
+              Browser Executable Path <i class="fas fa-info-circle ns-info-icon"></i></label>
+            <div style="display:flex; gap:6px;">
+              <input type="text" id="search-tor-browser-path" placeholder="C:\Users\...\Tor Browser\Browser\firefox.exe"
+                title="Full file path to external Tor Browser binary"
+                onchange="window.updateNetSearchConfig('tor.tor_browser_path', this.value)"
+                style="flex:1; padding:5px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-size:11px; font-family:monospace;">
+              <button type="button" class="btn btn-secondary" onclick="window.detectTorBrowserPath()"
+                style="border-radius:6px; font-size:11px; padding:5px 12px; cursor:pointer;"
+                title="Auto-detect installed Tor Browser executable path on this computer">
+                <i class="fas fa-search"></i> Detect
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SearXNG Meta-Search (Pure Python Daemon / Local or Remote) -->
+      <div style="padding:14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:16px;">🔍</span>
+            <strong style="font-size:13px; color:var(--text);">SearXNG Primary Instance</strong>
+            <i class="fas fa-info-circle ns-info-icon" title="Primary meta-search daemon used to fan queries across multiple upstream web/media engines simultaneously."></i>
+          </div>
+          <label class="switch" title="Enable or disable queries to the primary SearXNG instance (fallback mirrors still apply when configured)">
+            <input type="checkbox" id="search-searxng-enabled"
+              onchange="window.updateNetSearchConfig('searxng.enabled', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">
+          Native Pure-Python daemon (100% Docker-Free) or custom SearXNG instance.
+        </p>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="search-searxng-url" placeholder="http://127.0.0.1:8889"
+            title="Base URL of your primary local or remote SearXNG instance (e.g. http://127.0.0.1:8889)"
+            onchange="window.updateNetSearchConfig('searxng.url', this.value)"
+            style="flex:1; padding:5px 10px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text);">
+        </div>
+        <div
+          style="margin-top:10px; padding-top:8px; border-top:1px dashed var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:11px; color:var(--muted);"><i class="fas fa-layer-group"
+              style="color:var(--accent-cyan, #06b6d4);"></i> Backend Engines:</span>
+          <button type="button" class="btn btn-sm btn-secondary"
+            title="Jump to SearXNG tab and open the Aggregated Backend Engines list"
+            onclick="window.switchNetSearchEndpointTab && window.switchNetSearchEndpointTab('searxng'); window.toggleEndpointSection(null, 'endp-searxng-engines-body', true); document.getElementById('endp-searxng-engines-body')?.scrollIntoView({behavior:'smooth'});"
+            style="font-size:10px; padding:3px 8px; border-radius:6px;">
+            <i class="fas fa-sliders-h"></i> Configure Aggregated Engines
+          </button>
+        </div>
+      </div>
+
+      <!-- Brave Search API Key -->
+      <div style="padding:14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border);">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+          <span style="font-size:15px;">🦁</span>
+          <strong style="font-size:13px; color:var(--text);">Brave Search API Key</strong>
+          <i class="fas fa-info-circle ns-info-icon" title="Optional official Brave Search API token (X-Subscription-Token) for fast, CAPTCHA-free web results alongside other engines."></i>
+          <span style="font-size:10px; color:var(--muted); background:var(--bg1); padding:1px 6px; border-radius:4px; margin-left:auto;">optional</span>
+        </div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:8px; line-height:1.4;">
+          Enables direct Brave Search API access — no CAPTCHA, no rate-limits (2 000 req/month free tier).
+          <a href="https://api.search.brave.com/app/keys" target="_blank"
+            style="color:var(--accent-cyan); text-decoration:none;">Get a free key ↗</a>
+        </p>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="password" id="search-brave-api-key" placeholder="BSA…"
+            title="Enter your Brave Search Data API subscription key"
+            onchange="window.updateNetSearchConfig('brave_api_key', this.value)"
+            autocomplete="off"
+            style="flex:1; padding:5px 10px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-family:monospace;">
+          <button type="button" title="Show or hide Brave API key"
+            onclick="const i=document.getElementById('search-brave-api-key'); i.type=i.type==='password'?'text':'password';"
+            style="padding:5px 10px; font-size:11px; border-radius:6px; border:1px solid var(--border); background:var(--bg1); color:var(--text); cursor:pointer;">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Engine Defaults & Limits -->
+      <div style="padding:14px; background:var(--bg3); border-radius:10px; border:1px solid var(--border);">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <span style="font-size:16px;">⚙️</span>
+          <strong style="font-size:13px; color:var(--text);">Search Defaults &amp; Timeouts</strong>
+          <i class="fas fa-info-circle ns-info-icon" title="Global default per-engine network timeout and default maximum result count when a query does not override them."></i>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
+          <div style="flex:1; min-width:110px;">
+            <label
+              title="Maximum seconds to wait per HTTP search engine before timing out. Tor .onion engines automatically receive extra timeout headroom."
+              style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; display:block; margin-bottom:3px;">Timeout
+              (Seconds) <i class="fas fa-info-circle ns-info-icon"></i></label>
+            <input type="number" id="search-timeout" placeholder="10" min="2" max="60"
+              title="Default per-engine request timeout in seconds (2-60)"
+              onchange="window.updateNetSearchConfig('timeout', parseInt(this.value))"
+              style="width:100%; padding:5px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-size:12px;">
+          </div>
+          <div style="flex:1; min-width:110px;">
+            <label
+              title="Default maximum number of merged results returned per search query across active engines."
+              style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; display:block; margin-bottom:3px;">Default
+              Limit <i class="fas fa-info-circle ns-info-icon"></i></label>
+            <input type="number" id="search-limit" placeholder="25" min="5" max="100"
+              title="Default result limit per search request (5-100)"
+              onchange="window.updateNetSearchConfig('limit', parseInt(this.value))"
+              style="width:100%; padding:5px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg0); color:var(--text); font-size:12px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Privacy Shield: Local Engines Only -->
+      <div style="padding:14px; background:var(--bg3); border-radius:10px; border:1px solid rgba(16, 185, 129, 0.35);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:16px;">🛡️</span>
+            <strong style="font-size:13px; color:var(--text);">Privacy Shield: Local Only</strong>
+            <i class="fas fa-info-circle ns-info-icon" title="Zero-leak mode: blocks direct Clearnet cloud scrapers/APIs and runs searches strictly via local SearXNG / Tor .onion circuits."></i>
+          </div>
+          <label class="switch"
+            title="Disable third-party online engines and restrict queries to local private SearXNG and Tor circuits">
+            <input type="checkbox" id="search-local-only-enabled"
+              onchange="window.updateNetSearchConfig('local_only', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:0; line-height:1.4;">
+          Disables all third-party online cloud engines and scrapers (DDGS, Yahoo News, web scrapers). Runs searches
+          <strong>strictly on private local daemons and circuits</strong> (local SearXNG daemon on
+          <code>127.0.0.1:8889</code> or encrypted Tor .onion circuits) with zero tracking, similar to disabling cloud
+          models in the AI core.
+        </p>
+      </div>
+
+    </div>

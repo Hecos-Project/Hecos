@@ -16,6 +16,204 @@
         "category": "SISTEMA",
         "slash_commands": []
     },
+    "BROWSER": {
+        "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing. Funziona sia in modo autonomo con l'IA che tramite comandi diretti (slash commands come /b, /b_close, /b_tabs).",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-globe",
+        "category": "PLUGINS",
+        "module_type": "core_module",
+        "slash_commands": [
+            {
+                "id": "b",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b",
+                    "/browser"
+                ],
+                "description": "Opens the AI browser on a URL or performs a search.",
+                "usage": "/b <url_o_ricerca>",
+                "example": "/b youtube.com",
+                "icon": "🌐",
+                "method": "slash_b",
+                "requires_args": true
+            },
+            {
+                "id": "b_close",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_close"
+                ],
+                "description": "Closes the AI browser.",
+                "usage": "/b_close",
+                "example": "/b_close",
+                "icon": "🌐",
+                "method": "slash_b_close",
+                "requires_args": false
+            },
+            {
+                "id": "b_tabs",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_tabs"
+                ],
+                "description": "Shows the list of open tabs in the AI browser.",
+                "usage": "/b_tabs",
+                "example": "/b_tabs",
+                "icon": "🌐",
+                "method": "slash_b_tabs",
+                "requires_args": false
+            },
+            {
+                "id": "b_back",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_back"
+                ],
+                "description": "Naviga indietro nel browser.",
+                "usage": "/b_back",
+                "example": "/b_back",
+                "icon": "⬅️",
+                "method": "slash_b_back",
+                "requires_args": false
+            },
+            {
+                "id": "b_click",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_click"
+                ],
+                "description": "Clicca un elemento per testo o selettore.",
+                "usage": "/b_click <testo_o_selettore>",
+                "example": "/b_click Accedi",
+                "icon": "🖱️",
+                "method": "slash_b_click",
+                "requires_args": true
+            },
+            {
+                "id": "b_type",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_type"
+                ],
+                "description": "Scrive del testo in un campo.",
+                "usage": "/b_type <selettore> | <testo>",
+                "example": "/b_type Cerca | gatti divertenti",
+                "icon": "⌨️",
+                "method": "slash_b_type",
+                "requires_args": true
+            },
+            {
+                "id": "b_scroll",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_scroll"
+                ],
+                "description": "Scorre la pagina su o giù.",
+                "usage": "/b_scroll [up|down]",
+                "example": "/b_scroll down",
+                "icon": "↕️",
+                "method": "slash_b_scroll",
+                "requires_args": false
+            },
+            {
+                "id": "b_shot",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_shot"
+                ],
+                "description": "Scatta uno screenshot della pagina attuale.",
+                "usage": "/b_shot",
+                "example": "/b_shot",
+                "icon": "📸",
+                "method": "slash_b_shot",
+                "requires_args": false
+            },
+            {
+                "id": "b_new",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_new"
+                ],
+                "description": "Apre una nuova scheda.",
+                "usage": "/b_new [url]",
+                "example": "/b_new google.com",
+                "icon": "➕",
+                "method": "slash_b_new",
+                "requires_args": false
+            },
+            {
+                "id": "b_close_tab",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_close_tab"
+                ],
+                "description": "Chiude la scheda corrente.",
+                "usage": "/b_close_tab",
+                "example": "/b_close_tab",
+                "icon": "❌",
+                "method": "slash_b_close_tab",
+                "requires_args": false
+            },
+            {
+                "id": "b_switch",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_switch"
+                ],
+                "description": "Cambia scheda attiva specificando l'ID.",
+                "usage": "/b_switch <id>",
+                "example": "/b_switch 1",
+                "icon": "🔄",
+                "method": "slash_b_switch",
+                "requires_args": true
+            }
+        ]
+    },
+    "BUILDER": {
+        "description": "Builder Studio: Visual IDE for building and managing Hecos packages.",
+        "commands": {},
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
+    },
+    "CODER": {
+        "description": "Software Development, AI Coding & Workspace Runner Suite. Provides Aider multi-file coding, AST Repo Map, Git checkpoints, Project Test Runner, Workspace process manager, and CLI bridge.",
+        "commands": {
+            "check_syntax": "Checks syntax of a Python (.py), JSON (.json), YAML (.yaml/.yml), JS/TS, CSS, or HTML file on disk.",
+            "get_app_logs": "Reads live status and log output of a managed workspace application.",
+            "git_checkpoint": "Saves a non-destructive Git checkpoint snapshot (tracked + untracked files) without mutating HEAD.",
+            "git_diff": "Shows unified Git diff (size-capped) for the repository or a specific file.",
+            "git_restore": "Restores a file (or the full tree when confirm_all=True) from HEAD or a saved checkpoint.",
+            "git_status": "Inspects Git branch and modified/untracked files inside a project repository.",
+            "list_running_apps": "Lists all active and recent workspace runs, including orphaned OS processes.",
+            "open_coding_cli": "Opens a native Windows coding CLI window for a workspace project ('aider', 'shell', or 'trace').",
+            "probe_url": "Tests a local running web server URL and referenced static CSS/JS assets.",
+            "project_tree": "Generates a compact project folder tree.",
+            "repo_map": "Generates a compact multi-language AST map (files, classes, functions, line numbers) for a codebase.",
+            "run_aider_task": "Delegates a multi-file refactor/generation task to isolated Aider CLI (if installed).",
+            "run_project_test": "Runs a real Python script, unittest, or pytest suite inside an authorized workspace/project.",
+            "search_code": "Searches text/code recursively inside a project or module directory.",
+            "start_app": "Starts a persistent workspace script, local web server, or desktop GUI app.",
+            "stop_app": "Stops a running workspace application by run_id, OS PID, project folder/name, or 'all'.",
+            "stop_project_processes": "Stops all managed and orphaned OS processes locking a workspace project or file."
+        },
+        "status": "ONLINE (Coder Suite Active)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
+    },
     "DASHBOARD": {
         "description": "plugin_dashboard_desc",
         "commands": {
@@ -25,6 +223,22 @@
             "get_system_resources": "Returns a summary of system CPU and RAM usage."
         },
         "status": "plugin_dashboard_status_online",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
+    },
+    "DRIVE": {
+        "description": "HTTP File Manager (Hecos Drive)",
+        "commands": {
+            "count_items": "Counts the total number of files and folders in a given path.",
+            "get_root": "Returns the configured root directory for the drive.",
+            "list_files": "SCANS and lists files/folders in a path to return the names to the AI.",
+            "read_file": "Reads the textual content of a file."
+        },
+        "status": "ONLINE",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
@@ -133,6 +347,372 @@
         "module_type": "core_module",
         "slash_commands": []
     },
+    "NETSEARCH": {
+        "description": "Net Search: Multi-engine Web, Tor DarkWeb (.onion), OSINT, Media and Deep File Intelligence.",
+        "commands": {
+            "dark_search": "Searches the Tor Dark Web (.onion hidden services) through Ahmia, TorDex, Phobos, and onion crawlers.",
+            "deep_search": "Deep uninhibited search aggregating Clear Web, Dark Web (.onion), and file hunting.",
+            "fetch_page": "Reads and extracts the textual content of any webpage (Clearnet or Tor .onion).",
+            "file_search": "Hunts for downloadable files and documents using multi-extension dork queries and Archive.org.",
+            "media_search": "Searches for images, videos, audio and podcasts matching the query.",
+            "osint_search": "OSINT identity hunt: finds active user profiles across 15+ social and coding platforms.",
+            "slash_audio": "Method",
+            "slash_canale": "Method",
+            "slash_canali": "Method",
+            "slash_dark": "Method",
+            "slash_fetch": "Method",
+            "slash_files": "Method",
+            "slash_images": "Method",
+            "slash_media": "Method",
+            "slash_netsearch": "Method",
+            "slash_osint": "Method",
+            "slash_radio": "Method",
+            "slash_search": "Method",
+            "slash_search_config": "Method",
+            "slash_search_engines": "Method",
+            "slash_streams": "Method",
+            "slash_tor_new": "Method",
+            "slash_tv": "Method",
+            "slash_videos": "Method",
+            "slash_webcam": "Method",
+            "stream_control": "Controls Live TV/Radio TV Remote: play, list, ch_up, ch_down, last, stop, pause, vol_up, vol_down, set_volume, mute, fullscreen, target, open_vlc, status.",
+            "stream_search": "Searches live TV channels, radio stations, public webcams, or raw streams into a numbered lineup (pass empty query or max_results=500 for full list).",
+            "web_search": "Searches the Clearnet using privacy-preserving aggregators (SearXNG, DuckDuckGo, Brave, etc.)."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "NET SEARCH & INTELLIGENCE EXECUTION RULES:\n\n1. WEB SEARCH: If the user asks to search the web, find news, or search anything online, call NETSEARCH__web_search(query=...).\n2. DARK WEB: If the user asks for Tor, .onion, hidden services, dark web, or uninhibited search, call NETSEARCH__dark_search(query=...).\n3. DEEP SEARCH: If the user asks for comprehensive / deep search combining Clear + Dark + Files, call NETSEARCH__deep_search(query=...).\n4. MEDIA SEARCH: If the user asks for images, videos, audio/soundtracks, call NETSEARCH__media_search(query=..., media_type=...).\n5. FILE SEARCH: If the user asks for documents, PDFs, ebooks, zip archives, or file downloads, call NETSEARCH__file_search(query=..., file_types=...).\n6. OSINT: If the user asks to find a person's online accounts, usernames, or social profiles, call NETSEARCH__osint_search(username=...).\n7. READ WEBPAGE: If the user asks to inspect, read, or scrape a specific URL (clearnet or .onion), call NETSEARCH__fetch_page(url=...).\n8. LIVE STREAMS DISCOVERY: If the user asks for live TV channels, IPTV, radio stations, or live webcams, or asks for the full list of available channels, invoke NETSEARCH__stream_search(query='', category='all', max_results=500) or NETSEARCH__stream_control(action='list') or /canali.\n9. TV REMOTE & VOICE CONTROL: If the user asks to play a channel by name (pass channel name in query=, integer 1..N only in channel=) or number, list channels, toggle fullscreen, zap next/previous, stop, pause, adjust volume, mute, or open a stream in VLC Desktop (target='vlc'), invoke NETSEARCH__stream_control(action='play', query='Rai 1', category='tv') or /canale Rai 1.",
+        "is_class_based": true,
+        "icon": "fas fa-satellite-dish",
+        "category": "SISTEMA",
+        "slash_commands": [
+            {
+                "id": "search",
+                "aliases": [
+                    "/search",
+                    "/netsearch",
+                    "/cerca",
+                    "/websearch"
+                ],
+                "description": "Searches the web, dark web, media, and files across all engines",
+                "usage": "/search <query>",
+                "example": "/search artificial intelligence",
+                "icon": "🌐",
+                "category": "NETSEARCH",
+                "method": "slash_search",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "dark",
+                "aliases": [
+                    "/dark",
+                    "/onion",
+                    "/tor_search"
+                ],
+                "description": "Searches the Tor Dark Web (.onion hidden services)",
+                "usage": "/dark <query>",
+                "example": "/dark cybersecurity",
+                "icon": "🧅",
+                "category": "NETSEARCH",
+                "method": "slash_dark",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "media",
+                "aliases": [
+                    "/media",
+                    "/find_media"
+                ],
+                "description": "Searches for images, videos, podcasts and audio online",
+                "usage": "/media <query>",
+                "example": "/media 4k nature",
+                "icon": "🎬",
+                "category": "NETSEARCH",
+                "method": "slash_media",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "videos",
+                "aliases": [
+                    "/videos",
+                    "/video",
+                    "/cerca_video"
+                ],
+                "description": "Searches for videos across YouTube, Vimeo, Peertube, and web sources",
+                "usage": "/videos <query>",
+                "example": "/videos flying horses",
+                "icon": "📹",
+                "category": "NETSEARCH",
+                "method": "slash_videos",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "images",
+                "aliases": [
+                    "/images",
+                    "/immagini",
+                    "/foto_web",
+                    "/cerca_immagini"
+                ],
+                "description": "Searches the web for real photos, illustrations, and images",
+                "usage": "/images <query>",
+                "example": "/images flying horses",
+                "icon": "🖼️",
+                "category": "NETSEARCH",
+                "method": "slash_images",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "files",
+                "aliases": [
+                    "/files",
+                    "/file",
+                    "/dorks",
+                    "/cerca_file"
+                ],
+                "description": "Hunts for downloadable files, PDFs, ebooks, and archives online",
+                "usage": "/files <query>",
+                "example": "/files machine learning pdf",
+                "icon": "📁",
+                "category": "NETSEARCH",
+                "method": "slash_files",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "osint",
+                "aliases": [
+                    "/osint",
+                    "/whois_user"
+                ],
+                "description": "Searches for a username across 15+ social and coding platforms",
+                "usage": "/osint <username>",
+                "example": "/osint johndoe",
+                "icon": "🕵️",
+                "category": "NETSEARCH",
+                "method": "slash_osint",
+                "args_schema": {
+                    "username": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "fetch",
+                "aliases": [
+                    "/fetch",
+                    "/scrape",
+                    "/read_page"
+                ],
+                "description": "Fetches and extracts clean text from any URL (Clearnet or Tor .onion)",
+                "usage": "/fetch <url>",
+                "example": "/fetch https://example.com",
+                "icon": "📄",
+                "category": "NETSEARCH",
+                "method": "slash_fetch",
+                "args_schema": {
+                    "url": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "tor_new",
+                "aliases": [
+                    "/tor_new",
+                    "/new_circuit"
+                ],
+                "description": "Requests a new Tor identity circuit",
+                "usage": "/tor_new",
+                "example": "/tor_new",
+                "icon": "🧅",
+                "category": "NETSEARCH",
+                "method": "slash_tor_new",
+                "args_schema": {},
+                "requires_args": false
+            },
+            {
+                "id": "search_engines",
+                "aliases": [
+                    "/search_engines",
+                    "/engines"
+                ],
+                "description": "Displays the status of active search engines and daemons",
+                "usage": "/search_engines",
+                "example": "/search_engines",
+                "icon": "🛰️",
+                "category": "NETSEARCH",
+                "method": "slash_search_engines",
+                "args_schema": {},
+                "requires_args": false
+            },
+            {
+                "id": "search_config",
+                "aliases": [
+                    "/search_config"
+                ],
+                "description": "Inspects or updates Net Search configuration",
+                "usage": "/search_config [set <key> <val>]",
+                "example": "/search_config",
+                "icon": "⚙️",
+                "category": "NETSEARCH",
+                "method": "slash_search_config",
+                "args_schema": {
+                    "args": "str"
+                },
+                "requires_args": false
+            },
+            {
+                "id": "streams",
+                "aliases": [
+                    "/streams",
+                    "/live"
+                ],
+                "description": "Searches live TV, radio, webcams, and raw M3U8/RTSP streams",
+                "usage": "/streams <query>",
+                "example": "/streams italy news",
+                "icon": "📡",
+                "category": "NETSEARCH",
+                "method": "slash_streams",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": false
+            },
+            {
+                "id": "tv",
+                "aliases": [
+                    "/tv",
+                    "/iptv"
+                ],
+                "description": "Searches live TV & IPTV channels into numbered CH 01..NN lineup",
+                "usage": "/tv <query>",
+                "example": "/tv rai",
+                "icon": "📺",
+                "category": "NETSEARCH",
+                "method": "slash_tv",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": false
+            },
+            {
+                "id": "radio",
+                "aliases": [
+                    "/radio",
+                    "/fm"
+                ],
+                "description": "Searches live Icecast/MP3 radio stations",
+                "usage": "/radio <query>",
+                "example": "/radio jazz",
+                "icon": "📻",
+                "category": "NETSEARCH",
+                "method": "slash_radio",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": false
+            },
+            {
+                "id": "webcam",
+                "aliases": [
+                    "/webcam",
+                    "/cam"
+                ],
+                "description": "Searches live public webcams (cities, ports, weather, space)",
+                "usage": "/webcam <query>",
+                "example": "/webcam tokyo",
+                "icon": "📷",
+                "category": "NETSEARCH",
+                "method": "slash_webcam",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": false
+            },
+            {
+                "id": "canali",
+                "aliases": [
+                    "/canali",
+                    "/channels",
+                    "/lista"
+                ],
+                "description": "Lists all available live TV, radio, webcam, and raw channels (optionally filtered by tv/radio/webcam/keyword)",
+                "usage": "/canali [tv|radio|webcam|query]",
+                "example": "/canali",
+                "icon": "📋",
+                "category": "NETSEARCH",
+                "method": "slash_canali",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": false
+            },
+            {
+                "id": "canale",
+                "aliases": [
+                    "/canale",
+                    "/channel",
+                    "/remote"
+                ],
+                "description": "Controls Live TV/Radio playback (number, channel name, next, prev, stop, mute, vol <0-100>, vlc)",
+                "usage": "/canale <number|name|next|prev|stop|mute|vol 60|vlc>",
+                "example": "/canale 3",
+                "icon": "🎛️",
+                "category": "NETSEARCH",
+                "method": "slash_canale",
+                "args_schema": {
+                    "args": "str"
+                },
+                "requires_args": false
+            }
+        ]
+    },
+    "AUTOMATION": {
+        "description": "PC Automation: control the mouse, keyboard, and application windows. Use with desktop_screenshot for a full see-and-act loop.",
+        "commands": {
+            "click": "Clicks the mouse at the given screen coordinates.",
+            "click_text": "Locates text on the screen via OCR and clicks it.",
+            "drag": "Clicks and drags from one position to another.",
+            "focus_browser_tab": "Clicks on a browser tab whose title contains the given text fragment (case-insensitive).",
+            "focus_window": "Brings a window to the foreground by partial title match.",
+            "get_browser_tabs": "Returns the titles of all currently open tabs in Chrome, Edge, Opera, or Brave.",
+            "get_mouse_position": "Returns the current mouse cursor coordinates (x, y).",
+            "get_screen_size": "Returns the screen resolution (width x height in pixels).",
+            "hotkey": "Executes a keyboard shortcut by holding multiple keys simultaneously.",
+            "list_windows": "Returns a list of all currently visible window titles.",
+            "maximize_window": "Maximizes a window by partial title match.",
+            "minimize_window": "Minimizes a window by partial title match.",
+            "move_to": "Moves the mouse cursor to the specified screen coordinates.",
+            "press_key": "Presses and releases a single key.",
+            "read_window_controls": "Reads the UI control tree (buttons, inputs, links) of an application window.",
+            "scroll": "Scrolls the mouse wheel at the specified position.",
+            "type_and_enter": "Types the given text and immediately presses Enter.",
+            "type_text": "Types the given text as simulated keystrokes."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "VISION/AUTOMATION SYNERGY: You DO have 'eyes'! You can interact with the user's screen. When asked to click on something or read the screen, FIRST call WEBCAM__desktop_screenshot. The system will return the image to your context. THEN analyze the image to find the exact (x, y) coordinates. FINALLY, call AUTOMATION__move_to or AUTOMATION__click with those coordinates.",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
+    },
     "PERSONALITY": {
         "description": "Manage and switch AI personalities (souls) dynamically.",
         "commands": {
@@ -187,34 +767,322 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
-    "AUTOMATION": {
-        "description": "PC Automation: control the mouse, keyboard, and application windows. Use with desktop_screenshot for a full see-and-act loop.",
+    "CALENDAR": {
+        "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
         "commands": {
-            "click": "Clicks the mouse at the given screen coordinates.",
-            "click_text": "Locates text on the screen via OCR and clicks it.",
-            "drag": "Clicks and drags from one position to another.",
-            "focus_browser_tab": "Clicks on a browser tab whose title contains the given text fragment (case-insensitive).",
-            "focus_window": "Brings a window to the foreground by partial title match.",
-            "get_browser_tabs": "Returns the titles of all currently open tabs in Chrome, Edge, Opera, or Brave.",
-            "get_mouse_position": "Returns the current mouse cursor coordinates (x, y).",
-            "get_screen_size": "Returns the screen resolution (width x height in pixels).",
-            "hotkey": "Executes a keyboard shortcut by holding multiple keys simultaneously.",
-            "list_windows": "Returns a list of all currently visible window titles.",
-            "maximize_window": "Maximizes a window by partial title match.",
-            "minimize_window": "Minimizes a window by partial title match.",
-            "move_to": "Moves the mouse cursor to the specified screen coordinates.",
-            "press_key": "Presses and releases a single key.",
-            "read_window_controls": "Reads the UI control tree (buttons, inputs, links) of an application window.",
-            "scroll": "Scrolls the mouse wheel at the specified position.",
-            "type_and_enter": "Types the given text and immediately presses Enter.",
-            "type_text": "Types the given text as simulated keystrokes."
+            "add_event": "Adds an event to the calendar.",
+            "list_events": "Lists upcoming calendar events.",
+            "delete_event": "Deletes a calendar event by ID.",
+            "get_date_info": "Gets current date context, including localized formatting and upcoming holidays."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"far fa-calendar-alt\"></i>",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "calendar",
+                "manifest_version": "1",
+                "aliases": [
+                    "/calendar",
+                    "/calendario",
+                    "/appuntamenti"
+                ],
+                "description": "Lists the upcoming events in the calendar",
+                "usage": "/calendar",
+                "example": "/calendar",
+                "icon": "📅",
+                "method": "list_events",
+                "requires_args": false
+            }
+        ]
+    },
+    "DOCUMENT_READER": {
+        "description": "Universal document reader with TTS. Fullscreen reading mode, visual PDF canvas rendering, text selection reading, word-by-word highlighting, audiobook-style controls.",
+        "commands": {
+            "list_documents": "List all documents (PDF, TXT, MD, HTML, DOCX) available in the documents library.",
+            "read_document": "Open a document in the fullscreen reader with TTS capabilities. Accepts filename, partial name, or full path.",
+            "stop_reading": "Stop the current TTS reading session."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"fas fa-book-reader\"></i>",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "aliases": [
+                    "/read",
+                    "/leggi",
+                    "/reader",
+                    "/docreader",
+                    "/leggi_documento"
+                ],
+                "category": "DOCUMENTS",
+                "description": "Apre e legge un documento con voce sintetizzata nel Document Reader",
+                "example": "/read fotoromanzo",
+                "icon": "📖",
+                "id": "read",
+                "method": "read_document",
+                "requires_args": false,
+                "usage": "/read [percorso o nome file]"
+            },
+            {
+                "aliases": [
+                    "/stop_reading",
+                    "/ferma_lettura",
+                    "/stop_doc",
+                    "/stop_reader"
+                ],
+                "category": "DOCUMENTS",
+                "description": "Interrompe la lettura vocale attiva nel Document Reader",
+                "example": "/stop_reading",
+                "icon": "⏹️",
+                "id": "stop_reading",
+                "method": "stop_reading",
+                "requires_args": false,
+                "usage": "/stop_reading"
+            },
+            {
+                "aliases": [
+                    "/read_list",
+                    "/doc_list",
+                    "/lista_lettura"
+                ],
+                "category": "DOCUMENTS",
+                "description": "Elenca i documenti disponibili da leggere con il Document Reader",
+                "example": "/read_list",
+                "icon": "📑",
+                "id": "read_list",
+                "method": "list_documents",
+                "requires_args": false,
+                "usage": "/read_list"
+            }
+        ]
+    },
+    "IMAGE_GEN": {
+        "description": "AI Image Generation - Generates images from text prompts with priority support for local backends (SwarmUI/ComfyUI on port 7801). Additionally supports cloud AI providers including Pollinations, Gemini, OpenAI DALL-E, Stability AI, and HuggingFace. Fully autonomous package with its own TOML configuration.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"fas fa-image\"></i>",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "aliases": [
+                    "/img",
+                    "/image",
+                    "/photo",
+                    "/foto"
+                ],
+                "description": "Generates an AI image from a text description",
+                "example": "/img photorealistic photo of a cat on Mars",
+                "icon": "ðŸ–¼ï¸",
+                "id": "img",
+                "manifest_version": "1",
+                "method": "generate_image",
+                "requires_args": true,
+                "usage": "/img <description>"
+            }
+        ]
+    },
+    "TEMPLATES": {
+        "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-file-alt",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
+    "LISTS": {
+        "description": "Create and manage multiple lists (e.g. groceries, todos) with Hecos. Supports custom colors, archived lists, item states, and LLM autonomous management.",
+        "commands": {
+            "create_list": "Creates a new empty list.",
+            "list_lists": "Shows all active lists with the count of items.",
+            "show_list": "Shows all items of a specific list.",
+            "add_to_list": "Adds one or more items to a list. Creates the list if it doesn't exist.",
+            "check_item": "Marks an item as completed in a list.",
+            "uncheck_item": "Restores an item as to-do.",
+            "remove_from_list": "Permanently deletes an item from a list.",
+            "clear_done": "Removes all completed items from a list.",
+            "delete_list": "Deletes an entire list.",
+            "archive_list": "Archives a list (hides it from the main view)."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-list-check",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "lists",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list",
+                    "/lists",
+                    "/liste"
+                ],
+                "description": "Shows all lists",
+                "usage": "/list",
+                "example": "/list",
+                "icon": "📋",
+                "method": "list_lists",
+                "requires_args": false
+            },
+            {
+                "id": "list_show",
+                "manifest_version": "1",
+                "aliases": [
+                    "/lista"
+                ],
+                "description": "Shows a list",
+                "usage": "/lista <nome>",
+                "example": "/lista Spesa",
+                "icon": "🔍",
+                "method": "show_list",
+                "requires_args": true
+            },
+            {
+                "id": "list_add",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list add",
+                    "/lista aggiungi"
+                ],
+                "description": "Adds item",
+                "usage": "/list add <lista> <elemento>",
+                "example": "/list add Spesa Uova",
+                "icon": "➕",
+                "method": "add_to_list",
+                "requires_args": true
+            },
+            {
+                "id": "list_done",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list done",
+                    "/lista spunta"
+                ],
+                "description": "Checks item",
+                "usage": "/list done <lista> <elemento>",
+                "example": "/list done Spesa Uova",
+                "icon": "✅",
+                "method": "check_item",
+                "requires_args": true
+            }
+        ]
+    },
+    "MESSENGER": {
+        "description": "Send messages via Telegram, WhatsApp, and Discord.",
+        "commands": {
+            "check_connection": "Method",
+            "force_send": "Method",
+            "list_accounts": "Method",
+            "msg_command": "Direct command invoked via /msg <target> <text>",
+            "register_pre_callback": "Registra un pre-callback che intercetta i messaggi in ingresso.",
+            "resolve_contact_address": "Looks up a contact in the address book and returns their platform-specific address (e.g., chat ID).",
+            "send_message": "Send a message to a contact or channel.",
+            "send_photo": "Send a photo to a contact or channel (Telegram only for now)."
         },
         "status": "ONLINE",
         "example": "",
-        "routing_instructions": "VISION/AUTOMATION SYNERGY: You DO have 'eyes'! You can interact with the user's screen. When asked to click on something or read the screen, FIRST call WEBCAM__desktop_screenshot. The system will return the image to your context. THEN analyze the image to find the exact (x, y) coordinates. FINALLY, call AUTOMATION__move_to or AUTOMATION__click with those coordinates.",
+        "routing_instructions": "",
         "is_class_based": true,
         "icon": "",
         "category": "PLUGINS",
+        "slash_commands": []
+    },
+    "REMINDER": {
+        "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
+        "commands": {
+            "cancel_reminder": "Cancels an active reminder by ID.",
+            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
+            "snooze_reminder": "Postpones a reminder by N minutes from now."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-clock",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "aliases": [
+                    "/reminder",
+                    "/ricorda",
+                    "/promemoria"
+                ],
+                "description": "Imposta un nuovo promemoria",
+                "example": "/reminder chiamata Marco alle 15:30",
+                "icon": "⏱",
+                "id": "reminder",
+                "manifest_version": "1",
+                "method": "set_reminder",
+                "requires_args": true,
+                "usage": "/reminder <titolo> alle <ora>"
+            },
+            {
+                "aliases": [
+                    "/reminders",
+                    "/promemoria list"
+                ],
+                "description": "Lists all active reminders",
+                "example": "/reminders",
+                "icon": "📋",
+                "id": "reminders",
+                "manifest_version": "1",
+                "method": "list_reminders",
+                "requires_args": false,
+                "usage": "/reminders"
+            }
+        ]
+    },
+    "VOICE_FORGE": {
+        "description": "Vocal Timbre Sculpting & Forging Studio for Fish Speech S2-Pro. Crafts custom, original acoustic voice profiles via WORLD vocoder analysis-synthesis, pitch, formant warping, aperiodicity and spectral morphing without using existing human voices.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"fas fa-wave-square\"></i>",
+        "category": "MULTIMEDIA",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
+    "WEBCAM": {
+        "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "hpm",
         "slash_commands": []
     }
 }

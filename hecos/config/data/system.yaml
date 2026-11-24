@@ -1,12 +1,17 @@
 ai:
   active_global_preset: urania_9800_gp
-  active_personality: Urania_9800
+  active_personality: Hecos_Coder
   available_personalities:
     '1': Hecos_System_Soul
     '2': Hecos_Coder
     '3': Urania_9800
     '4': antonio_meloni
-    '5': dummy_null
+    '5': atlas_man
+    '6': dummy_null
+    '7': motoko_kusanagi
+    '8': nova_x-01
+    '9': sebastian_pro
+    '10': urania_teacher
   save_special_instructions: true
   special_instructions: Ricorda che devi sempre parlare in italiano, non in inglese.
     Scrivi sempre e solo in lingua italiana - a meno che non si tratti della generazione

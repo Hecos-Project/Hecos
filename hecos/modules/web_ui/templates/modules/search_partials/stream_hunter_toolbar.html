@@ -1,0 +1,62 @@
+      <!-- --   Stream Hunter Dedicated Toolbar (Shown in 'streams' mode)   -- -->
+      <div class="sh-toolbar" id="stream-hunter-toolbar">
+        <div class="sh-toolbar-top">
+          <div class="sh-subfilters" id="sh-subfilters">
+            <button type="button" class="sh-subfilter-btn active" data-subfilter="all" onclick="window.StreamHunterUI.setSubfilter('all')">
+              <i class="fas fa-layer-group"></i> <span>All Streams</span> <span class="sh-pill sh-pill-meta" id="sh-count-all">0</span>
+            </button>
+            <button type="button" class="sh-subfilter-btn" data-subfilter="tv" onclick="window.StreamHunterUI.setSubfilter('tv')">
+              <i class="fas fa-tv"></i> <span>TV / IPTV</span> <span class="sh-pill sh-pill-meta" id="sh-count-tv">0</span>
+            </button>
+            <button type="button" class="sh-subfilter-btn" data-subfilter="radio" onclick="window.StreamHunterUI.setSubfilter('radio')">
+              <i class="fas fa-broadcast-tower"></i> <span>Radio / Icecast</span> <span class="sh-pill sh-pill-meta" id="sh-count-radio">0</span>
+            </button>
+            <button type="button" class="sh-subfilter-btn" data-subfilter="webcam" onclick="window.StreamHunterUI.setSubfilter('webcam')">
+              <i class="fas fa-video"></i> <span>Live Webcams</span> <span class="sh-pill sh-pill-meta" id="sh-count-webcam">0</span>
+            </button>
+            <button type="button" class="sh-subfilter-btn" data-subfilter="raw" onclick="window.StreamHunterUI.setSubfilter('raw')">
+              <i class="fas fa-satellite-dish"></i> <span>Raw (.m3u8 / RTSP)</span> <span class="sh-pill sh-pill-meta" id="sh-count-raw">0</span>
+            </button>
+          </div>
+          <div class="sh-toolbar-right">
+            <select id="sh-country-select" class="sh-country-select" onchange="window.StreamHunterUI.setCountryFilter(this.value)" title="Filter streams by Country">
+              <option value="ALL">🌍 All Countries</option>
+              <option value="IT">🇮🇹 Italia (IT)</option>
+              <option value="US">🇺🇸 USA (US)</option>
+              <option value="GB">🇬🇧 UK (GB)</option>
+              <option value="DE">🇩🇪 Germany (DE)</option>
+              <option value="FR">🇫🇷 France (FR)</option>
+              <option value="ES">🇪🇸 Spain (ES)</option>
+              <option value="CH">🇨🇭 Switzerland (CH)</option>
+              <option value="JP">🇯🇵 Japan (JP)</option>
+              <option value="KR">🇰🇷 South Korea (KR)</option>
+            </select>
+            <button type="button" class="sh-btn active" id="sh-btn-autopreview" onclick="window.StreamHunterUI.toggleAutoPreviewRefresh(this)" title="Automatically refresh live preview images every 30 seconds">
+              <i class="fas fa-camera"></i> Auto-Preview: ON
+            </button>
+            <button type="button" class="sh-btn is-probe" id="sh-btn-probe-all" onclick="window.StreamHunterUI.probeVisibleStreams()" title="Verify liveness, latency and ICY metadata of visible streams">
+              <i class="fas fa-bolt"></i> Probe Online
+            </button>
+            <button type="button" class="sh-btn is-vlc" id="sh-btn-vlc-playlist" onclick="window.StreamHunterUI.openAllInVlcPlaylist(this)" title="Open all visible streams as a multi-channel playlist in VLC Desktop">
+              <i class="fas fa-tv"></i> Playlist in VLC (.m3u)
+            </button>
+            <button type="button" class="sh-btn" id="sh-btn-dl-m3u" onclick="window.StreamHunterUI.downloadM3uPlaylist()" title="Download .m3u8 playlist file">
+              <i class="fas fa-download"></i> .m3u8
+            </button>
+            <button type="button" class="sh-btn" id="sh-btn-hub-config" onclick="window.StreamHunterUI.openHubConfig()" title="Configure Live Stream Sources, Manual Stream Nodes & SQLite M3U Lists in Central Hub">
+              <i class="fas fa-sliders-h"></i> Sources &amp; Nodes
+            </button>
+          </div>
+        </div>
+        <div class="sh-quick-tags">
+          <span><i class="fas fa-compass"></i> Quick Channels:</span>
+          <button type="button" class="sh-quick-btn" onclick="window.StreamHunterUI.quickSearch('italia', 'all')">🇮🇹 Italia Live</button>
+          <button type="button" class="sh-quick-btn" onclick="window.StreamHunterUI.quickSearch('news', 'tv')">📰 Global News TV</button>
+          <button type="button" class="sh-quick-btn" onclick="window.StreamHunterUI.quickSearch('nasa', 'all')">🚀 NASA &amp; Space</button>
+          <button type="button" class="sh-quick-btn" onclick="window.StreamHunterUI.quickSearch('rock', 'radio')">🎸 Rock Radio</button>
+          <button type="button" class="sh-quick-btn" onclick="window.StreamHunterUI.quickSearch('jazz', 'radio')">🎷 Jazz &amp; Lounge</button>
+          <button type="button" class="sh-quick-btn" onclick="window.StreamHunterUI.quickSearch('somafm', 'radio')">🎧 SomaFM Cyber</button>
+          <button type="button" class="sh-quick-btn" onclick="window.StreamHunterUI.quickSearch('city', 'webcam')">🏙️ City Webcams</button>
+          <button type="button" class="sh-quick-btn" onclick="window.StreamHunterUI.quickSearch('weather', 'all')">⛈️ Weather &amp; Alpine Cams</button>
+        </div>
+      </div>

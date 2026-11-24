@@ -1,0 +1,155 @@
+<!-- CODER SYSTEM APP PANEL -->
+<div id="tab-coder" class="panel">
+
+  <!-- HEADER -->
+  <div class="card" style="margin-bottom:14px; padding:12px 16px; background:linear-gradient(135deg, rgba(var(--accent-rgb),0.06), var(--bg2));">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,#38bdf8,#6366f1); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <i class="fas fa-code" style="color:#fff; font-size:16px;"></i>
+        </div>
+        <div>
+          <div style="font-weight:700; color:var(--text); font-size:1.05em;">Coder — Software Development &amp; Workspace Suite</div>
+          <div style="font-size:0.78em; color:var(--muted);">Multi-file AI coding (Aider Sidecar), AST Repo Map, Git checkpoints, Project Test Runner, Process Watchdog &amp; Native CLI Bridge</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="/workspace" target="_blank" class="btn btn-primary btn-sm" style="text-decoration:none;"><i class="fas fa-terminal"></i> Open Workspace Runner</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODING & PROJECT TEST RUNNER -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-vial"></i> Project Test Runner &amp; Auto-Verification</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">Configure how Hecos Coder validates, tests, and executes multi-file software projects inside authorized workspace folders.</p>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Allow Launching Scripts &amp; Tests from Chat Cards / Workspace UI</div>
+      <label class="switch"><input type="checkbox" id="coder-allow-ui-exec" onchange="saveCoderKey('allow_ui_script_execution', this.checked)"><span class="slider"></span></label>
+    </div>
+
+    <div class="toggle-row" style="margin-top:8px;">
+      <div class="toggle-info">Auto-Verify Syntax After Writing or Patching Code Files</div>
+      <label class="switch"><input type="checkbox" id="coder-auto-verify-syntax" onchange="saveCoderKey('auto_verify_syntax_on_write', this.checked)"><span class="slider"></span></label>
+    </div>
+
+    <div class="toggle-row" style="margin-top:8px;">
+      <div class="toggle-info">Auto-Run Matching Unit Tests After Editing Python Files</div>
+      <label class="switch"><input type="checkbox" id="coder-auto-run-tests" onchange="saveCoderKey('auto_run_existing_tests_on_write', this.checked)"><span class="slider"></span></label>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px;">
+      <div class="field">
+        <label>Project Test Timeout (seconds)</label>
+        <input type="number" id="executor-test-timeout" min="5" max="180" placeholder="30"
+               onchange="saveCoderKey('test_timeout_seconds', parseInt(this.value) || 30)">
+        <small style="color:var(--muted); font-size:11px;">Maximum seconds allowed for <code>run_project_test</code> (unittest / pytest / script run).</small>
+      </div>
+      <div class="field">
+        <label>Python Interpreter Override (optional)</label>
+        <input type="text" id="executor-python-interpreter" placeholder="python_env\python.exe (auto-detected if blank)"
+               onchange="saveCoderKey('python_interpreter', this.value.trim())">
+        <small style="color:var(--muted); font-size:11px;">Leave blank to automatically use Hecos's embedded <code>python_env\python.exe</code>.</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- AIDER SIDECAR ENGINE -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-robot"></i> Aider Coding Engine (Sidecar &amp; Global Preset)</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">Configure the isolated Aider engine (<code>tools/aider_env</code>) used when personas delegate multi-file software development and refactoring tasks.</p>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Enable Invisible Aider Delegation</div>
+      <label class="switch"><input type="checkbox" id="executor-aider-enabled" onchange="saveCoderKey('aider_enabled', this.checked)"><span class="slider"></span></label>
+    </div>
+
+    <div class="field" style="margin-top:12px;">
+      <label>Default Global Preset for Aider</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select id="executor-aider-gp" style="flex:1;" onchange="onExecutorAiderConfigChange('aider_global_preset', this.value)"></select>
+        <button type="button" class="btn btn-sm" onclick="window.open('/chat', '_blank')" title="Manage Global Presets in Preset Manager (Chat)"><i class="fas fa-sliders-h"></i> Presets</button>
+      </div>
+      <small style="color:var(--muted); font-size:11px;">Automatically uses the selected Global Preset's model, backend, and <code>num_ctx</code> (unless overridden below).</small>
+    </div>
+
+    <div class="field">
+      <label>Direct Model Override (Dropdown)</label>
+      <select id="executor-aider-model" onchange="onExecutorAiderConfigChange('aider_model', this.value)"></select>
+      <small style="color:var(--muted); font-size:11px;">Choose any local Ollama or Cloud model directly for fast testing, or leave on <em>Follow Global Preset</em>.</small>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div class="field">
+        <label>Context Window Override (<code>num_ctx</code>)</label>
+        <input type="number" id="executor-aider-num-ctx" min="0" step="1024" placeholder="0"
+               onchange="onExecutorAiderConfigChange('aider_num_ctx', Math.max(0, parseInt(this.value) || 0))">
+        <small style="color:var(--muted); font-size:11px;"><code>0</code> = inherit from Global Preset (fallback 16384).</small>
+      </div>
+      <div class="field">
+        <label>Edit Format</label>
+        <select id="executor-aider-edit-format" onchange="saveCoderKey('aider_edit_format', this.value)">
+          <option value="">Auto (Model default)</option>
+          <option value="diff">diff (Search/Replace blocks)</option>
+          <option value="whole">whole (Full file — safer for smaller local models)</option>
+          <option value="udiff">udiff (Unified diff)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="toggle-row" style="margin-top:8px;">
+      <div class="toggle-info">Auto-Lint After Aider Edits</div>
+      <label class="switch"><input type="checkbox" id="executor-aider-auto-lint" onchange="saveCoderKey('aider_auto_lint', this.checked)"><span class="slider"></span></label>
+    </div>
+
+    <div style="margin-top:12px; padding:10px 12px; border-radius:8px; background:rgba(108,140,255,0.08); border:1px solid rgba(108,140,255,0.22); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+      <div id="executor-aider-live-status" style="font-size:12px; color:var(--muted);">Checking Aider sidecar...</div>
+      <div style="display:flex; gap:6px;">
+        <button type="button" class="btn btn-sm" onclick="refreshExecutorAiderStatus()"><i class="fas fa-sync"></i> Check</button>
+        <button type="button" class="btn btn-primary btn-sm" id="executor-aider-install-btn" onclick="installOrUpdateAiderFromPanel()"><i class="fas fa-download"></i> Install / Update</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODEL DIRECTIVES & ANTI-HALLUCINATION OVERRIDE -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-shield-alt"></i> Coding Model Directives &amp; Anti-Hallucination Guard</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">Visible prompt directives injected during coding tasks. Prevents the model from inventing edits/code in chat instead of calling real file/coding tools.</p>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Enable Anti-Hallucination Guard &amp; Auto-Retry</div>
+      <label class="switch"><input type="checkbox" id="executor-anti-hallucination-enabled" onchange="saveCoderKey('enable_anti_hallucination_guard', this.checked)"><span class="slider"></span></label>
+    </div>
+
+    <div class="field" style="margin-top:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
+        <label style="margin:0;">Anti-Hallucination Directive (Active Prompt)</label>
+        <button type="button" class="btn btn-sm" onclick="resetExecutorAntiHallucinationDirective()" title="Restore built-in Anti-Hallucination directive"><i class="fas fa-undo"></i> Reset Default</button>
+      </div>
+      <textarea id="executor-anti-hallucination-directive" rows="6" style="width:100%; font-family:monospace; font-size:12px; line-height:1.45;"
+                onchange="saveCoderKey('anti_hallucination_directive', this.value)"></textarea>
+      <small style="color:var(--muted); font-size:11px;">Editable strict rule reminding the model never to claim files/apps were updated or started without executing real coding tools.</small>
+    </div>
+
+    <div class="field" style="margin-top:12px;">
+      <label>Custom Model Behavior Override (Optional)</label>
+      <textarea id="executor-model-directive-override" rows="3" placeholder="e.g. Always inspect files before calling Aider; prefer Flask on port 5050..."
+                style="width:100%; font-family:monospace; font-size:12px; line-height:1.45;"
+                onchange="saveCoderKey('model_directive_override', this.value)"></textarea>
+      <small style="color:var(--muted); font-size:11px;">Appended as an override rule after the Anti-Hallucination directive when non-empty.</small>
+    </div>
+  </div>
+
+  <!-- NATIVE CLI BRIDGE & WORKSPACE TOOLS -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-terminal"></i> Native Windows CLI &amp; Interactive Coding Terminals</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Launch native Windows PowerShell terminals pre-configured with Hecos's embedded <code>python_env</code>, <code>aider_env</code>, and active LLM credentials.</p>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button type="button" class="btn btn-sm" onclick="launchCoderTerminal('trace')"><i class="fas fa-satellite-dish"></i> Live Action Trace Console</button>
+      <button type="button" class="btn btn-sm" onclick="launchCoderTerminal('shell')"><i class="fas fa-terminal"></i> Workspace PowerShell</button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="launchCoderTerminal('aider')"><i class="fas fa-bolt"></i> Interactive Aider CLI</button>
+    </div>
+  </div>
+
+</div>

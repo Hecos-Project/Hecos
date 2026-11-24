@@ -1,0 +1,157 @@
+        <!-- ═══ TAB 1: SEARXNG ═══ -->
+        <div id="ns-tab-pane-searxng" class="ns-tab-pane active">
+          <!-- 1a. Primary Daemon -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-searxng-local-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-searxng-local-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-server" style="color:var(--accent-cyan, #06b6d4); margin-right:6px;"></i>
+                  Primary SearXNG Daemon
+                  <i class="fas fa-info-circle ns-info-icon" title="Your main SearXNG server (local Pure-Python daemon or self-hosted instance) queried first for web/video/image/audio meta-search."></i>
+                </span>
+                <span class="badge-pill badge-neutral" style="font-size:10px;">Local / Docker-Free</span>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-searxng-local-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">Primary local or remote SearXNG meta-search instance (protocol, host, port, API key).</p>
+              <div id="endp-searxng-local-wrap"></div>
+            </div>
+          </div>
+
+          <!-- 1b. Aggregated Backend Engines -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-searxng-engines-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-searxng-engines-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-layer-group" style="color:var(--accent-cyan, #06b6d4); margin-right:6px;"></i>
+                  Aggregated Backend Engines
+                  <i class="fas fa-info-circle ns-info-icon" title="Upstream search engines enabled inside your SearXNG daemon (e.g., Bing, Yandex, PeerTube, Dailymotion) grouped by search category."></i>
+                </span>
+                <span id="badge-searxng-engines-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Engines</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Add a new upstream engine adapter to your SearXNG backend engine list"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;" onclick="window.addSearxngEngineNode()">
+                  <i class="fas fa-plus"></i> Add Engine
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-searxng-engines-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:10px; line-height:1.4;">
+                Backend search adapters queried by SearXNG (enable/disable, rename, assign categories, or remove).
+              </p>
+              <div
+                style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; padding:8px 10px; background:var(--bg0); border-radius:6px; border:1px solid var(--border); align-items:center;">
+                <span style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-right:4px;" title="One-click shortcuts to add popular upstream SearXNG engine adapters">Quick Presets:</span>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('bing', 'Bing Web Search', 'general')">+ Bing</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('yandex', 'Yandex Web Search', 'general')">+ Yandex</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('yahoo', 'Yahoo Web Search', 'general')">+ Yahoo</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('duckduckgo', 'DuckDuckGo', 'general')">+ DuckDuckGo</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('google', 'Google Web Search', 'general')">+ Google</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('brave', 'Brave Web Search', 'general')">+ Brave</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('wikipedia', 'Wikipedia', 'general')">+ Wikipedia</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('google_videos', 'Google Videos', 'videos')">+ Google Videos</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('bing_videos', 'Bing Videos', 'videos')">+ Bing Videos</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('dailymotion', 'Dailymotion Videos', 'videos')">+ Dailymotion</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('peertube', 'PeerTube Videos', 'videos')">+ PeerTube</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:10px; padding:2px 7px;"
+                  onclick="window.quickAddSearxngEngine('vimeo', 'Vimeo Videos', 'videos')">+ Vimeo</button>
+              </div>
+              <div id="endp-searxng-engines-wrap" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+          </div>
+
+          <!-- 1c. Unified Fallback Mirrors & Custom SearXNG Nodes -->
+          <div class="endpoint-group" style="margin-bottom:14px;">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-searxng-fallbacks-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-searxng-fallbacks-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-network-wired" style="color:var(--accent-cyan, #06b6d4); margin-right:6px;"></i>
+                  Fallback Mirrors &amp; Custom SearXNG Nodes
+                  <i class="fas fa-info-circle ns-info-icon" title="Backup public or self-hosted SearXNG nodes queried automatically whenever your primary SearXNG instance fails or gets rate-limited."></i>
+                </span>
+                <span id="badge-searxng-fallbacks-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Nodes</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Add a structured fallback SearXNG mirror (protocol, host, port, path, optional API key)"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;" onclick="window.addSearxngFallbackNode()">
+                  <i class="fas fa-plus"></i> Add Mirror / Node
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-searxng-fallbacks-body">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">
+                Unified pool of resilient SearXNG fallback mirrors and custom meta-search nodes queried automatically
+                whenever the primary daemon is offline or rate-limited.
+              </p>
+              <div id="endp-searxng-fallbacks-wrap" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+          </div>
+
+          <!-- 1d. Automated Source Lists for SearXNG -->
+          <div class="endpoint-group" style="margin-bottom:0; border-color:rgba(6, 182, 212, 0.28);">
+            <div class="endpoint-group-header endpoint-group-header-clickable"
+              onclick="window.toggleEndpointSection(this, 'endp-sources-searxng-body')">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-group-toggle"
+                  onclick="event.stopPropagation(); window.toggleEndpointSection(this, 'endp-sources-searxng-body')"
+                  title="Expand Section (+)" aria-expanded="false">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <span class="endpoint-group-title" style="font-weight:700; font-size:12px; color:var(--text);">
+                  <i class="fas fa-rss" style="color:var(--accent-cyan, #06b6d4); margin-right:6px;"></i>
+                  Automated SearXNG Source Lists
+                  <i class="fas fa-info-circle ns-info-icon" title="Remote feeds or files (e.g. searx.space instances JSON) that automatically populate and refresh SearXNG fallback mirrors on schedule."></i>
+                </span>
+                <span id="badge-sources-searxng-count" class="badge-pill badge-neutral"
+                  style="font-size:10px; padding:2px 8px;">0 Lists</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary"
+                  title="Register a URL, local file, or pasted feed of SearXNG instances or engines"
+                  style="border-radius:6px; font-size:11px; padding:4px 10px;"
+                  onclick="window.SearchSources && window.SearchSources.openAddFormForTab('searxng', 'searxng_fallbacks')">
+                  <i class="fas fa-plus"></i> Add / Import SearXNG List
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-group-body" style="display:none;" id="endp-sources-searxng-body">
+              <div id="endp-sources-presets-searxng"
+                style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; padding:8px 10px; background:var(--bg0); border-radius:6px; border:1px solid var(--border); align-items:center;"></div>
+              <div id="endp-sources-list-searxng" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+          </div>
+        </div>

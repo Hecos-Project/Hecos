@@ -1,0 +1,174 @@
+        <!-- ═══ UNIFIED CONTEXTUAL ADD / EDIT / IMPORT SOURCE DRAWER ═══ -->
+        <div id="src-editor-panel"
+          style="display:none; margin-top:16px; padding:14px; background:var(--bg1, #141621); border:1px solid rgba(16, 185, 129, 0.38); border-radius:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <strong id="src-editor-title" style="font-size:12px; color:var(--text);">
+                <i class="fas fa-plus-circle" style="color:var(--accent-emerald, #10b981); margin-right:5px;"></i>
+                Add / Update Source List
+              </strong>
+              <span id="src-editor-pool-hint" class="badge-pill badge-neutral" style="font-size:10px; padding:2px 8px;"
+                title="Target pool or SQLite domain role where extracted items from this source will be placed">Pool: Auto</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:2px 8px;"
+              onclick="window.SearchSources && window.SearchSources.closeEditor()" title="Close panel">
+              <i class="fas fa-times"></i> Close
+            </button>
+          </div>
+
+          <div style="padding:12px; background:var(--bg0); border:1px solid var(--border); border-radius:8px; margin-bottom:12px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:8px; margin-bottom:8px;">
+              <div>
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;"
+                  title="Human-readable label shown on the source list card">Source Name <i class="fas fa-info-circle ns-info-icon"></i></label>
+                <input type="text" id="src-form-name" class="endpoint-input" style="width:100%;" placeholder="e.g. GitHub Mirror List"
+                  title="Display name for this source list">
+              </div>
+              <div style="grid-column:span 2;">
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;"
+                  title="HTTP/HTTPS URL, GitHub repo or raw link, OpenSearch descriptor URL, .onion feed, or local Windows/Linux file path">URL / GitHub / OpenSearch / Local File Path <i class="fas fa-info-circle ns-info-icon"></i></label>
+                <input type="text" id="src-form-location" class="endpoint-input" style="width:100%;" placeholder="https://raw.githubusercontent.com/... or C:\lists\engines.sqlite"
+                  title="Remote URL, GitHub repository URL, or local disk path to fetch">
+              </div>
+              <div>
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;"
+                  title="File parser format. Leave Auto-Detect unless the URL has an unusual extension or structure">Format <i class="fas fa-info-circle ns-info-icon"></i></label>
+                <select id="src-form-format" class="endpoint-input" style="width:100%;"
+                  title="Parser format for the source content">
+                  <option value="auto">Auto-Detect</option>
+                  <option value="m3u">M3U / M3U8 / PLS Playlist</option>
+                  <option value="json">JSON</option>
+                  <option value="csv">CSV / TSV</option>
+                  <option value="yaml">YAML / SearXNG settings</option>
+                  <option value="sqlite">SQLite (.db / .sqlite)</option>
+                  <option value="opensearch">OpenSearch XML / HTML</option>
+                  <option value="onion_list">Text / Markdown / .onion list</option>
+                  <option value="domain_list">Domain List / Hosts (.txt)</option>
+                </select>
+              </div>
+              <div id="src-form-pool-wrap">
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;"
+                  title="Destination pool for extracted endpoints or SQLite role for domain/stream lists">Role / Destination Pool <i class="fas fa-info-circle ns-info-icon"></i></label>
+                <select id="src-form-pool" class="endpoint-input" style="width:100%;"
+                  title="Destination endpoint pool or SQLite domain/stream role">
+                  <option value="auto">Auto Route</option>
+                  <option value="searxng_fallbacks">SearXNG Fallback Mirrors</option>
+                  <option value="custom_nodes">Custom SearXNG Nodes</option>
+                  <option value="searxng_engines">SearXNG Aggregated Engines</option>
+                  <option value="custom_clear_engines">Custom Web / OpenSearch</option>
+                  <option value="custom_onion_engines">Tor .onion Engines</option>
+                  <option value="domain_directory">Domain Directory (Searchable)</option>
+                  <option value="domain_blocklist">SafeSearch Blocklist (SQLite)</option>
+                  <option value="domain_allowlist">SafeSearch Allowlist (SQLite)</option>
+                  <option value="stream_tv">Live Streams: TV / IPTV (SQLite)</option>
+                  <option value="stream_radio">Live Streams: Radio / Icecast (SQLite)</option>
+                  <option value="stream_webcam">Live Streams: Public Webcams (SQLite)</option>
+                  <option value="stream_raw">Live Streams: Raw Feeds (SQLite)</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:3px;"
+                  title="How often (in hours) the scheduler re-checks this source when Auto-Update is enabled">Interval (hours) <i class="fas fa-info-circle ns-info-icon"></i></label>
+                <input type="number" id="src-form-interval" class="endpoint-input" style="width:100%;" value="12" min="1" max="720"
+                  title="Automatic refresh interval in hours (1-720)">
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--text);">
+                <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer;"
+                  title="Automatically download and merge updates on the configured hourly schedule">
+                  <input type="checkbox" id="src-form-autoupdate" checked> Auto-Update <i class="fas fa-info-circle ns-info-icon"></i>
+                </label>
+                <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer;" title="Force SOCKS5h Tor routing when downloading this source">
+                  <input type="checkbox" id="src-form-usetor"> Route via Tor (.onion) <i class="fas fa-info-circle ns-info-icon"></i>
+                </label>
+              </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" id="src-form-cancel-btn" class="btn btn-sm btn-secondary" style="display:none; font-size:11px; padding:4px 10px;"
+                  title="Cancel editing and reset the source form"
+                  onclick="window.SearchSources && window.SearchSources.clearForm()">Cancel Edit</button>
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:4px 10px;"
+                  title="Fetch and parse this source in memory without saving to preview new vs duplicate items"
+                  onclick="window.SearchSources && window.SearchSources.previewUrl()">
+                  <i class="fas fa-eye"></i> Preview &amp; Check Duplicates
+                </button>
+                <button type="button" class="btn btn-sm btn-primary" style="font-size:11px; padding:4px 12px;"
+                  title="Register this source, fetch its contents immediately, and deduplicate into the target pool/SQLite DB"
+                  onclick="window.SearchSources && window.SearchSources.saveFromForm()">
+                  <i class="fas fa-download"></i> <span id="src-form-save-label">Add &amp; Sync Source</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- One-shot File Upload or Paste -->
+          <div style="padding:12px; background:var(--bg0); border:1px solid var(--border); border-radius:8px;">
+            <div style="font-size:11px; font-weight:700; color:var(--text); margin-bottom:8px;">
+              <i class="fas fa-file-import" style="color:var(--accent-cyan, #06b6d4); margin-right:5px;"></i>
+              Direct File Import / Paste Compilation
+              <i class="fas fa-info-circle ns-info-icon" title="One-shot local import: upload a .txt/.hosts/.json/.csv/.yaml/.sqlite file or paste raw domain/engine lists directly without setting up a recurring URL."></i>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; align-items:center;">
+              <div style="display:inline-flex; align-items:center; gap:8px; flex:1; min-width:200px; padding:4px 8px; border:1px solid var(--border); border-radius:6px; background:var(--bg1);">
+                <input type="file" id="src-import-file" accept=".m3u,.m3u8,.pls,.json,.csv,.tsv,.yaml,.yml,.sqlite,.sqlite3,.db,.xml,.osd,.txt,.md"
+                  onchange="window.SearchSources && window.SearchSources.updateImportFileLabel()"
+                  style="display:none;">
+                <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:3px 10px; border-radius:5px; white-space:nowrap;"
+                  title="Browse and select a local file (.m3u, .m3u8, .pls, .json, .csv, .yaml, .sqlite, .xml, .txt) to import"
+                  onclick="document.getElementById('src-import-file')?.click()">
+                  <i class="fas fa-folder-open"></i> Choose File
+                </button>
+                <span id="src-import-file-label" style="font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">No file selected</span>
+              </div>
+              <select id="src-import-format" class="endpoint-input" style="max-width:170px;"
+                title="Format of the uploaded file or pasted content">
+                <option value="auto">Format: Auto</option>
+                <option value="m3u">M3U / M3U8 / PLS</option>
+                <option value="json">JSON</option>
+                <option value="csv">CSV</option>
+                <option value="yaml">YAML</option>
+                <option value="sqlite">SQLite</option>
+                <option value="opensearch">OpenSearch XML</option>
+                <option value="onion_list">Text / .onion</option>
+                <option value="domain_list">Domain List / Hosts</option>
+              </select>
+              <div id="src-import-pool-wrap" style="max-width:190px;">
+                <select id="src-import-pool" class="endpoint-input" style="width:100%;"
+                  title="Destination pool or SQLite domain/stream role for imported items">
+                  <option value="auto">Pool: Auto</option>
+                  <option value="searxng_fallbacks">SearXNG Fallbacks</option>
+                  <option value="custom_nodes">Custom Nodes</option>
+                  <option value="searxng_engines">SearXNG Engines</option>
+                  <option value="custom_clear_engines">Custom Web / OpenSearch</option>
+                  <option value="custom_onion_engines">Tor .onion Engines</option>
+                  <option value="domain_directory">Domain Directory (SQLite)</option>
+                  <option value="domain_blocklist">SafeSearch Blocklist (SQLite)</option>
+                  <option value="domain_allowlist">SafeSearch Allowlist (SQLite)</option>
+                  <option value="stream_tv">Streams: TV / IPTV (SQLite)</option>
+                  <option value="stream_radio">Streams: Radio (SQLite)</option>
+                  <option value="stream_webcam">Streams: Webcams (SQLite)</option>
+                  <option value="stream_raw">Streams: Raw (SQLite)</option>
+                </select>
+              </div>
+            </div>
+            <textarea id="src-import-text" rows="3" class="endpoint-input"
+              style="width:100%; resize:vertical; margin-bottom:8px;"
+              title="Paste raw JSON, CSV, YAML, OpenSearch XML, URLs, .onion links, or plain domain lists"
+              placeholder="Or paste JSON, CSV, YAML, OpenSearch XML, URLs / .onion addresses, or domains here..."></textarea>
+            <div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-sm btn-secondary" style="font-size:11px; padding:4px 10px;"
+                title="Inspect what would be extracted and see duplicate counts without saving yet"
+                onclick="window.SearchSources && window.SearchSources.importRawOrFile(true)">
+                <i class="fas fa-search"></i> Dry-Run Preview
+              </button>
+              <button type="button" class="btn btn-sm btn-primary" style="font-size:11px; padding:4px 12px;"
+                title="Parse, deduplicate, and immediately save imported entries into the selected pool or SQLite role"
+                onclick="window.SearchSources && window.SearchSources.importRawOrFile(false)">
+                <i class="fas fa-check"></i> Import &amp; Deduplicate
+              </button>
+            </div>
+          </div>
+
+          <div id="src-preview-box"
+            style="display:none; margin-top:10px; padding:10px; background:var(--bg0); border:1px solid rgba(6,182,212,0.35); border-radius:6px;"></div>
+        </div>
