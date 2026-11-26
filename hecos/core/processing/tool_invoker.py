@@ -300,6 +300,11 @@ def resolve_native_tools_method_and_args(
                         actual_args = {"html_content": clean_str}
                 else:
                     actual_args = {"html_content": clean_str}
+            elif call_match:
+                # Preserve explicit method(args) attempted in bracket syntax so unknown methods
+                # produce a clear diagnostic error instead of a silent 0ms no-op.
+                actual_method_name = call_match.group(1).strip()
+                actual_args = parse_call_kwargs(call_match.group(2).strip())
 
     return actual_method_name, actual_args
 
@@ -347,23 +352,46 @@ def execute_plugin_tool(
 
         if actual_method:
             logger.info(f"[SYSTEM] {translator.t('executing_module', module=mod_tag)}")
-            try:
-                method = getattr(plugin_obj.tools, actual_method)
-                if isinstance(actual_args, dict):
-                    sig = inspect.signature(method)
-                    valid_kwargs = {k: v for k, v in actual_args.items() if k in sig.parameters}
-                    if not valid_kwargs and len(sig.parameters) >= 1 and actual_args:
-                        first_param = [p for p in sig.parameters.keys() if p != 'self'][0]
-                        valid_kwargs = {first_param: list(actual_args.values())[0]}
-                    result = method(**valid_kwargs)
-                else:
-                    result = method(actual_args)
-                if result:
-                    logger.info(f"[OUTPUT {mod_tag}]:\n{result}")
-                    output_val = str(result)
-            except Exception as e:
-                logger.error(f"[PROCESSOR] Tool error ({actual_method}): {e}")
-                output_val = f"Error: {e}"
+            if not hasattr(plugin_obj.tools, actual_method):
+                avail = [
+                    m for m in dir(plugin_obj.tools)
+                    if not m.startswith("_") and callable(getattr(plugin_obj.tools, m, None))
+                ]
+                err_msg = (
+                    f"'{mod_tag}' has no tool '{actual_method}'. "
+                    f"Available tools on {mod_tag}: {', '.join(avail)}"
+                )
+                logger.error(f"[PROCESSOR] Tool error ({actual_method}): {err_msg}")
+                output_val = f"Error: {err_msg}"
+            else:
+                try:
+                    method = getattr(plugin_obj.tools, actual_method)
+                    if isinstance(actual_args, dict):
+                        sig = inspect.signature(method)
+                        valid_kwargs = {k: v for k, v in actual_args.items() if k in sig.parameters}
+                        if not valid_kwargs and len(sig.parameters) >= 1 and actual_args:
+                            first_param = [p for p in sig.parameters.keys() if p != 'self'][0]
+                            valid_kwargs = {first_param: list(actual_args.values())[0]}
+                        result = method(**valid_kwargs)
+                    else:
+                        result = method(actual_args)
+                    if result:
+                        logger.info(f"[OUTPUT {mod_tag}]:\n{result}")
+                        output_val = str(result)
+                except Exception as e:
+                    logger.error(f"[PROCESSOR] Tool error ({actual_method}): {e}")
+                    output_val = f"Error: {e}"
+        else:
+            avail = [
+                m for m in dir(plugin_obj.tools)
+                if not m.startswith("_") and callable(getattr(plugin_obj.tools, m, None))
+            ]
+            err_msg = (
+                f"Could not resolve tool method for '{mod_tag}' from '{str(action_or_args)[:80]}'. "
+                f"Available tools on {mod_tag}: {', '.join(avail)}"
+            )
+            logger.warning(f"[PROCESSOR] {err_msg}")
+            output_val = f"Error: {err_msg}"
 
     # Strategy 3: Function .execute()
     elif hasattr(plugin_obj, "execute") and not method_name:

@@ -15,8 +15,9 @@ DEFAULT_ACTION_PLANS_CONFIG: Dict[str, Any] = {
     "enabled": True,
     "lazy_load": False,
     "llm_callable": True,
-    "plan_mode": "auto",  # "auto" | "confirm" | "manual" | "off"
+    "plan_mode": "manual",  # "manual" | "auto" | "confirm" | "plan_only" | "off"
     "auto_plan_min_steps_hint": 3,
+    "planning_directive": "",
     "expose_tools_in_custom_presets": True,
     "checkpoint_enabled": True,
     "resume_banner_enabled": True,
@@ -46,7 +47,11 @@ def normalize_action_plans_config(raw: Optional[Dict[str, Any]]) -> Dict[str, An
             merged[bool_key] = bool(raw[bool_key])
 
     mode = str(raw.get("plan_mode") or merged["plan_mode"]).strip().lower()
-    merged["plan_mode"] = mode if mode in PLAN_MODES else "auto"
+    merged["plan_mode"] = mode if mode in PLAN_MODES else "manual"
+
+    raw_directive = raw.get("planning_directive")
+    if raw_directive is not None:
+        merged["planning_directive"] = str(raw_directive).strip()[:4000]
 
     def _clamp_int(key: str, low: int, high: int, fallback: int) -> int:
         try:

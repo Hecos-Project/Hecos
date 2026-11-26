@@ -23,10 +23,10 @@
     <div class="field">
       <label for="ap-plan-mode">{{ t('ap_mode_label') or 'Default Planning Mode' }}</label>
       <select id="ap-plan-mode">
-        <option value="auto">{{ t('ap_mode_auto') or 'Automatic on complex tasks (Recommended)' }}</option>
+        <option value="manual">{{ t('ap_mode_manual') or 'Manual — Only on explicit /plan, Plan First button, or direct call (Recommended)' }}</option>
+        <option value="auto">{{ t('ap_mode_auto') or 'Automatic on complex tasks' }}</option>
         <option value="plan_only">{{ t('ap_mode_plan_only') or 'Plan Only (Architect mode — generate plan first and stop before coding)' }}</option>
         <option value="confirm">{{ t('ap_mode_confirm') or 'Ask user confirmation before executing steps' }}</option>
-        <option value="manual">{{ t('ap_mode_manual') or 'Only on explicit request / direct plugin call' }}</option>
         <option value="off">{{ t('ap_mode_off') or 'Disabled for LLM (keeps checkpoints active)' }}</option>
       </select>
     </div>
@@ -34,6 +34,19 @@
     <div class="field">
       <label for="ap-min-steps">{{ t('ap_min_steps_label') or 'Minimum steps threshold to suggest an automatic plan' }}</label>
       <input type="number" id="ap-min-steps" min="2" max="20" step="1">
+    </div>
+
+    <div class="field">
+      <label for="ap-planning-directive">{{ t('ap_planning_directive_label') or 'Auto/Confirm Planning Directive (User-Editable Prompt Override)' }}</label>
+      <textarea id="ap-planning-directive" rows="4" style="width:100%; font-family:monospace; font-size:12px; resize:vertical;" placeholder="Injected into system prompt ONLY when Planning Mode is set to Automatic or Confirm. Leave empty to inject no extra planning directive. Supports {min_steps}."></textarea>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap;">
+        <span style="font-size:11px; color:var(--muted);">{{ t('ap_planning_directive_hint') or 'Used only in Auto or Confirm mode (never injected in Manual or Off mode). Use {min_steps} for the step threshold.' }}</span>
+        <div style="display:flex; gap:6px;">
+          <button type="button" class="btn btn-xs btn-outline" id="ap-directive-template-btn"><i class="fas fa-magic"></i> {{ t('ap_btn_load_template') or 'Load Suggested Template' }}</button>
+          <button type="button" class="btn btn-xs btn-outline" id="ap-directive-clear-btn"><i class="fas fa-eraser"></i> {{ t('ap_btn_clear') or 'Clear' }}</button>
+          <button type="button" class="btn btn-xs btn-primary" id="ap-directive-save-btn"><i class="fas fa-save"></i> {{ t('ap_btn_save') or 'Save' }}</button>
+        </div>
+      </div>
     </div>
 
     <div class="field">
@@ -104,6 +117,6 @@
 
 </div>
 
-<script src="/static/js/action_plans_hub/aph_api.js?v={{ version }}&t=20261119_mdexport2"></script>
-<script src="/static/js/action_plans_hub/aph_render.js?v={{ version }}&t=20261120_nomodtoggle"></script>
-<script src="/static/js/action_plans_hub/aph_bootstrap.js?v={{ version }}&t=20261119_mdexport2"></script>
+<script src="/static/js/action_plans_hub/aph_api.js?v={{ version }}&t=20261124_manual_ap"></script>
+<script src="/static/js/action_plans_hub/aph_render.js?v={{ version }}&t=20261124_manual_ap"></script>
+<script src="/static/js/action_plans_hub/aph_bootstrap.js?v={{ version }}&t=20261124_manual_ap"></script>

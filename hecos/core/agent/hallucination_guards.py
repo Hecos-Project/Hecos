@@ -147,6 +147,125 @@ def get_netsearch_unexecuted_guard_message() -> Optional[str]:
         return None
 
 
+# --- MESSENGER ANTI-HALLUCINATION GUARDS ---
+
+_MESSENGER_USER_INTENT_RE = re.compile(
+    r'(?:'
+    r'\b(?:manda\w*|invia\w*|scrivi\w*|spedisc\w*|inoltra\w*|rispondi\w*|send|text|message|forward)\b'
+    r'[^\r\n]{0,95}\b(?:messaggi\w*|whatsapp|wazzap|wa|telegram|tg|chat|contatt\w*|numer\w*|telefon\w*)\b'
+    r'|\b(?:whatsapp|wazzap|telegram)\b[^\r\n]{0,75}\b(?:manda\w*|invia\w*|scrivi\w*|spedisc\w*|saluta\w*|avvisa\w*|send|write)\b'
+    r'|\b(?:su|via|tramite|on)\s+(?:whatsapp|wazzap|telegram)\b'
+    r'|\bnon\s+hai\s+(?:mandat[oa]|inviat[oa]|spedit[oa])\b'
+    r'|\b(?:mandane|inviane|scrivine)\s+(?:un\s+altro|ancora|uno|un[\'’]altra)\b'
+    r'|\b(?:mandagliel[oaie]|inviagliel[oaie]|mandamel[oaie]|inviamel[oaie]|rimandal[oaie]|riscrivigli\w*)\b'
+    r'|\b(?:send|write)\s+(?:another(?:\s+one)?|one\s+more)\b'
+    r')',
+    re.IGNORECASE,
+)
+
+_MESSENGER_SENT_CLAIM_RE = re.compile(
+    r'(?:'
+    r'\b(?:messaggio|altro\s+messaggio|wazzap|whatsapp|telegram|foto|selfie|documento)\s+(?:inviat[oa]|mandat[oa]|spedit[oa]|partit[oa]|consegnat[oa])\b'
+    r'|\b(?:ho|abbiamo)\s+(?:appena\s+|gi[aà]\s+)?(?:inviato|mandato|spedito|inoltrato|rimesso\s+in\s+pista)\b'
+    r'|\b(?:l[\'’]ho|te\s+l[\'’]ho|gliel[\'’]ho|ve\s+l[\'’]ho)\s+(?:appena\s+|gi[aà]\s+)?(?:inviat[oa]|mandat[oa]|spedit[oa]|scritt[oa])\b'
+    r'|\b(?:ti|gli|le)\s+ho\s+(?:appena\s+)?scritto\s+su\s+(?:whatsapp|wazzap|telegram)\b'
+    r'|\b(?:i(?:\s+have|\'ve)?\s+(?:just\s+|already\s+)?(?:sent|dispatched|delivered)|just\s+sent)\b'
+    r'[^\r\n]{0,50}\b(?:message|photo|document|whatsapp|telegram|text|it|another\s+one)\b'
+    r'|\bsent\s+(?:a\s+|the\s+)?(?:message|photo|selfie|document|text)\b'
+    r'|\[[^\]]*(?:whatsapp|wazzap|telegram|group|gruppo)[^\]]*\]\s*(?:sent|inviat[oa]|mandat[oa]|message)'
+    r'|\bmessage\s+(?:has\s+been\s+|was\s+)?(?:sent|delivered|dispatched)\b'
+    r'|\b(?:mensaje\s+enviado|he\s+enviado\s+el\s+mensaje|acabo\s+de\s+enviar)\b'
+    r')',
+    re.IGNORECASE,
+)
+
+_NEGATIVE_MESSENGER_CLAIM_RE = re.compile(
+    r'(?:'
+    r'\b(?:non\s+(?:ho|posso|riesco|sono\s+riuscit[oa])[^\r\n]{0,35}(?:invia\w*|manda\w*|spedi\w*|genera\w*)|nessun\s+messaggio\s+(?:inviato|mandato))\b'
+    r'|\b(?:haven\'t|have\s+not|did\s+not|didn\'t|cannot|can\'t|couldn\'t|unable\s+to)\s+(?:send|sent|deliver|generate)\b'
+    r')',
+    re.IGNORECASE,
+)
+
+_MESSENGER_CLARIFICATION_RE = re.compile(
+    r'\b(?:a\s+chi\s+(?:devo|vuoi|lo|la)|quale\s+piattaforma|su\s+quale\s+piattaforma|'
+    r'su\s+whatsapp\s+o\s+(?:su\s+)?telegram|su\s+telegram\s+o\s+(?:su\s+)?whatsapp|'
+    r'to\s+whom\s+should\s+i\s+send|which\s+platform)\b',
+    re.IGNORECASE,
+)
+
+
+def are_messenger_tools_enabled(cfg: Optional[dict]) -> bool:
+    """Return True if Messenger plugin and at least one provider (WhatsApp/Telegram) are enabled."""
+    if isinstance(cfg, dict):
+        if cfg.get("disable_tools", False):
+            return False
+        plugins_cfg = cfg.get("plugins") or {}
+        if plugins_cfg.get("MESSENGER", {}).get("enabled", True) is False:
+            return False
+        pctrl = cfg.get("payload_control") or {}
+        if pctrl.get("send_tools", True):
+            mode = str(pctrl.get("tool_selection_mode") or "all").strip().lower()
+            if mode == "custom":
+                selected = {str(x).strip() for x in (pctrl.get("selected_tools") or [])}
+                if not any(s.startswith("MESSENGER__") or s in ("MESSENGER", "MESSENGER__*") for s in selected):
+                    return False
+    try:
+        from hecos.hpm.messenger.messenger_config.config_manager import get_config_obj
+        mcfg = get_config_obj()
+        return bool(mcfg.whatsapp.enabled or mcfg.telegram.enabled)
+    except Exception:
+        return False
+
+
+def detect_unexecuted_messenger_claim(
+    user_text: Optional[str],
+    assistant_text: Optional[str],
+    *,
+    require_explicit_claim: bool = False,
+) -> bool:
+    """
+    Return True when the user asked to send via Messenger and the assistant replied in plain text
+    without invoking MESSENGER (and without asking a clarification question or stating inability).
+    When `require_explicit_claim=True` (used after a failed tool call), checks literal delivery claims.
+    """
+    if not user_text or not isinstance(user_text, str):
+        return False
+    clean_u = user_text.strip()
+    if not clean_u or clean_u.startswith("/"):
+        return False
+    if not _MESSENGER_USER_INTENT_RE.search(clean_u):
+        return False
+    ans = (assistant_text or "").strip()
+    if len(ans) < 12 or "[[IMG:" in ans or "[[IGEN_ALERT]]" in ans or "[[HSEARCH:" in ans:
+        return False
+
+    # Strip quoted substrings so echoing user complaints ('sempre il tuo "non hai mandato niente"') won't confuse filters
+    unquoted_ans = re.sub(r'"[^"\r\n]{1,120}"', " ", ans)
+    if _MESSENGER_CLARIFICATION_RE.search(unquoted_ans):
+        return False
+    if _NEGATIVE_MESSENGER_CLAIM_RE.search(unquoted_ans):
+        return False
+
+    if require_explicit_claim:
+        return bool(_MESSENGER_SENT_CLAIM_RE.search(unquoted_ans))
+
+    return True
+
+
+def get_messenger_unexecuted_guard_message() -> Optional[str]:
+    """Read the user-configurable Messenger anti-hallucination guard prompt from MessengerConfig (None if disabled)."""
+    try:
+        from hecos.hpm.messenger.messenger_config.config_manager import get_config_obj
+        mcfg = get_config_obj()
+        if not getattr(mcfg, "anti_hallucination_guard_enabled", True):
+            return None
+        msg = str(getattr(mcfg, "anti_hallucination_prompt", "") or "").strip()
+        return msg or None
+    except Exception:
+        return None
+
+
 # --- EXECUTOR FILE VERIFICATION & ANTI-HALLUCINATION GUARDS ---
 
 _FILE_CLAIM_RE = re.compile(
@@ -243,12 +362,39 @@ def is_executor_anti_hallucination_enabled(cfg: Optional[dict]) -> bool:
     return True
 
 
-def _has_nonexistent_file_uri(text: str) -> bool:
+_IMAGE_FILE_EXTS = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".avif")
+
+_IMAGE_ONLY_USER_RE = re.compile(
+    r'\b(?:foto|fotografi\w*|immagin[ei]|selfie|ritratt[oi]|scatt[oi]|disegn[ai]\w*|'
+    r'photos?|pictures?|images?|pics?|portraits?|draw(?:ing)?|paint(?:ing)?|selfies?)\b',
+    re.IGNORECASE,
+)
+
+_CODE_OR_TEXT_FILE_USER_RE = re.compile(
+    r'(?:\b(?:codice|script|programma|progetto|software|app|webapp|sito|server|backend|frontend|'
+    r'endpoint|api|funzione|classe|modulo|repo|repository|patch|fix|bug|refactor|test|pytest|'
+    r'file\s+di\s+testo|documento|pdf|html|css|javascript|typescript|python|json|yaml|yml|toml|markdown|'
+    r'code|coding|project|script|program|patch|refactor|write\s+file|edit\s+file|create\s+file)\b'
+    r'|\.(?:py|js|ts|jsx|tsx|json|ya?ml|toml|html?|css|sh|bat|md|txt|sql|csv)\b)',
+    re.IGNORECASE,
+)
+
+
+def _is_image_only_user_request(user_text: Optional[str]) -> bool:
+    """Return True when the user asked for image/photo generation without code or disk-file editing intent."""
+    if not user_text or not isinstance(user_text, str):
+        return False
+    return bool(_IMAGE_ONLY_USER_RE.search(user_text)) and not bool(_CODE_OR_TEXT_FILE_USER_RE.search(user_text))
+
+
+def _has_nonexistent_file_uri(text: str, *, ignore_images: bool = True) -> bool:
     """Return True if text embeds a local file:/// link pointing to a path missing on disk."""
     for raw_uri in re.findall(r'file:///([^\s)\]\'"<>`]+)', text, re.IGNORECASE):
         norm = raw_uri.strip().rstrip(".,;:")
         lower = norm.lower()
         if not norm or "path/to/" in lower or "..." in lower:
+            continue
+        if ignore_images and lower.endswith(_IMAGE_FILE_EXTS):
             continue
         candidate = norm.replace("/", os.sep)
         if not os.path.exists(candidate):
@@ -256,11 +402,21 @@ def _has_nonexistent_file_uri(text: str) -> bool:
     return False
 
 
-def detect_unexecuted_file_claim(text: Optional[str]) -> bool:
-    """Detect when plain assistant text claims files were created or emits dead file:/// links without tool execution."""
+def detect_unexecuted_file_claim(text: Optional[str], user_text: Optional[str] = None) -> bool:
+    """Detect when plain assistant text claims code/text files were created or emits dead non-image file:/// links without tool execution."""
     if not text or not isinstance(text, str):
         return False
-    if _has_nonexistent_file_uri(text):
+    if _is_image_only_user_request(user_text):
+        return False
+    if "[Image Gen Config]" in text or "[[IMG:" in text:
+        # Never confuse image generation replies with EXECUTOR source/file writes
+        if not re.search(
+            r'[A-Za-z0-9_.-]+\.(?:py|js|ts|jsx|tsx|json|ya?ml|html?|css|sh|bat|md|txt)\b',
+            text,
+            re.IGNORECASE,
+        ):
+            return False
+    if _has_nonexistent_file_uri(text, ignore_images=True):
         return True
     if _NEGATIVE_FILE_CLAIM_RE.search(text):
         return False
@@ -374,8 +530,8 @@ def evaluate_plain_text_guards(
     if (
         not is_plan_only_turn
         and (
-            (not executor_mutated_disk and not verified_disk_files and detect_unexecuted_file_claim(extracted_text))
-            or (echoed_tool_resp and not verified_disk_files)
+            (not executor_mutated_disk and not verified_disk_files and detect_unexecuted_file_claim(extracted_text, user_text=user_text))
+            or (echoed_tool_resp and not verified_disk_files and not _is_image_only_user_request(user_text))
             or parroted_loop_breaker
         )
         and is_executor_anti_hallucination_enabled(current_cfg)
@@ -441,6 +597,43 @@ def evaluate_plain_text_guards(
                 guard_msg,
                 tr("Ricerca non eseguita — richiamo Net Search", "Search skipped — retrying with Net Search"),
                 None,
+            )
+
+    messenger_calls = [
+        r for r in accumulated_tool_results
+        if str(r.get("tag", "")).upper() == "MESSENGER"
+        or str(r.get("action", "")).startswith("MESSENGER__")
+    ]
+    image_gen_failed_in_turn = any(
+        "[[IGEN_ALERT]]" in str(r.get("output", ""))
+        for r in accumulated_tool_results
+    )
+    if (
+        not messenger_calls
+        and not image_gen_failed_in_turn
+        and retries_state.get("messenger", 0) < 1
+        and iteration < max_iterations
+        and are_messenger_tools_enabled(current_cfg)
+        and detect_unexecuted_messenger_claim(user_text, extracted_text, require_explicit_claim=False)
+    ):
+        guard_msg = get_messenger_unexecuted_guard_message()
+        if guard_msg:
+            retries_state["messenger"] = retries_state.get("messenger", 0) + 1
+            logger.warning("[AGENT] Caught unexecuted Messenger request/claim — forcing real MESSENGER tool retry.")
+            return (
+                guard_msg,
+                tr("Invio non eseguito — richiamo MESSENGER", "Messenger skipped — invoking MESSENGER"),
+                None,
+            )
+    elif messenger_calls and detect_unexecuted_messenger_claim(user_text, extracted_text, require_explicit_claim=True):
+        messenger_sent_ok = any(
+            "✅" in str(r.get("output", "")) or "⚠️" in str(r.get("output", ""))
+            for r in messenger_calls
+        )
+        if not messenger_sent_ok and not unverified_file_notice:
+            last_err = str(messenger_calls[-1].get("output", "")).strip()
+            unverified_file_notice = (
+                f"> ⚠️ **Messenger Notice:** The message was **not** sent (`{last_err[:180]}`)."
             )
 
     return None, None, unverified_file_notice

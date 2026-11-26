@@ -5,6 +5,7 @@ via plugins and filters text for speech synthesis.
 
 Facade module. Tool dispatching logic is in tool_dispatcher.py.
 """
+import copy
 from hecos.core.processing import filtri
 from hecos.core.logging import logger
 from hecos.core.i18n import translator
@@ -19,20 +20,107 @@ from hecos.core.processing.tool_dispatcher import (
 # Global variable to hold hardware parameters
 current_config = {}
 
+
+def _build_cli_runtime_config(base_config):
+    """Builds an isolated per-turn config copy for CLI execution.
+    - Prevents per-turn flags (_turn_*) from leaking across CLI turns.
+    - Keeps CLI strictly decoupled from WebUI Global Presets (model + soul + TTS only).
+    - Applies explicit backend.ollama.enable_thinking if set, or disables thinking when
+      num_predict <= 2048 to prevent thinking-token starvation/truncation on Gemma 4 / Qwen.
+    """
+    cfg = copy.deepcopy(base_config) if isinstance(base_config, dict) else {}
+    for k in list(cfg.keys()):
+        if str(k).startswith("_turn_"):
+            cfg.pop(k, None)
+
+    ai_cfg = cfg.setdefault("ai", {})
+    if isinstance(ai_cfg, dict):
+        ai_cfg["active_global_preset"] = ""
+
+    pctrl = cfg.setdefault("payload_control", {})
+    if isinstance(pctrl, dict):
+        pctrl.setdefault("send_tools", True)
+        pctrl.setdefault("send_personality", True)
+        pctrl.setdefault("send_memory", True)
+
+        backend_cfg = cfg.get("backend") or {}
+        btype = str(backend_cfg.get("type") or "ollama").lower()
+        if btype == "hybrid":
+            btype = str(backend_cfg.get("active_model_source") or "ollama").lower()
+        if btype == "ollama":
+            ollama_cfg = backend_cfg.get("ollama") or {}
+            explicit_think = pctrl.get("enable_thinking")
+            if explicit_think is None:
+                explicit_think = ollama_cfg.get("enable_thinking")
+            if explicit_think is not None:
+                pctrl["enable_thinking"] = bool(explicit_think)
+            else:
+                try:
+                    n_pred = int(ollama_cfg.get("num_predict") or 0)
+                except (TypeError, ValueError):
+                    n_pred = 0
+                if 0 < n_pred <= 2048:
+                    pctrl["enable_thinking"] = False
+                    logger.info(
+                        f"[PROCESSOR] CLI auto-guard: enable_thinking=False for Ollama "
+                        f"(num_predict={n_pred} <= 2048 avoids thinking-token truncation; use '/think on' to force)."
+                    )
+
+    return cfg
+
+
 def configure(new_config):
     """Receives configuration from Main and stores it for Brain calls."""
     global current_config
     current_config = new_config
     logger.info("[PROCESSOR] Hardware configuration synchronized.")
 
-def process_exchange(user_text, voice_status, sm=None):
+
+def process_exchange(
+    user_text,
+    voice_status,
+    sm=None,
+    config_manager=None,
+    cancel_event=None,
+    turn_id=None,
+    trace_callback=None,
+    session_id=None,
+):
     """Manages the entire chain: AI -> Plugin -> Cleaning -> Response.
     NOW REFACTORED TO USE THE AGENTIC LOOP."""
     logger.info(f"[PROCESSOR] Input received (length: {len(user_text)}). Delegating to Agentic Loop.")
-    
+
     from hecos.core.agent.loop import AgentExecutor
-    
-    executor = AgentExecutor(config=current_config, state_manager=sm)
+
+    if config_manager is not None and getattr(config_manager, "config", None):
+        base_cfg = config_manager.config
+        turn_cfg = _build_cli_runtime_config(base_cfg)
+    elif current_config and isinstance(current_config, dict) and current_config.get("backend"):
+        turn_cfg = _build_cli_runtime_config(current_config)
+    else:
+        import sys as _sys
+        sys_mgr = getattr(_sys, "hecos_config_manager", None)
+        raw_base = getattr(sys_mgr, "config", None) if sys_mgr is not None else None
+        if not raw_base:
+            from hecos.core.llm import brain as _brain
+            raw_base = _brain.load_config() or {}
+        try:
+            from hecos.config.session_config_manager import merge_session_config
+            turn_cfg = merge_session_config(raw_base, session_id=session_id)
+        except Exception:
+            turn_cfg = _build_cli_runtime_config(raw_base)
+        if config_manager is None and sys_mgr is not None:
+            config_manager = sys_mgr
+
+    executor = AgentExecutor(
+        config=turn_cfg,
+        config_manager=config_manager,
+        state_manager=sm,
+        trace_callback=trace_callback,
+        session_id=session_id,
+        cancel_event=cancel_event,
+        turn_id=turn_id,
+    )
     video_response, clean_voice = executor.run_agentic_loop(user_text, voice_status=voice_status)
     return video_response, clean_voice
 
@@ -92,6 +180,18 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
         if clean_s and clean_s not in _collected_stream_badges:
             _collected_stream_badges.append(clean_s)
 
+    # Collect [[IGEN_META]] / "> **[Image Gen Config]** ..." and SwarmUI auto-start lines
+    # so they are ALWAYS displayed in chat when enabled (even on early-termination fast path)
+    # without being mangled by asterisk/bracket filters or read aloud by TTS.
+    _collected_igen_meta = []
+    _igen_meta_re = _re.compile(
+        r'(?m)^\s*>\s*(?:🖥️\s*)?\*\*\[(?:Image Gen Config|SwarmUI Auto-Start)\]\*\*[^\r\n]*$'
+    )
+    for m_line in _igen_meta_re.findall(base_text):
+        clean_meta = m_line.strip()
+        if clean_meta and clean_meta not in _collected_igen_meta:
+            _collected_igen_meta.append(clean_meta)
+
     if tool_results:
         for r in tool_results:
             out = r.get('output', '')
@@ -100,10 +200,15 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
                     clean_m = match.strip()
                     if clean_m and clean_m not in _collected_alerts:
                         _collected_alerts.append(clean_m)
+                for m_line in _igen_meta_re.findall(out):
+                    clean_meta = m_line.strip()
+                    if clean_meta and clean_meta not in _collected_igen_meta:
+                        _collected_igen_meta.append(clean_meta)
 
-    # Strip raw [[IGEN_ALERT]] / [[STREAM_STATUS]] wrappers from base_text before bracket regex & TTS
+    # Strip raw [[IGEN_ALERT]] / [[STREAM_STATUS]] wrappers and Image Gen metadata lines from base_text before bracket regex & TTS
     base_text = _re.sub(r'\[\[IGEN_ALERT\]\].*?\[\[/IGEN_ALERT\]\]', '', base_text, flags=_re.DOTALL).strip()
     base_text = _re.sub(r'\[\[STREAM_STATUS\]\].*?\[\[/STREAM_STATUS\]\]', '', base_text, flags=_re.DOTALL).strip()
+    base_text = _igen_meta_re.sub('', base_text).strip()
 
     # Strip executed slash command lines and inline MODULE__method(...) calls when tools were executed
     if tool_results:
@@ -193,6 +298,12 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
                 for img_tag in img_tags_in_out:
                     if img_tag not in video_response:
                         video_response = f"{video_response}\n\n{img_tag}".strip()
+
+    # Append Image Gen Config metadata lines (when 'Show Config in Chat' is enabled) — UI only, never spoken
+    if _collected_igen_meta:
+        for meta_line in _collected_igen_meta:
+            if meta_line not in video_response:
+                video_response = f"{video_response}\n\n{meta_line}".strip()
 
     # Append any diagnostic [[IGEN_ALERT]] or verified [[STREAM_STATUS]] banners as formatted blockquotes
     if _collected_alerts:

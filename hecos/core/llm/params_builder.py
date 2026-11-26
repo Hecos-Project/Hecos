@@ -126,8 +126,7 @@ def _is_gemma4_model(model_name: str, api_base: str = "http://localhost:11434") 
 
         zlog_debug("LiteLLM", f"[GEMMA4 DETECT] Could not check model family for '{model_name}': {e}")
 
-        _model_family_cache[cache_key] = False
-
+        # Do NOT cache connection/startup errors permanently — Ollama may still be booting.
         return False
 
 
@@ -388,83 +387,165 @@ def build_messages(
 
 
 
+def _build_dynamic_text_mode_catalog(
+    tools: List[Dict[str, Any]],
+    config: Optional[Dict[str, Any]] = None,
+) -> str:
+    """
+    Build a concise, 100% dynamic text-mode tool catalog directly from active tool schemas,
+    dormant lazy HPM schemas (when tool_selection_mode == 'all'), and registry slash commands.
+    Zero hardcoded module directives.
+    """
+    import json as _json
+    import os as _os
+
+    cfg = config if isinstance(config, dict) else {}
+    p_ctrl = cfg.get("payload_control") or {}
+    if cfg.get("disable_tools", False) or not p_ctrl.get("send_tools", True):
+        return ""
+
+    sel_mode = str(p_ctrl.get("tool_selection_mode") or "all").strip().lower()
+    cfg_plugins = cfg.get("plugins") or {}
+    is_plan_only = bool(cfg.get("_turn_plan_only") or cfg.get("_turn_revise_plan_id")) and not bool(
+        cfg.get("_turn_execute_plan") or cfg.get("_turn_fast_code")
+    )
+    _plan_only_blocked = {
+        "EXECUTOR__write_file", "EXECUTOR__patch_file", "EXECUTOR__run_aider_task",
+        "EXECUTOR__delete_file", "EXECUTOR__move_path", "EXECUTOR__create_dir",
+        "EXECUTOR__start_app", "EXECUTOR__stop_app", "EXECUTOR__git_restore",
+        "EXECUTOR__execute_shell_command", "EXECUTOR__run_python_code",
+        "IMAGE_GEN__generate_image", "ACTION_PLANS__update_step", "ACTION_PLANS__complete_plan",
+    }
+    _internal_skip_tags = {"MEMORY", "MODELS", "PERSONALITY", "WEB_UI", "HELP"}
+
+    combined_schemas: List[Dict[str, Any]] = list(tools or [])
+    seen_fnames = set()
+    for _t in combined_schemas:
+        if isinstance(_t, dict):
+            _fn = _t.get("function") if isinstance(_t.get("function"), dict) else _t
+            _n = str(_fn.get("name") or "").strip()
+            if _n:
+                seen_fnames.add(_n)
+
+    # In 'all' mode, also include dormant lazy HPM schemas (e.g. IMAGE_GEN, CALENDAR, REMINDER, WEBCAM)
+    # since text-mode sends 0 JSON tool schemas to the backend and needs compact syntax visibility.
+    if sel_mode != "custom":
+        try:
+            from hecos.core.system.module_state import _lazy_tool_schemas, _lazy_llm_callable
+            for tag, lazy_list in list(_lazy_tool_schemas.items()):
+                tag_up = str(tag or "").upper()
+                if not tag_up or tag_up in _internal_skip_tags:
+                    continue
+                if not cfg_plugins.get(tag_up, {}).get("enabled", True):
+                    continue
+                if not cfg_plugins.get(tag_up, {}).get("llm_callable", True):
+                    continue
+                if not _lazy_llm_callable.get(tag_up, True):
+                    continue
+                for _lt in (lazy_list or []):
+                    if not isinstance(_lt, dict):
+                        continue
+                    _fn = _lt.get("function") if isinstance(_lt.get("function"), dict) else _lt
+                    _fname = str(_fn.get("name") or "").strip()
+                    if not _fname or _fname in seen_fnames:
+                        continue
+                    if is_plan_only and _fname in _plan_only_blocked:
+                        continue
+                    seen_fnames.add(_fname)
+                    combined_schemas.append(_lt)
+        except Exception:
+            pass
+
+    # Load registered slash commands per tag from registry.json (for compact '| Slash: ...' hints)
+    slash_by_tag: Dict[str, List[str]] = {}
+    try:
+        from hecos.core.system.module_state import REGISTRY_PATH
+        if _os.path.exists(REGISTRY_PATH):
+            with open(REGISTRY_PATH, "r", encoding="utf-8") as _rf:
+                _reg = _json.load(_rf) or {}
+            for _rtag, _rinfo in _reg.items():
+                if not isinstance(_rinfo, dict):
+                    continue
+                _usages: List[str] = []
+                for _sc in (_rinfo.get("slash_commands") or []):
+                    if isinstance(_sc, dict):
+                        _u = str(_sc.get("usage") or "").strip()
+                        if not _u and _sc.get("aliases"):
+                            _u = str(_sc["aliases"][0]).strip()
+                        if _u:
+                            _usages.append(_u)
+                    elif isinstance(_sc, str) and _sc.strip():
+                        _usages.append(_sc.strip())
+                if _usages:
+                    slash_by_tag[str(_rtag).upper()] = list(dict.fromkeys(_usages))
+    except Exception:
+        pass
+
+    grouped: Dict[str, List[str]] = {}
+    for _t in combined_schemas:
+        if not isinstance(_t, dict):
+            continue
+        _fn = _t.get("function") if isinstance(_t.get("function"), dict) else _t
+        _fname = str(_fn.get("name") or "").strip()
+        if not _fname:
+            continue
+        _tag = _fname.split("__", 1)[0].upper() if "__" in _fname else "TOOLS"
+        if _tag in _internal_skip_tags:
+            continue
+        _params_obj = _fn.get("parameters") or {}
+        _req = [str(p) for p in (_params_obj.get("required") or []) if p]
+        if not _req:
+            _props = list((_params_obj.get("properties") or {}).keys())
+            _sig_args = ", ".join(f"{p}=?" for p in _props[:2])
+        else:
+            _sig_args = ", ".join(_req[:4])
+        grouped.setdefault(_tag, []).append(f"{_fname}({_sig_args})")
+
+    if not grouped:
+        return ""
+
+    lines: List[str] = []
+    for _tag in sorted(grouped.keys()):
+        _sigs = grouped[_tag]
+        _shown = ", ".join(_sigs[:10])
+        if len(_sigs) > 10:
+            _shown += f" (+{len(_sigs) - 10} more)"
+        _slash_list = slash_by_tag.get(_tag) or []
+        _slash_part = f" | Slash: {', '.join(_slash_list[:3])}" if _slash_list else ""
+        lines.append(f"- {_tag}: {_shown}{_slash_part}")
+
+    return (
+        "\n### DIRECT ACTIONS (TEXT-MODE TOOL CALLS) ###\n"
+        "Native JSON tool calling is inactive for this model. To execute any active tool below, "
+        "emit `MODULE__method(arg='value')`, `[MODULE: method(arg='value')]`, or its slash command on its own line. "
+        "When multiple actions are requested, emit one call per line. "
+        "Always wait for real tool output before reporting results; never simulate tool results in plain text.\n"
+        + "\n".join(lines)
+        + "\n"
+    )
+
+
 def inject_local_tool_hints(
-
     messages: List[Dict[str, Any]],
-
     params: Dict[str, Any],
-
     tools: Optional[List[Dict[str, Any]]],
-
+    config: Optional[Dict[str, Any]] = None,
 ) -> None:
-
-    """Injects anti-refusal and tool-calling rules into system prompt for local models."""
-
+    """Injects native or dynamically generated text-mode tool syntax into the system prompt for local models."""
     if not (messages and messages[0].get("role") == "system" and tools):
-
         return
 
-
-
     is_native = bool(tools and "tools" in params)
-
     if is_native:
-
         tool_hint = (
-
             "\n### ACTIONS & TOOL EXECUTION RULES ###\n"
-
             "Action modules can be invoked via tool calls when requested by the user.\n"
-
         )
-
         messages[0]["content"] += tool_hint
-
     else:
-
-        has_executor_tools = any(
-
-            isinstance(t, dict) and ((t.get("function") or {}).get("name", "").startswith("EXECUTOR__"))
-
-            for t in (tools or [])
-
-        )
-
-        exec_examples = ""
-
-        if has_executor_tools:
-
-            exec_examples = (
-
-                "For code/files/app execution in text-mode, emit calls like `EXECUTOR__read_file(file_path='C:/Hecos/hecos/media/workspace/...')`, "
-
-                "`EXECUTOR__run_aider_task(repo_path='C:/Hecos/hecos/media/workspace/...', instruction='...')`, "
-
-                "`EXECUTOR__patch_file(file_path='...', old_text='...', new_text='...')`, or `EXECUTOR__start_app(target_path='...')` "
-
-                "(always use forward slashes `/` in Windows paths). NEVER claim files or servers were created, fixed, updated, or started unless you actually emitted the `EXECUTOR__*` call and read its output.\n"
-
-            )
-
-        tool_hint = (
-
-            "\n### DIRECT ACTIONS RULES (TEXT-MODE TOOL CALLS) ###\n"
-
-            "Active modules can be invoked using slash commands (e.g. `/search <query>`, `/tv <channel>`, `/streams <query>`), "
-
-            "explicit module tags (`[NETSEARCH: stream_control(action='play', query='Rai 1', category='tv')]`), "
-
-            "or double-underscore calls (`NETSEARCH__stream_control(action='play', query='Rai 1', category='tv')`) when requested by the user.\n"
-
-            f"{exec_examples}"
-
-            "Wait for the tool output before claiming playback or external results succeeded. "
-
-            "NEVER write `'📺 Tuned to...'`, `'⏹️ Live Stream stopped'`, or `'> 📺'` status lines directly in plain text — playback only happens when you emit the real tool call.\n"
-
-        )
-
-        messages[0]["content"] += tool_hint
+        dynamic_catalog = _build_dynamic_text_mode_catalog(tools, config=config)
+        if dynamic_catalog:
+            messages[0]["content"] += dynamic_catalog
 
 
 
@@ -758,9 +839,7 @@ def build_llm_params(
 
         if backend_type == "ollama" or (backend_type == "llama_cpp" and llama_text_cmds):
 
-
-
-            inject_local_tool_hints(messages, params, tools)
+            inject_local_tool_hints(messages, params, tools, config=config_or_subconfig)
 
 
 
@@ -825,6 +904,8 @@ def build_llm_params(
         # NOTE: for Gemma4 and most Ollama models, "think" must be a ROOT-level key in the request body, NOT inside options{}
         _pctrl = config_or_subconfig.get("payload_control") or specific_config.get("payload_control") or {}
         _thinking_enabled = _pctrl.get("enable_thinking")  # None = not set, False = disabled
+        if _thinking_enabled is None:
+            _thinking_enabled = specific_config.get("enable_thinking")
         _think_root = None  # will be injected at root level of ollama body, not inside options
         if _thinking_enabled is False:
             _think_root = False

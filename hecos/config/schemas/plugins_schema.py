@@ -172,8 +172,9 @@ class PluginActionPlans(BaseModel):
     enabled: bool = True
     lazy_load: bool = False
     llm_callable: bool = True
-    plan_mode: str = "auto"
+    plan_mode: str = "manual"
     auto_plan_min_steps_hint: int = 3
+    planning_directive: str = ""
     expose_tools_in_custom_presets: bool = True
     checkpoint_enabled: bool = True
     resume_banner_enabled: bool = True

@@ -168,8 +168,11 @@ def clean_for_voice(text):
     if not text:
         return ""
 
-    # 0b. Strip UI media tags, raw HTML/PDF paths, and markdown image/file URLs before TTS
+    # 0b. Strip UI media tags, Image Gen config metadata, raw HTML/PDF paths, and markdown image/file URLs before TTS
     text = re.sub(r'\[\[(?:IMG|HSEARCH|HMEDIA):[^\]]+\]\]', '', text)
+    text = re.sub(r'\[\[IGEN_ALERT\]\].*?\[\[/IGEN_ALERT\]\]', '', text, flags=re.DOTALL)
+    text = re.sub(r'(?m)^\s*>\s*(?:🖥️\s*)?\*\*\[(?:Image Gen Config|SwarmUI Auto-Start)\]\*\*[^\r\n]*$', '', text)
+    text = re.sub(r'(?m)^\s*\*\(Generated image of:[^\r\n]*\)\*\s*$', '', text)
     text = re.sub(r'(?m)^\s*(?:HTML|PDF):\s*[^\r\n]+$', '', text)
     text = re.sub(r'!\[[^\]]*\]\([^\)]+\)', '', text)
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)

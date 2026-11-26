@@ -7,7 +7,7 @@ DESCRIPTION: Pydantic v2 models for config/system.yaml (core system only).
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -76,6 +76,7 @@ class OllamaBackendConfig(BaseModel):
     keep_alive: str = "120m"
     probe_timeout_sec: int = 3
     request_timeout_sec: int = 900
+    enable_thinking: Optional[bool] = None  # None = auto; False = disable reasoning; True = force reasoning
     # ── Lifecycle / startup flags ─────────────────────────────────────────────
     binary_path: str = ""            # Path to ollama.exe or 'ollama app.exe' (auto-detected if empty)
     auto_start_server: bool = False  # Launch Ollama automatically if not running

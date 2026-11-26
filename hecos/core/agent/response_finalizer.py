@@ -26,6 +26,13 @@ _DOC_INTENT_RE = re.compile(
     re.IGNORECASE,
 )
 
+_MESSENGER_SEND_INTENT_RE = re.compile(
+    r'(?:\b(?:whatsapp|wazzap|telegram)\b'
+    r'|\b(?:invia\w*|manda\w*|spedisc\w*|inoltra\w*|send|forward)\b'
+    r'[^\r\n]{0,45}\b(?:su|via|tramite|al\s+mio\s+numero|al\s+mio\s+contatto|on|to)\b)',
+    re.IGNORECASE,
+)
+
 _NETSEARCH_SYNTHESIS_INTENT_RE = re.compile(
     r'\b(?:sunto|riassunt[io]|riassumi|sintesi|sintetizza|spiega|spiegami|analizza|'
     r'confronta|commenta|descrivi|summariz\w*|summary|analy[sz]\w*|explain|digest|synthesi[sz]\w*)\b',
@@ -151,6 +158,14 @@ def eval_early_termination(
     )
     doc_satisfied = (not wants_doc) or has_doc
 
+    wants_messenger = bool(_MESSENGER_SEND_INTENT_RE.search(user_text or ""))
+    has_messenger_sent = any(
+        str(r.get("tag", "")).upper() == "MESSENGER"
+        and ("✅" in str(r.get("output", "")) or "⚠️" in str(r.get("output", "")))
+        for r in accumulated_tool_results
+    )
+    messenger_satisfied = (not wants_messenger) or has_messenger_sent
+
     def _is_err(out_str: str) -> bool:
         return out_str.lstrip().startswith(("Error:", "⚠️", "[SYSTEM ERROR"))
 
@@ -167,7 +182,7 @@ def eval_early_termination(
     has_pending_vision_review = bool(images and len(images) > 0 and iteration == 1 and has_search_card)
     wants_synthesis = bool(_NETSEARCH_SYNTHESIS_INTENT_RE.search(user_text or ""))
 
-    if has_generated_img and all_images_done and doc_satisfied:
+    if has_generated_img and all_images_done and doc_satisfied and messenger_satisfied:
         exec_plan_id = str(getattr(state_manager, "active_execute_plan_id", "") or "").strip() if state_manager else ""
         single_step_idx = int(getattr(state_manager, "active_execute_single_step", 0) or 0) if state_manager else 0
         img_failed = bool(getattr(state_manager, "image_gen_failed", False)) if state_manager else False
@@ -192,7 +207,7 @@ def eval_early_termination(
         if plan_allows_early_stop:
             return True, tr("Immagine generata e risposta formulata", "Image generated and response formulated")
 
-    if has_search_card and not has_pending_vision_review and doc_satisfied and has_text:
+    if has_search_card and not has_pending_vision_review and doc_satisfied and messenger_satisfied and has_text:
         if iteration == 1 and wants_synthesis:
             return False, ""
         return True, tr("Ricerca completata e risposta formulata", "Search completed and response formulated")

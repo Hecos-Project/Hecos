@@ -155,50 +155,62 @@ def register_audio_engines_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         try:
             from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
             daemon = FishSpeechDaemon.get_instance()
-            host, port = daemon._resolve_target()
-            is_local = daemon.is_local_target()
-            healthy = daemon.is_healthy(host, port, timeout=1.5)
-            listening = daemon.is_port_listening(host, port)
+            rt = daemon.get_runtime_status()
 
             s2_pro_dir = os.path.join(root_dir, "hecos", "engines", "fish_speech", "checkpoints", "s2-pro")
             model_installed = os.path.exists(s2_pro_dir)
 
-            state = "online" if healthy else ("starting" if (listening or daemon.is_starting()) else "offline")
             return jsonify({
                 "ok": True,
-                "is_local": is_local,
-                "host": host,
-                "port": port,
-                "listening": listening,
-                "healthy": healthy,
-                "status": state,
+                **rt,
                 "model_installed": model_installed,
-                "model_name": "Fish Speech S2-Pro (Dual-AR)",
-                "last_error": daemon.get_last_error()
+                "model_name": rt.get("model") or "Fish Speech S2-Pro (Dual-AR)",
             })
         except Exception as exc:
             return jsonify({"ok": False, "error": str(exc)}), 500
 
     @app.route('/api/audio/fish/server-action', methods=['POST'])
     def fish_server_action():
-        """Controls the local Fish Speech daemon process: restart, start, stop."""
+        """Controls the local Fish Speech daemon process: restart, start, stop, cancel."""
         try:
             data = request.get_json(force=True) or {}
             action = data.get("action", "restart").lower()
+            async_mode = bool(data.get("async", False))
             from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
             daemon = FishSpeechDaemon.get_instance()
 
-            if action == "restart":
+            if action == "cancel":
+                logger.info("[WebUI] User requested Fish Speech active synthesis CANCEL.")
+                ok, count = daemon.cancel_inflight()
+                return jsonify({
+                    "ok": ok,
+                    "cancelled": count,
+                    "message": f"Aborted {count} active/queued synthesis request(s)." if ok else "Server unreachable for cancel.",
+                    "action": "cancel",
+                })
+            elif action == "restart":
                 logger.info("[WebUI] User requested Fish Speech server RESTART.")
-                ok, msg = daemon.restart(timeout=75.0)
+                daemon.stop(force_all=True)
+                daemon.set_standalone_pinned(True)
+                if async_mode:
+                    daemon.preload(delay=0.4, timeout=240.0)
+                    return jsonify({"ok": True, "message": "Fish Speech server restarting in background...", "action": "restart"})
+                ok, msg = daemon.ensure_running(timeout=180.0)
                 return jsonify({"ok": ok, "message": msg, "action": "restart"})
             elif action == "start":
                 logger.info("[WebUI] User requested Fish Speech server START.")
-                ok, msg = daemon.ensure_running(timeout=75.0)
+                ok_pre, pre_msg = daemon.check_preconditions()
+                if not ok_pre:
+                    return jsonify({"ok": False, "error": pre_msg, "message": pre_msg, "action": "start"})
+                daemon.set_standalone_pinned(True)
+                if async_mode:
+                    daemon.preload(delay=0.0, timeout=240.0)
+                    return jsonify({"ok": True, "message": "Fish Speech server starting in background...", "action": "start"})
+                ok, msg = daemon.ensure_running(timeout=180.0)
                 return jsonify({"ok": ok, "message": msg, "action": "start"})
             elif action == "stop":
                 logger.info("[WebUI] User requested Fish Speech server STOP.")
-                daemon.stop()
+                daemon.stop(force_all=True)
                 return jsonify({"ok": True, "message": "Fish Speech local server stopped and VRAM released.", "action": "stop"})
             else:
                 return jsonify({"ok": False, "error": f"Unknown action: {action}"}), 400

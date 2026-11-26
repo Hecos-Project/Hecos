@@ -309,17 +309,26 @@ function mergeHubPanels(panels) {
             const jsPrefix = jsPath.startsWith('hpm_plugin/') ? '/' : '/static/';
             const fullSrc  = `${jsPrefix}${jsPath}?v=${window.VERSION || Date.now()}`;
 
-            // Skip if already injected
-            if (document.querySelector(`script[src^="${jsPrefix}${jsPath}"]`)) {
-                _loadScriptSequential(files, index + 1);
+            // Skip if already injected; if still in-flight, wait for its onload before advancing
+            const existingScript = document.querySelector(`script[src^="${jsPrefix}${jsPath}"]`);
+            if (existingScript) {
+                if (existingScript.dataset.hpmLoaded === '1') {
+                    _loadScriptSequential(files, index + 1);
+                } else {
+                    existingScript.addEventListener('load', () => _loadScriptSequential(files, index + 1), { once: true });
+                }
                 return;
             }
 
             const script = document.createElement('script');
             script.src = fullSrc;
             script.defer = true;
-            script.onload  = () => _loadScriptSequential(files, index + 1);
+            script.onload  = () => {
+                script.dataset.hpmLoaded = '1';
+                _loadScriptSequential(files, index + 1);
+            };
             script.onerror = () => {
+                script.dataset.hpmLoaded = '1';
                 console.error(`[HPM AssetLoader] Failed to load JS: ${jsPath}`);
                 _loadScriptSequential(files, index + 1);
             };

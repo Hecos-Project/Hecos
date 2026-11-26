@@ -165,6 +165,13 @@ async function showTab(name, skipScroll = false) {
   if (name === 'voice' || targetId === 'voice' || name === 'audio' || targetId === 'audio') {
       if (typeof window.refreshTTSEnginesRuntime === 'function') window.refreshTTSEnginesRuntime(false);
   }
+  if (name === 'igen' || targetId === 'igen') {
+      if (typeof window.initImageGenPanel === 'function') {
+          window.initImageGenPanel(false);
+      } else if (typeof window.reloadIgenPanel === 'function') {
+          window.reloadIgenPanel();
+      }
+  }
   
   // Scroll panel container to top
   if (!skipScroll) {

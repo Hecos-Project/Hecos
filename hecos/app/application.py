@@ -119,7 +119,9 @@ class HecosApplication:
                 ptt_status=self.state_manager.push_to_talk,
             )
 
-        # [WEB_UI] Inject live managers into plugin if active, then start the Flask server.
+        # [WEB_UI] Inject live managers into plugin if active, then start the Flask server
+        # (skip if an external WebUI process, e.g. Hecos Tray, is already listening on the same port).
+        external_webui_port = None
         web_ui_mod = module_loader.get_plugin_module("WEB_UI")
         if web_ui_mod and hasattr(web_ui_mod, "tools"):
             if hasattr(web_ui_mod.tools, "_set_config_manager"):
@@ -127,26 +129,40 @@ class HecosApplication:
             if hasattr(web_ui_mod.tools, "_set_state_manager"):
                 web_ui_mod.tools._set_state_manager(self.state_manager)
             if hasattr(web_ui_mod.tools, "_ensure_server"):
+                import socket
+                _port = int(config.get("plugins", {}).get("WEB_UI", {}).get("port", 7070) or 7070)
+                _port_already_open = False
                 try:
-                    web_ui_mod.tools._ensure_server()
-                    # ── Server Live Banner ─────────────────────────────────────────────
-                    import socket
+                    with socket.create_connection(("127.0.0.1", _port), timeout=0.35):
+                        _port_already_open = True
+                except OSError:
+                    _port_already_open = False
+
+                if _port_already_open:
+                    external_webui_port = _port
+                    logger.warning(
+                        f"[APP] WebUI port {_port} already active (external Hecos WebUI instance detected) "
+                        f"— skipping duplicate embedded server startup."
+                    )
+                else:
                     try:
-                        _s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                        _s.connect(('10.254.254.254', 1))
-                        _lan = _s.getsockname()[0]
-                        _s.close()
-                    except Exception:
-                        _lan = "127.0.0.1"
-                    _port = config.get("plugins", {}).get("WEB_UI", {}).get("port", 7070)
-                    _scheme = "https" if config.get("plugins", {}).get("WEB_UI", {}).get("https_enabled") else "http"
-                    logger.info(f"[BOOT] {'=' * 54}")
-                    logger.info(f"[BOOT]   🚀 SERVER LIVE  →  {_scheme}://{_lan}:{_port}/chat")
-                    logger.info(f"[BOOT]   🔑 Pannello     →  {_scheme}://{_lan}:{_port}/hecos/config/ui")
-                    logger.info(f"[BOOT] {'=' * 54}")
-                    # ──────────────────────────────────────────────────────────────────
-                except Exception as _ws_e:
-                    logger.warning(f"[APP] WebUI server startup error: {_ws_e}")
+                        web_ui_mod.tools._ensure_server()
+                        # ── Server Live Banner ─────────────────────────────────────────────
+                        try:
+                            _s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                            _s.connect(('10.254.254.254', 1))
+                            _lan = _s.getsockname()[0]
+                            _s.close()
+                        except Exception:
+                            _lan = "127.0.0.1"
+                        _scheme = "https" if config.get("plugins", {}).get("WEB_UI", {}).get("https_enabled") else "http"
+                        logger.info(f"[BOOT] {'=' * 54}")
+                        logger.info(f"[BOOT]   🚀 SERVER LIVE  →  {_scheme}://{_lan}:{_port}/chat")
+                        logger.info(f"[BOOT]   🔑 Pannello     →  {_scheme}://{_lan}:{_port}/hecos/config/ui")
+                        logger.info(f"[BOOT] {'=' * 54}")
+                        # ──────────────────────────────────────────────────────────────────
+                    except Exception as _ws_e:
+                        logger.warning(f"[APP] WebUI server startup error: {_ws_e}")
 
         # Pre-load configured TTS engines (Piper fallback + active engine if autostart enabled)
         try:
@@ -159,6 +175,12 @@ class HecosApplication:
         # Render WebUI links box + initial HECOS welcome inside Zone 2 (Body)
         self.bootstrapper.show_welcome()
 
+        if not is_webui_mode and external_webui_port is not None:
+            interface.print_scrolling(
+                f"\033[93m[SYSTEM] External Hecos WebUI already running on port {external_webui_port} "
+                f"(embedded server skipped). If PTT double-triggers, pause/stop Hecos Tray or toggle PTT (F8).\033[0m"
+            )
+
         # Avvia bus audio PTT, updater e thread ascolto SOLO in modalità console
         if not is_webui_mode:
             if dashboard_mod:
@@ -168,8 +190,13 @@ class HecosApplication:
 
             try:
                 from hecos.core.audio import ptt_bus
-                ptt_bus.start(state=self.state_manager)
-                logger.info("[APP] PTT Bus started.")
+                if not ptt_bus.get_status().get("active_listeners"):
+                    ptt_bus.start(state=self.state_manager)
+                    logger.info("[APP] PTT Bus started.")
+                else:
+                    ptt_bus._state_ref = self.state_manager
+                    ptt_bus.update_cache()
+                    logger.info("[APP] PTT Bus already active — state bound without duplicate restart.")
             except Exception as e:
                 logger.warning(f"[APP] Could not start audio bus: {e}")
 

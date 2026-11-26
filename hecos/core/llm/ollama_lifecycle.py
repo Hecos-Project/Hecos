@@ -116,19 +116,25 @@ def reap_orphan_ollama_runners() -> int:
     return reaped
 
 
-def resolve_effective_ollama_target(config: dict, session_id: Optional[str] = None) -> tuple:
+def resolve_effective_ollama_target(
+    config: dict,
+    session_id: Optional[str] = None,
+    use_global_preset: bool = True,
+) -> tuple:
     """
-    Resolves (effective_backend, effective_model, effective_ollama_cfg) by applying
-    the active Global Preset (Soul) and ModelManager fallback rules — matching the
-    exact model and runner parameters (num_ctx, num_gpu) used by chat inference.
+    Resolves (effective_backend, effective_model, effective_ollama_cfg).
+    When `use_global_preset=True` (default, WebUI), applies the active Global Preset (Soul)
+    so warm-up matches chat inference. When `use_global_preset=False` (CLI console mode),
+    reads strictly from base `system.yaml` config so CLI stays decoupled from Global Presets.
     """
     base_cfg = config or {}
     merged_cfg = base_cfg
-    try:
-        from hecos.config.session_config_manager import merge_session_config
-        merged_cfg = merge_session_config(base_cfg, session_id=session_id) or base_cfg
-    except Exception as e:
-        logger.debug(f"[OllamaLifecycle] Soul merge skipped during target resolution: {e}")
+    if use_global_preset:
+        try:
+            from hecos.config.session_config_manager import merge_session_config
+            merged_cfg = merge_session_config(base_cfg, session_id=session_id) or base_cfg
+        except Exception as e:
+            logger.debug(f"[OllamaLifecycle] Soul merge skipped during target resolution: {e}")
 
     base_ollama = base_cfg.get("backend", {}).get("ollama", {}) or {}
     merged_ollama = dict(merged_cfg.get("backend", {}).get("ollama", {}) or {})
@@ -386,15 +392,16 @@ class OllamaLifecycleManager:
         delay: float = 3.0,
         session_id: Optional[str] = None,
         force_model: Optional[str] = None,
+        use_global_preset: bool = True,
     ):
         """
         If backend.ollama.warmup_model is True, send an empty-prompt request
-        to Ollama to force the effective configured model (including active Global Preset / Soul
+        to Ollama to force the effective configured model (optionally including active Global Preset / Soul
         overrides and runner options num_ctx + num_gpu) into VRAM immediately.
         Returns immediately — actual loading happens in a daemon thread.
         """
         effective_backend, resolved_model, ollama_cfg = resolve_effective_ollama_target(
-            config, session_id=session_id
+            config, session_id=session_id, use_global_preset=use_global_preset
         )
         if not ollama_cfg.get("warmup_model", False) and not force_model:
             return  # Feature disabled
@@ -842,13 +849,15 @@ class OllamaLifecycleManager:
 
 # ── Module-level convenience functions ───────────────────────────────────────
 
-def run_ollama_startup_sequence(config: dict):
+def run_ollama_startup_sequence(config: dict, use_global_preset: bool = True):
     """
     Entry point called from the bootstrapper and standalone WebUI server.
-    Resolves the effective backend and model (including active Global Preset / Soul)
+    Resolves the effective backend and model (optionally applying Global Preset / Soul)
     and handles auto-start + GPU model warm-up non-blockingly when Ollama is active.
     """
-    effective_backend, effective_model, ollama_cfg = resolve_effective_ollama_target(config)
+    effective_backend, effective_model, ollama_cfg = resolve_effective_ollama_target(
+        config, use_global_preset=use_global_preset
+    )
 
     auto_start = ollama_cfg.get("auto_start_server", False)
     warmup     = ollama_cfg.get("warmup_model", False)
@@ -877,6 +886,6 @@ def run_ollama_startup_sequence(config: dict):
             f"[OllamaLifecycle] Boot sequence: effective model='{effective_model}', "
             f"server_already_up={already_up}, warmup_delay={warmup_delay}s."
         )
-        mgr.maybe_warmup_model(config, delay=warmup_delay)
+        mgr.maybe_warmup_model(config, delay=warmup_delay, use_global_preset=use_global_preset)
 
 

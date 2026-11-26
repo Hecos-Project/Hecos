@@ -46,8 +46,9 @@
     const setCk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
     const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
 
-    setVal('ap-plan-mode', c.plan_mode || 'auto');
+    setVal('ap-plan-mode', c.plan_mode || 'manual');
     setVal('ap-min-steps', c.auto_plan_min_steps_hint ?? 3);
+    setVal('ap-planning-directive', c.planning_directive || '');
     setCk('ap-expose-presets', c.expose_tools_in_custom_presets !== false);
     setVal('ap-approval-timeout', c.approval_timeout_seconds ?? 300);
 
@@ -69,9 +70,11 @@
       return Number.isFinite(n) ? n : defVal;
     };
     const modeEl = document.getElementById('ap-plan-mode');
+    const dirEl = document.getElementById('ap-planning-directive');
     return {
-      plan_mode: modeEl ? modeEl.value : 'auto',
+      plan_mode: modeEl ? modeEl.value : 'manual',
       auto_plan_min_steps_hint: getNum('ap-min-steps', 3),
+      planning_directive: dirEl ? String(dirEl.value || '').trim() : '',
       expose_tools_in_custom_presets: getCk('ap-expose-presets', true),
       approval_timeout_seconds: getNum('ap-approval-timeout', 300),
       checkpoint_enabled: getCk('ap-ckpt-enabled', true),

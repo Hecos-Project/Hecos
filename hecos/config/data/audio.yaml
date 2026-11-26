@@ -1,4 +1,4 @@
-active_engine: fish_speech
+active_engine: piper
 voice_status: true
 piper_autostart: true
 piper_path: C:\Hecos\bin\piper\piper.exe
@@ -46,7 +46,7 @@ piper_inference_presets:
 kokoro:
   autostart: true
   speed: 0.95
-  voice: if_sara
+  voice: af_heart
   lang_code: auto
   blend_voice: ''
   alpha: 1.0
@@ -114,7 +114,7 @@ kokoro_presets:
     normalize: true
     sentence_silence: 0.15
     speed: 0.95
-    voice: if_sara
+    voice: af_heart
     volume: 1
   voce ita 1:
     alpha: 1

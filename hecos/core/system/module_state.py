@@ -20,8 +20,10 @@ _lazy_tool_schemas = {}       # Caches function calling schemas for dormant plug
 _lazy_llm_callable = {}       # tag -> bool: True if dormant plugin should expose schemas to LLM
 
 def get_active_tags():
-    """Returns a list of all currently active plugin tags."""
-    return list(_loaded_plugins.keys()) + list(_loaded_legacy_plugins.keys()) + list(_lazy_plugins_paths.keys())
+    """Returns a deduplicated list of all currently active plugin tags (order-preserving)."""
+    return list(dict.fromkeys(
+        list(_loaded_plugins.keys()) + list(_loaded_legacy_plugins.keys()) + list(_lazy_plugins_paths.keys())
+    ))
 
 def get_plugin_module(tag, legacy=False):
     """Returns the plugin module if active, or triggers a lazy load if dormant.

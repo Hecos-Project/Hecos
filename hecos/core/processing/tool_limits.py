@@ -63,9 +63,13 @@ def get_requested_image_limit(
             if n:
                 counts.append(n)
 
-        # 3. Pattern: <number>[-\s][di] <foto/immagini/images/photos/shot/scatti> (e.g. "10-shot", "10 scatti")
+        # 3. Pattern: <number>[-\s][optional articles/adjectives] <foto/immagini/images/photos/shot/scatti>
+        # Handles e.g. "3 foto", "10-shot", "tutte e 3 le foto", "3 nuove immagini", "all 3 photos"
         m_noun = re.findall(
-            r'\b' + _WORD_OR_DIGIT_PATTERN + r'(?:\s*-\s*|\s+)(?:di\s+)?(?:foto|fotografie|immagini|immagine|photos?|pictures?|images?|pics?|illustrazioni|scatti|shots?|frames?|fotogrammi)\b',
+            r'\b'
+            + _WORD_OR_DIGIT_PATTERN
+            + r'(?:\s*-\s*|\s+)(?:(?:di|le|i|gli|the|all|queste|questi|nuove|nuovi|altre|altri|diverse|diversi|belle|bei|prossime|seguenti|more|new|other|different|distinct|separate)\s+){0,2}'
+            + r'(?:foto|fotografie|immagini|immagine|photos?|pictures?|images?|pics?|illustrazioni|scatti|shots?|frames?|fotogrammi)\b',
             t,
         )
         for match in m_noun:
@@ -82,6 +86,36 @@ def get_requested_image_limit(
             n = _parse_num_val(match)
             if n:
                 counts.append(n)
+
+        has_img_keyword = bool(re.search(
+            r'\b(?:foto|fotografi\w*|immagin[ei]|photos?|pictures?|images?|pics?|illustrazioni|scatti|shots?|frames?|selfie|ritratt[oi]|disegn[ai]\w*)\b',
+            t,
+        ))
+        if has_img_keyword:
+            # 4b. Collective quantifiers: "tutte e 3", "tutte e tre", "all 3", "all three"
+            m_all = re.findall(
+                r'\b(?:tutt[ei]\s+e\s+|all\s+(?:of\s+the\s+)?)' + _WORD_OR_DIGIT_PATTERN + r'\b',
+                t,
+            )
+            for match in m_all:
+                n = _parse_num_val(match)
+                if n and n >= 2:
+                    counts.append(n)
+
+            # 4c. Enumerated sequence in prompt (e.g. "1. foto in cucina 2. foto nel deserto 3. foto in spiaggia")
+            enum_nums = [
+                int(x) for x in re.findall(r'(?:^|[\s,;:])(\d{1,2})[\.\)]\s+(?!\d)', t)
+                if 1 <= int(x) <= 20
+            ]
+            if len(enum_nums) >= 2 and 1 in enum_nums:
+                seq_len = 0
+                expected = 1
+                for num in enum_nums:
+                    if num == expected:
+                        seq_len = expected
+                        expected += 1
+                if seq_len >= 2:
+                    counts.append(seq_len)
 
     text_limit = min(max(1, max(counts)), 20) if counts else 1
 

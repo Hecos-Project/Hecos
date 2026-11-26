@@ -153,6 +153,8 @@ class AgentTracer:
 
     @classmethod
     def _print_cli(cls, msg: str, level: str = "info", sess: Optional[TraceSession] = None) -> None:
+        if sess is not None and sess.cancel_event is not None and sess.cancel_event.is_set():
+            return
         cfg = sess.config if sess else get_agent_config()
         print_cli_trace(msg, level=level, cli_enabled=cfg.get("cli_traces_enabled", True))
 
@@ -176,6 +178,7 @@ class AgentTracer:
         level: str = "info",
         module_name: str = "",
         close_previous: bool = True,
+        print_cli: bool = True,
     ) -> Dict[str, Any]:
         """Starts a new structured step in the current turn's timeline and emits it to UI + CLI."""
         sess = cls.get_session()
@@ -230,7 +233,8 @@ class AgentTracer:
         elif detail:
             display_msg += f" — {detail}"
 
-        cls._print_cli(display_msg, level=level, sess=sess)
+        if print_cli:
+            cls._print_cli(display_msg, level=level, sess=sess)
         cls._dispatch_to_ui(
             sess,
             {
@@ -403,6 +407,7 @@ class AgentTracer:
                         label=tr("Ragionamento interno del modello", "Model internal reasoning"),
                         icon="fa-lightbulb",
                         level="info",
+                        print_cli=False,
                     )
                     AgentTracer.finish_step(s, status="ok", result_preview=preview)
                 if sess and sess.trace_callback:

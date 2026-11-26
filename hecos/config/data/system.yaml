@@ -1,6 +1,6 @@
 ai:
   active_global_preset: urania_9800_gp
-  active_personality: Hecos_Coder
+  active_personality: Urania_9800
   available_personalities:
     '1': Hecos_System_Soul
     '2': Hecos_Coder
@@ -44,25 +44,26 @@ backend:
     request_timeout_sec: 900
   ollama:
     url: http://localhost:11434
-    model: nandhank/qwen3.5-abliterated-truthful:9b
+    model: masska129/gemma-4-abliterated:12b-qat
     available_models:
-      '1': masska129/gemma-4-abliterated:12b-qat
-      '2': sorc/qwen3.5-claude-4.6-opus:latest
-      '3': nandhank/qwen3.5-abliterated-truthful:9b
-      '4': sorc/qwen3.5-instruct-heretic:9b
-      '5': srchmnmichael/qwen3.5-9B-uncensored:latest
-      '6': huihui_ai/qwen2.5-coder-abliterate:14b
-      '7': huihui_ai/qwen3-coder-abliterated:30b
-      '8': mattcapalbo1432/qwen38-obliterated-cyber:latest
+      '1': huihui_ai/qwen2.5-coder-abliterate:14b
+      '2': huihui_ai/qwen3-coder-abliterated:30b
+      '3': masska129/gemma-4-abliterated:12b-qat
+      '4': mattcapalbo1432/qwen38-obliterated-cyber:latest
+      '5': nandhank/qwen3.5-abliterated-truthful:9b
+      '6': sorc/qwen3.5-claude-4.6-opus:latest
+      '7': sorc/qwen3.5-instruct-heretic:9b
+      '8': srchmnmichael/qwen3.5-9B-uncensored:latest
     num_ctx: 40960
     num_gpu: 99
-    num_predict: 4096
-    temperature: 0.95
-    top_p: 0.98
-    repeat_penalty: 1.0
+    num_predict: 1024
+    temperature: 0.7
+    top_p: 0.9
+    repeat_penalty: 1.1
     keep_alive: 120m
     probe_timeout_sec: 3
     request_timeout_sec: 900
+    enable_thinking: null
     binary_path: C:\Users\melon\AppData\Local\Programs\Ollama\ollama.exe
     auto_start_server: false
     auto_stop_server: true
@@ -123,6 +124,12 @@ llm:
       - gemini-2.5-flash-native-audio-latest
       - veo-3.1-lite-generate-preview
       - gemini-3.5-transcribe-live
+      - deep-research-pro-preview-12-2025
+      - gemini-embedding-2-preview
+      - gemini-embedding-2
+      - aqa
+      - veo-3.1-generate-preview
+      - veo-3.1-fast-generate-preview
       - gemini-2.5-flash
       - gemini-2.5-pro
       - gemini-2.5-flash-preview-tts
@@ -145,14 +152,20 @@ llm:
       - gemini-3.1-flash-image-preview
       - gemini-3.1-flash-image
       - gemini-3.1-flash-lite-image
+      - gemini-nano-banana-2.1
       - gemini-3.5-flash
       - gemini-3.5-flash-lite
       - gemini-omni-flash-preview
       - gemini-omni-1.1-flash
+      - gemini-omni-1.2-flash
       - gemini-3.5-transcribe
       - gemini-3.6-flash
       - gemini-3.7-flash
       - gemini-3.8-flash
+      - gemini-4-argon
+      - gemini-4-carbon
+      - gemini-4-hydrogen
+      - gemini-4-neon
       - lyria-3-clip-preview
       - lyria-3-pro-preview
       - lyria-3.5
@@ -166,13 +179,7 @@ llm:
       - antigravity-preview-latest
       - deep-research-max-preview-04-2026
       - deep-research-preview-04-2026
-      - deep-research-pro-preview-12-2025
       - gemini-embedding-001
-      - gemini-embedding-2-preview
-      - gemini-embedding-2
-      - aqa
-      - veo-3.1-generate-preview
-      - veo-3.1-fast-generate-preview
     openai:
       api_key: ''
       models:
@@ -188,17 +195,17 @@ llm:
       - llama-3.3-70b-versatile
       - compound
       - compound-mini
-      - meta-llama/llama-prompt-guard-2-22m
       - whisper-large-v3-turbo
-      - openai/gpt-oss-20b
-      - openai/gpt-oss-120b
+      - meta-llama/llama-prompt-guard-2-86m
       - whisper-large-v3
-      - qwen/qwen3.8-27b
+      - openai/gpt-oss-20b
+      - allam-2-7b
+      - meta-llama/llama-prompt-guard-2-22m
       - canopylabs/orpheus-arabic-saudi
       - canopylabs/orpheus-v1-english
-      - meta-llama/llama-prompt-guard-2-86m
-      - allam-2-7b
       - openai/gpt-oss-safeguard-20b
+      - qwen/qwen3.8-27b
+      - openai/gpt-oss-120b
 logging:
   level: DEBUG
   destination: console
@@ -236,6 +243,4 @@ hpm:
   repositories:
   - name: Hecos Official
     url: https://hecos-project.github.io/store/index.json
-  - name: Hecos Elite
-    url: https://github.com/Hecos-Project/Hecos-Elite
   restart_mode: auto_batch

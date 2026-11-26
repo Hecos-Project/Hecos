@@ -37,6 +37,11 @@ class PersonalityManager:
                     new_p = soul_files[idx]
                     self.config_manager.set(new_p, 'ai', 'active_personality')
                     self.config_manager.save()
+                    try:
+                        from hecos.core.processing import processore
+                        processore.configure(self.config_manager.config)
+                    except Exception:
+                        pass
                     print(f"\033[92m{translator.t('personality_updated', name=new_p)}\033[0m")
                     time.sleep(1)
                 else:

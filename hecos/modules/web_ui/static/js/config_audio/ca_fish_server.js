@@ -12,6 +12,12 @@
     'use strict';
 
     let _fishModelsCache = null;
+    let _fishPollTimer = null;
+
+    function _scheduleFishPoll(ms) {
+        clearTimeout(_fishPollTimer);
+        _fishPollTimer = setTimeout(() => window.checkFishServerStatus(false), ms);
+    }
 
     // ── Local Fish Speech Server Management (Status, Start, Stop, Restart) ─────
 
@@ -23,21 +29,27 @@
         const restartBtn = document.getElementById('btn-fish-server-restart');
 
         try {
-            const res = await fetch('/api/audio/fish/server-status');
+            const res = await fetch('/api/audio/fish/server-status', { cache: 'no-store' });
             const data = await res.json();
             if (!data.ok) throw new Error(data.error || 'Failed to fetch status');
 
+            const vramStr = data.vram_mb > 0 ? ` · VRAM ${(data.vram_mb / 1024).toFixed(1)} GB` : '';
+            const warnStr = data.vram_warning ? ` · ⚠️ ${data.vram_warning}` : '';
+
             if (data.status === 'online') {
                 if (badge) {
-                    badge.className = 'badge-pill badge-ok';
+                    badge.className = data.busy ? 'badge-pill badge-accent' : 'badge-pill badge-ok';
                     badge.style.background = '';
                     badge.style.color = '';
-                    badge.innerHTML = '🟢 Server Online (CUDA S2-Pro Ready)';
+                    badge.innerHTML = data.busy
+                        ? `🟣 Synthesizing (${Math.round(data.busy_seconds || 0)}s)...`
+                        : '🟢 Server Online (CUDA S2-Pro Ready)';
                 }
-                if (desc) desc.textContent = `Running on ${data.host}:${data.port} · Model: ${data.model_name}`;
+                if (desc) desc.textContent = `Running on ${data.host}:${data.port} · Model: ${data.model_name}${vramStr}${warnStr}`;
                 if (startBtn) startBtn.style.display = 'none';
                 if (stopBtn) stopBtn.style.display = 'inline-flex';
                 if (restartBtn) restartBtn.style.display = 'inline-flex';
+                if (data.busy) _scheduleFishPoll(2000);
                 if (interactive && window.showToast) window.showToast("Fish Speech server is healthy and responding!", "success");
             } else if (data.status === 'starting') {
                 if (badge) {
@@ -46,11 +58,12 @@
                     badge.style.color = '#eab308';
                     badge.innerHTML = '🟡 Initializing Model on GPU...';
                 }
-                if (desc) desc.textContent = `Port ${data.port} active. Loading weights...`;
+                if (desc) desc.textContent = `Port ${data.port} · Loading neural weights into VRAM...`;
                 if (startBtn) startBtn.style.display = 'none';
                 if (stopBtn) stopBtn.style.display = 'inline-flex';
                 if (restartBtn) restartBtn.style.display = 'inline-flex';
-                if (interactive && window.showToast) window.showToast("Server is starting, please wait a few seconds...", "info");
+                _scheduleFishPoll(2000);
+                if (interactive && window.showToast) window.showToast("Server is starting, please wait...", "info");
             } else {
                 if (badge) {
                     badge.className = 'badge-pill';
@@ -58,7 +71,7 @@
                     badge.style.color = '#ef4444';
                     badge.innerHTML = '🔴 Server Offline (VRAM Free)';
                 }
-                if (desc) desc.textContent = `Daemon stopped. Click 'Start Server' to load S2-Pro into VRAM.`;
+                if (desc) desc.textContent = data.vram_warning || `Daemon stopped. Click 'Start Server' to load S2-Pro into VRAM.`;
                 if (startBtn) startBtn.style.display = 'inline-flex';
                 if (stopBtn) stopBtn.style.display = 'none';
                 if (restartBtn) restartBtn.style.display = 'none';
@@ -102,10 +115,11 @@
         if (stopBtn) stopBtn.disabled = true;
 
         try {
+            const isAsync = (action === 'start' || action === 'restart');
             const res = await fetch('/api/audio/fish/server-action', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: action })
+                body: JSON.stringify({ action: action, async: isAsync })
             });
             const data = await res.json();
             if (data.ok) {

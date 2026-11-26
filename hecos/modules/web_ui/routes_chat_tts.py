@@ -115,7 +115,10 @@ def sanitize_text_for_tts(text: str, engine: str = None) -> str:
         prev_text = text
         text = re.sub(r'^(SYNCHRONIZED|COACH|PRESENTER|AI|ASSISTANT|SYSTEM|USER|UTENTE|ASSISTENTE|[A-Za-z0-9_\-\s]{2,30})\s*[:\-]\s*', '', text, flags=re.IGNORECASE).strip()
 
-    # 3. Remove agent image tags (e.g. IMG:gen_...)
+    # 3. Remove agent image tags (e.g. IMG:gen_...) and Image Gen metadata/alert blocks
+    text = re.sub(r'\[\[IGEN_ALERT\]\][\s\S]*?\[\[/IGEN_ALERT\]\]', '', text)
+    text = re.sub(r'(?m)^\s*>\s*(?:🖥️\s*)?\*\*\[(?:Image Gen Config|SwarmUI Auto-Start)\]\*\*[^\r\n]*$', '', text)
+    text = re.sub(r'(?m)^\s*\*\(Generated image of:[^\r\n]*\)\*\s*$', '', text)
     text = re.sub(r'IMG:\S+', '', text)
     text = re.sub(r'IMG:.*$', '', text, flags=re.MULTILINE)
 

@@ -81,9 +81,35 @@
     if (!panel || panel.dataset.apBound === 'true') return;
     panel.dataset.apBound = 'true';
 
-    panel.querySelectorAll('input, select').forEach((el) => {
+    panel.querySelectorAll('input, select, textarea').forEach((el) => {
       el.addEventListener('change', () => { save(); });
     });
+    const tplBtn = document.getElementById('ap-directive-template-btn');
+    if (tplBtn) {
+      tplBtn.addEventListener('click', () => {
+        const dirEl = document.getElementById('ap-planning-directive');
+        if (dirEl) {
+          dirEl.value =
+            'For complex multi-step tasks (>= {min_steps} steps: software projects, refactors, audits, or workflows): ' +
+            'create a concise checklist FIRST via `ACTION_PLANS__create_plan(title=..., steps=[...])`, ' +
+            'update progress with `ACTION_PLANS__update_step(step_index=..., status=\'done\'|\'running\'|\'failed\', notes=...)`, ' +
+            'and finalize with `ACTION_PLANS__complete_plan(...)`. Skip planning for simple chat, questions, or direct image requests.';
+          save();
+        }
+      });
+    }
+    const clrBtn = document.getElementById('ap-directive-clear-btn');
+    if (clrBtn) {
+      clrBtn.addEventListener('click', () => {
+        const dirEl = document.getElementById('ap-planning-directive');
+        if (dirEl) {
+          dirEl.value = '';
+          save();
+        }
+      });
+    }
+    const saveDirBtn = document.getElementById('ap-directive-save-btn');
+    if (saveDirBtn) saveDirBtn.addEventListener('click', () => { save(); });
     const refBtn = document.getElementById('ap-refresh-btn');
     if (refBtn) refBtn.addEventListener('click', refresh);
     const purgeBtn = document.getElementById('ap-purge-btn');

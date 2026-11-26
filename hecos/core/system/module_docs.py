@@ -708,14 +708,30 @@ def get_tools_schema(payload_control=None, config=None):
 
     is_plan_only_turn = False
     is_execute_or_fast_code = False
+    ap_mode = "manual"
+    active_session_id = ""
+    has_pending_session_plan = False
     try:
-        from hecos.core.action_plans import get_action_plans_config
+        from hecos.core.action_plans import get_action_plans_config, get_action_plan_manager
         ap_cfg = get_action_plans_config(raw_config=config)
+        ap_mode = str(ap_cfg.get("plan_mode") or "manual").strip().lower()
         if isinstance(config, dict):
             is_execute_or_fast_code = bool(config.get("_turn_execute_plan") or config.get("_turn_fast_code"))
-            is_plan_only_turn = bool(config.get("_turn_plan_only")) or (
-                not is_execute_or_fast_code and str(ap_cfg.get("plan_mode") or "").lower() == "plan_only"
+            is_plan_only_turn = bool(config.get("_turn_plan_only") or config.get("_turn_revise_plan_id")) or (
+                not is_execute_or_fast_code and ap_mode == "plan_only"
             )
+            active_session_id = str(config.get("_session_id") or config.get("session_id") or "").strip()
+        if not active_session_id:
+            try:
+                from hecos.core.agent.trace_session import get_active_session
+                _ts = get_active_session()
+                active_session_id = str(getattr(_ts, "session_id", "") or "").strip() if _ts else ""
+            except Exception:
+                active_session_id = ""
+        if active_session_id:
+            pending_ap = get_action_plan_manager().resolve_plan(source_id=active_session_id)
+            if pending_ap and str(pending_ap.get("status") or "").lower() in ("awaiting_approval", "draft", "running"):
+                has_pending_session_plan = True
     except Exception:
         ap_cfg = {}
 
@@ -728,6 +744,19 @@ def get_tools_schema(payload_control=None, config=None):
     for tag, module in list(_loaded_plugins.items()):
         if not _plugins_cfg.get(tag, {}).get("llm_callable", True):
             continue
+
+        # Action Plans gate: in 'manual' or 'off' mode, do not advertise ACTION_PLANS__*
+        # during normal chat turns unless explicitly invoked (/plan, Plan First, Execute Plan)
+        # or there is an active/pending plan in the current session.
+        if tag == "ACTION_PLANS":
+            if ap_mode == "off" and not (is_plan_only_turn or is_execute_or_fast_code):
+                continue
+            if (
+                mode == "all"
+                and ap_mode == "manual"
+                and not (is_plan_only_turn or is_execute_or_fast_code or has_pending_session_plan)
+            ):
+                continue
 
         extracted = _sanitize_tool_schema(_extract_module_tools(tag, module))
         if mode == "custom":
@@ -803,22 +832,15 @@ def get_tools_schema(payload_control=None, config=None):
                     exec_schemas = _sanitize_tool_schema(_lazy_tool_schemas.get("EXECUTOR") or [])
                 tools_list.extend(exec_schemas)
 
-    # Auto-expose ACTION_PLANS tools to multi-step custom presets or explicit Plan/Execute turns
+    # Auto-expose ACTION_PLANS tools only on explicit Plan/Execute turns, pending session plans,
+    # or custom presets when the user enabled auto/confirm/plan_only mode.
     if "ACTION_PLANS" in _loaded_plugins and _plugins_cfg.get("ACTION_PLANS", {}).get("llm_callable", True):
         try:
-            should_expose_ap = bool(is_plan_only_turn or is_execute_or_fast_code)
-            if not should_expose_ap:
-                try:
-                    from hecos.core.action_plans import get_action_plan_manager
-                    pending_ap = get_action_plan_manager().resolve_plan()
-                    if pending_ap and str(pending_ap.get("status") or "").lower() in ("awaiting_approval", "draft"):
-                        should_expose_ap = True
-                except Exception:
-                    pass
-            if not should_expose_ap and mode == "custom":
+            should_expose_ap = bool(is_plan_only_turn or is_execute_or_fast_code or has_pending_session_plan)
+            if not should_expose_ap and mode == "custom" and ap_mode != "off":
                 if (
                     ap_cfg.get("enabled", True)
-                    and ap_cfg.get("plan_mode") in ("auto", "confirm", "plan_only")
+                    and ap_mode in ("auto", "confirm", "plan_only")
                     and ap_cfg.get("expose_tools_in_custom_presets", True)
                 ):
                     existing_names_check = {(t.get("function") or t).get("name", "") for t in tools_list}
@@ -836,7 +858,7 @@ def get_tools_schema(payload_control=None, config=None):
                         ))
                         for n in existing_names_check
                     )
-            if should_expose_ap:
+            if should_expose_ap and (ap_mode != "off" or is_plan_only_turn or is_execute_or_fast_code):
                 existing_names = {(t.get("function") or t).get("name", "") for t in tools_list}
                 _ap_skip = {"ACTION_PLANS__update_step", "ACTION_PLANS__complete_plan"} if is_plan_only_turn else set()
                 for ap_tool in _sanitize_tool_schema(_extract_module_tools("ACTION_PLANS", _loaded_plugins["ACTION_PLANS"])):

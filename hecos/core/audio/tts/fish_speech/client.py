@@ -235,9 +235,9 @@ class FishSpeechClient:
             try:
                 from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
                 daemon = FishSpeechDaemon.get_instance()
-                if not daemon.is_port_listening(target_host, target_port):
-                    logger.info("FISH_SPEECH", f"Local Fish Speech server not listening on port {target_port}. Starting automatically...")
-                    started, start_msg = daemon.ensure_running(timeout=90.0)
+                if not daemon.is_healthy(target_host, target_port, timeout=1.5):
+                    logger.info("FISH_SPEECH", f"Local Fish Speech server not ready on port {target_port}. Ensuring daemon is running...")
+                    started, start_msg = daemon.ensure_running(timeout=180.0)
                     if not started:
                         logger.error("FISH_SPEECH", f"❌ Could not auto-start Fish Speech server: {start_msg}")
                         return None

@@ -39,6 +39,29 @@
       },
       "verification_step": "Press F8 to enable server PTT, or hold tap WebUI mic icon to test WebRTC upload.",
       "notes": "WebRTC PTT uses pydub backend conversion to map remote Mobile Dictation to standard Hecos STT."
+    },
+    {
+      "id": "fish_speech_local_daemon",
+      "description": "Standalone local Fish Speech S2-Pro FastAPI daemon (port 18480) with zero-duplicate meta-device CUDA weight streaming, mid-token disconnect/cancel abort, VRAM paging telemetry, and lifecycle decoupled from global active_engine for Voice Forge Studio.",
+      "risk": "low",
+      "available_in": ["web", "plugin"],
+      "implementation": {
+        "core_files": [
+          "hecos/core/audio/tts/fish_speech_daemon.py",
+          "hecos/core/audio/tts/fish_speech_server.py",
+          "hecos/core/audio/tts_manager.py",
+          "hecos/modules/web_ui/routes_audio_engines.py"
+        ],
+        "entry_points": [
+          "GET /api/audio/fish/server-status",
+          "POST /api/audio/fish/server-action",
+          "GET /hecos/api/plugins/voice_forge/fish_server/status",
+          "POST /hecos/api/plugins/voice_forge/fish_server/action"
+        ],
+        "config_keys": ["fish_speech.api_url", "fish_speech.model_checkpoint", "fish_speech.autostart"]
+      },
+      "verification_step": "Keep Piper or Kokoro as Active TTS Engine, start Fish Speech server from Voice Forge bar, synthesize audio, and verify active_engine remains unchanged.",
+      "notes": "Supports start, stop (free VRAM), restart, and cancel (abort in-flight synthesis without unloading weights)."
     }
   ]
 }

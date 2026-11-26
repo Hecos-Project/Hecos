@@ -80,11 +80,11 @@ if DEPLOY_DIR.exists():
     shutil.copytree(DEPLOY_DIR, backup, dirs_exist_ok=True)
     print(f"\nBacked up current install → livebackup/voice_forge_{ts}")
 
-# Deploy: unpack hpkg into Hecos hpm/voice_forge
+# Deploy: unpack hpkg into Hecos hpm/voice_forge (including signed hpkg_manifest.toml)
 DEPLOY_DIR.mkdir(parents=True, exist_ok=True)
 print(f"Deploying to: {DEPLOY_DIR}")
 with zipfile.ZipFile(latest, 'r') as zf:
-    members = [m for m in zf.namelist() if m != "hpkg_manifest.toml"]
+    members = list(zf.namelist())
     for member in members:
         dest = DEPLOY_DIR / member
         dest.parent.mkdir(parents=True, exist_ok=True)

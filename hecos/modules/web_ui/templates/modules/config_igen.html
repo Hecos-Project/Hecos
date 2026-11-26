@@ -15,6 +15,7 @@
     </div>
     <div style="display:flex; gap:8px; align-items:center;">
       <button
+        type="button"
         id="igen-refresh-btn"
         onclick="window.reloadIgenPanel()"
         style="display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px;
@@ -28,6 +29,7 @@
         Refresh
       </button>
       <button
+        type="button"
         id="igen-gallery-btn"
         onclick="window._openIgenGallery()"
         style="display:flex; align-items:center; gap:8px; padding:8px 18px; border-radius:10px;
@@ -78,6 +80,57 @@ window._openIgenGallery = async function() {
 <!-- Preset & Provider Card -->
 <div class="card">
   <div class="card-title"><i class="fas fa-bolt"></i> Provider &amp; Generation</div>
+
+  <!-- CONFIGURATION PRESET TOOLBAR (Core-style, always visible) -->
+  <div class="igen-preset-bar" id="igen-preset-bar">
+    <div class="igen-preset-bar-header">
+      <div class="igen-preset-bar-title">
+        <i class="fas fa-sliders-h" style="color:var(--accent);"></i>
+        <span>Configuration Preset</span>
+        <span id="igen-preset-type-badge" class="igen-preset-pill igen-pill-neutral">No Preset</span>
+        <span id="igen-preset-dirty-badge" class="igen-preset-pill igen-pill-dirty" style="display:none;" title="Parameters were modified since this preset was loaded. Click Update or New to save.">● Modified</span>
+        <span id="igen-preset-count-badge" class="igen-preset-count">0 presets</span>
+      </div>
+      <div class="igen-preset-io-actions">
+        <button type="button" class="btn btn-secondary btn-sm igen-io-btn" id="igen-preset-export-btn" onclick="exportIgenPreset()" title="Export selected preset to .json">
+          <i class="fas fa-file-export"></i>
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm igen-io-btn" onclick="document.getElementById('igen-preset-import-input').click()" title="Import preset from .json file">
+          <i class="fas fa-file-import"></i>
+        </button>
+        <input type="file" id="igen-preset-import-input" accept=".json" style="display:none;" onchange="importIgenPreset(event)">
+      </div>
+    </div>
+
+    <div class="igen-preset-controls">
+      <select id="igen-preset" onchange="loadIgenPreset()" class="config-input igen-preset-select">
+        <option value="">— Select a preset —</option>
+      </select>
+      <div class="igen-preset-btn-group">
+        <button type="button" id="igen-preset-new-btn" class="btn btn-primary btn-sm" onclick="saveIgenPreset()" title="Save current configuration as a new custom preset">
+          <i class="fas fa-plus"></i> New
+        </button>
+        <button type="button" id="igen-preset-update-btn" class="btn btn-secondary btn-sm" onclick="updateIgenPreset()" title="Update selected custom preset with current settings (or save as new if built-in)">
+          <i class="fas fa-sync-alt"></i> Update
+        </button>
+        <button type="button" id="igen-preset-rename-btn" class="btn btn-secondary btn-sm" onclick="renameIgenPreset()" title="Rename selected custom preset">
+          <i class="fas fa-edit"></i> Rename
+        </button>
+        <button type="button" id="igen-preset-duplicate-btn" class="btn btn-secondary btn-sm" onclick="duplicateIgenPreset()" title="Duplicate selected preset as a new editable custom preset">
+          <i class="fas fa-copy"></i> Duplicate
+        </button>
+        <button type="button" id="igen-preset-reset-btn" class="btn btn-secondary btn-sm" onclick="resetIgenPreset()" title="Reload saved parameters of selected preset (or reset to defaults)">
+          <i class="fas fa-undo"></i> Reset
+        </button>
+        <button type="button" id="igen-preset-default-btn" class="btn btn-secondary btn-sm igen-btn-star" onclick="toggleIgenDefaultPreset()" title="Mark/unmark selected preset as startup default">
+          <i class="far fa-star"></i> Default
+        </button>
+        <button type="button" id="igen-preset-delete-btn" class="btn btn-danger btn-sm" onclick="deleteIgenPreset()" title="Delete selected custom preset">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- CLOUD PROVIDERS TOGGLE — controls whether cloud options are available -->
   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding:8px 12px; background:rgba(var(--accent-rgb),0.04); border:1px solid var(--border); border-radius:10px;">
@@ -166,38 +219,54 @@ window._openIgenGallery = async function() {
       </details>
     </div>
 
-    <!-- Tab: Presets -->
-    
+    <!-- Tab: Presets (Library & Active Summary) -->
     <div id="igen-tab-presets" class="igen-tab-pane" style="display:none; padding-top:14px;">
-      
+
       <!-- Live Summary Card -->
-      <div style="margin-bottom:16px; padding:12px; background:linear-gradient(135deg, rgba(var(--accent-rgb),0.05), var(--bg2)); border:1px solid var(--border); border-radius:10px; font-size:12px;">
-        <div style="font-weight:700; color:var(--text); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-          <i class="fas fa-clipboard-list" style="color:var(--accent);"></i> Active Configuration
+      <div style="margin-bottom:16px; padding:12px 14px; background:linear-gradient(135deg, rgba(var(--accent-rgb),0.05), var(--bg2)); border:1px solid var(--border); border-radius:10px; font-size:12px;">
+        <div style="font-weight:700; color:var(--text); margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:6px;">
+          <span><i class="fas fa-clipboard-list" style="color:var(--accent); margin-right:6px;"></i>Active Configuration Snapshot</span>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="saveIgenPreset()" title="Save current configuration as a new custom preset">
+              <i class="fas fa-plus"></i> Save Current as Preset
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('igen-preset-import-input').click()" title="Import preset from JSON file">
+              <i class="fas fa-file-import"></i> Import
+            </button>
+          </div>
         </div>
         <div id="igen-live-summary" style="display:flex; flex-direction:column; gap:2px;">
-          <!-- Populated by JS -->
           <div style="color:var(--muted); font-style:italic;">Loading...</div>
         </div>
       </div>
 
-      <!-- Presets Management -->
-      <div style="font-weight:600; font-size:12px; margin-bottom:8px; color:var(--muted);">Select or Save Preset</div>
-      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-        <select id="igen-preset" onchange="loadIgenPreset()" class="config-input" style="flex:1; min-width:180px; padding:6px 12px; font-size:13px;">
-          <option value="">— Select a preset —</option>
-        </select>
-        <button id="igen-preset-default-btn" type="button" class="btn-default-profile" style="display:none; padding:7px 12px; border-radius:8px; font-size:12px; font-weight:600; border:1px solid rgba(251,191,36,0.3); color:#fbbf24; background:transparent; cursor:pointer;"><i class="far fa-star"></i> Set as Default</button>
-        <button id="igen-preset-update-btn" onclick="updateIgenPreset()" title="Update selected user preset with current values" style="display:none; padding:7px 14px; border-radius:8px; border:1px solid var(--accent); background:rgba(var(--accent-rgb),0.1); color:var(--accent); cursor:pointer; font-size:12px; font-weight:700; white-space:nowrap;"><i class="fas fa-sync"></i> Update</button>
-        <button onclick="saveIgenPreset()" title="Save current config as a new preset" class="btn btn-sm" style="white-space:nowrap;"><i class="fas fa-save"></i> Save As</button>
-        <button id="igen-preset-delete-btn" onclick="deleteIgenPreset()" title="Delete selected user preset" class="btn btn-sm btn-danger" style="white-space:nowrap; padding:6px 12px;"><i class="fas fa-trash"></i> Delete</button>
+      <!-- Custom User Presets Library -->
+      <div class="igen-lib-section">
+        <div class="igen-lib-header">
+          <span><i class="fas fa-user-tag" style="color:var(--accent);"></i> My Custom Presets</span>
+          <span id="igen-custom-count-badge" class="igen-preset-count">0</span>
+        </div>
+        <div id="igen-custom-presets-list" class="igen-lib-list">
+          <div class="igen-lib-empty">No custom presets yet. Click <strong>+ New</strong> above to save your current configuration.</div>
+        </div>
       </div>
-      
+
+      <!-- Built-in Presets Library -->
+      <div class="igen-lib-section" style="margin-top:14px;">
+        <div class="igen-lib-header">
+          <span><i class="fas fa-cube" style="color:var(--muted);"></i> Built-in Presets (Read-only · Duplicate to customize)</span>
+          <span id="igen-builtin-count-badge" class="igen-preset-count">0</span>
+        </div>
+        <div id="igen-builtin-presets-list" class="igen-lib-list">
+          <div class="igen-lib-empty">Loading built-in presets...</div>
+        </div>
+      </div>
+
       <!-- Info Box -->
       <div style="margin-top:14px; padding:10px 12px; background:rgba(var(--accent-rgb),0.06); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; font-size:11.5px; color:var(--muted); line-height:1.5;">
         <i class="fas fa-info-circle" style="color:var(--accent); margin-right:4px;"></i>
-        A preset saves <strong>every</strong> parameter: provider, model, VAE, LoRAs, sampler, scheduler, etc.
-        Mark a preset as <strong>⭐ Default</strong> to load it automatically on every restart.
+        Each preset saves <strong>every</strong> generation parameter: provider, model, VAE, LoRAs, dimensions, CFG, steps, sampler, scheduler, negative prompt, style &amp; directives.
+        Mark any preset as <strong>⭐ Default</strong> to auto-load it on Hecos startup. Built-in presets are protected — click <strong>Duplicate</strong> or <strong>Update</strong> to save an editable custom copy.
       </div>
     </div>
 
@@ -217,15 +286,23 @@ window._openIgenGallery = async function() {
       </div>
 
       <div class="field" style="margin-bottom:12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px; flex-wrap:wrap;">
           <label style="margin:0; font-weight:600; font-size:12px;">Autonomous Directives (System Override)</label>
-          <span style="font-size:11px; color:var(--muted);"><i class="fas fa-file-code"></i> routing_override.yaml</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="if(window.loadIgenPhotorealRoutingTemplate) window.loadIgenPhotorealRoutingTemplate()" title="Fill with a natural-language photography guide optimized for Flux.2 / Flux.3 (editable)" style="padding:3px 9px; font-size:11px;">
+              <i class="fas fa-camera"></i> Photoreal Flux Guide
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="var el=document.getElementById('igen-routing-override'); if(el){el.value=''; if(window.saveIgenConfig) window.saveIgenConfig();}" title="Clear custom directive" style="padding:3px 9px; font-size:11px;">
+              <i class="fas fa-eraser"></i> Clear
+            </button>
+            <span style="font-size:11px; color:var(--muted);"><i class="fas fa-file-code"></i> routing_override.yaml</span>
+          </div>
         </div>
         <textarea 
           id="igen-routing-override" 
           class="config-input" 
           rows="5" 
-          placeholder="e.g. Generate at most 1 image per response unless the user explicitly asks for multiple photos. If an image was already generated in this turn, do not produce another. Respond with natural narrative dialogue and tone..." 
+          placeholder="e.g. Generate at most 1 image per response unless the user explicitly asks for multiple photos. Describe scenes in natural photography language (camera/lens, directional light, natural skin pores) and avoid CGI buzzwords like 'hyper-realistic'..." 
           data-igen-managed 
           style="width:100%; resize:vertical; font-family:monospace; font-size:12.5px; line-height:1.45;"></textarea>
       </div>
@@ -312,7 +389,7 @@ window._openIgenGallery = async function() {
     <!-- SwarmUI Installation Path -->
     <div class="field" style="margin-bottom:12px;">
       <label style="font-size:11.5px; color:var(--muted); margin-bottom:4px; display:block;">SwarmUI Installation Directory <span style="font-weight:400; opacity:0.8;">(leave empty for auto-detection, e.g. C:\SwarmUI)</span></label>
-      <input type="text" id="igen-local-install-path" class="config-input" data-igen-managed placeholder="Auto-detect (e.g. C:\SwarmUI)" style="width:100%; font-size:12px;">
+      <input type="text" id="igen-local-install-path" class="config-input" data-igen-managed autocomplete="off" placeholder="Auto-detect (e.g. C:\SwarmUI)" style="width:100%; font-size:12px;">
     </div>
 
     <!-- Test & Start SwarmUI buttons -->
@@ -388,7 +465,7 @@ window._openIgenGallery = async function() {
     <!-- Horde Worker Blacklist (hidden) -->
     <div class="field" style="margin-bottom:10px; display:none;">
       <label>Horde Worker Blacklist <small style="color:var(--muted); font-weight:400;">(comma separated worker IDs to exclude)</small></label>
-      <input type="text" id="horde-worker-blacklist" class="config-input" data-igen-managed placeholder="e.g. worker_id_1, worker_id_2">
+      <input type="text" id="horde-worker-blacklist" class="config-input" data-igen-managed autocomplete="off" placeholder="e.g. worker_id_1, worker_id_2">
     </div>
 
     <!-- Account Info Box -->
@@ -415,7 +492,7 @@ window._openIgenGallery = async function() {
         </div>
       </div>
       <label class="switch" title="Enable or disable all cloud providers. Disable to force local-only generation.">
-        <input type="checkbox" id="igen-cloud-enabled" data-igen-managed checked onchange="onCloudEnabledChanged()">
+        <input type="checkbox" id="igen-cloud-enabled-mirror" onchange="var m=document.getElementById('igen-cloud-enabled'); if(m){m.checked=this.checked; if(window._onCloudToggle) window._onCloudToggle(this.checked); if(window.onCloudEnabledChanged) window.onCloudEnabledChanged();}">
         <span class="slider"></span>
       </label>
     </div>
@@ -458,25 +535,51 @@ window._openIgenGallery = async function() {
 <div class="card">
   <div class="card-title"><i class="fas fa-sliders-h"></i> Image Parameters</div>
 
-  <!-- Aspect Ratio -->
+  <!-- Resolution Preset & Dimensions -->
   <div class="grid-2" style="margin-top:14px;">
     <div class="field">
-      <label>Aspect Ratio</label>
-      <select id="igen-aspect-ratio" onchange="onAspectRatioChanged()" class="config-input" data-igen-managed>
-        <option value="1:1">1:1 — Square</option>
-        <option value="16:9">16:9 — Landscape (HD)</option>
-        <option value="9:16">9:16 — Portrait (Mobile)</option>
-        <option value="4:3">4:3 — Classic Landscape</option>
-        <option value="3:4">3:4 — Classic Portrait</option>
-        <option value="custom"><i class="fas fa-ruler-combined"></i> Custom (manual W × H)</option>
+      <label>Resolution / Aspect Ratio</label>
+      <select id="igen-aspect-ratio" onchange="onAspectRatioChanged(true)" class="config-input" data-igen-managed>
+        <optgroup label="Standard (~1 MP · Fast &amp; Balanced)">
+          <option value="1:1">1:1 — 1024 × 1024 (Square)</option>
+          <option value="3:4">3:4 — 896 × 1152 (Portrait)</option>
+          <option value="2:3">2:3 — 832 × 1216 (Photo Portrait)</option>
+          <option value="9:16">9:16 — 768 × 1344 (Vertical / Mobile)</option>
+          <option value="4:3">4:3 — 1152 × 896 (Classic Landscape)</option>
+          <option value="3:2">3:2 — 1216 × 832 (Photo Landscape)</option>
+          <option value="16:9">16:9 — 1344 × 768 (Widescreen HD)</option>
+          <option value="21:9">21:9 — 1536 × 640 (Cinema Ultrawide)</option>
+        </optgroup>
+        <optgroup label="High-Res (~1.5–2 MP · Flux.2 / Flux.3 Detail)">
+          <option value="1:1_hd">1:1 HD — 1280 × 1280 (Square HD)</option>
+          <option value="2:3_hd">2:3 HD — 1024 × 1536 (Portrait HD)</option>
+          <option value="3:4_hd">3:4 HD — 1152 × 1536 (Portrait HD+)</option>
+          <option value="9:16_hd">9:16 HD — 896 × 1536 (Vertical HD)</option>
+          <option value="3:2_hd">3:2 HD — 1536 × 1024 (Landscape HD)</option>
+          <option value="4:3_hd">4:3 HD — 1536 × 1152 (Landscape HD+)</option>
+          <option value="16:9_hd">16:9 HD — 1536 × 896 (Widescreen HD+)</option>
+        </optgroup>
+        <optgroup label="Fast / Draft (~0.5 MP)">
+          <option value="1:1_fast">1:1 Fast — 768 × 768</option>
+          <option value="3:4_fast">3:4 Fast — 640 × 896</option>
+          <option value="16:9_fast">16:9 Fast — 960 × 576</option>
+        </optgroup>
+        <optgroup label="Manual">
+          <option value="custom">Custom (manual W × H)</option>
+        </optgroup>
       </select>
     </div>
-    <div class="field" id="igen-custom-dims" style="display:none;">
-      <label>Custom Size (px)</label>
+    <div class="field" id="igen-custom-dims">
+      <label style="display:flex; justify-content:space-between; align-items:center;">
+        <span>Dimensions (W × H px)</span>
+        <span id="igen-dims-mp-badge" style="font-size:10.5px; color:var(--muted); font-weight:500;">1.05 MP</span>
+      </label>
       <div style="display:flex; gap:6px; align-items:center;">
-        <input type="number" id="igen-width" class="config-input" min="256" max="2048" step="64" placeholder="W" style="width:50%;">
-        <span style="color:var(--muted);">×</span>
-        <input type="number" id="igen-height" class="config-input" min="256" max="2048" step="64" placeholder="H" style="width:50%;">
+        <input type="number" id="igen-width" class="config-input" min="256" max="2048" step="64" placeholder="W" style="flex:1;" oninput="if(window.onCustomDimEdited) window.onCustomDimEdited()">
+        <button type="button" onclick="if(window.swapIgenDimensions) window.swapIgenDimensions()" title="Swap Width &amp; Height" style="padding:6px 9px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer; flex-shrink:0;">
+          <i class="fas fa-exchange-alt" style="font-size:11px;"></i>
+        </button>
+        <input type="number" id="igen-height" class="config-input" min="256" max="2048" step="64" placeholder="H" style="flex:1;" oninput="if(window.onCustomDimEdited) window.onCustomDimEdited()">
       </div>
     </div>
   </div>
@@ -527,50 +630,115 @@ window._openIgenGallery = async function() {
 
   <!-- Advanced -->
   <details style="margin-top:14px;">
-    <summary style="cursor:pointer; font-weight:600; color:var(--text); display:flex; gap:6px;"><span style="font-size:13px;">Advanced Sampling</span></summary>
+    <summary style="cursor:pointer; font-weight:600; color:var(--text); display:flex; gap:6px;"><span style="font-size:13px;">Advanced Sampling &amp; Flux Controls</span></summary>
     <div class="grid-2" style="margin-top:10px;">
       <div class="field">
         <label>Sampler</label>
         <select id="igen-sampler" class="config-input" data-igen-managed>
-          <option value="euler">Euler</option>
-          <option value="euler_a">Euler Ancestral</option>
-          <option value="heun">Heun</option>
-          <option value="dpm_2">DPM2</option>
-          <option value="dpm_2_a">DPM2 Ancestral</option>
-          <option value="lms">LMS</option>
-          <option value="lcm">LCM</option>
-          <option value="dpm_fast">DPM Fast</option>
-          <option value="dpm_adaptive">DPM Adaptive</option>
-          <option value="dpm++_2s_a">DPM++ 2S a</option>
-          <option value="dpm++_2m">DPM++ 2M</option>
-          <option value="dpm++_sde">DPM++ SDE</option>
-          <option value="dpm++_2m_sde">DPM++ 2M SDE</option>
-          <option value="dpm++_3m_sde">DPM++ 3M SDE</option>
-          <option value="uni_pc">UniPC</option>
-          <option value="uni_pc_bh2">UniPC BH2</option>
-          <option value="ddim">DDIM</option>
-          <option value="plms">PLMS</option>
+          <optgroup label="Recommended (Flux / Modern Flow)">
+            <option value="euler">Euler</option>
+            <option value="res_multistep">Res Multistep (Flux / Natural Detail)</option>
+            <option value="deis">DEIS</option>
+            <option value="er_sde">ER SDE</option>
+            <option value="ipndm">iPNDM</option>
+            <option value="ipndm_v">iPNDM V</option>
+            <option value="sa_solver">SA Solver</option>
+            <option value="heun">Heun</option>
+            <option value="heunpp2">Heun++ 2</option>
+          </optgroup>
+          <optgroup label="Classic / SDXL / DPM">
+            <option value="euler_a">Euler Ancestral</option>
+            <option value="dpm++_2m">DPM++ 2M</option>
+            <option value="dpm++_2m_sde">DPM++ 2M SDE</option>
+            <option value="dpmpp_2m_sde_gpu">DPM++ 2M SDE (GPU)</option>
+            <option value="dpm++_sde">DPM++ SDE</option>
+            <option value="dpmpp_sde_gpu">DPM++ SDE (GPU)</option>
+            <option value="dpm++_2s_a">DPM++ 2S a</option>
+            <option value="dpm++_3m_sde">DPM++ 3M SDE</option>
+            <option value="dpmpp_3m_sde_gpu">DPM++ 3M SDE (GPU)</option>
+            <option value="dpm_2">DPM2</option>
+            <option value="dpm_2_a">DPM2 Ancestral</option>
+            <option value="uni_pc">UniPC</option>
+            <option value="uni_pc_bh2">UniPC BH2</option>
+            <option value="lms">LMS</option>
+            <option value="lcm">LCM</option>
+            <option value="ddim">DDIM</option>
+            <option value="ddpm">DDPM</option>
+            <option value="dpm_fast">DPM Fast</option>
+            <option value="dpm_adaptive">DPM Adaptive</option>
+            <option value="seeds_2">SEEDS 2</option>
+            <option value="seeds_3">SEEDS 3</option>
+            <option value="res_multistep_ancestral">Res Multistep Ancestral</option>
+            <option value="gradient_estimation">Gradient Estimation</option>
+            <option value="euler_cfg_pp">Euler CFG++</option>
+            <option value="dpmpp_2m_cfg_pp">DPM++ 2M CFG++</option>
+            <option value="res_multistep_cfg_pp">Res Multistep CFG++</option>
+          </optgroup>
         </select>
       </div>
       <div class="field">
         <label>Scheduler</label>
         <select id="igen-scheduler" class="config-input" data-igen-managed>
-          <option value="normal">Normal</option>
-          <option value="karras">Karras</option>
-          <option value="exponential">Exponential</option>
-          <option value="sgm_uniform">SGM Uniform</option>
-          <option value="simple">Simple</option>
-          <option value="ddim_uniform">DDIM Uniform</option>
-          <option value="euler">Euler</option>
-          <option value="dpm++">DPM++</option>
-          <option value="pndm">PNDM</option>
-          <option value="ddim">DDIM</option>
-          <option value="beta">Beta</option>
-          <option value="align_your_steps">Align Your Steps</option>
+          <optgroup label="Recommended (Flux / Modern Flow)">
+            <option value="simple">Simple</option>
+            <option value="beta">Beta (Natural Skin / Detail)</option>
+            <option value="flux2">Flux2 (Flow Schedule)</option>
+            <option value="sgm_uniform">SGM Uniform</option>
+            <option value="normal">Normal</option>
+          </optgroup>
+          <optgroup label="Classic / Other">
+            <option value="karras">Karras</option>
+            <option value="exponential">Exponential</option>
+            <option value="linear_quadratic">Linear Quadratic</option>
+            <option value="ddim_uniform">DDIM Uniform</option>
+            <option value="align_your_steps">Align Your Steps</option>
+            <option value="turbo">Turbo</option>
+            <option value="kl_optimal">KL Optimal</option>
+          </optgroup>
         </select>
       </div>
     </div>
+
+    <!-- Flux / Rectified Flow SwarmUI Controls -->
+    <div id="igen-flux-params-row" class="grid-2" style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">
+      <div class="field">
+        <label title="Embedded guidance sent to SwarmUI as fluxguidancescale (distinct from CFG). Leave empty for model default (~3.5). Lower values (2.0–2.5) often reduce plastic/glossy skin on Flux models.">
+          Flux Guidance Scale <small style="color:var(--muted); font-weight:400;">(empty = auto)</small>
+        </label>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <input type="number" id="igen-flux-guidance" class="config-input" min="0" max="10" step="0.1" placeholder="Auto (e.g. 2.2 or 3.5)" style="flex:1;" data-igen-managed>
+          <button type="button" onclick="var el=document.getElementById('igen-flux-guidance'); if(el){el.value=''; el.dispatchEvent(new Event('input',{bubbles:true}));}" title="Reset to Auto (model default)" style="padding:6px 10px; font-size:11px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--muted); cursor:pointer;">Auto</button>
+        </div>
+      </div>
+      <div class="field">
+        <label title="Rectified flow Sigma Shift sent to SwarmUI as sigmashift. Leave empty for model default.">
+          Sigma Shift <small style="color:var(--muted); font-weight:400;">(empty = auto)</small>
+        </label>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <input type="number" id="igen-sigma-shift" class="config-input" min="0" max="10" step="0.05" placeholder="Auto (model default)" style="flex:1;" data-igen-managed>
+          <button type="button" onclick="var el=document.getElementById('igen-sigma-shift'); if(el){el.value=''; el.dispatchEvent(new Event('input',{bubbles:true}));}" title="Reset to Auto (model default)" style="padding:6px 10px; font-size:11px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--muted); cursor:pointer;">Auto</button>
+        </div>
+      </div>
+    </div>
   </details>
+
+  <!-- Flux Prompt Upsampler (Optional LLM Refiner) -->
+  <div class="toggle-row" style="margin-top:14px;">
+    <div class="toggle-info">
+      <strong>Flux Prompt Upsampler (LLM Refiner)</strong>
+      <span style="display:block; font-size:11px; color:var(--muted);">Expands concise prompts into descriptive photography paragraphs for Flux models using your editable instructions below.</span>
+    </div>
+    <label class="switch"><input type="checkbox" id="igen-optimize-flux" data-igen-managed onchange="var b=document.getElementById('igen-flux-refiner-box'); if(b) b.style.display=this.checked?'block':'none';"><span class="slider"></span></label>
+  </div>
+  <div class="field" id="igen-flux-refiner-box" style="margin-top:6px; display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; gap:8px; flex-wrap:wrap;">
+      <label style="margin:0; font-size:11.5px;">Flux Upsampler Instructions (Editable)</label>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="if(window.loadIgenPhotorealRefinerTemplate) window.loadIgenPhotorealRefinerTemplate()" style="padding:2px 9px; font-size:11px;" title="Load natural-light photorealistic prompt expansion template">
+        <i class="fas fa-magic"></i> Load Photoreal Template
+      </button>
+    </div>
+    <textarea id="igen-flux-refiner-instructions" class="config-input" rows="3" placeholder="System prompt for expanding short image prompts into natural descriptive paragraphs..." data-igen-managed style="width:100%; font-size:12px; resize:vertical;"></textarea>
+  </div>
 
   <!-- Style Options -->
   <div class="toggle-row" style="margin-top:14px;">
@@ -616,3 +784,18 @@ window._openIgenGallery = async function() {
 </div>
 
 </div>
+
+<script>
+(function() {
+  var tries = 0;
+  function _bootIgenFragment() {
+    if (typeof window.initImageGenPanel === 'function') {
+      window.initImageGenPanel(false);
+    } else if (tries < 100) {
+      tries++;
+      setTimeout(_bootIgenFragment, 80);
+    }
+  }
+  _bootIgenFragment();
+})();
+</script>

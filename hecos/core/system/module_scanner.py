@@ -234,9 +234,23 @@ def update_capability_registry(config=None, debug_log=True):
                         is_lazy = config.get('plugins', {}).get(tag, {}).get('lazy_load', manifest_data.get("lazy_load", False))
                         
                         if is_lazy:
+                            lazy_schemas = manifest_data.get("tool_schema", []) or []
+                            lazy_commands = dict(manifest_data.get("commands") or {})
+                            if not lazy_commands and lazy_schemas:
+                                for _ts in lazy_schemas:
+                                    if not isinstance(_ts, dict):
+                                        continue
+                                    _fn = _ts.get("function") if isinstance(_ts.get("function"), dict) else _ts
+                                    _fname = str(_fn.get("name") or "").strip()
+                                    if not _fname:
+                                        continue
+                                    _short = _fname.split("__", 1)[1] if "__" in _fname else _fname
+                                    _fdesc = str(_fn.get("description") or "Tool method").strip().splitlines()[0]
+                                    lazy_commands[_short] = _fdesc
+
                             skills_map[tag] = {
                                 "description": manifest_data.get("description", ""),
-                                "commands": manifest_data.get("commands", {}),
+                                "commands": lazy_commands,
                                 "status": "ONLINE (DORMANT)",
                                 "example": manifest_data.get("example", ""),
                                 "routing_instructions": manifest_data.get("routing_instructions", ""),
@@ -249,10 +263,10 @@ def update_capability_registry(config=None, debug_log=True):
                             }
                             
                             _lazy_plugins_paths[tag] = os.path.abspath(main_file)
-                            _lazy_tool_schemas[tag] = manifest_data.get("tool_schema", [])
-                            # llm_callable=true means this plugin's schemas are sent to the LLM
-                            # even while dormant (the JIT awakener will load it when called)
-                            _lazy_llm_callable[tag] = manifest_data.get("llm_callable", False)
+                            _lazy_tool_schemas[tag] = lazy_schemas
+                            # Default to True when the manifest declares LLM tool_schema entries
+                            # unless the manifest explicitly opts out with llm_callable=false.
+                            _lazy_llm_callable[tag] = manifest_data.get("llm_callable", bool(lazy_schemas))
                             
                             if debug_log: logger.debug("LOADER", f"Module {plugin_dir} registered efficiently (Lazy Load).")
                             continue

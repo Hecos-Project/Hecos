@@ -185,23 +185,42 @@ class AgentExecutor:
             m_detail = tr("Esecuzione tool disabilitata a livello di sistema", "Tool execution disabled by system")
             m_icon = "fa-comments"
         elif send_tools:
-            tool_mode = str(pctrl.get("tool_selection_mode") or "all").strip().lower()
-            m_label = (
-                tr("Modalità: Tool Selezionati", "Mode: Selected Tools")
-                if tool_mode == "custom"
-                else tr("Modalità: Tool Calling Nativo", "Mode: Native Tool Calling")
-            )
+            # Check if Ollama native tool API is bypassed for Gemma 4 text-mode models
+            is_gemma4_text_mode = False
             try:
-                from hecos.core.system.module_docs import get_tools_schema as _gts
-                schema_count = len(_gts(payload_control=pctrl, config=current_cfg) or [])
+                from hecos.core.llm.params_builder import resolve_backend_and_model, _is_gemma4_model
+                _btype, _mname, _spec_cfg = resolve_backend_and_model(current_cfg)
+                if _btype == "ollama" and _mname:
+                    _api_url = _spec_cfg.get("url", "http://127.0.0.1:11434")
+                    is_gemma4_text_mode = bool(_is_gemma4_model(_mname, _api_url))
             except Exception:
-                schema_count = 0
-            m_detail = (
-                tr(f"{schema_count} funzioni selezionate nel modello", f"{schema_count} selected schemas loaded in model")
-                if tool_mode == "custom"
-                else tr(f"{schema_count} funzioni caricate nel modello", f"{schema_count} function schemas loaded in model")
-            )
-            m_icon = "fa-toolbox"
+                is_gemma4_text_mode = False
+
+            if is_gemma4_text_mode:
+                m_label = tr("Modalità: Tool Calling Testuale (Gemma 4)", "Mode: Text-Mode Tool Calling (Gemma 4)")
+                m_detail = tr(
+                    "Chiamate testuali & comandi rapidi attivi (API tool nativa disabilitata per Gemma 4)",
+                    "Text-mode module calls & slash commands active (native tool API disabled for Gemma 4)",
+                )
+                m_icon = "fa-terminal"
+            else:
+                tool_mode = str(pctrl.get("tool_selection_mode") or "all").strip().lower()
+                m_label = (
+                    tr("Modalità: Tool Selezionati", "Mode: Selected Tools")
+                    if tool_mode == "custom"
+                    else tr("Modalità: Tool Calling Nativo", "Mode: Native Tool Calling")
+                )
+                try:
+                    from hecos.core.system.module_docs import get_tools_schema as _gts
+                    schema_count = len(_gts(payload_control=pctrl, config=current_cfg) or [])
+                except Exception:
+                    schema_count = 0
+                m_detail = (
+                    tr(f"{schema_count} funzioni selezionate nel modello", f"{schema_count} selected schemas loaded in model")
+                    if tool_mode == "custom"
+                    else tr(f"{schema_count} funzioni caricate nel modello", f"{schema_count} function schemas loaded in model")
+                )
+                m_icon = "fa-toolbox"
         else:
             m_label = tr("Modalità: Comandi Rapidi (Fast Chat)", "Mode: Direct Commands (Fast Chat)")
             m_detail = tr(
@@ -218,6 +237,7 @@ class AgentExecutor:
             level="info",
             module_name=tr("Configurazione Payload", "Payload Control"),
             close_previous=False,
+            print_cli=False,
         )
         AgentTracer.finish_step(mode_step, status="ok", result_preview=m_detail)
 

@@ -153,11 +153,16 @@ class LegacyTagParser:
                 if not any(t[0] == tag.lower() for t in tags_found):
                     tags_found.append((tag.lower(), "", "simple", None))
 
-        # Match Slash Commands (e.g., /img, /search, /pdf) emitted by the LLM on their own line outside code blocks.
+        # Match Slash Commands (e.g., /img, /search, /pdf) emitted by the LLM on their own line
+        # (including bulleted or numbered lists such as "1. /img ..." or "- /img ..."), outside code blocks.
         # Note: require whitespace or end-of-line after the command token so URL paths like
         # /api/images/... or /snapshots/... are never mistaken for slash commands.
         if masked_text:
-            slash_matches = re.findall(r'^\s*(/[a-zA-Z0-9_]+(?:\s+[^\r\n]*)?)(?:\r?\n|$)', masked_text, flags=re.MULTILINE)
+            slash_matches = re.findall(
+                r'^\s*(?:(?:\d{1,2}[\.\)]|[-*•])\s+)?(/[a-zA-Z0-9_]+(?:\s+[^\r\n]*)?)(?:\r?\n|$)',
+                masked_text,
+                flags=re.MULTILINE,
+            )
             seen_cmds = set()
             img_cmd_count = 0
             for cmd in slash_matches:

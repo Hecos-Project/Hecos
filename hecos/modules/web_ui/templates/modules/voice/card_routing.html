@@ -5,7 +5,7 @@
   </div>
   <div class="field">
     <label>Active TTS Engine</label>
-    <select id="v-active-engine" onchange="if(window.switchAudioEngineTab) window.switchAudioEngineTab(this.value); if(window.saveAudioConfig) window.saveAudioConfig();">
+    <select id="v-active-engine" onchange="if(window.switchAudioEngineTab) window.switchAudioEngineTab(this.value, true);">
       <option value="piper">Piper (Default - Fast)</option>
       <option value="kokoro">Kokoro (Balanced)</option>
       <option value="xtts2">XTTSv2 (High Quality)</option>
@@ -13,25 +13,25 @@
     </select>
   </div>
 
-  <!-- TABS -->
-  <div style="display:flex; border-bottom:1px solid var(--border); margin-top:20px; gap:4px;">
-    <button id="btn-tab-piper" class="btn btn-secondary active" onclick="window.switchAudioEngineTab('piper')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:var(--bg3);">
+  <!-- TABS (Inspect & manage individual engine daemons without overwriting Active TTS Engine) -->
+  <div style="display:flex; border-bottom:1px solid var(--border); margin-top:20px; gap:4px; flex-wrap:wrap;">
+    <button type="button" id="btn-tab-piper" class="btn btn-secondary active" onclick="window.switchAudioEngineTab('piper', false)" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:var(--bg3);">
       <i class="fas fa-volume-up"></i> Piper (Fast)
     </button>
-    <button id="btn-tab-kokoro" class="btn btn-secondary" onclick="window.switchAudioEngineTab('kokoro')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:transparent;">
+    <button type="button" id="btn-tab-kokoro" class="btn btn-secondary" onclick="window.switchAudioEngineTab('kokoro', false)" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:transparent;">
       <i class="fas fa-wave-square"></i> Kokoro (Balanced)
     </button>
-    <button id="btn-tab-xtts2" class="btn btn-secondary" onclick="window.switchAudioEngineTab('xtts2')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:transparent;">
+    <button type="button" id="btn-tab-xtts2" class="btn btn-secondary" onclick="window.switchAudioEngineTab('xtts2', false)" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:transparent;">
       <i class="fas fa-microchip"></i> XTTSv2 (High Quality)
     </button>
-    <button id="btn-tab-fish_speech" class="btn btn-secondary" onclick="window.switchAudioEngineTab('fish_speech')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:transparent;">
+    <button type="button" id="btn-tab-fish_speech" class="btn btn-secondary" onclick="window.switchAudioEngineTab('fish_speech', false)" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:transparent;">
       <i class="fas fa-fish"></i> Fish Speech (Expressive)
     </button>
   </div>
 </div>
 
 <script>
-  window.switchAudioEngineTab = function(engine, saveEngine = true) {
+  window.switchAudioEngineTab = function(engine, setAsActive = false) {
     const engines = ['piper', 'kokoro', 'xtts2', 'fish_speech'];
     engines.forEach(e => {
       const card = document.getElementById(`card-${e}`);
@@ -54,9 +54,11 @@
       }
     });
 
-    const activeSel = document.getElementById('v-active-engine');
-    if (activeSel && activeSel.value !== engine) {
-      activeSel.value = engine;
+    if (setAsActive) {
+      const activeSel = document.getElementById('v-active-engine');
+      if (activeSel && activeSel.value !== engine) {
+        activeSel.value = engine;
+      }
     }
 
     if (engine === 'fish_speech') {
@@ -68,13 +70,13 @@
       if (typeof window.refreshKokoroClonesAll === 'function') window.refreshKokoroClonesAll();
     }
 
-    if (saveEngine && typeof window.saveAudioConfig === 'function') {
+    if (setAsActive && typeof window.saveAudioConfig === 'function') {
       window.saveAudioConfig();
     }
   };
 
-  function switchAudioEngineTab(engine, saveEngine = true) {
-    return window.switchAudioEngineTab(engine, saveEngine);
+  function switchAudioEngineTab(engine, setAsActive = false) {
+    return window.switchAudioEngineTab(engine, setAsActive);
   }
 
   (function() {

@@ -60,16 +60,76 @@ class FishSpeechDaemon:
         self._port: int = DEFAULT_FISH_PORT
         self._log_path: str = os.path.join(_get_project_root(), "hecos", "logs", "fish_speech_server.log")
         self._spawned_by_me = False
+        self._standalone_pinned: bool = False
         self._is_starting: bool = False
         self._cancel_start: bool = False
         self._ready_event = threading.Event()
         self._start_thread: Optional[threading.Thread] = None
+        self._gpu_probe_cache: Tuple[float, float, float] = (0.0, 0.0, 0.0)
         atexit.register(self._atexit_stop)
 
     def _atexit_stop(self):
         """Cleanly stops server process on exit."""
         if self._spawned_by_me or self._proc is not None:
             self.stop(force_all=False)
+
+    def set_standalone_pinned(self, pinned: bool) -> None:
+        """Marks the daemon as manually/standalone-managed (e.g. Voice Forge) so switching active_engine keeps it alive."""
+        self._standalone_pinned = bool(pinned)
+
+    def is_standalone_pinned(self) -> bool:
+        return bool(self._standalone_pinned)
+
+    def is_busy(self) -> bool:
+        """Returns True if the local Fish Speech server is currently synthesizing a request."""
+        if not self.is_local_target():
+            return False
+        host, port = self._resolve_target()
+        health = self.probe_health(host, port, timeout=0.8)
+        return bool(health and health.get("busy"))
+
+    def cancel_inflight(self, timeout: float = 2.5) -> Tuple[bool, int]:
+        """Signals /v1/tts/cancel on the local Fish Speech server to abort stuck/queued requests without unloading VRAM."""
+        if not self.is_local_target():
+            return False, 0
+        host, port = self._resolve_target()
+        probe_host = "127.0.0.1" if host in ("localhost", "0.0.0.0") else host
+        url = f"http://{probe_host}:{port}/v1/tts/cancel"
+        try:
+            req = urllib.request.Request(url, data=b"{}", headers={"Content-Type": "application/json"}, method="POST")
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                if resp.status == 200:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    return True, int(data.get("cancelled") or 0)
+        except Exception as exc:
+            logger.debug("FISH_SPEECH_DAEMON", f"cancel_inflight notice: {exc}")
+        return False, 0
+
+    def _probe_offline_gpu_vram(self) -> Tuple[float, float]:
+        """Queries (free_mb, total_mb) via nvidia-smi without initializing a CUDA context in the WebUI process."""
+        now = time.monotonic()
+        ts, cached_free, cached_total = self._gpu_probe_cache
+        if now - ts < 5.0 and cached_total > 0:
+            return cached_free, cached_total
+        try:
+            res = subprocess.run(
+                ["nvidia-smi", "--query-gpu=memory.free,memory.total", "--format=csv,noheader,nounits"],
+                capture_output=True,
+                text=True,
+                timeout=1.5,
+                creationflags=0x08000000 if sys.platform == "win32" else 0,
+            )
+            if res.returncode == 0 and res.stdout.strip():
+                first_line = res.stdout.strip().splitlines()[0]
+                parts = [p.strip() for p in first_line.split(",")]
+                if len(parts) >= 2:
+                    free_mb = round(float(parts[0]), 1)
+                    total_mb = round(float(parts[1]), 1)
+                    self._gpu_probe_cache = (now, free_mb, total_mb)
+                    return free_mb, total_mb
+        except Exception:
+            pass
+        return 0.0, 0.0
 
     def is_starting(self) -> bool:
         """Returns True if a startup is currently initializing the model."""
@@ -247,8 +307,11 @@ class FishSpeechDaemon:
             if self._is_starting:
                 wait_existing_event = self._ready_event
             elif self._proc and self._proc.poll() is None:
-                # Process is already alive (either handling a heavy request or finishing init)
-                return True, "Server process is active."
+                # Process is alive (still initializing weights or binding port) — wait for readiness below
+                proc = self._proc
+                self._is_starting = True
+                self._cancel_start = False
+                self._ready_event.clear()
             else:
                 # Check if port is already bound by an existing Fish server or a foreign process
                 if self.is_port_listening(host, port):
@@ -394,6 +457,7 @@ class FishSpeechDaemon:
     def stop(self, force_all: bool = True):
         """Stops the local server process if running and releases GPU VRAM."""
         with self._lock:
+            self._standalone_pinned = False
             self._cancel_start = True
             self._is_starting = False
             self._ready_event.set()
@@ -434,13 +498,25 @@ class FishSpeechDaemon:
         pid = None
         ram_mb = 0.0
         vram_mb = float(health.get("vram_mb") or 0.0) if health else 0.0
+        vram_reserved_mb = float(health.get("vram_reserved_mb") or 0.0) if health else 0.0
+        gpu_free_mb = float(health.get("gpu_free_mb") or 0.0) if health else 0.0
+        gpu_total_mb = float(health.get("gpu_total_mb") or 0.0) if health else 0.0
+        busy = bool(health.get("busy")) if health else False
+        active_requests = int(health.get("active_requests") or 0) if health else 0
+        busy_seconds = float(health.get("busy_seconds") or 0.0) if health else 0.0
+        vram_paging = bool(health.get("vram_paging")) if health else False
+        last_wav_kbps = float(health.get("last_wav_kbps") or 0.0) if health else 0.0
         device = (health.get("device") or "cuda").upper() if health else "—"
+
+        if is_local and gpu_total_mb <= 0.0:
+            gpu_free_mb, gpu_total_mb = self._probe_offline_gpu_vram()
 
         if self._proc and self._proc.poll() is None:
             pid = self._proc.pid
         elif health and health.get("pid"):
             pid = int(health["pid"])
 
+        shared_vram_mb = 0.0
         try:
             import psutil
             if not pid and is_local and (listening or self._is_starting):
@@ -464,11 +540,26 @@ class FishSpeechDaemon:
         except Exception:
             pass
 
+        min_required_mb = 9800.0 if ckpt == "s2-pro" else 2800.0
+        vram_warning = ""
+        if is_local and gpu_total_mb > 0:
+            if healthy and (vram_paging or (busy and busy_seconds > 45 and last_wav_kbps > 0 and last_wav_kbps < 10.0)):
+                vram_paging = True
+                vram_warning = (
+                    f"GPU VRAM overflow detected — Windows is paging Fish Speech weights to shared system RAM "
+                    f"(20–30x slower). Close heavy GPU apps and click Restart Server."
+                )
+            elif not healthy and not self._is_starting and gpu_free_mb < min_required_mb:
+                vram_warning = (
+                    f"Low free GPU VRAM ({gpu_free_mb / 1024:.1f} GB free / {gpu_total_mb / 1024:.1f} GB total; "
+                    f"{ckpt} needs ~{min_required_mb / 1024:.1f} GB). Close other GPU apps to prevent severe slowdown."
+                )
+
         if not is_local:
             state = "cloud"
         elif healthy:
             state = "online"
-        elif self._is_starting or (health and health.get("status") == "initializing"):
+        elif self._is_starting or (health and health.get("status") == "initializing") or (listening and not healthy):
             state = "starting"
         else:
             state = "offline"
@@ -476,6 +567,9 @@ class FishSpeechDaemon:
         return {
             "status": state,
             "loaded": healthy,
+            "busy": busy,
+            "active_requests": active_requests,
+            "busy_seconds": busy_seconds,
             "is_local": is_local,
             "host": host,
             "port": port,
@@ -484,6 +578,14 @@ class FishSpeechDaemon:
             "pid": pid,
             "ram_mb": ram_mb,
             "vram_mb": vram_mb,
+            "vram_reserved_mb": vram_reserved_mb,
+            "gpu_free_mb": gpu_free_mb,
+            "gpu_total_mb": gpu_total_mb,
+            "shared_vram_mb": shared_vram_mb,
+            "vram_paging": vram_paging,
+            "vram_warning": vram_warning,
+            "last_wav_kbps": last_wav_kbps,
+            "standalone_pinned": self._standalone_pinned,
             "device": device,
             "mode": "daemon" if is_local else "cloud",
             "model": f"Fish Speech ({ckpt})",

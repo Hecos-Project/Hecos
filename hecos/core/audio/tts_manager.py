@@ -158,8 +158,22 @@ def handle_active_engine_switch(prev_engine: str, new_engine: str, cfg: dict = N
                     local_cfg = get_audio_config()
 
                 if prev_norm != new_norm and prev_norm in ("kokoro", "xtts2", "fish_speech"):
-                    logger.info("TTS_MANAGER", f"Active engine switched '{prev_norm}' -> '{new_norm}': unloading '{prev_norm}'...")
-                    _get_engine_instance(prev_norm).unload()
+                    skip_unload = False
+                    if prev_norm == "fish_speech":
+                        try:
+                            from hecos.core.audio.tts.fish_speech_daemon import FishSpeechDaemon
+                            daemon = FishSpeechDaemon.get_instance()
+                            if daemon.is_standalone_pinned() or daemon.is_busy():
+                                skip_unload = True
+                                logger.info(
+                                    "TTS_MANAGER",
+                                    f"Active engine switched '{prev_norm}' -> '{new_norm}': keeping Fish Speech daemon online (standalone/Voice Forge active).",
+                                )
+                        except Exception:
+                            pass
+                    if not skip_unload:
+                        logger.info("TTS_MANAGER", f"Active engine switched '{prev_norm}' -> '{new_norm}': unloading '{prev_norm}'...")
+                        _get_engine_instance(prev_norm).unload()
 
                 if _is_engine_autostart_enabled(new_norm, local_cfg):
                     eng = _get_engine_instance(new_norm)
@@ -346,6 +360,7 @@ def perform_engine_action(engine_name: str, action: str) -> Tuple[bool, str]:
         ok_pre, pre_msg = daemon.check_preconditions()
         if not ok_pre:
             return False, pre_msg
+        daemon.set_standalone_pinned(True)
         t = daemon.preload(delay=0.0)
         if isinstance(t, threading.Thread):
             t.join(timeout=1.5)

@@ -166,7 +166,9 @@ class SystemBootstrapper:
         # ── Ollama Lifecycle — Auto-start server & Model Warm-Up ──────────────────
         try:
             from hecos.core.llm.ollama_lifecycle import run_ollama_startup_sequence
-            run_ollama_startup_sequence(config)
+            # In CLI console mode, stay strictly decoupled from WebUI Global Presets
+            # so warm-up targets the exact base model configured in system.yaml.
+            run_ollama_startup_sequence(config, use_global_preset=self._is_webui_mode)
         except Exception as _ollama_boot_e:
             logger.warning(f"[APP] Ollama startup sequence error (non-fatal): {_ollama_boot_e}")
         # ──────────────────────────────────────────────────────────────────────────

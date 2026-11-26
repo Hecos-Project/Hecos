@@ -188,6 +188,8 @@ hecos/logs/*
 # Memory: Ignore databases and user-specific data, keep source code
 hecos/memory/*.db
 hecos/memory/*.db-journal
+hecos/memory/*.db-wal
+hecos/memory/*.db-shm
 hecos/memory/users/
 hecos/memory/vaults/
 hecos/memory/core_identity.json
@@ -779,3 +781,10 @@ hecos/data/agent_checkpoints/*
 hecos/data/flow_checkpoints/*
 !hecos/data/flow_checkpoints/.gitkeep
 hecos/data/global_presets_usage.json
+
+# Messenger & SwarmUI Local Runtime State / Isolated Browser Session (CRITICAL PRIVACY: never commit WhatsApp session cookies!)
+hecos/data/whatsapp_session/
+hecos/data/telegram_discovered_chats.json
+hecos/data/whatsapp_discovered_groups.json
+hecos/data/whatsapp_sent_ledger.json
+hecos/data/swarmui_catalog_cache.json

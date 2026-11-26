@@ -18,7 +18,26 @@
     },
     "BROWSER": {
         "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing. Funziona sia in modo autonomo con l'IA che tramite comandi diretti (slash commands come /b, /b_close, /b_tabs).",
-        "commands": {},
+        "commands": {
+            "open_url": "Opens a URL in the Hecos AI browser. The browser window will appear automatically. Use this instead of the WEB plugin when you need to interact with a page.",
+            "get_current_url": "Returns the URL currently loaded in the Hecos browser.",
+            "go_back": "Navigate the browser back to the previous page.",
+            "get_page_text": "Returns all visible text from the current browser page. Use after open_url to understand the page before interacting.",
+            "get_links": "Returns all hyperlinks (label → URL) on the current page as a numbered list.",
+            "get_inputs": "Lists all input fields, buttons and form elements on the current page. Use to identify fields before calling type_in_field.",
+            "get_title": "Returns the title of the current browser page.",
+            "click_element": "Clicks a page element by its visible text label or aria-label. Intelligent fallback to CSS selectors. Prefer this over coordinate-based clicking.",
+            "type_in_field": "Finds an input field by its label/placeholder and types text into it. Optionally presses Enter to submit.",
+            "scroll": "Scrolls the browser page up or down.",
+            "press_key": "Presses a keyboard key in the browser context (e.g. 'Enter', 'Escape', 'Tab', 'ArrowDown').",
+            "run_js": "Executes JavaScript in the browser and returns the result. Powerful for extracting data or triggering actions not accessible via DOM.",
+            "screenshot": "Takes a screenshot of the current browser viewport. Returns the file path which the vision AI can analyze. Use only when text-based tools are insufficient.",
+            "list_tabs": "List all open tabs/pages in the current browser. Use in CDP mode to find existing sites like YouTube.",
+            "switch_tab": "Switches the active browser focus to a specific tab by its ID.",
+            "new_tab": "Opens a new tab in the browser and navigates to the specified URL.",
+            "close_tab": "Closes the currently active browser tab.",
+            "close": "Closes the ENTIRE Hecos AI browser window."
+        },
         "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
@@ -801,6 +820,25 @@
             }
         ]
     },
+    "CONTACTS": {
+        "description": "Optimized Address Book plugin for Hecos with rich metadata, WhatsApp integration, and modular structure.",
+        "commands": {
+            "find_contact": "Searches the address book and returns matching contacts. Use when the user asks 'chi è X?', 'find the number of Y', 'qual è il telefono di Z', 'cerca il contatto', 'who is...'.",
+            "add_contact": "Creates a new contact in the address book. Use when the user says 'aggiungi contatto', 'salva questo numero', 'add a contact', 'registra il numero di X'.",
+            "update_contact": "Updates fields of an existing contact. IMPORTANT: ALWAYS use find_contact first to get the exact ID or display name before calling this.",
+            "delete_contact": "Permanently deletes a contact.",
+            "list_contacts": "Lists all contacts. Use 'query' to filter by a specific tag, name, or company."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fas fa-address-book",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
     "DOCUMENT_READER": {
         "description": "Universal document reader with TTS. Fullscreen reading mode, visual PDF canvas rendering, text selection reading, word-by-word highlighting, audiobook-style controls.",
         "commands": {
@@ -869,7 +907,11 @@
     },
     "IMAGE_GEN": {
         "description": "AI Image Generation - Generates images from text prompts with priority support for local backends (SwarmUI/ComfyUI on port 7801). Additionally supports cloud AI providers including Pollinations, Gemini, OpenAI DALL-E, Stability AI, and HuggingFace. Fully autonomous package with its own TOML configuration.",
-        "commands": {},
+        "commands": {
+            "generate_image": "Generates an image from a text description. Uses the configured provider.",
+            "probe_providers": "Tests all image generation providers and HuggingFace servers to see which ones are working. Returns a diagnostic report. Use when the user asks to check, test or diagnose providers, or when image generation keeps failing.",
+            "check_local_status": "Checks the status of the local image generation backend (SwarmUI). Returns a diagnostic report including connectivity, version, available models, and supported samplers/schedulers. Use when the user asks about local generation status, wants to list local models, or troubleshoot local issues."
+        },
         "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
@@ -899,7 +941,12 @@
     },
     "TEMPLATES": {
         "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
-        "commands": {},
+        "commands": {
+            "list_templates": "List all available templates. Channel is optional (e.g. 'whatsapp', 'email', 'telegram', 'discord').",
+            "render_template": "Render a template by replacing its variables and combining header/body/footer. Use this before sending a message if you want to use a specific template.",
+            "create_template": "Creates a new custom HTML/CSS template from scratch. You can include Jinja variables (e.g. {{ title }}). Returns the ID of the new template.",
+            "update_template": "Updates the HTML content of an existing template."
+        },
         "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
@@ -992,16 +1039,20 @@
         ]
     },
     "MESSENGER": {
-        "description": "Send messages via Telegram, WhatsApp, and Discord.",
+        "description": "Send and receive messages, photos, and documents via WhatsApp and Telegram.",
         "commands": {
-            "check_connection": "Method",
-            "force_send": "Method",
-            "list_accounts": "Method",
-            "msg_command": "Direct command invoked via /msg <target> <text>",
-            "register_pre_callback": "Registra un pre-callback che intercetta i messaggi in ingresso.",
-            "resolve_contact_address": "Looks up a contact in the address book and returns their platform-specific address (e.g., chat ID).",
-            "send_message": "Send a message to a contact or channel.",
-            "send_photo": "Send a photo to a contact or channel (Telegram only for now)."
+            "check_connection": "Checks live connectivity and readiness of one or all messaging providers.",
+            "list_accounts": "Lists all configured messaging providers, accounts, and active delivery methods.",
+            "msg_command": "Slash command handler invoked via `/msg <target> <text>` or `/send <target> <text>`.",
+            "register_pre_callback": "Registers an inbound message pre-callback interceptor.",
+            "resolve_contact_address": "Resolves a contact name from Hecos Contacts without sending a message.",
+            "send_document": "Sends a document or file (PDF, HTML, DOCX, TXT, ZIP, audio, video) to a contact or channel",
+            "send_file": "Sends a document or file (PDF, HTML, DOCX, TXT, ZIP, audio, video) to a contact or channel",
+            "send_message": "Sends a text message (and optional file attachments) to a contact name or direct address",
+            "send_photo": "Sends a photo or image file (`[[IMG:filename]]`, `/api/images/...`, `'latest'`, or full path)",
+            "send_telegram_to_contact": "Method",
+            "send_to_contact": "Method",
+            "send_whatsapp_to_contact": "Method"
         },
         "status": "ONLINE",
         "example": "",
@@ -1074,7 +1125,10 @@
     },
     "WEBCAM": {
         "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",
-        "commands": {},
+        "commands": {
+            "take_snapshot": "Takes a photo. CRITICAL: Use target='server' for PC webcam, target='client' for user's phone. DO NOT use this for 'generating' AI art or drawings; use IMAGE_GEN instead.",
+            "desktop_screenshot": "Captures the entire desktop screen (or a specific monitor) and saves it as an image file. Use this when the user asks 'what is on my screen?', 'look at my screen', 'can you see my screen?', or to debug/analyze anything displayed on the monitor."
+        },
         "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",

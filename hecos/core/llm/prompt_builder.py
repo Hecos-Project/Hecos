@@ -923,13 +923,37 @@ class PromptBuilder:
 
         hpm_capabilities = []
 
+        # Determine whether ACTION_PLANS should be advertised in this turn's capabilities
+        _ap_visible_in_caps = True
+        try:
+            from hecos.core.action_plans import get_action_plans_config
+            _ap_c = get_action_plans_config(raw_config=config)
+            _ap_m = str(_ap_c.get("plan_mode") or "manual").strip().lower()
+            _explicit_ap_turn = bool(
+                isinstance(config, dict)
+                and (config.get("_turn_plan_only") or config.get("_turn_execute_plan") or config.get("_turn_revise_plan_id"))
+            )
+            if _ap_m == "off" and not _explicit_ap_turn:
+                _ap_visible_in_caps = False
+            elif _ap_m == "manual" and not _explicit_ap_turn and (custom_allowed_tags is None or "ACTION_PLANS" not in custom_allowed_tags):
+                _ap_visible_in_caps = False
+        except Exception:
+            pass
 
+        try:
+            from hecos.core.system.module_state import _lazy_tool_schemas as _pb_lazy_schemas
+        except Exception:
+            _pb_lazy_schemas = {}
 
         for tag, info in db.items():
 
             tag_upper = tag.upper()
 
             if tag_upper in INTERNAL_SYSTEM_MODULES:
+
+                continue
+
+            if tag_upper == "ACTION_PLANS" and not _ap_visible_in_caps:
 
                 continue
 
@@ -981,6 +1005,14 @@ class PromptBuilder:
 
 
             cmds = [c for c in info.get("commands", {}).keys() if not c.startswith("_") and not c.startswith("slash_")]
+            if not cmds and tag_upper in _pb_lazy_schemas:
+                for _ts in (_pb_lazy_schemas.get(tag_upper) or []):
+                    if not isinstance(_ts, dict):
+                        continue
+                    _fn = _ts.get("function") if isinstance(_ts.get("function"), dict) else _ts
+                    _fname = str(_fn.get("name") or "").strip()
+                    if _fname:
+                        cmds.append(_fname.split("__", 1)[1] if "__" in _fname else _fname)
 
             cmds_str = ", ".join(cmds[:5])
 
@@ -988,13 +1020,26 @@ class PromptBuilder:
 
                 cmds_str += f" (+{len(cmds)-5} more)"
 
-
+            slash_aliases = []
+            for _sc in (info.get("slash_commands") or []):
+                if isinstance(_sc, dict):
+                    _als = _sc.get("aliases") or []
+                    if _als:
+                        slash_aliases.append(str(_als[0]))
+                    elif _sc.get("usage"):
+                        slash_aliases.append(str(_sc.get("usage")).split()[0])
+                elif isinstance(_sc, str) and _sc.strip():
+                    slash_aliases.append(_sc.strip())
+            slash_str = ", ".join(dict.fromkeys(slash_aliases[:4]))
 
             entry = f"- {tag_upper}: {desc}"
-
+            meta_parts = []
             if cmds_str:
-
-                entry += f" [Commands: {cmds_str}]"
+                meta_parts.append(f"Commands: {cmds_str}")
+            if slash_str:
+                meta_parts.append(f"Slash: {slash_str}")
+            if meta_parts:
+                entry += f" [{' | '.join(meta_parts)}]"
 
 
 
@@ -1164,7 +1209,7 @@ class PromptBuilder:
             try:
                 from hecos.core.action_plans import get_action_plans_config, get_action_plan_manager
                 ap_cfg = get_action_plans_config(raw_config=config)
-                ap_mode = str(ap_cfg.get("plan_mode") or "auto").lower()
+                ap_mode = str(ap_cfg.get("plan_mode") or "manual").lower()
                 is_execute_turn = bool(isinstance(config, dict) and config.get("_turn_execute_plan"))
                 is_fast_code_turn = bool(isinstance(config, dict) and config.get("_turn_fast_code"))
                 revise_plan_id = str(config.get("_turn_revise_plan_id") or "").strip() if isinstance(config, dict) else ""
@@ -1302,17 +1347,12 @@ class PromptBuilder:
                     )
                 ):
                     min_hint = int(ap_cfg.get("auto_plan_min_steps_hint", 3) or 3)
-                    file_manager_rules += (
-                        "\n### ACTION PLANS (SHARED CORE) ###\n"
-                        f"For multi-step tasks (>= {min_hint} steps: projects, refactors, audits, workflows): "
-                        "create a concise checklist FIRST via `ACTION_PLANS__create_plan(title=..., steps=[...])`, "
-                        "update progress with `ACTION_PLANS__update_step(step_index=..., status='done'|'running'|'failed', notes=...)`, "
-                        "and finalize with `ACTION_PLANS__complete_plan(...)`. Skip planning for simple 1-turn questions.\n"
-                    )
-                    if ap_mode == "confirm":
+                    user_directive = str(ap_cfg.get("planning_directive") or "").strip()
+                    if user_directive:
+                        resolved_directive = user_directive.replace("{min_steps}", str(min_hint))
                         file_manager_rules += (
-                            "- CONFIRM MODE ACTIVE: `ACTION_PLANS__create_plan` waits for user approval; "
-                            "if rejected, stop without editing files.\n"
+                            "\n### ACTION PLANS (USER-CONFIGURED DIRECTIVE) ###\n"
+                            f"{resolved_directive}\n"
                         )
             except Exception as e:
                 logger.debug(f"PromptBuilder: Action Plan directive skipped: {e}")
@@ -1344,34 +1384,6 @@ class PromptBuilder:
                         netsearch_protocol = f"\n{_raw_proto}\n"
             except Exception:
                 netsearch_protocol = ""
-
-
-
-        is_image_gen_active = (
-            _is_image_gen_plugin_active()
-            if _is_tag_allowed_in_prompt("IMAGE_GEN")
-            else False
-        )
-
-        if _is_tag_allowed_in_prompt("IMAGE_GEN") and is_image_gen_active:
-
-            image_gen_protocol_block = (
-
-                "\n### IMAGE GENERATION (IMAGE_GEN) ###\n"
-
-                "When the user explicitly requests an image or photo:\n"
-
-                "- Output `/img <english_prompt>` on its own separate line.\n"
-
-                "- Emit at most 1 `/img` command per turn unless a specific quantity is requested.\n"
-
-            )
-
-        else:
-
-            image_gen_protocol_block = ""
-
-
 
         # plugin_guidelines: removed — _load_capabilities() and RoutingManager
         # already enumerate all active modules dynamically from registry.json.

@@ -87,6 +87,10 @@ class ConfigManager:
     def yaml_path(self):
         return self._yaml_path
 
+    @property
+    def data_dir(self):
+        return os.path.dirname(self._yaml_path)
+
     def save(self):
         with self._lock:
             try:

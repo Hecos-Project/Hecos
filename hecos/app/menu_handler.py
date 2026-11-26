@@ -62,6 +62,7 @@ class MenuHandler:
         current = self.model_manager.get_effective_model(self.config_manager.config)
         interface.show_models_menu(models, current)
         self.model_manager.handle_models(self._input_digitale_sicuro, prefetched=models)
+        processore.configure(self.config_manager.config)
 
     def _handle_f3(self):
         """Personality selection (F3)."""
@@ -71,6 +72,7 @@ class MenuHandler:
         current = self.config_manager.config.get("ai", {}).get("active_personality", "N/D")
         interface.show_personality_menu(souls, current)
         self.personality_manager.handle_personality(self._input_digitale_sicuro, soul_files=souls)
+        processore.configure(self.config_manager.config)
 
     def _handle_f7(self):
         """Configuration Menu (F7)."""
@@ -139,6 +141,11 @@ class MenuHandler:
             acfg = get_audio_config()
             acfg["push_to_talk"] = new_ptt
             _save_audio_config(acfg)
+            try:
+                from hecos.core.audio import ptt_bus
+                ptt_bus.update_cache()
+            except Exception as _ptt_e:
+                logger.debug(f"[MENU] Failed to refresh PTT cache: {_ptt_e}")
             verb = "ON" if new_ptt else "OFF"
             color = "\033[96m" if new_ptt else "\033[91m"
             interface.print_scrolling(f"{color}[SYSTEM] Push-To-Talk (PTT): {verb}\033[0m")

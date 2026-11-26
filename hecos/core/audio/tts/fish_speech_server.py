@@ -10,8 +10,10 @@ import os
 import sys
 import io
 import time
+import asyncio
+import threading
 import argparse
-from typing import Optional
+from typing import Optional, Set
 
 # Ensure project root & fish_speech engine are on sys.path
 _current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -60,10 +62,24 @@ app.add_middleware(
 
 engine: Optional[TTSInferenceEngine] = None
 server_device: str = "cpu"
+_state_lock = threading.Lock()
+_active_requests: int = 0
+_active_since: Optional[float] = None
+_cancel_events: Set[threading.Event] = set()
+_vram_paging_detected: bool = False
+_last_wav_kbps: float = 0.0
+
+
+def _cancel_all_inflight() -> int:
+    with _state_lock:
+        events = list(_cancel_events)
+    for ev in events:
+        ev.set()
+    return len(events)
 
 
 def init_engine(checkpoint_dir: str, device: str = "auto", compile_model: bool = False, max_seq_len: int = 2048):
-    global engine, server_device
+    global engine, server_device, _vram_paging_detected
 
     os.environ["FISH_MAX_SEQ_LEN"] = str(max_seq_len)
 
@@ -73,6 +89,7 @@ def init_engine(checkpoint_dir: str, device: str = "auto", compile_model: bool =
 
     logger.info(f"[FISH_SERVER] Initializing Fish Speech on device: {device} (checkpoint: {checkpoint_dir}, max_seq_len: {max_seq_len})...")
 
+    t_init = time.perf_counter()
     model_manager = ModelManager(
         mode="tts",
         device=device,
@@ -82,10 +99,18 @@ def init_engine(checkpoint_dir: str, device: str = "auto", compile_model: bool =
         decoder_checkpoint_path=None,
         decoder_config_name="modded_dac_vq",
     )
+    init_elapsed = time.perf_counter() - t_init
     engine = model_manager.tts_inference_engine
 
+    # If CUDA init + 16-token warmup took > 28s, WDDM is paging weights into shared system RAM
+    if device.startswith("cuda") and init_elapsed > 28.0:
+        _vram_paging_detected = True
+        logger.warning(
+            f"[FISH_SERVER] Slow CUDA init/warmup ({init_elapsed:.1f}s) — GPU VRAM overflow into shared system RAM likely."
+        )
+
     logger.info("=" * 60)
-    logger.info(f"✅ Fish Speech engine ({engine.model_family.upper()}) ready on {device.upper()}!")
+    logger.info(f"✅ Fish Speech engine ({engine.model_family.upper()}) ready on {device.upper()} in {init_elapsed:.1f}s!")
     logger.info("=" * 60)
 
 
@@ -94,21 +119,48 @@ def init_engine(checkpoint_dir: str, device: str = "auto", compile_model: bool =
 async def health_check():
     family = getattr(engine, "model_family", "s2-pro") if engine is not None else "s2-pro"
     vram_mb = 0.0
+    vram_reserved_mb = 0.0
+    gpu_free_mb = 0.0
+    gpu_total_mb = 0.0
     if torch.cuda.is_available():
         try:
             vram_mb = round(torch.cuda.memory_allocated() / (1024 * 1024), 1)
+            vram_reserved_mb = round(torch.cuda.memory_reserved() / (1024 * 1024), 1)
+            free_b, total_b = torch.cuda.mem_get_info()
+            gpu_free_mb = round(free_b / (1024 * 1024), 1)
+            gpu_total_mb = round(total_b / (1024 * 1024), 1)
         except Exception:
             pass
+    with _state_lock:
+        active = _active_requests
+        busy_sec = round(max(0.0, time.time() - _active_since), 1) if (_active_since and active > 0) else 0.0
+        paging = _vram_paging_detected
+        kbps = _last_wav_kbps
     return {
         "ok": True,
         "service": "hecos-fish-speech",
         "pid": os.getpid(),
         "status": "ready" if engine is not None else "initializing",
+        "busy": active > 0,
+        "active_requests": active,
+        "busy_seconds": busy_sec,
         "engine": f"fish_speech_{family}",
         "device": server_device,
         "cuda_available": torch.cuda.is_available(),
         "vram_mb": vram_mb,
+        "vram_reserved_mb": vram_reserved_mb,
+        "gpu_free_mb": gpu_free_mb,
+        "gpu_total_mb": gpu_total_mb,
+        "vram_paging": paging,
+        "last_wav_kbps": kbps,
     }
+
+
+@app.post("/v1/tts/cancel")
+async def cancel_tts():
+    cancelled = _cancel_all_inflight()
+    logger.warning(f"[FISH_SERVER] Cancel requested via /v1/tts/cancel — signaled {cancelled} active/queued request(s).")
+    return {"ok": True, "cancelled": cancelled}
 
 
 @app.get("/v1/tts/defaults")
@@ -120,6 +172,7 @@ async def tts_defaults():
 
 @app.post("/v1/tts")
 async def tts_endpoint(request: Request):
+    global _active_requests, _active_since
     if engine is None:
         raise HTTPException(status_code=503, detail="Fish Speech engine is still initializing or not loaded.")
 
@@ -147,6 +200,31 @@ async def tts_endpoint(request: Request):
     except Exception as req_err:
         raise HTTPException(status_code=422, detail=f"Invalid ServeTTSRequest payload: {req_err}")
 
+    cancel_event = threading.Event()
+    inference_done = asyncio.Event()
+
+    with _state_lock:
+        if _active_requests == 0:
+            _active_since = time.time()
+        _active_requests += 1
+        _cancel_events.add(cancel_event)
+
+    async def _watch_disconnect():
+        try:
+            while not inference_done.is_set() and not cancel_event.is_set():
+                if await request.is_disconnected():
+                    cancel_event.set()
+                    logger.warning(
+                        f"[FISH_SERVER] Client disconnected — aborting synthesis for text: {req.text[:50]!r}"
+                    )
+                    break
+                try:
+                    await asyncio.wait_for(inference_done.wait(), timeout=0.4)
+                except asyncio.TimeoutError:
+                    pass
+        except Exception:
+            pass
+
     # Synthesize audio in a thread pool to avoid blocking the event loop and health checks
     def _do_inference():
         sample_rate = getattr(engine.decoder_model, "sample_rate", 44100)
@@ -156,14 +234,14 @@ async def tts_endpoint(request: Request):
 
         if req.streaming:
             audio_chunks = []
-            for chunk in inference(req, engine):
+            for chunk in inference(req, engine, cancel_event=cancel_event):
                 if isinstance(chunk, bytes):
                     audio_chunks.append(chunk)
             if not audio_chunks:
                 raise RuntimeError("Engine returned 0 streaming chunks.")
             wav_bytes = b"".join(audio_chunks)
         else:
-            raw_audio = next(inference(req, engine))
+            raw_audio = next(inference(req, engine, cancel_event=cancel_event))
             if raw_audio is None:
                 raise RuntimeError("Engine returned None audio.")
 
@@ -182,19 +260,39 @@ async def tts_endpoint(request: Request):
                 raise RuntimeError(f"Unexpected audio type from engine: {type(raw_audio)}")
         return wav_bytes, req_format
 
+    watcher_task = asyncio.create_task(_watch_disconnect())
     try:
-        import asyncio
+        global _vram_paging_detected, _last_wav_kbps
         start_t = time.time()
         wav_bytes, req_format = await asyncio.to_thread(_do_inference)
-        elapsed = time.time() - start_t
-        logger.info(f"[FISH_SERVER] Synthesized {len(wav_bytes)} bytes in {elapsed:.2f}s for text: {req.text[:50]!r}")
+        elapsed = max(0.001, time.time() - start_t)
+        kbps = round((len(wav_bytes) / 1024.0) / elapsed, 1)
+        with _state_lock:
+            _last_wav_kbps = kbps
+            if server_device.startswith("cuda") and len(wav_bytes) > 80_000:
+                # 44.1kHz 16-bit mono WAV is ~86 KB/s of audio; normal CUDA generation achieves >25 KB/s,
+                # whereas PCIe shared-RAM paging drops below ~8 KB/s (<2 tok/s).
+                _vram_paging_detected = kbps < 10.0
+        logger.info(f"[FISH_SERVER] Synthesized {len(wav_bytes)} bytes in {elapsed:.2f}s ({kbps:.1f} KB/s) for text: {req.text[:50]!r}")
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         return Response(content=wav_bytes, media_type=f"audio/{req_format}")
 
     except Exception as synth_err:
+        err_text = str(synth_err)
+        if cancel_event.is_set() or "cancelled" in err_text.lower():
+            logger.warning(f"[FISH_SERVER] Synthesis aborted cleanly: {err_text}")
+            raise HTTPException(status_code=499, detail="Synthesis cancelled or client disconnected.")
         logger.error(f"[FISH_SERVER] Synthesis error: {synth_err}")
-        raise HTTPException(status_code=500, detail=str(synth_err))
+        raise HTTPException(status_code=500, detail=err_text)
+    finally:
+        inference_done.set()
+        watcher_task.cancel()
+        with _state_lock:
+            _cancel_events.discard(cancel_event)
+            _active_requests = max(0, _active_requests - 1)
+            if _active_requests == 0:
+                _active_since = None
 
 
 if __name__ == "__main__":

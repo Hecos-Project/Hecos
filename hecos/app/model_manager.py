@@ -219,31 +219,47 @@ class ModelManager:
             import time; time.sleep(2)
             return
 
-        # Flatten for selection logic (preserving category order)
+        # Flatten for selection logic (preserving category order & exact backend mapping)
         flat_list = []
-        for cat in categorized.values():
-            flat_list.extend(cat)
+        for cat_name, models in categorized.items():
+            iterable = models.keys() if isinstance(models, dict) else models
+            for m_name in iterable:
+                flat_list.append((cat_name, m_name))
 
         choice = input_callback(">> ")
         if choice and choice != "ESC":
             try:
                 idx = int(choice) - 1
                 if 0 <= idx < len(flat_list):
-                    new_model = flat_list[idx]
-                    # Identify backend from model name
-                    new_backend = "ollama"
-                    if "/" in new_model:
+                    cat_name, new_model = flat_list[idx]
+                    cat_low = str(cat_name or "").lower()
+                    if cat_low.startswith("ollama"):
+                        new_backend = "ollama"
+                    elif cat_low.startswith("kobold"):
+                        new_backend = "kobold"
+                    elif cat_low.startswith("llamacpp") or cat_low.startswith("llama_cpp"):
+                        new_backend = "llama_cpp"
+                    elif cat_low.startswith("cloud"):
                         new_backend = "cloud"
-                    elif any(m in new_model.lower() for m in ["gpt", "claude", "gemini"]):
-                        new_backend = "cloud"
-                    
+                    else:
+                        # Safe fallback if a custom category is ever introduced
+                        cloud_prefixes = ("gemini/", "openai/", "anthropic/", "groq/", "cohere/")
+                        new_backend = "cloud" if str(new_model).lower().startswith(cloud_prefixes) else "ollama"
+
                     self.config_manager.set(new_backend, 'backend', 'type')
+                    self.config_manager.set(new_backend, 'backend', 'active_model_source')
                     self.config_manager.set(new_model, 'backend', new_backend, 'model')
                     self.config_manager.save()
+                    try:
+                        from hecos.core.processing import processore
+                        processore.configure(self.config_manager.config)
+                    except Exception:
+                        pass
                     print(f"\n\033[92m{translator.t('model_set_success', model=new_model, type=new_backend)}\033[0m")
                 else:
                     print(f"\n\033[91m{translator.t('invalid_index')}\033[0m")
-            except:
+            except Exception as e:
+                logger.warning(f"[ModelManager] CLI model selection error: {e}")
                 print(f"\n\033[91m{translator.t('selection_error')}\033[0m")
             import time; time.sleep(2)
 
