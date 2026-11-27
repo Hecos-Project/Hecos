@@ -60,8 +60,9 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     # Helper to check if an HPM package is installed (used for dynamically showing Drive/Flows buttons)
     def _is_hpm_installed(plugin_id):
         try:
+            from hecos.core.constants import HECOS_DIR
             from hecos.core.package_manager.registry import PackageRegistry
-            data_dir = os.path.join(root_dir, "hecos", "data")
+            data_dir = os.path.join(HECOS_DIR, "data")
             reg = PackageRegistry(data_dir)
             pkg = reg.get(plugin_id)
             return pkg is not None and pkg.get("status") != "disabled"

@@ -91,7 +91,7 @@ class WebUIPlugin:
         if not self._server_started and self._cfg_mgr is not None:
             try:
                 from .server import start_if_needed
-                start_if_needed(self._cfg_mgr, _ROOT, port=self._port)
+                start_if_needed(self._cfg_mgr, _PROJ_ROOT, port=self._port)
                 
                 scheme = self._get_scheme()
                 url = f"{scheme}://127.0.0.1:{self._port}"
