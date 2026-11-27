@@ -12,55 +12,64 @@ from hecos.core.logging import logger
 # ── plugin_tag → Hub category (mirrors config_manifest.js CONFIG_HUB.modules) ──
 # Keys are uppercase plugin_tag values from the command registry.
 _TAG_TO_HUB_CAT = {
-    # INTELLIGENZA
-    "MODELS":       "INTELLIGENZA",
-    "MEMORY":       "INTELLIGENZA",
-    "PERSONALITY":  "INTELLIGENZA",
-    "HDCS":         "INTELLIGENZA",
-    "EXECUTOR":     "INTELLIGENZA",
-    "AGENT":        "INTELLIGENZA",
+    # INTELLIGENCE
+    "MODELS":         "INTELLIGENCE",
+    "MEMORY":         "INTELLIGENCE",
+    "PERSONALITY":    "INTELLIGENCE",
+    "AGENT":          "INTELLIGENCE",
 
     # MULTIMEDIA
-    "IMAGE_GEN":    "MULTIMEDIA",
-    "WEBCAM":       "MULTIMEDIA",
-    "AUDIO":        "MULTIMEDIA",
-    "VOICE":        "MULTIMEDIA",
-    "VIDEO":        "MULTIMEDIA",
+    "IMAGE_GEN":      "MULTIMEDIA",
+    "WEBCAM":         "MULTIMEDIA",
+    "AUDIO":          "MULTIMEDIA",
+    "VOICE":          "MULTIMEDIA",
+    "VIDEO":          "MULTIMEDIA",
+    "PRESENTER":      "MULTIMEDIA",
 
-    # CONNETTIVITÀ
-    "BROWSER":      "CONNETTIVITÀ",
-    "SEARCH":       "CONNETTIVITÀ",
-    "MESSENGER":    "CONNETTIVITÀ",
-    "CONTACTS":     "CONNETTIVITÀ",
-    "REMOTE":       "CONNETTIVITÀ",
-    "MAIL":         "CONNETTIVITÀ",
+    # CONNECTIVITY
+    "BROWSER":        "CONNECTIVITY",
+    "SEARCH":         "CONNECTIVITY",
+    "NETSEARCH":      "CONNECTIVITY",
+    "MESSENGER":      "CONNECTIVITY",
+    "CONTACTS":       "CONNECTIVITY",
+    "REMOTE":         "CONNECTIVITY",
+    "MAIL":           "CONNECTIVITY",
 
-    # RISORSE
-    "DRIVE":        "RISORSE",
-    "DRIVE_EDITOR": "RISORSE",
-    "DOCS":         "RISORSE",
-    "FILES":        "RISORSE",
-    "CODE":         "RISORSE",
-    "CALENDAR":     "RISORSE",
-    "REMINDER":     "RISORSE",
+    # RESOURCES
+    "DRIVE":          "RESOURCES",
+    "DRIVE_EDITOR":   "RESOURCES",
+    "DOCS":           "RESOURCES",
+    "DOCUMENT_MAKER": "RESOURCES",
+    "FILES":          "RESOURCES",
+    "CALENDAR":       "RESOURCES",
+    "REMINDER":       "RESOURCES",
+    "LISTS":          "RESOURCES",
+    "TEMPLATES":      "RESOURCES",
 
-    # SISTEMA
-    "AUTOMATION":   "SISTEMA",
-    "UTILS":        "SISTEMA",
-    "SYSTEM":       "SISTEMA",
-    "BUILDER":      "SISTEMA",
-    "NOTIFICATIONS":"CONNETTIVITÀ",
-    "USERS":        "SISTEMA",
-    "DOCUMENT_MAKER":"RISORSE",
+    # AUTOMATION
+    "AUTOMATION":     "AUTOMATION",
+    "FLOWS":          "AUTOMATION",
+    "EXECUTOR":       "AUTOMATION",
+    "ACTION_PLANS":   "AUTOMATION",
+    "HDCS":           "AUTOMATION",
+    "CODE":           "AUTOMATION",
+    "BUILDER":        "AUTOMATION",
+
+    # SYSTEM
+    "UTILS":          "SYSTEM",
+    "SYSTEM":         "SYSTEM",
+    "NOTIFICATIONS":  "SYSTEM",
+    "USERS":          "SYSTEM",
 }
 
-# Hub category display metadata
+# Hub category display metadata (English reference)
 _HUB_CATS = {
-    "INTELLIGENZA": {"id": "intelligenza", "label": "Intelligence", "icon": "fas fa-brain",        "color": "#66fcf1", "order": 1},
-    "MULTIMEDIA":   {"id": "multimedia",   "label": "Multimedia",   "icon": "fas fa-compact-disc", "color": "#ec4899", "order": 2},
-    "CONNETTIVITÀ": {"id": "connettivita", "label": "Connectivity", "icon": "fas fa-network-wired","color": "#3b82f6", "order": 3},
-    "RISORSE":      {"id": "risorse",      "label": "Resources",    "icon": "fas fa-folder-open",  "color": "#f59e0b", "order": 4},
-    "SISTEMA":      {"id": "sistema",      "label": "System",       "icon": "fas fa-cogs",         "color": "#45a29e", "order": 5},
+    "INTELLIGENCE": {"id": "intelligence", "label": "Intelligence", "icon": "fas fa-brain",       "color": "#66fcf1", "order": 1},
+    "MULTIMEDIA":   {"id": "multimedia",   "label": "Multimedia",   "icon": "fas fa-photo-film",  "color": "#ec4899", "order": 2},
+    "CONNECTIVITY": {"id": "connectivity", "label": "Connectivity", "icon": "fas fa-globe",       "color": "#3b82f6", "order": 3},
+    "RESOURCES":    {"id": "resources",    "label": "Resources",    "icon": "fas fa-folder-open", "color": "#f59e0b", "order": 4},
+    "AUTOMATION":   {"id": "automation",   "label": "Automation",   "icon": "fas fa-gears",       "color": "#a78bfa", "order": 5},
+    "SYSTEM":       {"id": "system",       "label": "System",       "icon": "fas fa-sliders",     "color": "#45a29e", "order": 6},
 }
 
 # Display metadata per plugin_tag (module-level chip)

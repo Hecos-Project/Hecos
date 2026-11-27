@@ -249,15 +249,20 @@ function mergeHubPanels(panels) {
         const rawIcon = p.icon || '';
         const iconHtml = rawIcon.includes('<') ? rawIcon : `<i class="fas ${rawIcon || 'fa-puzzle-piece'}"></i>`;
 
+        const resolvedType = p.type || 'plugin';
+        const normCat = (typeof window.normalizeHubCategory === 'function')
+            ? window.normalizeHubCategory(p.category || (existing && existing.cat), panelId, resolvedType)
+            : (p.category || (existing && existing.cat) || 'SYSTEM');
+
         if (existing) {
             // Overwrite generic registry data with specific HPM package data
             existing.id = panelId;
             existing.label = p.name || panelId;
             existing.icon = iconHtml;
-            existing.cat = p.category || existing.cat || 'CONNETTIVITÀ';
+            existing.cat = normCat;
             existing.pluginTag = p.plugin_tag || panelId.toUpperCase();
             existing.isHpm = true;
-            existing.moduleType = p.type || 'plugin';
+            existing.moduleType = resolvedType;
             existing.description = p.description || existing.description || '';
             existing.version = p.version || existing.version || '';
             added++;
@@ -266,10 +271,10 @@ function mergeHubPanels(panels) {
                 id:          panelId,
                 label:       p.name || panelId,
                 icon:        iconHtml,
-                cat:         p.category || 'CONNETTIVITÀ',
+                cat:         normCat,
                 pluginTag:   p.plugin_tag || panelId.toUpperCase(),
                 isHpm:       true,
-                moduleType:  p.type || 'plugin',
+                moduleType:  resolvedType,
                 description: p.description || '',
                 version:     p.version || ''
             });

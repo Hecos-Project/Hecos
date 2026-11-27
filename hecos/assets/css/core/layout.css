@@ -74,6 +74,11 @@ header {
   padding-bottom: 100px;
 }
 
+.config-page .container.hub-control-center {
+  max-width: 1320px;
+  padding: 22px 24px 100px;
+}
+
 .save-bar {
   position: fixed;
   bottom: 0;

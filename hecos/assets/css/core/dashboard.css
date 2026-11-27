@@ -1,4 +1,4 @@
-﻿/* View Switcher & Filter Tabs (Categories Bar) */
+/* View Switcher & Filter Tabs (Categories Bar) */
 .view-switcher, .global-controls {
   display: flex;
   background: var(--glass-b);
@@ -25,9 +25,159 @@
 .switcher-btn:hover { color: var(--text); background: var(--glass-b); }
 .switcher-btn.active { background: var(--accent); color: white; box-shadow: var(--shadow-glow); }
 
+/* ── Control Center Split Layout & Sticky Sidebar Rail (Option C) ── */
+.hub-split-layout {
+  display: grid;
+  grid-template-columns: 244px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  transition: grid-template-columns 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hub-main-col {
+  min-width: 0;
+  width: 100%;
+}
+
+.hub-rail {
+  position: sticky;
+  top: 76px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: calc(100vh - 142px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  box-shadow: var(--shadow);
+  z-index: 15;
+}
+
+.hub-rail::-webkit-scrollbar { width: 4px; }
+.hub-rail::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.hub-rail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 8px 6px;
+}
+
+.hub-rail-subheader {
+  padding-top: 2px;
+}
+
+.hub-rail-title {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.hub-rail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hub-rail-count {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+.hub-rail-collapse-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  transition: all 0.18s ease;
+}
+
+.hub-rail-collapse-btn:hover {
+  background: var(--glass-b);
+  border-color: var(--border);
+  color: var(--accent);
+}
+
+.hub-rail-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 6px;
+  flex-shrink: 0;
+}
+
+.hub-rail-reset-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 2px;
+  font-family: inherit;
+}
+
+.hub-rail-reset-btn:hover {
+  text-decoration: underline;
+}
+
+.hub-rail-type-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 2px 6px 4px;
+}
+
+.type-filter-chip {
+  padding: 4px 8px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.type-filter-chip:hover {
+  color: var(--text);
+  border-color: rgba(var(--accent-rgb), 0.5);
+  background: var(--glass-b);
+}
+
+.type-filter-chip.active {
+  background: rgba(var(--accent-rgb), 0.16);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.16);
+}
+
+/* Generic .filter-tabs kept for HPM & Builder panels */
 .filter-tabs {
   display: flex;
-  flex-wrap: wrap; /* Allow wrapping to multiple rows when many categories are present */
+  flex-wrap: wrap;
   justify-content: flex-start;
   gap: 6px;
   margin-bottom: 30px;
@@ -41,6 +191,18 @@
   display: none;
 }
 
+/* Central Hub Sidebar Rail override for #config-filter-tabs */
+.hub-rail-cats.filter-tabs {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
 .filter-btn {
   padding: 7px 12px;
   background: transparent;
@@ -50,10 +212,39 @@
   font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+}
+
+.hub-rail-cats .filter-btn {
+  width: 100%;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  text-align: left;
+}
+
+.filter-btn-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.filter-btn-left i {
+  width: 16px;
+  text-align: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.filter-btn-left .filter-btn-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -63,6 +254,92 @@
   border-color: var(--accent);
   color: var(--accent);
   box-shadow: var(--shadow-glow);
+}
+
+/* Collapsed Icon-Only Sidebar Rail Mode (Desktop) */
+@media (min-width: 961px) {
+  .hub-control-center.rail-collapsed .hub-split-layout {
+    grid-template-columns: 60px minmax(0, 1fr);
+    gap: 20px;
+  }
+  .hub-control-center.rail-collapsed .hub-rail {
+    padding: 10px 7px;
+    align-items: center;
+  }
+  .hub-control-center.rail-collapsed .hub-rail-title,
+  .hub-control-center.rail-collapsed .hub-rail-count,
+  .hub-control-center.rail-collapsed .hub-rail-divider,
+  .hub-control-center.rail-collapsed .hub-rail-type-section,
+  .hub-control-center.rail-collapsed .filter-btn-label,
+  .hub-control-center.rail-collapsed .filter-btn .btn-badge:not(.badge-new) {
+    display: none !important;
+  }
+  .hub-control-center.rail-collapsed .hub-rail-header {
+    justify-content: center;
+    padding: 2px 0 6px;
+    width: 100%;
+  }
+  .hub-control-center.rail-collapsed .hub-rail-cats {
+    width: 100%;
+    align-items: center;
+  }
+  .hub-control-center.rail-collapsed .hub-rail-cats .filter-btn {
+    width: 42px;
+    height: 38px;
+    padding: 0;
+    justify-content: center;
+    position: relative;
+  }
+  .hub-control-center.rail-collapsed .filter-btn-left {
+    gap: 0;
+    justify-content: center;
+  }
+  .hub-control-center.rail-collapsed .filter-btn .btn-badge.badge-new {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
+    padding: 0;
+    font-size: 0;
+  }
+}
+
+/* Responsive Mobile / Tablet Collapse into Horizontal Strip */
+@media (max-width: 960px) {
+  .config-page .container.hub-control-center {
+    padding: 14px 12px 100px;
+  }
+  .hub-split-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .hub-rail {
+    position: static;
+    max-height: none;
+    padding: 10px;
+  }
+  .hub-rail-collapse-btn {
+    display: none !important;
+  }
+  .hub-rail-cats.filter-tabs {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .hub-rail-cats .filter-btn {
+    width: auto;
+    flex-shrink: 0;
+    gap: 7px;
+  }
+  .hub-rail-type-pills {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
 }
 
 .filter-btn .btn-badge {
@@ -382,11 +659,17 @@
 }
 
 .category-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 12px;
+    padding-left: 0;
+    transition: all 0.3s ease;
+}
+
+.category-content.tabs {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    padding-left: 10px;
-    transition: all 0.3s ease;
+    gap: 6px;
 }
 
 .category-group.collapsed .category-content {

@@ -34,23 +34,23 @@
     // ── Injection ─────────────────────────────────────────────────────────────
     function inject() {
         if (document.getElementById('hecos-search-bar')) return;
-        const anchor = document.getElementById('config-filter-tabs');
+        const anchor = document.getElementById('hub-search-anchor') || document.getElementById('config-filter-tabs');
         if (!anchor) return;
 
         // --- SEARCH BAR ---
         const bar = document.createElement('div');
         bar.id = 'hecos-search-bar';
         bar.innerHTML = `
-            <div style="display:flex;align-items:center;gap:8px;padding:8px 0 6px;">
-                <div id="zs-wrapper" style="display:flex;align-items:center;flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .2s,box-shadow .2s;">
-                    <span style="padding:0 10px;font-size:14px;color:var(--muted);user-select:none;">🔍</span>
+            <div style="display:flex;align-items:center;gap:8px;padding:0 0 14px;">
+                <div id="zs-wrapper" style="display:flex;align-items:center;flex:1;background:var(--bg2,rgba(255,255,255,0.05));border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .2s,box-shadow .2s;">
+                    <span style="padding:0 10px 0 12px;font-size:13px;color:var(--muted);user-select:none;"><i class="fas fa-magnifying-glass"></i></span>
                     <input id="zs-input" type="text" placeholder="Search configuration... (Ctrl+F)" autocomplete="off"
                         style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13px;padding:8px 4px;font-family:inherit;">
-                    <button id="zs-clear" title="Clear (Esc)" style="display:none;background:none;border:none;cursor:pointer;padding:4px 10px;color:var(--muted);font-size:14px;">✕</button>
+                    <button id="zs-clear" title="Clear (Esc)" style="display:none;background:none;border:none;cursor:pointer;padding:4px 10px;color:var(--muted);font-size:13px;"><i class="fas fa-xmark"></i></button>
                 </div>
                 <span id="zs-count" style="font-size:11px;color:var(--muted);min-width:70px;text-align:center;"></span>
                 <!-- DEFAULT HUB PAGINATION CONTROLS (Between search bar & search settings) -->
-                <div id="zs-hub-pagination-control" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:4px 10px;height:34px;box-sizing:border-box;user-select:none;flex-shrink:0;">
+                <div id="zs-hub-pagination-control" style="display:inline-flex;align-items:center;gap:6px;background:var(--bg2,rgba(255,255,255,0.05));border:1px solid var(--border);border-radius:8px;padding:4px 10px;height:36px;box-sizing:border-box;user-select:none;flex-shrink:0;">
                     <i class="fas fa-layer-group" style="font-size:11px;color:var(--accent);"></i>
                     <span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">Cards / page:</span>
                     <select id="hub-default-page-size-select" style="background:transparent;border:none;color:var(--text);font-size:11.5px;font-weight:700;cursor:pointer;outline:none;padding:0 2px;" onchange="window.hubSetDefaultPageSize ? window.hubSetDefaultPageSize(this.value) : (localStorage.setItem('hub_default_page_size', this.value));" title="Default cards per page">
@@ -62,14 +62,14 @@
                     </select>
                 </div>
                 <div style="position:relative;">
-                    <button id="zs-settings-btn" title="Search Settings" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--muted);font-size:13px;height:34px;display:inline-flex;align-items:center;justify-content:center;">⚙️</button>
+                    <button id="zs-settings-btn" title="Search Settings" style="background:var(--bg2,rgba(255,255,255,0.05));border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--muted);font-size:13px;height:36px;display:inline-flex;align-items:center;justify-content:center;"><i class="fas fa-sliders"></i></button>
                     <div id="zs-settings-panel" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--bg2,#111);border:1px solid var(--border);border-radius:12px;padding:16px;z-index:9999;min-width:290px;box-shadow:0 8px 30px rgba(0,0,0,.5);">
                         ${buildSettingsHTML()}
                     </div>
                 </div>
             </div>
             <!-- RESULTS PANE -->
-            <div id="zs-results" style="display:none;flex-direction:column;gap:10px;margin-bottom:10px;max-height:60vh;overflow-y:auto;padding-right:4px;"></div>
+            <div id="zs-results" style="display:none;flex-direction:column;gap:10px;margin-bottom:14px;max-height:60vh;overflow-y:auto;padding-right:4px;"></div>
         `;
         anchor.parentNode.insertBefore(bar, anchor);
 
@@ -176,13 +176,13 @@
                 // Search preload is off — panels haven't been indexed yet
                 resultsEl.innerHTML = `
                 <div style="padding:16px 12px; text-align:center; color:var(--muted); font-size:13px; line-height:1.6;">
-                    <div style="font-size:22px; margin-bottom:8px;">🔍</div>
+                    <div style="font-size:22px; margin-bottom:8px; color:var(--accent);"><i class="fas fa-magnifying-glass"></i></div>
                     <div style="color:var(--text); font-weight:600; margin-bottom:6px;">Global Search is not active</div>
                     <div style="font-size:12px;">Only panels you've already visited are being searched.<br>
                     To search across <strong style="color:var(--accent)">all settings</strong>, enable 
-                    <strong style="color:var(--accent)">⚡ Preload all panels for search</strong> 
+                    <strong style="color:var(--accent)"><i class="fas fa-bolt"></i> Preload all panels for search</strong> 
                     in the <button onclick="document.getElementById('zs-settings-btn').click()" 
-                        style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;padding:0;text-decoration:underline;">⚙️ Search Settings</button> 
+                        style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;padding:0;text-decoration:underline;"><i class="fas fa-sliders"></i> Search Settings</button> 
                     and reload the page.</div>
                 </div>`;
                 countEl.innerHTML = `<span style="color:var(--muted)">Partial index</span>`;
@@ -206,7 +206,7 @@
                 }
                 return `
                 <div style="border-left:3px solid var(--accent,#66fcf1);padding-left:10px;">
-                    <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;">📂 ${escQ(pl)}</div>
+                    <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;"><i class="fas fa-folder-open" style="color:var(--accent);margin-right:4px;"></i>${escQ(pl)}</div>
                     ${cardHTML}
                 </div>`;
             }).join('');
@@ -246,13 +246,13 @@
     // ── Settings Panel ────────────────────────────────────────────────────────
     function buildSettingsHTML() {
         return `
-        <div style="font-size:13px;font-weight:600;color:var(--accent,#66fcf1);margin-bottom:12px;">🔍 Search Settings</div>
+        <div style="font-size:13px;font-weight:600;color:var(--accent,#66fcf1);margin-bottom:12px;"><i class="fas fa-sliders" style="margin-right:6px;"></i>Search Settings</div>
         <div style="display:flex;flex-direction:column;gap:12px;">
             ${sRow('Case Sensitive',             'zs-s-case',    S.case_sensitive)}
             ${sRow('Highlight Matches',          'zs-s-hl',      S.highlight_results)}
             ${sRow('Auto-Navigate (most hits)',  'zs-s-nav',     S.auto_navigate)}
             ${sRow('Search in Input Values',     'zs-s-vals',    S.search_in_values)}
-            ${sRow('⚡ Preload all panels for search <span style="font-size:9px;color:var(--muted);">(may slow startup)</span>', 'zs-s-preload', S.preload_panels)}
+            ${sRow('<i class="fas fa-bolt" style="color:var(--accent);margin-right:4px;"></i>Preload all panels for search <span style="font-size:9px;color:var(--muted);">(may slow startup)</span>', 'zs-s-preload', S.preload_panels)}
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="flex:1;font-size:12px;color:var(--muted);">Highlight Color</span>
                 <input type="color" id="zs-s-color" value="${S.highlight_color}" style="width:36px;height:24px;border:none;background:none;cursor:pointer;padding:0;">

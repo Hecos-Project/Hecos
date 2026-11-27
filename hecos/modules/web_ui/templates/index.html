@@ -18,59 +18,97 @@
 
 {% include 'modules/core/_core_header.html' %}
 
-<div class="container">
-  <div id="config-welcome-container">
-    {% include 'modules/config_welcome.html' %}
-  </div>
-
-  <!-- CATEGORY FILTER TABS -->
-  <div id="config-filter-tabs" class="filter-tabs">
-      <!-- Populated by config_core.js -->
-  </div>
-
-  <!-- DYNAMIC TABS BAR -->
-  <div class="tabs-container" id="tabs-bar-container">
-     <div id="config-tabs-bar">
-        <!-- Populated immediately by config_core.js at DOMContentLoaded — no delay -->
-        <div id="tab-engine-init-msg" style="padding:10px 14px; color:var(--muted); font-size: var(--font-size-sm); display:flex; align-items:center; gap:6px;">
-          <i class="fas fa-cog" style="animation: spin 1.2s linear infinite; font-size:13px;"></i>
-          <span id="init-text">Initializing Tab Engine<span class="dot-anim"></span></span>
+<div class="container hub-control-center" id="hub-control-center">
+  <script>
+    if (localStorage.getItem('hecos-hub-rail-collapsed') === '1') {
+      document.getElementById('hub-control-center').classList.add('rail-collapsed');
+    }
+  </script>
+  <div class="hub-split-layout">
+    <!-- LEFT STICKY SIDEBAR RAIL (Control Center Pro) -->
+    <aside id="hub-sidebar-rail" class="hub-rail" aria-label="Central Hub Categories">
+      <div class="hub-rail-header">
+        <span class="hub-rail-title" id="hub-rail-cat-heading">{{ t('hub_rail_categories') or 'Categories' }}</span>
+        <div class="hub-rail-header-actions">
+          <span class="hub-rail-count" id="hub-rail-cat-count"></span>
+          <button type="button" id="hub-rail-collapse-btn" class="hub-rail-collapse-btn" onclick="window.toggleHubRailCollapse && window.toggleHubRailCollapse()" title="{{ t('hub_rail_collapse') or 'Collapse sidebar' }}">
+            <i class="fas fa-angles-left"></i>
+          </button>
         </div>
-        <script>
-            // Check if scripts are already cached to show a custom message on first load
-            if (!localStorage.getItem('hecos_scripts_cached')) {
-                const initText = document.getElementById('init-text');
-                if (initText) {
-                    initText.innerHTML = `Initializing Tab Engine (First load takes a bit longer...) <span class="dot-anim"></span>`;
-                }
-            }
-            // Mark cache as loaded when window load event fires
-            window.addEventListener('load', () => {
-                localStorage.setItem('hecos_scripts_cached', 'true');
-            });
-        </script>
-     </div>
-  </div>
-
-  <div id="config-main-ui-wrapper">
-    <!-- WALL / GRID VIEW (Hidden by default) -->
-    <div id="config-wall" class="config-wall" style="display:none;">
-      <!-- Will be populated by config_core.js -->
-    </div>
-  </div>
-
-  <form id="config-form" onsubmit="event.preventDefault(); saveConfig();">
-    <!-- Panels are loaded lazily via fetch on tab click. -->
-    <!-- The welcome panel is the only panel that is always present in the DOM. -->
-    <div id="panel-container">
-      <!-- Panels will be injected here by config_core.js -->
-      <!-- Skeleton shown while a panel is loading -->
-      <div id="panel-skeleton" style="display:none; padding:40px 20px; text-align:center; color:var(--muted);">
-        <div style="font-size:28px; margin-bottom:16px; display:inline-block;"><i class="fas fa-cog fa-spin"></i></div>
-        <div style="font-size:14px;">Loading panel...</div>
       </div>
+
+      <!-- CATEGORY FILTER TABS -->
+      <div id="config-filter-tabs" class="filter-tabs hub-rail-cats">
+          <!-- Populated by config_core_hub.js -->
+      </div>
+
+      <div class="hub-rail-divider" id="hub-rail-type-divider"></div>
+
+      <!-- TECHNICAL TYPE FILTERS -->
+      <div class="hub-rail-type-section" id="hub-rail-type-section">
+        <div class="hub-rail-header hub-rail-subheader">
+          <span class="hub-rail-title" id="hub-rail-type-heading">{{ t('hub_rail_tech_type') or 'Technical Type' }}</span>
+          <button type="button" id="hub-rail-type-reset" class="hub-rail-reset-btn" style="display:none;" onclick="window.setTypeFilter && window.setTypeFilter('ALL')">{{ t('hub_rail_reset') or 'Reset' }}</button>
+        </div>
+        <div id="config-type-filters" class="hub-rail-type-pills">
+          <!-- Populated by config_core_hub.js -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT MAIN WORKSPACE -->
+    <div class="hub-main-col">
+      <div id="hub-search-anchor"></div>
+
+      <div id="config-welcome-container">
+        {% include 'modules/config_welcome.html' %}
+      </div>
+
+      <!-- DYNAMIC TABS BAR -->
+      <div class="tabs-container" id="tabs-bar-container">
+         <div id="config-tabs-bar">
+            <!-- Populated immediately by config_core.js at DOMContentLoaded — no delay -->
+            <div id="tab-engine-init-msg" style="padding:10px 14px; color:var(--muted); font-size: var(--font-size-sm); display:flex; align-items:center; gap:6px;">
+              <i class="fas fa-cog" style="animation: spin 1.2s linear infinite; font-size:13px;"></i>
+              <span id="init-text">Initializing Tab Engine<span class="dot-anim"></span></span>
+            </div>
+            <script>
+                // Check if scripts are already cached to show a custom message on first load
+                if (!localStorage.getItem('hecos_scripts_cached')) {
+                    const initText = document.getElementById('init-text');
+                    if (initText) {
+                        initText.innerHTML = `Initializing Tab Engine (First load takes a bit longer...) <span class="dot-anim"></span>`;
+                    }
+                }
+                // Mark cache as loaded when window load event fires
+                window.addEventListener('load', () => {
+                    localStorage.setItem('hecos_scripts_cached', 'true');
+                });
+            </script>
+         </div>
+      </div>
+
+      <div id="config-main-ui-wrapper">
+        <!-- WALL / GRID VIEW (Hidden by default) -->
+        <div id="config-wall" class="config-wall" style="display:none;">
+          <!-- Will be populated by config_core.js -->
+        </div>
+      </div>
+
+      <form id="config-form" onsubmit="event.preventDefault(); saveConfig();">
+        <!-- Panels are loaded lazily via fetch on tab click. -->
+        <!-- The welcome panel is the only panel that is always present in the DOM. -->
+        <div id="panel-container">
+          <!-- Panels will be injected here by config_core.js -->
+          <!-- Skeleton shown while a panel is loading -->
+          <div id="panel-skeleton" style="display:none; padding:40px 20px; text-align:center; color:var(--muted);">
+            <div style="font-size:28px; margin-bottom:16px; display:inline-block;"><i class="fas fa-cog fa-spin"></i></div>
+            <div style="font-size:14px;">Loading panel...</div>
+          </div>
+        </div>
+      </form>
     </div>
-  </form>
+  </div>
 </div>
 
 {% include 'modules/core/_core_save_bar.html' %}
@@ -93,17 +131,17 @@
 -->
 
 <!-- PHASE 1: Critical rendering path — must run before everything else -->
-<script defer src="/static/js/config_manifest.js?v={{ version }}-icons-v1"></script>
-<script defer src="/static/js/packages_panel_render_meta.js?v={{ version }}-icons-v1"></script>
+<script defer src="/static/js/config_manifest.js?v={{ version }}-rail-v1"></script>
+<script defer src="/static/js/packages_panel_render_meta.js?v={{ version }}-rail-v1"></script>
 <script defer src="/static/js/config_core_utils.js?v={{ version }}"></script>
-<script defer src="/static/js/config_core_init.js?v={{ version }}-v3"></script>
-<script defer src="/static/js/config_core_navigation.js?v={{ version }}-v11"></script>
+<script defer src="/static/js/config_core_init.js?v={{ version }}-rail-v1"></script>
+<script defer src="/static/js/config_core_navigation.js?v={{ version }}-rail-v1"></script>
 <script defer src="/static/js/hecos_tooltip.js?v={{ version }}&t=20261127_icons1"></script>
-<script defer src="/static/js/config_core_hub.js?v={{ version }}-icons-v1"></script>
+<script defer src="/static/js/config_core_hub.js?v={{ version }}-rail-v1"></script>
 <script defer src="/static/js/config_core_persistence.js?v={{ version }}&t=20261127_wmode1"></script>
 <script defer src="/static/js/config_core_status.js?v={{ version }}"></script>
-<script defer src="/static/js/config_core.js?v={{ version }}&t=20261127_wmode1"></script>
-<script defer src="/static/js/config_search.js?v={{ version }}-v4"></script>
+<script defer src="/static/js/config_core.js?v={{ version }}&t=20261127_rail1"></script>
+<script defer src="/static/js/config_search.js?v={{ version }}-rail-v1"></script>
 <script defer src="/static/js/hecos_wheel_picker.js?v={{ version }}"></script>
 <script defer src="/static/js/hecos_progress.js?v={{ version }}-purple"></script>
 

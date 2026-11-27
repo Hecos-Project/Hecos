@@ -38,7 +38,11 @@ if (rawHash && rawHash.startsWith('tab-')) rawHash = rawHash.slice(4);
 let activeTab = rawHash
     || sessionStorage.getItem('hecos-config-tab')
     || (isRefresh ? 'backend' : 'welcome');
-window.activeCategoryFilter = sessionStorage.getItem('hecos-config-filter') || '';
+const _savedCatFilter = sessionStorage.getItem('hecos-config-filter') || 'ALL';
+window.activeCategoryFilter = (_savedCatFilter === 'ALL' || !_savedCatFilter)
+    ? (_savedCatFilter || 'ALL')
+    : ((typeof window.normalizeHubCategory === 'function') ? window.normalizeHubCategory(_savedCatFilter) : _savedCatFilter);
+window.activeTypeFilter = sessionStorage.getItem('hecos-config-type-filter') || 'ALL';
 
 // Lazy panel cache — shared with _loadPanel (config_core_navigation.js)
 const _panelCache    = {};  // panelId → true

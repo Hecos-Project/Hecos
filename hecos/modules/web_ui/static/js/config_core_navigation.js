@@ -323,12 +323,7 @@ function toggleAllCategories(expanded) {
     renderConfigHub();
 }
 
-/** Applies a category filter and re-renders the hub. */
-function setCategoryFilter(cat) {
-    window.activeCategoryFilter = cat;
-    sessionStorage.setItem('hecos-config-filter', cat);
-    if (cat && cat !== 'ALL') window.hpmMarkCategorySeen?.(cat);
-
+function _exitWelcomeIfActive() {
     if (activeTab === 'welcome') {
         const welcomeContainer = document.getElementById('config-welcome-container');
         if (welcomeContainer) welcomeContainer.style.display = 'none';
@@ -345,14 +340,49 @@ function setCategoryFilter(cat) {
         const wall = document.getElementById('config-wall');
         if (wall && viewMode === 'wall') wall.style.display = 'flex';
     }
+}
+
+/** Applies a category filter and re-renders the hub. */
+function setCategoryFilter(cat) {
+    const normCat = (!cat || cat === 'ALL')
+        ? 'ALL'
+        : ((typeof window.normalizeHubCategory === 'function') ? window.normalizeHubCategory(cat) : cat);
+    window.activeCategoryFilter = normCat;
+    sessionStorage.setItem('hecos-config-filter', normCat);
+    if (normCat && normCat !== 'ALL') window.hpmMarkCategorySeen?.(normCat);
+
+    _exitWelcomeIfActive();
     renderConfigHub(viewMode);
 }
 
-window.showTab              = showTab;
-window.setViewMode          = setViewMode;
-window.toggleCategory       = toggleCategory;
-window.toggleAllCategories  = toggleAllCategories;
-window.setCategoryFilter    = setCategoryFilter;
+/** Applies a technical module type filter (Sidebar Rail) and re-renders the hub. */
+function setTypeFilter(type) {
+    const cleanType = (!type || type === 'ALL') ? 'ALL' : String(type).toLowerCase().trim();
+    window.activeTypeFilter = cleanType;
+    sessionStorage.setItem('hecos-config-type-filter', cleanType);
+    _exitWelcomeIfActive();
+    renderConfigHub(viewMode);
+}
+
+/** Toggles collapsed icon-only state on the desktop Central Hub sidebar rail. */
+function toggleHubRailCollapse(forceState) {
+    const wrap = document.getElementById('hub-control-center');
+    if (!wrap) return;
+    const shouldCollapse = (typeof forceState === 'boolean')
+        ? forceState
+        : !wrap.classList.contains('rail-collapsed');
+    wrap.classList.toggle('rail-collapsed', shouldCollapse);
+    try { localStorage.setItem('hecos-hub-rail-collapsed', shouldCollapse ? '1' : '0'); } catch (_) {}
+    if (typeof renderFilterTabs === 'function') renderFilterTabs();
+}
+
+window.showTab               = showTab;
+window.setViewMode           = setViewMode;
+window.toggleCategory        = toggleCategory;
+window.toggleAllCategories   = toggleAllCategories;
+window.setCategoryFilter     = setCategoryFilter;
+window.setTypeFilter         = setTypeFilter;
+window.toggleHubRailCollapse = toggleHubRailCollapse;
 
 /**
  * Silent background fetch for a panel.

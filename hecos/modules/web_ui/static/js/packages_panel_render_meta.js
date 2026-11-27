@@ -12,16 +12,28 @@ window.hpm_ti = function(en, it, es) {
 };
 
 window.HPM_HUB_CATEGORIES = {
-  'INTELLIGENZA': { label: window.hpm_ti('Intelligence', 'Intelligenza', 'Inteligencia'), icon: 'fa-brain',         color: '#66fcf1', order: 1 },
-  'MULTIMEDIA':   { label: 'Multimedia',   icon: 'fa-compact-disc',  color: '#ec4899', order: 2 },
-  'CONNETTIVITÀ': { label: window.hpm_ti('Connectivity', 'Connettività', 'Conectividad'), icon: 'fa-network-wired', color: '#3b82f6', order: 3 },
-  'RISORSE':      { label: window.hpm_ti('Resources', 'Risorse', 'Recursos'),      icon: 'fa-folder-open',   color: '#f59e0b', order: 4 },
-  'SISTEMA':      { label: window.hpm_ti('System', 'Sistema', 'Sistema'),      icon: 'fa-cogs',          color: '#45a29e', order: 5 },
-  'APPS_EXTRAS':  { label: 'App & Extras', icon: 'fa-th-large',      color: '#8b5cf6', order: 6 }
+  'INTELLIGENCE': { label: window.hpm_ti('Intelligence', 'Intelligenza', 'Inteligencia'), icon: 'fa-brain',       color: '#66fcf1', order: 1 },
+  'MULTIMEDIA':   { label: window.hpm_ti('Multimedia', 'Multimedia', 'Multimedia'),       icon: 'fa-photo-film',  color: '#ec4899', order: 2 },
+  'CONNECTIVITY': { label: window.hpm_ti('Connectivity', 'Connettività', 'Conectividad'), icon: 'fa-globe',       color: '#3b82f6', order: 3 },
+  'RESOURCES':    { label: window.hpm_ti('Resources', 'Risorse', 'Recursos'),             icon: 'fa-folder-open', color: '#f59e0b', order: 4 },
+  'AUTOMATION':   { label: window.hpm_ti('Automation', 'Automazione', 'Automatización'),  icon: 'fa-gears',       color: '#a78bfa', order: 5 },
+  'SYSTEM':       { label: window.hpm_ti('System', 'Sistema', 'Sistema'),                 icon: 'fa-sliders',     color: '#45a29e', order: 6 },
+  'APPS_EXTRAS':  { label: window.hpm_ti('Apps & Extras', 'App & Extra', 'Apps y Extras'),icon: 'fa-th-large',    color: '#8b5cf6', order: 7 }
+};
+
+window.HPM_HUB_CAT_ALIASES = {
+  'INTELLIGENZA': 'INTELLIGENCE',
+  'CONNETTIVITÀ': 'CONNECTIVITY',
+  'CONNETTIVITA': 'CONNECTIVITY',
+  'RISORSE':      'RESOURCES',
+  'DOCUMENTS':    'RESOURCES',
+  'AUTOMAZIONE':  'AUTOMATION',
+  'SISTEMA':      'SYSTEM'
 };
 
 window.hpmGetHubCategoryLabel = function(catKey) {
-  const k = (catKey || 'CONNETTIVITÀ').toUpperCase();
+  const raw = (catKey || 'SYSTEM').toUpperCase().trim();
+  const k = window.HPM_HUB_CAT_ALIASES[raw] || raw;
   if (window.HPM_HUB_CATEGORIES[k]) return window.HPM_HUB_CATEGORIES[k].label;
   return catKey;
 };

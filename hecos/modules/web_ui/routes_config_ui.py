@@ -217,6 +217,72 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
             reg      = PackageRegistry(data_dir)
             packages = reg.list_all()
 
+            _CAT_ALIASES = {
+                "INTELLIGENCE": "INTELLIGENCE",
+                "INTELLIGENZA": "INTELLIGENCE",
+                "MULTIMEDIA":   "MULTIMEDIA",
+                "CONNECTIVITY": "CONNECTIVITY",
+                "CONNETTIVITÀ": "CONNECTIVITY",
+                "CONNETTIVITA": "CONNECTIVITY",
+                "RESOURCES":    "RESOURCES",
+                "RISORSE":      "RESOURCES",
+                "DOCUMENTS":    "RESOURCES",
+                "AUTOMATION":   "AUTOMATION",
+                "AUTOMAZIONE":  "AUTOMATION",
+                "SYSTEM":       "SYSTEM",
+                "SISTEMA":      "SYSTEM",
+            }
+            _CANONICAL_PKG_CAT = {
+                "voice_forge":        "MULTIMEDIA",
+                "image_gen":          "MULTIMEDIA",
+                "media_player":       "MULTIMEDIA",
+                "playbooks":          "MULTIMEDIA",
+                "themes_pack":        "MULTIMEDIA",
+                "webcam":             "MULTIMEDIA",
+                "net_search":         "CONNECTIVITY",
+                "browser_automation": "CONNECTIVITY",
+                "sys_net":            "CONNECTIVITY",
+                "mcp_bridge":         "CONNECTIVITY",
+                "mail":               "CONNECTIVITY",
+                "messenger":          "CONNECTIVITY",
+                "contacts":           "CONNECTIVITY",
+                "remote_triggers":    "CONNECTIVITY",
+                "remote_access_pro":  "CONNECTIVITY",
+                "weather_pro":        "CONNECTIVITY",
+                "map":                "CONNECTIVITY",
+                "drive":              "RESOURCES",
+                "document_reader":    "RESOURCES",
+                "document_maker":     "RESOURCES",
+                "templates":          "RESOURCES",
+                "calendar":           "RESOURCES",
+                "reminder":           "RESOURCES",
+                "lists":              "RESOURCES",
+                "flows":              "AUTOMATION",
+                "pc_automation":      "AUTOMATION",
+                "coder":              "AUTOMATION",
+                "builder_studio":     "AUTOMATION",
+                "global_backup":      "SYSTEM",
+                "notifications":      "SYSTEM",
+            }
+
+            def _resolve_hub_cat(pid: str, raw_cat: str, pkg_type: str) -> str:
+                pid_clean = (pid or "").strip().lower()
+                if pid_clean in _CANONICAL_PKG_CAT:
+                    return _CANONICAL_PKG_CAT[pid_clean]
+                up = (raw_cat or "").strip().upper()
+                if up in _CAT_ALIASES:
+                    return _CAT_ALIASES[up]
+                pt = (pkg_type or "").strip().lower()
+                if pt == "library":
+                    return "RESOURCES"
+                if pt in ("theme", "playbook"):
+                    return "MULTIMEDIA"
+                if pt == "persona":
+                    return "INTELLIGENCE"
+                if pt == "skill_pack":
+                    return "AUTOMATION"
+                return "SYSTEM"
+
             panels = []
             for pkg in packages:
                 if pkg.get("status") == "disabled":
@@ -253,15 +319,16 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
                 # Legacy single js_file for backward-compat with older consumers
                 js_url_legacy = js_urls[0] if js_urls else None
                 css_url = _to_url(css_file_raw)
+                pkg_type = pkg.get("type") or manifest.get("type", "plugin")
 
                 panels.append({
                     "id":          tab_id,
                     "name":        pkg.get("name") or manifest.get("name", pkg["id"]),
                     "icon":        cp.get("tab_icon", ""),
-                    "category":    cp.get("category", "CONNETTIV\u00c0"),
+                    "category":    _resolve_hub_cat(plugin_id, cp.get("category", ""), pkg_type),
                     "plugin_tag":  manifest.get("tag", pkg["id"].upper()),
                     "version":     pkg.get("version", ""),
-                    "type":        pkg.get("type") or manifest.get("type", "plugin"),
+                    "type":        pkg_type,
                     "description": pkg.get("description") or manifest.get("description", ""),
                     "js_file":     js_url_legacy,   # legacy — kept for compat
                     "js_files":    js_urls,          # NEW: full ordered list

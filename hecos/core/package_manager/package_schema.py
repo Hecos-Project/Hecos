@@ -71,8 +71,8 @@ class ConfigPanelDescriptor(BaseModel):
         return self
     
     category: Optional[str] = Field(
-        "CONNETTIVITÀ",
-        description="Category in the Config Hub (e.g. MULTIMEDIA, SISTEMA, CONNETTIVITÀ)"
+        "SYSTEM",
+        description="Category in the Central Hub (INTELLIGENCE, MULTIMEDIA, CONNECTIVITY, RESOURCES, AUTOMATION, SYSTEM)"
     )
     
     api_routes_file: Optional[str] = Field(

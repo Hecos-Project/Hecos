@@ -155,6 +155,15 @@ window.hpmGetNewCategories = function(modules) {
     return { newPanels, newCats };
 };
 
+function _resolveModuleTechType(m) {
+    if (!m) return 'other';
+    let type = (m.moduleType || '').toLowerCase().trim();
+    if (m.isCore) type = 'core_module';
+    if (!type && m.isHpm) type = 'plugin';
+    if (!type) type = 'core_module';
+    return (window.HPM_TYPE_META && window.HPM_TYPE_META[type]) ? type : 'other';
+}
+
 function renderFilterTabs() {
     const container = document.getElementById('config-filter-tabs');
     const hub       = window.CONFIG_HUB;
@@ -162,9 +171,38 @@ function renderFilterTabs() {
 
     const userRole = (window.currentUser && window.currentUser.role) || 'user';
     const cfgReady = window.cfg && Object.keys(window.cfg).length > 0;
+    const activeType = window.activeTypeFilter || 'ALL';
+    const activeCat  = (!window.activeCategoryFilter || window.activeCategoryFilter === 'ALL')
+        ? 'ALL'
+        : ((typeof window.normalizeHubCategory === 'function') ? window.normalizeHubCategory(window.activeCategoryFilter) : window.activeCategoryFilter);
+    window.activeCategoryFilter = activeCat;
+
+    // Localize static rail chrome
+    const catHeading  = document.getElementById('hub-rail-cat-heading');
+    const typeHeading = document.getElementById('hub-rail-type-heading');
+    const typeReset   = document.getElementById('hub-rail-type-reset');
+    const collapseBtn = document.getElementById('hub-rail-collapse-btn');
+    const centerWrap  = document.getElementById('hub-control-center');
+    const isRailCollapsed = !!(centerWrap && centerWrap.classList.contains('rail-collapsed'));
+
+    if (catHeading)  catHeading.textContent  = _hubT('hub_rail_categories', 'Categories');
+    if (typeHeading) typeHeading.textContent = _hubT('hub_rail_tech_type', 'Technical Type');
+    if (typeReset) {
+        typeReset.textContent = _hubT('hub_rail_reset', 'Reset');
+        typeReset.style.display = (activeType !== 'ALL') ? 'inline-block' : 'none';
+    }
+    if (collapseBtn) {
+        collapseBtn.title = isRailCollapsed
+            ? _hubT('hub_rail_expand', 'Expand sidebar')
+            : _hubT('hub_rail_collapse', 'Collapse sidebar');
+        collapseBtn.innerHTML = `<i class="fas ${isRailCollapsed ? 'fa-angles-right' : 'fa-angles-left'}"></i>`;
+    }
 
     const allVisible = hub.modules.filter(m => {
         if (m.adminOnly && userRole !== 'admin') return false;
+        if (typeof window.normalizeHubCategory === 'function') {
+            m.cat = window.normalizeHubCategory(m.cat, m.id, m.moduleType);
+        }
         if (m.isExtension && m.parentPluginTag) {
             if (cfgReady) {
                 const parent = window.cfg.plugins && window.cfg.plugins[m.parentPluginTag];
@@ -184,37 +222,83 @@ function renderFilterTabs() {
         const hasPanel  = !!document.getElementById('tab-' + m.id);
         const isMapped  = !!(hub.tagMap && hub.tagMap[m.pluginTag]);
         const isCore    = !!m.isCore;
-        return (inCache || inLazySet || hasPanel || isMapped || isCore);
+        const isHpmEnabled = !!(m.isHpm && cfgReady && m.pluginTag && (() => {
+            const p = window.cfg.plugins && window.cfg.plugins[m.pluginTag];
+            return !p || p.enabled !== false;
+        })());
+        return (inCache || inLazySet || hasPanel || isMapped || isCore || isHpmEnabled);
     });
 
-    const counts = { 'ALL': allVisible.length };
-    allVisible.forEach(m => { counts[m.cat] = (counts[m.cat] || 0) + 1; });
+    const totalCounts = {};
+    allVisible.forEach(m => { totalCounts[m.cat] = (totalCounts[m.cat] || 0) + 1; });
 
-    // Determine which categories have at least one unacknowledged NEW module (< 3 days TTL)
-    const { newPanels: _ftNewPanels, newCats: _ftNewCats } = window.hpmGetNewCategories(allVisible);
+    const typeFiltered = (activeType === 'ALL')
+        ? allVisible
+        : allVisible.filter(m => _resolveModuleTechType(m) === activeType);
 
+    const counts = { 'ALL': typeFiltered.length };
+    typeFiltered.forEach(m => { counts[m.cat] = (counts[m.cat] || 0) + 1; });
+
+    const { newCats: _ftNewCats } = window.hpmGetNewCategories(allVisible);
+
+    const allCatsLabel = _hubT('hub_rail_all_categories', 'All Categories');
     let html = `
-        <button type="button" class="filter-btn ${window.activeCategoryFilter === 'ALL' ? 'active' : ''}" data-filter-cat="ALL" onclick="setCategoryFilter('ALL')">
-            <span><i class="fas fa-star"></i></span> ${_hubT('hub_filter_all', 'All')}
+        <button type="button" class="filter-btn ${activeCat === 'ALL' ? 'active' : ''}" data-filter-cat="ALL" onclick="setCategoryFilter('ALL')" title="${allCatsLabel} (${counts['ALL']})">
+            <span class="filter-btn-left"><i class="fas fa-layer-group"></i><span class="filter-btn-label">${allCatsLabel}</span></span>
             <span class="btn-badge">${counts['ALL']}</span>
         </button>
     `;
 
+    let nonEmptyCatCount = 0;
     Object.keys(hub.categories).forEach(catId => {
+        if (!totalCounts[catId]) return;
+        nonEmptyCatCount++;
         const cat         = hub.categories[catId];
-        const activeClass = (window.activeCategoryFilter === catId) ? 'active' : '';
+        const activeClass = (activeCat === catId) ? 'active' : '';
         const count       = counts[catId] || 0;
-        if (count === 0) return;
+        const dimStyle    = (count === 0 && activeClass === '') ? ' style="opacity:0.48;"' : '';
         const _ftCatIsNew = _ftNewCats.has(catId);
+        const catTitle    = _hubT(cat.label, cat.fallback || catId);
         html += `
-            <button type="button" class="filter-btn ${activeClass}" data-filter-cat="${catId}" onclick="setCategoryFilter('${catId}')">
-                <span>${cat.icon}</span> ${window.t ? window.t(cat.label) : catId}
+            <button type="button" class="filter-btn ${activeClass}" data-filter-cat="${catId}" onclick="setCategoryFilter('${catId}')" title="${catTitle} (${count})"${dimStyle}>
+                <span class="filter-btn-left">${cat.icon}<span class="filter-btn-label">${catTitle}</span></span>
                 <span class="btn-badge${_ftCatIsNew ? ' badge-new' : ''}">${count}</span>
             </button>
         `;
     });
 
     container.innerHTML = html;
+
+    const catCountEl = document.getElementById('hub-rail-cat-count');
+    if (catCountEl) catCountEl.textContent = String(nonEmptyCatCount);
+
+    // Populate Technical Type Filter Chips inside the Rail
+    const typeContainer = document.getElementById('config-type-filters');
+    if (typeContainer && window.HPM_TYPE_META) {
+        const presentTypes = new Map();
+        allVisible.forEach(m => {
+            const t = _resolveModuleTechType(m);
+            presentTypes.set(t, (presentTypes.get(t) || 0) + 1);
+        });
+        const sortedTypes = Array.from(presentTypes.keys()).sort((a, b) => {
+            const oa = (window.HPM_TYPE_META[a] && window.HPM_TYPE_META[a].order) || 99;
+            const ob = (window.HPM_TYPE_META[b] && window.HPM_TYPE_META[b].order) || 99;
+            return oa - ob;
+        });
+
+        const allLabel = _hubT('hub_filter_all', 'All');
+        let tHtml = `<button type="button" class="type-filter-chip ${activeType === 'ALL' ? 'active' : ''}" onclick="setTypeFilter('ALL')">${allLabel}</button>`;
+        sortedTypes.forEach(tKey => {
+            const meta = window.HPM_TYPE_META[tKey] || window.HPM_TYPE_META.other;
+            const shortLbl = meta.shortLabel || meta.label || tKey;
+            const lbl = _hubT(shortLbl, shortLbl);
+            tHtml += `<button type="button" class="type-filter-chip ${activeType === tKey ? 'active' : ''}" onclick="setTypeFilter('${tKey}')" title="${_hubT(meta.label || lbl, meta.label || lbl)} (${presentTypes.get(tKey)})">
+                <i class="fas ${meta.icon}" style="color:${meta.color};font-size:10px;"></i>
+                <span>${lbl}</span>
+            </button>`;
+        });
+        typeContainer.innerHTML = tHtml;
+    }
 }
 
 /**
@@ -1003,16 +1087,22 @@ if (!window._hubKeyNavAttached) {
             activeEl.blur();
         }
 
-        // ── ZONE 1: Category Filters ──────────────────────────────────────────
+        // ── ZONE 1: Category Filters (Vertical Desktop Rail or Horizontal Mobile Strip) ──
         if (st.zone === 'filters') {
             const btns = _getHubFilterButtons();
             if (btns.length === 0) return;
+            const filterContainer = document.getElementById('config-filter-tabs');
+            const isVerticalRail = !!(filterContainer && window.getComputedStyle(filterContainer).flexDirection === 'column');
             const curFilter = st.filterCat || window.activeCategoryFilter || 'ALL';
             let idx = btns.findIndex(b => b.dataset.filterCat === curFilter);
             if (idx === -1) idx = 0;
 
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                const delta = (e.key === 'ArrowRight') ? 1 : -1;
+            const prevKey  = isVerticalRail ? 'ArrowUp'   : 'ArrowLeft';
+            const nextKey  = isVerticalRail ? 'ArrowDown' : 'ArrowRight';
+            const enterKey = isVerticalRail ? 'ArrowRight': 'ArrowDown';
+
+            if (e.key === prevKey || e.key === nextKey) {
+                const delta = (e.key === nextKey) ? 1 : -1;
                 const nextIdx = (idx + delta + btns.length) % btns.length;
                 const nextCat = btns[nextIdx].dataset.filterCat;
                 st.visible = true;
@@ -1023,7 +1113,7 @@ if (!window._hubKeyNavAttached) {
                     window.setCategoryFilter(nextCat);
                 }
                 window.syncHubKbFocus(true);
-            } else if (e.key === 'ArrowDown') {
+            } else if (e.key === enterKey) {
                 if (!window.activeCategoryFilter && typeof window.setCategoryFilter === 'function') {
                     window.setCategoryFilter(curFilter);
                 }
@@ -1033,7 +1123,7 @@ if (!window._hubKeyNavAttached) {
                     _enterHubGroupFromTop(groups[0]);
                     window.syncHubKbFocus(true);
                 }
-            } else if (e.key === 'ArrowUp') {
+            } else {
                 st.visible = true;
                 window.syncHubKbFocus(true);
             }
@@ -1149,9 +1239,19 @@ if (!window._hubKeyNavAttached) {
                         const newItems = _getHubGroupItems(newGrp);
                         if (newItems.length > 0) st.moduleId = newItems[newItems.length - 1].dataset.modId;
                         window.syncHubKbFocus(true);
+                    } else if (delta < 0) {
+                        st.zone = 'filters';
+                        st.filterCat = window.activeCategoryFilter || 'ALL';
+                        st.moduleId = null;
+                        window.syncHubKbFocus(true);
                     } else {
                         window.syncHubKbFocus(true);
                     }
+                } else if (delta < 0) {
+                    st.zone = 'filters';
+                    st.filterCat = window.activeCategoryFilter || 'ALL';
+                    st.moduleId = null;
+                    window.syncHubKbFocus(true);
                 } else {
                     window.syncHubKbFocus(true);
                 }
@@ -1219,6 +1319,9 @@ function renderConfigHub(mode = 'tabs') {
 
     const visibleModules = hub.modules.filter(m => {
         if (m.adminOnly && userRole !== 'admin') return false;
+        if (typeof window.normalizeHubCategory === 'function') {
+            m.cat = window.normalizeHubCategory(m.cat, m.id, m.moduleType);
+        }
 
         if (m.isExtension && m.parentPluginTag) {
             if (cfgReady) {
@@ -1253,18 +1356,27 @@ function renderConfigHub(mode = 'tabs') {
         return (inCache || inLazySet || hasPanel || isMapped || isCore || isHpmEnabled);
     });
 
-    // Category filter
+    const normActiveCat = (!window.activeCategoryFilter || window.activeCategoryFilter === 'ALL')
+        ? 'ALL'
+        : ((typeof window.normalizeHubCategory === 'function') ? window.normalizeHubCategory(window.activeCategoryFilter) : window.activeCategoryFilter);
+    window.activeCategoryFilter = normActiveCat;
+    const activeType = window.activeTypeFilter || 'ALL';
+
+    // Category + Technical Type cross-filter
     const filteredModules = visibleModules.filter(m => {
-        if (window.activeCategoryFilter === 'ALL') return true;
-        return m.cat === window.activeCategoryFilter;
+        const catOk  = (normActiveCat === 'ALL') || (m.cat === normActiveCat);
+        const typeOk = (activeType === 'ALL') || (_resolveModuleTechType(m) === activeType);
+        return catOk && typeOk;
     });
 
-    // Sort by category order then label
+    // Sort by category order then localized label
     filteredModules.sort((a, b) => {
         const catA = hub.categories[a.cat] || { order: 99 };
         const catB = hub.categories[b.cat] || { order: 99 };
         if (catA.order !== catB.order) return catA.order - catB.order;
-        return a.label.localeCompare(b.label);
+        const lblA = _hubT(a.label, a.label);
+        const lblB = _hubT(b.label, b.label);
+        return String(lblA).localeCompare(String(lblB));
     });
 
     // Icon injection helper
@@ -1315,7 +1427,8 @@ function renderConfigHub(mode = 'tabs') {
         if (m.cat !== currentTabCat) {
             if (currentTabCat !== null) tabsHtml += `</div></div>`;
             currentTabCat = m.cat;
-            const catData   = hub.categories[currentTabCat] || { label: currentTabCat, icon: '📂' };
+            const catData   = hub.categories[currentTabCat] || { label: currentTabCat, fallback: currentTabCat, icon: '<i class="fas fa-folder-open"></i>' };
+            const catTitle  = _hubT(catData.label, catData.fallback || currentTabCat);
             const isCollapsed = uiState.collapsedCategories.includes(currentTabCat);
             const catHasNew       = newCats.has(currentTabCat);
             const _catTotal       = catCounts[currentTabCat] || 0;
@@ -1330,7 +1443,7 @@ function renderConfigHub(mode = 'tabs') {
                 <div class="category-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${currentTabCat}" data-cur-page="${_catPage}" data-total-pages="${_catTotalPages}">
                     <div class="category-header" onclick="toggleCategory('${currentTabCat}')">
                         <span class="cat-toggle">${isCollapsed ? '⊕' : '⊖'}</span>
-                        <span class="cat-label">${catData.icon} ${window.t ? window.t(catData.label) : catData.label}</span>
+                        <span class="cat-label">${catData.icon} ${catTitle}</span>
                         <span class="cat-badge${catHasNew ? ' badge-new' : ''}">${_catTotal}</span>
                         ${_pagHtml}
                         <div class="cat-line"></div>
@@ -1354,20 +1467,29 @@ function renderConfigHub(mode = 'tabs') {
         const isNew       = newPanels.includes(m.id);
         const badgeHtml   = isNew ? `<span class="new-badge" style="margin-left:6px; background:var(--accent); color:white; font-size:9px; padding:2px 5px; border-radius:10px; font-weight:800; animation:hpmPulse 2s infinite;">NEW</span>` : '';
         const typeBadge   = window.hpmGetModuleTypeBadge(m, true);
-        if (_mVisible) tabsHtml += `<button type="button" class="tab ${activeClass}" data-mod-id="${m.id}" data-mod-cat="${currentTabCat}" onclick="showTab('${m.id}')">${icon} ${window.t ? window.t(m.label) : m.label} ${typeBadge} ${badgeHtml}</button>`;
+        if (_mVisible) tabsHtml += `<button type="button" class="tab ${activeClass}" data-mod-id="${m.id}" data-mod-cat="${currentTabCat}" onclick="showTab('${m.id}')">${icon} ${_hubT(m.label, m.label)} ${typeBadge} ${badgeHtml}</button>`;
     });
+    const _emptyFilterHtml = (visibleModules.length > 0 && filteredModules.length === 0)
+        ? `<div class="card" style="text-align:center; padding:32px 20px; color:var(--muted);">
+               <div style="font-size:22px; color:var(--accent); margin-bottom:10px;"><i class="fas fa-filter-circle-xmark"></i></div>
+               <div style="font-size:13px; margin-bottom:12px;">${_hubT('hub_empty_filtered', 'No modules match the active filters.')}</div>
+               <button type="button" class="btn btn-sm btn-secondary" onclick="setCategoryFilter('ALL'); setTypeFilter('ALL');">${_hubT('hub_rail_reset', 'Reset')}</button>
+           </div>`
+        : '';
     if (filteredModules.length > 0) tabsHtml += `</div></div>`;
+    else tabsHtml = _emptyFilterHtml;
     tabsBar.innerHTML = tabsHtml;
 
     // 2. Render WALL cards
     let wallHtml = '';
-    let currentCat = null, currentCatData = null;
+    let currentCat = null, currentCatData = null, currentCatTitle = '';
     const _hubCatIdxMapWall = {};  // per-cat item index counter for wall pagination
     filteredModules.forEach(m => {
         if (m.cat !== currentCat) {
             if (currentCat !== null) wallHtml += `</div></div>`;
-            currentCat     = m.cat;
-            currentCatData = hub.categories[currentCat] || { label: currentCat, icon: '📂' };
+            currentCat      = m.cat;
+            currentCatData  = hub.categories[currentCat] || { label: currentCat, fallback: currentCat, icon: '<i class="fas fa-folder-open"></i>' };
+            currentCatTitle = _hubT(currentCatData.label, currentCatData.fallback || currentCat);
             const isCollapsed = uiState.collapsedCategories.includes(currentCat);
             const catHasNew   = newCats.has(currentCat);
             const _catTotalWall       = catCounts[currentCat] || 0;
@@ -1382,7 +1504,7 @@ function renderConfigHub(mode = 'tabs') {
                 <div class="category-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${currentCat}" data-cur-page="${_catPageWall}" data-total-pages="${_catTotalPagesWall}">
                     <div class="category-header" onclick="toggleCategory('${currentCat}')">
                         <span class="cat-toggle">${isCollapsed ? '⊕' : '⊖'}</span>
-                        <span class="cat-label">${currentCatData.icon} ${window.t ? window.t(currentCatData.label) : currentCatData.label}</span>
+                        <span class="cat-label">${currentCatData.icon} ${currentCatTitle}</span>
                         <span class="cat-badge${catHasNew ? ' badge-new' : ''}">${_catTotalWall}</span>
                         ${_pagHtmlWall}
                         <div class="cat-line"></div>
@@ -1412,13 +1534,14 @@ function renderConfigHub(mode = 'tabs') {
                     ${badgeHtml}
                     ${typeBadge}
                     <div class="m-icon">${icon}</div>
-                    <div class="m-label">${window.t ? window.t(m.label) : m.label}</div>
-                    <div class="m-cat">${window.t ? window.t(currentCatData.label) : currentCat}</div>
+                    <div class="m-label">${_hubT(m.label, m.label)}</div>
+                    <div class="m-cat">${currentCatTitle}</div>
                 </div>
             `;
         }
     });
     if (filteredModules.length > 0) wallHtml += `</div></div>`;
+    else wallHtml = _emptyFilterHtml;
     wallArea.innerHTML = wallHtml;
 
     // 3. Render category filter pill bar
