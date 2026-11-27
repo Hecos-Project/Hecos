@@ -39,6 +39,14 @@
   width: 100%;
 }
 
+/* Direct standalone view for Package Manager (#packages / #hpm-settings): zero Hub clutter above */
+.hub-control-center.hub-standalone-manager #hecos-search-bar,
+.hub-control-center.hub-standalone-manager #tabs-bar-container,
+.hub-control-center.hub-standalone-manager #config-main-ui-wrapper,
+.hub-control-center.hub-standalone-manager #config-welcome-container {
+  display: none !important;
+}
+
 .hub-rail {
   position: sticky;
   top: 76px;
@@ -174,6 +182,52 @@
   box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.16);
 }
 
+.hub-rail-pm-btn {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
+  background: rgba(var(--accent-rgb), 0.06);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: inherit;
+  transition: all 0.18s ease;
+}
+
+.hub-rail-pm-btn i {
+  color: var(--accent);
+}
+
+.hub-rail-pm-btn:hover {
+  background: rgba(var(--accent-rgb), 0.14);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.hub-rail-pm-btn.active {
+  background: rgba(var(--accent-rgb), 0.2);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.hub-rail-pm-kbd {
+  font-size: 9.5px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
 /* Generic .filter-tabs kept for HPM & Builder panels */
 .filter-tabs {
   display: flex;
@@ -268,11 +322,19 @@
   }
   .hub-control-center.rail-collapsed .hub-rail-title,
   .hub-control-center.rail-collapsed .hub-rail-count,
-  .hub-control-center.rail-collapsed .hub-rail-divider,
   .hub-control-center.rail-collapsed .hub-rail-type-section,
+  .hub-control-center.rail-collapsed #hub-rail-type-divider,
   .hub-control-center.rail-collapsed .filter-btn-label,
+  .hub-control-center.rail-collapsed .hub-rail-pm-label,
+  .hub-control-center.rail-collapsed .hub-rail-pm-kbd,
   .hub-control-center.rail-collapsed .filter-btn .btn-badge:not(.badge-new) {
     display: none !important;
+  }
+  .hub-control-center.rail-collapsed .hub-rail-pm-btn {
+    width: 42px;
+    height: 38px;
+    padding: 0;
+    justify-content: center;
   }
   .hub-control-center.rail-collapsed .hub-rail-header {
     justify-content: center;
@@ -659,11 +721,17 @@
 }
 
 .category-content {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     padding-left: 0;
     transition: all 0.3s ease;
+}
+
+#config-wall .category-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 12px;
 }
 
 .category-content.tabs {

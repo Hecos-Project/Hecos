@@ -19,23 +19,39 @@ async function showTab(name, skipScroll = false) {
   const hub = window.CONFIG_HUB;
   const mod = (hub && hub.modules) ? hub.modules.find(m => m.id === name) : null;
 
-  // Welcome screen toggling
-  const mainWrapper      = document.getElementById('config-main-ui-wrapper');
-  const welcomeContainer = document.getElementById('config-welcome-container');
-  const tBar             = document.getElementById('tabs-bar-container');
-  const wall             = document.getElementById('config-wall');
+  // Welcome & Standalone Package Manager screen toggling
+  const centerWrap          = document.getElementById('hub-control-center');
+  const mainWrapper         = document.getElementById('config-main-ui-wrapper');
+  const welcomeContainer    = document.getElementById('config-welcome-container');
+  const tBar                = document.getElementById('tabs-bar-container');
+  const wall                = document.getElementById('config-wall');
+  const isStandaloneManager = (name === 'packages' || name === 'hpm-settings');
+
+  if (centerWrap) {
+      centerWrap.classList.toggle('hub-standalone-manager', isStandaloneManager);
+  }
 
   if (name === 'welcome') {
       if (welcomeContainer) welcomeContainer.style.display = 'block';
       if (mainWrapper)      mainWrapper.style.setProperty('display', 'none', 'important');
+  } else if (isStandaloneManager) {
+      if (welcomeContainer) welcomeContainer.style.display = 'none';
+      if (tBar)             tBar.style.display = 'none';
+      if (wall)             wall.style.display = 'none';
+      if (mainWrapper)      mainWrapper.style.setProperty('display', 'none', 'important');
+      try {
+          if (window.location.hash !== '#' + name) {
+              history.replaceState(null, '', '#' + name);
+          }
+      } catch (_) {}
   } else {
       if (welcomeContainer) welcomeContainer.style.display = 'none';
       if (mainWrapper) {
           mainWrapper.style.removeProperty('display');
           mainWrapper.style.setProperty('display', 'block', 'important');
       }
-      if (tBar && viewMode === 'tabs') tBar.style.display = 'block';
-      if (wall && viewMode === 'wall') wall.style.display = 'flex';
+      if (tBar) tBar.style.display = (viewMode === 'tabs') ? 'block' : 'none';
+      if (wall) wall.style.display = (viewMode === 'wall') ? 'flex'  : 'none';
   }
 
   // Resolve target ID via tagMap or MCP category
@@ -123,7 +139,13 @@ async function showTab(name, skipScroll = false) {
   const card = document.querySelector(`.module-card[onclick*="'${name}'"]`);
   if (card) card.classList.add('active');
 
-  if (viewMode === 'wall' && panel && !skipScroll) {
+  // Sync Left Sidebar Rail state between Categories vs standalone Module Manager
+  const railPmBtn = document.getElementById('hub-rail-packages-btn');
+  if (railPmBtn) railPmBtn.classList.toggle('active', isStandaloneManager);
+  if (isStandaloneManager) {
+      document.querySelectorAll('#config-filter-tabs .filter-btn').forEach(b => b.classList.remove('active'));
+      window.scrollTo({ top: 0, behavior: 'auto' });
+  } else if (panel && !skipScroll) {
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -281,20 +303,32 @@ function setViewMode(mode, silent = false) {
     viewMode = mode;
     localStorage.setItem('hecos-config-view', mode);
 
+    const centerWrap    = document.getElementById('hub-control-center');
     const tabsContainer = document.getElementById('tabs-bar-container');
     const wallContainer = document.getElementById('config-wall');
     const switcherTabs  = document.getElementById('view-tabs');
     const switcherWall  = document.getElementById('view-wall');
 
+    // If user explicitly clicks Tabs/Wall in header while inside standalone Package Manager, return to Hub
+    if (!silent && (activeTab === 'packages' || activeTab === 'hpm-settings')) {
+        _exitWelcomeIfActive();
+    }
+
+    const inStandalone = silent && (activeTab === 'packages' || activeTab === 'hpm-settings' || !!(centerWrap && centerWrap.classList.contains('hub-standalone-manager')));
+
     if (mode === 'wall') {
-        if (tabsContainer) tabsContainer.style.display = 'none';
-        if (wallContainer) wallContainer.style.display = 'flex';
+        if (!inStandalone) {
+            if (tabsContainer) tabsContainer.style.display = 'none';
+            if (wallContainer) wallContainer.style.display = 'flex';
+        }
         if (switcherWall)  switcherWall.classList.add('active');
         if (switcherTabs)  switcherTabs.classList.remove('active');
         renderConfigHub('wall');
     } else {
-        if (tabsContainer) tabsContainer.style.display = 'block';
-        if (wallContainer) wallContainer.style.display = 'none';
+        if (!inStandalone) {
+            if (tabsContainer) tabsContainer.style.display = 'block';
+            if (wallContainer) wallContainer.style.display = 'none';
+        }
         if (switcherTabs)  switcherTabs.classList.add('active');
         if (switcherWall)  switcherWall.classList.remove('active');
         renderConfigHub('tabs');
@@ -324,10 +358,26 @@ function toggleAllCategories(expanded) {
 }
 
 function _exitWelcomeIfActive() {
-    if (activeTab === 'welcome') {
+    const centerWrap = document.getElementById('hub-control-center');
+    const wasStandalone = (activeTab === 'packages' || activeTab === 'hpm-settings' || !!(centerWrap && centerWrap.classList.contains('hub-standalone-manager')));
+
+    if (centerWrap) centerWrap.classList.remove('hub-standalone-manager');
+    const railPmBtn = document.getElementById('hub-rail-packages-btn');
+    if (railPmBtn) railPmBtn.classList.remove('active');
+
+    if (activeTab === 'welcome' || wasStandalone) {
         const welcomeContainer = document.getElementById('config-welcome-container');
         if (welcomeContainer) welcomeContainer.style.display = 'none';
+        if (wasStandalone) {
+            document.querySelectorAll('#tab-packages, #tab-hpm-settings').forEach(p => p.classList.remove('active'));
+            try {
+                if (window.location.hash === '#packages' || window.location.hash === '#hpm-settings') {
+                    history.replaceState(null, '', window.location.pathname + window.location.search);
+                }
+            } catch (_) {}
+        }
         sessionStorage.setItem('hecos-config-welcome-seen', 'true');
+        sessionStorage.setItem('hecos-config-tab', '');
         activeTab = '';
         uiState.collapsedCategories = [];
         const mainWrapper = document.getElementById('config-main-ui-wrapper');
@@ -336,9 +386,9 @@ function _exitWelcomeIfActive() {
             mainWrapper.style.setProperty('display', 'block', 'important');
         }
         const tBar = document.getElementById('tabs-bar-container');
-        if (tBar && viewMode === 'tabs') tBar.style.display = 'block';
+        if (tBar) tBar.style.display = (viewMode === 'tabs') ? 'block' : 'none';
         const wall = document.getElementById('config-wall');
-        if (wall && viewMode === 'wall') wall.style.display = 'flex';
+        if (wall) wall.style.display = (viewMode === 'wall') ? 'flex'  : 'none';
     }
 }
 

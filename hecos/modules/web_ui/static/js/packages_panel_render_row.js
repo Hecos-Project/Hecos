@@ -147,7 +147,7 @@ window.hpmRenderRow = function (pkg, meta) {
 
   return `
     <div class="hpm-card" id="hpm-pkg-${pkg.id}"
-         style="background:var(--bg2);border:1px solid var(--border-color);
+         style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border-color, var(--border));
                 border-radius:9px;padding:10px 13px;
                 display:flex;align-items:center;gap:12px;
                 transition:opacity .2s;${isDisabled ? 'opacity:0.6;' : ''}">
@@ -177,8 +177,8 @@ window.hpmRenderRow = function (pkg, meta) {
         </div>` : ''}
         ${(pkg.manifest_snapshot && pkg.manifest_snapshot.config_panel) ? `
         <div style="font-size:0.75em;margin-top:6px;">
-            <a href="#${window._hesc(pkg.manifest_snapshot.config_panel.tab_id || pkg.id.replace('_', '-'))}" style="color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.05);padding:3px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);">
-                <i class="fas fa-cogs"></i>
+            <a href="#${window._hesc(pkg.manifest_snapshot.config_panel.tab_id || pkg.id.replace('_', '-'))}" onclick="if(typeof window.showTab==='function'){event.preventDefault();window.showTab('${window._hesc(pkg.manifest_snapshot.config_panel.tab_id || pkg.id.replace('_', '-'))}');}" style="color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.05);padding:3px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);">
+                <i class="fas fa-sliders"></i>
                 <span>${_ti('Configuration', 'Configurazione', 'Configuración')}: ${window._hesc(window.hpmGetHubCategoryLabel(pkg.manifest_snapshot.config_panel.category))} &rarr; ${window._hesc(pkg.manifest_snapshot.config_panel.tab_label || pkg.name)}</span>
             </a>
         </div>

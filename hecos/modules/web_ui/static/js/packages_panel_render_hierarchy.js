@@ -106,7 +106,7 @@ window.hpmRenderHierarchy = function (packagesList) {
               ${group.length}
             </span>
           </div>
-          <div class="category-content" style="${isCollapsed ? 'display:none;' : 'display:grid;gap:6px;margin-top:8px;padding:0 2px;'}">
+          <div class="category-content hpm-list-rows" style="${isCollapsed ? 'display:none;' : 'display:grid;grid-template-columns:minmax(0,1fr);width:100%;gap:6px;margin-top:8px;padding:0 2px;'}">
             ${group.map(pkg => window.hpmRenderRow(pkg, meta)).join('')}
           </div>
         </div>`;

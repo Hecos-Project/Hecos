@@ -39,9 +39,11 @@ async function initAll(attempt = 1) {
     }
 
     renderConfigHub(viewMode);
-    // Only call showTab if there's an active tab to restore (not 'welcome')
+    // Only call showTab if there's an active tab to restore (not 'welcome').
+    // When deep-linking via explicit URL #hash (e.g. #packages, #widgets, #calendar), do NOT skip scroll!
     if (activeTab && activeTab !== 'welcome') {
-        showTab(activeTab, true);
+        const hasExplicitHash = !!(window.location.hash && window.location.hash.length > 1);
+        showTab(activeTab, !hasExplicitHash);
     }
     console.log('[Init] Phase 0: Hub rendered immediately.');
 

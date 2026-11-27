@@ -240,10 +240,19 @@ function renderFilterTabs() {
     typeFiltered.forEach(m => { counts[m.cat] = (counts[m.cat] || 0) + 1; });
 
     const { newCats: _ftNewCats } = window.hpmGetNewCategories(allVisible);
+    const inStandalonePm = !!(centerWrap && centerWrap.classList.contains('hub-standalone-manager'));
+
+    const railPmBtn = document.getElementById('hub-rail-packages-btn');
+    const railPmLbl = document.getElementById('hub-rail-packages-label');
+    if (railPmLbl) railPmLbl.textContent = _hubT('hub_mod_hpm_settings', 'Module Manager');
+    if (railPmBtn) {
+        railPmBtn.classList.toggle('active', inStandalonePm);
+        railPmBtn.title = `${_hubT('hub_mod_hpm_settings', 'Module Manager')} [F1]`;
+    }
 
     const allCatsLabel = _hubT('hub_rail_all_categories', 'All Categories');
     let html = `
-        <button type="button" class="filter-btn ${activeCat === 'ALL' ? 'active' : ''}" data-filter-cat="ALL" onclick="setCategoryFilter('ALL')" title="${allCatsLabel} (${counts['ALL']})">
+        <button type="button" class="filter-btn ${(!inStandalonePm && activeCat === 'ALL') ? 'active' : ''}" data-filter-cat="ALL" onclick="setCategoryFilter('ALL')" title="${allCatsLabel} (${counts['ALL']})">
             <span class="filter-btn-left"><i class="fas fa-layer-group"></i><span class="filter-btn-label">${allCatsLabel}</span></span>
             <span class="btn-badge">${counts['ALL']}</span>
         </button>
@@ -254,7 +263,7 @@ function renderFilterTabs() {
         if (!totalCounts[catId]) return;
         nonEmptyCatCount++;
         const cat         = hub.categories[catId];
-        const activeClass = (activeCat === catId) ? 'active' : '';
+        const activeClass = (!inStandalonePm && activeCat === catId) ? 'active' : '';
         const count       = counts[catId] || 0;
         const dimStyle    = (count === 0 && activeClass === '') ? ' style="opacity:0.48;"' : '';
         const _ftCatIsNew = _ftNewCats.has(catId);

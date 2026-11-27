@@ -7,7 +7,8 @@
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
-**Helping Companion System (Privato, Rapido, Semplice)**
+**Helping Companion System (Privato, Rapido, Semplice)**  
+*Si pronuncia **Haicos** · IPA: `/ˈhaɪ.kos/` (ha‑i‑cos)*
 
 <p align="center">
   <a href="https://github.com/Hecos-Project/Hecos/releases/latest/download/INSTALL_HECOS_WINDOWS.zip">

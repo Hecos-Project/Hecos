@@ -35,9 +35,10 @@ const navType   = window.performance?.getEntriesByType("navigation")[0]?.type;
 const isRefresh = navType === 'reload';
 let rawHash = window.location.hash.substring(1);
 if (rawHash && rawHash.startsWith('tab-')) rawHash = rawHash.slice(4);
+// Direct URL hash (e.g. #packages from Sidebar / F1) always wins;
+// Topbar "Hub" (/hecos/config/ui without hash) opens Central Hub cleanly instead of stale sessionStorage.
 let activeTab = rawHash
-    || sessionStorage.getItem('hecos-config-tab')
-    || (isRefresh ? 'backend' : 'welcome');
+    || (isRefresh ? (sessionStorage.getItem('hecos-config-tab') || 'welcome') : 'welcome');
 const _savedCatFilter = sessionStorage.getItem('hecos-config-filter') || 'ALL';
 window.activeCategoryFilter = (_savedCatFilter === 'ALL' || !_savedCatFilter)
     ? (_savedCatFilter || 'ALL')

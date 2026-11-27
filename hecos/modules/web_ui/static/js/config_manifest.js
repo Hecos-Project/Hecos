@@ -156,7 +156,7 @@ window.CONFIG_HUB = {
 
         // 6. SYSTEM
         { id: 'system',       label: 'hub_mod_system',         descKey: 'hub_desc_system',       icon: '<i class="fas fa-sliders"></i>',          cat: 'SYSTEM', isCore: true },
-        { id: 'hpm-settings', label: 'hub_mod_hpm_settings',   descKey: 'hub_desc_hpm_settings', icon: '<i class="fas fa-box-open"></i>',         cat: 'SYSTEM', isCore: true },
+        { id: 'packages',     label: 'hub_mod_hpm_settings',   descKey: 'hub_desc_hpm_settings', icon: '<i class="fas fa-box-open"></i>',         cat: 'SYSTEM', isCore: true },
         { id: 'users',        label: 'hub_mod_users',          descKey: 'hub_desc_users',        icon: '<i class="fas fa-users"></i>',            cat: 'SYSTEM', adminOnly: true, isCore: true },
         { id: 'privacy',      label: 'hub_mod_privacy',        descKey: 'hub_desc_privacy',      icon: '<i class="fas fa-shield-halved"></i>',    cat: 'SYSTEM', isCore: true },
         { id: 'logs',         label: 'hub_mod_logs',           descKey: 'hub_desc_logs',         icon: '<i class="fas fa-scroll"></i>',           cat: 'SYSTEM', isCore: true },
@@ -248,7 +248,7 @@ window.LAZY_PANEL_IDS = new Set([
     'webcam', 'executor', 'automation',
     'browser', 'netsearch', 'system', 'sysnet', 'users', 'payload', 'plugins',
     'contacts', 'remote-triggers',
-    'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup', 'shortcuts', 'presenter'
+    'logs', 'privacy', 'packages', 'hpm-settings', 'help', 'flows', 'backup', 'shortcuts', 'presenter'
 ]);
 
 window.SYSTEM_PANELS = [

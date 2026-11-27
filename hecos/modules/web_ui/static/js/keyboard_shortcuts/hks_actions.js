@@ -91,10 +91,12 @@
             category: 'navigation',
             contexts: ['global', 'chat', 'hub', 'home'],
             handler: () => {
-                if (window.HKS && window.HKS.getContext() === 'hub') {
-                    if (window.switchTab) window.switchTab('voice');
+                if (typeof window.showTab === 'function') {
+                    window.showTab('voice');
+                } else if (typeof window.hecosOpenConfig === 'function') {
+                    window.hecosOpenConfig('#voice');
                 } else {
-                    window.open('/hecos/config#voice', '_blank');
+                    window.open('/hecos/config/ui#voice', '_blank', 'noopener');
                 }
             }
         },
@@ -104,21 +106,14 @@
             label: 'Module Manager',
             icon: 'fas fa-cube',
             category: 'navigation',
-            description: 'Open the Hecos Module Manager tab',
+            description: 'Open the Hecos Package Manager directly',
             contexts: ['global', 'chat', 'hub', 'home'],
             handler: function() {
                 const ctx = window.HKS ? window.HKS.getContext() : 'global';
-                if (ctx === 'hub') {
-                    // Already in hub — activate HPM tab if available
-                    if (typeof window.activateTab === 'function') {
-                        window.activateTab('packages');
-                    } else if (typeof window.navigateToTab === 'function') {
-                        window.navigateToTab('packages');
-                    } else {
-                        // Try clicking the tab link
-                        const tab = document.querySelector('[data-tab="packages"], [href="#packages"]');
-                        if (tab) tab.click();
-                    }
+                if (ctx === 'hub' || typeof window.showTab === 'function') {
+                    window.showTab('packages');
+                } else if (typeof window.hecosOpenConfig === 'function') {
+                    window.hecosOpenConfig('#packages');
                 } else {
                     window.open('/hecos/config/ui#packages', '_blank', 'noopener');
                 }
@@ -158,14 +153,10 @@
             contexts: ['global', 'chat', 'hub', 'home'],
             handler: function() {
                 const ctx = window.HKS ? window.HKS.getContext() : 'global';
-                if (ctx === 'hub') {
-                    // Navigate to shortcuts tab in hub
-                    if (typeof window.navigateToTab === 'function') {
-                        window.navigateToTab('shortcuts');
-                    } else {
-                        const tab = document.querySelector('[data-tab="shortcuts"]');
-                        if (tab) tab.click();
-                    }
+                if (ctx === 'hub' || typeof window.showTab === 'function') {
+                    window.showTab('shortcuts');
+                } else if (typeof window.hecosOpenConfig === 'function') {
+                    window.hecosOpenConfig('#shortcuts');
                 } else {
                     window.open('/hecos/config/ui#shortcuts', '_blank', 'noopener');
                 }
