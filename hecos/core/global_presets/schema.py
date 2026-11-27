@@ -33,7 +33,7 @@ class SoulMeta(BaseModel):
     tags: List[str] = Field(default_factory=list)
     created_at: str = ""
     updated_at: str = ""
-    icon: str = "🧠"
+    icon: str = "fa-bolt"
 
 class SoulPersona(BaseModel):
     soul_file: Optional[str] = None

@@ -21,20 +21,32 @@
 (function() {
     'use strict';
 
+    let _lastAppliedMode = null;
+    const _initWui = window.cfg?.plugins?.WEB_UI || {};
+    let _lastRefreshedDccKey = `${_initWui.dcc_new_first ?? true}:${parseInt(_initWui.dcc_new_highlight_hours, 10) || 72}`;
+
+    function _normalizeMode(mode) {
+        const m = String(mode || '').trim().toLowerCase();
+        return (m === 'classic' || m === 'avatar' || m === 'hybrid') ? m : 'hybrid';
+    }
+
     /**
      * Get current welcome mode from config.
      */
     function getMode() {
-        return window.cfg?.plugins?.WEB_UI?.chatui_welcome_mode || 'hybrid';
+        return _normalizeMode(window.cfg?.plugins?.WEB_UI?.chatui_welcome_mode || 'hybrid');
     }
 
     /**
      * Show the welcome screen. Idempotent — safe to call multiple times.
      * Removes previous state and re-renders based on current mode & soul.
      */
-    function show(isUpdate = false) {
+    function show(isUpdate = false, opts = {}) {
         const chatArea = document.getElementById('chat-area');
         if (!chatArea) return;
+
+        const mode = getMode();
+        _lastAppliedMode = mode;
 
         // Don't show if chat already has real messages
         const messages = Array.from(chatArea.children).filter(
@@ -42,12 +54,13 @@
         );
         if (messages.length > 0) return;
 
-        const mode = getMode();
+        const forceReset = Boolean(opts && opts.forceReset);
 
         let isHybridAvatarVisible = false;
-        if (mode === 'hybrid') {
+        if (mode === 'hybrid' && !forceReset) {
             const oldMain = document.getElementById('welcome');
-            if (oldMain && oldMain.style.display === 'none') {
+            const oldAvatar = document.getElementById('hecos-welcome-screen');
+            if (oldMain && oldMain.style.display === 'none' && oldAvatar && oldAvatar.style.display !== 'none') {
                 isHybridAvatarVisible = true;
             }
         }
@@ -105,6 +118,72 @@
     }
 
     /**
+     * Apply live Chat Interface config updates (BroadcastChannel, localStorage, or SSE).
+     * Instantaneously switches Welcome Mode or refreshes DCC chips without reloading.
+     */
+    function applyConfigUpdate(payload) {
+        if (!payload || typeof payload !== 'object') return;
+        window.cfg = window.cfg || {};
+        window.cfg.plugins = window.cfg.plugins || {};
+        window.cfg.plugins.WEB_UI = window.cfg.plugins.WEB_UI || {};
+        const wui = window.cfg.plugins.WEB_UI;
+
+        let modeChanged = false;
+        if (payload.chatui_welcome_mode !== undefined) {
+            const nextMode = _normalizeMode(payload.chatui_welcome_mode);
+            const prevMode = _lastAppliedMode || getMode();
+            wui.chatui_welcome_mode = nextMode;
+            if (nextMode !== prevMode) {
+                modeChanged = true;
+            }
+        }
+
+        if (payload.dcc_new_first !== undefined) {
+            wui.dcc_new_first = Boolean(payload.dcc_new_first);
+        }
+        if (payload.dcc_new_highlight_hours !== undefined) {
+            wui.dcc_new_highlight_hours = parseInt(payload.dcc_new_highlight_hours, 10) || 72;
+        }
+
+        if (modeChanged) {
+            show(false, { forceReset: true });
+        }
+
+        // Refresh DCC chips once backend has persisted the new DCC highlight settings
+        if (payload.persisted !== false) {
+            const nextDccKey = `${wui.dcc_new_first ?? true}:${parseInt(wui.dcc_new_highlight_hours, 10) || 72}`;
+            if (nextDccKey !== _lastRefreshedDccKey) {
+                _lastRefreshedDccKey = nextDccKey;
+                if (window.DccEngine && typeof window.DccEngine.refresh === 'function') {
+                    window.DccEngine.refresh();
+                }
+            }
+        }
+    }
+
+    // ── Live cross-tab sync listeners (Config Panel → Chat) ──
+    try {
+        if (typeof BroadcastChannel !== 'undefined') {
+            const _chatUiChannel = new BroadcastChannel('hecos_chat_ui');
+            _chatUiChannel.onmessage = (ev) => {
+                if (ev && ev.data && ev.data.type === 'chat_ui_config_updated') {
+                    applyConfigUpdate(ev.data);
+                }
+            };
+        }
+    } catch (_) {}
+
+    window.addEventListener('storage', (ev) => {
+        if (ev.key !== 'hecos_chat_ui_sync' || !ev.newValue) return;
+        try {
+            const msg = JSON.parse(ev.newValue);
+            if (msg && msg.type === 'chat_ui_config_updated') {
+                applyConfigUpdate(msg);
+            }
+        } catch (_) {}
+    });
+
+    /**
      * Remove all welcome elements from the DOM.
      */
     function remove() {
@@ -140,6 +219,8 @@
         remove,
         hide,
         startPrompt,
+        getMode,
+        applyConfigUpdate,
         triggerHybrid: null  // Set dynamically by ws_hybrid.js
     };
 

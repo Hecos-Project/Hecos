@@ -9,12 +9,20 @@ function populateWebUIConfig() {
     const c = window.cfg;
     if (!c?.plugins?.WEB_UI) return;
     const w = c.plugins.WEB_UI;
-    setVal('webui-port',         w.port         || 8080);
-    setVal('webui-api-port',     w.api_port      || 5000);
-    setCheck('webui-force-login',w.force_login   ?? true);
-    setCheck('webui-https-enabled', w.https_enabled ?? false);
-    setVal('webui-cert-file',    w.cert_file    || 'certs/cert.pem');
-    setVal('webui-key-file',     w.key_file     || 'certs/key.pem');
+    setVal('webui-port',             w.port                    || 8080);
+    setVal('webui-api-port',         w.api_port                || 5000);
+    setCheck('webui-force-login',    w.force_login             ?? true);
+    setCheck('webui-https-enabled',  w.https_enabled           ?? false);
+    setVal('webui-cert-file',        w.cert_file               || 'certs/cert.pem');
+    setVal('webui-key-file',         w.key_file                || 'certs/key.pem');
+    setCheck('wui-control-room-panel', w.control_room_panel    ?? true);
+    setCheck('wui-control-room-home',  w.control_room_home     ?? true);
+    setVal('chatui-welcome-mode',    w.chatui_welcome_mode     || 'hybrid');
+    setCheck('wui-dcc-new-first',    w.dcc_new_first           ?? true);
+    setVal('wui-dcc-highlight-hours', w.dcc_new_highlight_hours || 72);
+    if (typeof window._updateWelcomeModeDesc === 'function') {
+        window._updateWelcomeModeDesc(w.chatui_welcome_mode || 'hybrid');
+    }
 }
 
 function buildWebUIPayload() {
@@ -22,12 +30,17 @@ function buildWebUIPayload() {
     return {
         plugins: {
             WEB_UI: {
-                port:          parseInt(getV('webui-port',     w.port))         || 8080,
-                api_port:      parseInt(getV('webui-api-port', w.api_port))     || 5000,
-                force_login:   getC('webui-force-login',   w.force_login   ?? true),
-                https_enabled: getC('webui-https-enabled', w.https_enabled ?? false),
-                cert_file:     getV('webui-cert-file',     w.cert_file),
-                key_file:      getV('webui-key-file',      w.key_file)
+                port:                    parseInt(getV('webui-port',     w.port))         || 8080,
+                api_port:                parseInt(getV('webui-api-port', w.api_port))     || 5000,
+                force_login:             getC('webui-force-login',       w.force_login             ?? true),
+                https_enabled:           getC('webui-https-enabled',     w.https_enabled           ?? false),
+                cert_file:               getV('webui-cert-file',         w.cert_file),
+                key_file:                getV('webui-key-file',          w.key_file),
+                control_room_panel:      getC('wui-control-room-panel',  w.control_room_panel      ?? true),
+                control_room_home:       getC('wui-control-room-home',   w.control_room_home       ?? true),
+                chatui_welcome_mode:     getV('chatui-welcome-mode',     w.chatui_welcome_mode     || 'hybrid'),
+                dcc_new_first:           getC('wui-dcc-new-first',       w.dcc_new_first           ?? true),
+                dcc_new_highlight_hours: parseInt(getV('wui-dcc-highlight-hours', w.dcc_new_highlight_hours || 72), 10) || 72
             }
         }
     };

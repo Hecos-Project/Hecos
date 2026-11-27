@@ -225,20 +225,21 @@ window.sfRefreshUIVisibilityAndSummaries = function() {
     window.sfState.isDirty = diff.total > 0;
     window.sfState.sessionHasDraft = diff.total > 0 || presetDiffersFromGlobal;
 
-    const getPresetName = (id) => {
-        if (!id) return 'Base Configuration';
+    const getPresetLabelHtml = (id) => {
+        if (!id) return '<i class="fas fa-sliders sf-inline-icon is-muted"></i> Base Configuration';
         const found = (window.sfState.souls || []).find(s => s.meta.id === id);
-        return found ? `${found.meta.icon || '⚡'} ${found.meta.name}` : id;
+        const name = found ? found.meta.name : id;
+        return `<i class="fas fa-bolt sf-inline-icon"></i> ${_sfEscHtml(name)}`;
     };
 
     const chatLabel = document.getElementById('sf-chat-preset-label');
     if (chatLabel) {
-        const baseName = getPresetName(window.sfState.activeSoulId);
-        chatLabel.textContent = diff.total > 0 ? `${baseName} (modified)` : baseName;
+        const baseHtml = getPresetLabelHtml(window.sfState.activeSoulId);
+        chatLabel.innerHTML = diff.total > 0 ? `${baseHtml} (modified)` : baseHtml;
     }
     const globalLabel = document.getElementById('sf-global-preset-label');
     if (globalLabel) {
-        globalLabel.textContent = getPresetName(window.sfState.globalDefaultSoulId);
+        globalLabel.innerHTML = getPresetLabelHtml(window.sfState.globalDefaultSoulId);
     }
 
     const badge = document.getElementById('sf-draft-badge');
@@ -351,7 +352,7 @@ window.sfPopulateDropdowns = function(optData) {
         if (soulSel) {
             const opt = document.createElement('option');
             opt.value = s.meta.id;
-            opt.textContent = `${s.meta.icon || '⚡'} ${s.meta.name}`;
+            opt.textContent = s.meta.name;
             soulSel.appendChild(opt);
         }
     });
@@ -405,19 +406,22 @@ window.sfPopulateDropdowns = function(optData) {
 
 const _SF_CAP_META = {
     thinking: {
-        icon: '💭',
+        iconClass: 'fas fa-brain',
+        iconHtml: '<i class="fas fa-brain"></i>',
         label: 'Thinking',
         title: 'Thinking / Reasoning',
         desc: 'Supports internal <think> reasoning chains (controllable via Enable Thinking toggle).'
     },
     tools: {
-        icon: '⚙️',
+        iconClass: 'fas fa-wrench',
+        iconHtml: '<i class="fas fa-wrench"></i>',
         label: 'Tools',
         title: 'Tools / Function Calling',
         desc: 'Supports structured tool calling, web search, memory & Hecos module actions.'
     },
     vision: {
-        icon: '👁️',
+        iconClass: 'fas fa-eye',
+        iconHtml: '<i class="fas fa-eye"></i>',
         label: 'Vision',
         title: 'Vision / Multimodal',
         desc: 'Includes vision projector / multimodal weights for analyzing images and screenshots.'
@@ -441,7 +445,8 @@ function _sfFormatSizeBytes(bytes) {
 }
 
 function _sfBuildModelDisplay(m) {
-    const prefix = (m.type === 'cloud') ? '☁️ ' : (m.type === 'local' ? '🖥️ ' : '');
+    const providerIconClass = (m.type === 'cloud') ? 'fas fa-cloud' : (m.type === 'local' ? 'fas fa-desktop' : 'fas fa-microchip');
+    const providerIconHtml = `<i class="${providerIconClass} sf-mp-prov-icon"></i>`;
     const specParts = [];
     if (m.parameter_size) {
         let p = m.parameter_size;
@@ -455,25 +460,43 @@ function _sfBuildModelDisplay(m) {
 
     const sizeTag = specParts.length ? ` [${specParts.join(' | ')}]` : '';
     const caps = Array.isArray(m.capabilities) ? m.capabilities : [];
-    const icons = caps.map(c => _SF_CAP_META[c]?.icon).filter(Boolean).join('');
+    const capIconsHtml = caps.map(c => {
+        const meta = _SF_CAP_META[c];
+        return meta ? `<span class="sf-mp-cap-badge" title="${_sfEscHtml(meta.title + ' — ' + meta.desc)}">${meta.iconHtml}</span>` : '';
+    }).filter(Boolean).join('');
     const descs = caps.map(c => _SF_CAP_META[c]?.title || c).filter(Boolean);
 
-    let tooltipText = `${m.name}${sizeTag}`;
-    if (m.family) tooltipText += `\nFamily: ${m.family}`;
-    if (sizeHuman) tooltipText += `\nDisk size: ${sizeHuman}`;
-    if (descs.length) tooltipText += `\nCapabilities: ${descs.join(', ')}`;
-    if (m.description) tooltipText += `\n${m.description}`;
+    const metaRows = [];
+    if (m.family) metaRows.push({ icon: 'fas fa-diagram-project', label: 'Family', value: m.family });
+    if (m.parameter_size || m.quantization_level) {
+        metaRows.push({ icon: 'fas fa-layer-group', label: 'Specs', value: [m.parameter_size, m.quantization_level].filter(Boolean).join(' · ') });
+    }
+    if (sizeHuman) metaRows.push({ icon: 'fas fa-hard-drive', label: 'Disk', value: sizeHuman });
+    if (m.context_length > 0) {
+        const kCtx = m.context_length >= 1024 ? `${Math.round(m.context_length / 1024)}k` : `${m.context_length}`;
+        metaRows.push({ icon: 'fas fa-arrows-left-right', label: 'Context', value: `${kCtx} tokens` });
+    }
+    if (descs.length) metaRows.push({ icon: 'fas fa-wrench', label: 'Capabilities', value: descs.join(', ') });
+
+    const richTip = {
+        title: m.name,
+        iconHtml: `<i class="${providerIconClass}"></i>`,
+        badge: m.type === 'cloud' ? 'Cloud' : 'Local',
+        body: m.description || '',
+        metaRows
+    };
 
     return {
-        prefix,
+        providerIconClass,
+        providerIconHtml,
         sizeTag,
         specCompact: specParts.join(' · '),
         sizeHuman,
         caps,
-        icons,
+        capIconsHtml,
         descs,
-        tooltipText,
-        optionLabel: prefix + m.name + sizeTag + (icons ? ' ' + icons : '')
+        richTip,
+        optionLabel: m.name + sizeTag
     };
 }
 
@@ -509,14 +532,14 @@ window.sfUpdateModelHoverCard = function(m) {
     if (m.has_projector) specBits.push('Projector: Multimodal');
 
     const capBadges = d.caps.map(c => {
-        const meta = _SF_CAP_META[c] || { icon: '•', title: c, desc: '' };
-        return `<span class="sf-mib-pill cap-${_sfEscHtml(c)}" title="${_sfEscHtml(meta.desc)}">${meta.icon} ${_sfEscHtml(meta.title)}</span>`;
+        const meta = _SF_CAP_META[c] || { iconHtml: '<i class="fas fa-circle-dot"></i>', title: c, desc: '' };
+        return `<span class="sf-mib-pill cap-${_sfEscHtml(c)}" title="${_sfEscHtml(meta.desc)}">${meta.iconHtml} ${_sfEscHtml(meta.title)}</span>`;
     }).join('');
 
     card.innerHTML = `
         <div class="sf-mhc-title">
-            <span>${d.prefix}${_sfEscHtml(m.name)}</span>
-            <span style="font-size:10px; color:#94a3b8; font-weight:500;">${_sfEscHtml(providerLabel)}</span>
+            <span class="sf-mhc-title-main">${d.providerIconHtml}<span>${_sfEscHtml(m.name)}</span></span>
+            <span class="sf-mhc-subtag">${_sfEscHtml(providerLabel)}</span>
         </div>
         ${specBits.length ? `<div class="sf-mhc-specs">${_sfEscHtml(specBits.join(' · '))}</div>` : ''}
         ${capBadges ? `<div class="sf-mhc-caps">${capBadges}</div>` : `<div class="sf-mhc-specs">Standard text generation model</div>`}
@@ -554,22 +577,18 @@ window.sfRenderModelPickerList = function(filterText = '') {
         item.setAttribute('aria-selected', m.id === curVal ? 'true' : 'false');
         item.dataset.modelId = m.id;
         item._sfModelObj = m;
-        item.title = d.tooltipText;
-
-        const capIconsHtml = d.caps.map(c => {
-            const meta = _SF_CAP_META[c];
-            if (!meta) return '';
-            return `<span title="${_sfEscHtml(meta.title + ' — ' + meta.desc)}">${meta.icon}</span>`;
-        }).join('');
+        if (window.HecosTooltip && typeof window.HecosTooltip.setRichTip === 'function') {
+            window.HecosTooltip.setRichTip(item, d.richTip);
+        }
 
         item.innerHTML = `
             <div class="sf-mp-item-left">
-                <span>${d.prefix.trim()}</span>
+                ${d.providerIconHtml}
                 <span class="sf-mp-item-name">${_sfEscHtml(m.name)}</span>
             </div>
             <div class="sf-mp-item-right">
                 ${d.specCompact ? `<span class="sf-mp-spec-tag">${_sfEscHtml(d.specCompact)}</span>` : ''}
-                ${capIconsHtml ? `<span class="sf-mp-cap-icons">${capIconsHtml}</span>` : ''}
+                ${d.capIconsHtml ? `<span class="sf-mp-cap-icons">${d.capIconsHtml}</span>` : ''}
             </div>
         `;
 
@@ -647,15 +666,20 @@ window.sfSyncModelUI = function() {
     if (labelEl && metaEl) {
         if (m) {
             const d = _sfBuildModelDisplay(m);
-            labelEl.textContent = d.prefix + m.name;
-            labelEl.title = d.tooltipText;
+            labelEl.innerHTML = `${d.providerIconHtml}<span>${_sfEscHtml(m.name)}</span>`;
+            if (window.HecosTooltip && typeof window.HecosTooltip.setRichTip === 'function') {
+                window.HecosTooltip.setRichTip(labelEl, d.richTip);
+            }
             const metaBadges = [];
             if (d.specCompact) metaBadges.push(`<span class="sf-mp-spec-tag">${_sfEscHtml(d.specCompact)}</span>`);
-            if (d.icons) metaBadges.push(`<span class="sf-mp-cap-icons">${d.icons}</span>`);
+            if (d.capIconsHtml) metaBadges.push(`<span class="sf-mp-cap-icons">${d.capIconsHtml}</span>`);
             metaEl.innerHTML = metaBadges.join('');
         } else {
             const fallbackTxt = mSel.options[mSel.selectedIndex]?.textContent || val || '(Select model)';
             labelEl.textContent = fallbackTxt;
+            if (window.HecosTooltip && typeof window.HecosTooltip.setRichTip === 'function') {
+                window.HecosTooltip.setRichTip(labelEl, null);
+            }
             labelEl.title = fallbackTxt;
             metaEl.innerHTML = '';
         }
@@ -675,36 +699,36 @@ window.sfSyncModelUI = function() {
             const provName = m.type === 'local'
                 ? `Local (${m.provider === 'llama_cpp' ? 'GGUF' : (m.provider || 'Ollama')})`
                 : `Cloud (${m.provider || 'API'})`;
-            pills.push(`<span class="sf-mib-pill" data-sf-tip="${_sfEscHtml(provTip)}" title="${_sfEscHtml(provTip)}">${d.prefix.trim()} ${_sfEscHtml(provName)}</span>`);
+            pills.push(`<span class="sf-mib-pill" title="${_sfEscHtml(provTip)}">${d.providerIconHtml} ${_sfEscHtml(provName)}</span>`);
 
             if (m.parameter_size || m.quantization_level) {
                 const pqText = [m.parameter_size, m.quantization_level].filter(Boolean).join(' · ');
                 const pqTip = `Architecture spec: ${m.parameter_size || 'unknown'} parameters` +
                     (m.quantization_level ? `, ${m.quantization_level} quantization` : '') +
                     (m.family ? ` (${m.family} family)` : '') + '.';
-                pills.push(`<span class="sf-mib-pill spec-param" data-sf-tip="${_sfEscHtml(pqTip)}" title="${_sfEscHtml(pqTip)}">🧠 ${_sfEscHtml(pqText)}</span>`);
+                pills.push(`<span class="sf-mib-pill spec-param" title="${_sfEscHtml(pqTip)}"><i class="fas fa-layer-group"></i> ${_sfEscHtml(pqText)}</span>`);
             }
 
             if (d.sizeHuman) {
                 const diskTip = `Disk footprint: ${d.sizeHuman} (${(m.size_bytes / (1024 * 1024)).toFixed(0)} MB on disk).`;
-                pills.push(`<span class="sf-mib-pill spec-disk" data-sf-tip="${_sfEscHtml(diskTip)}" title="${_sfEscHtml(diskTip)}">💾 ${_sfEscHtml(d.sizeHuman)}</span>`);
+                pills.push(`<span class="sf-mib-pill spec-disk" title="${_sfEscHtml(diskTip)}"><i class="fas fa-hard-drive"></i> ${_sfEscHtml(d.sizeHuman)}</span>`);
             }
 
             if (m.family) {
                 const famTip = `Model architecture family: ${m.family}.`;
-                pills.push(`<span class="sf-mib-pill" data-sf-tip="${_sfEscHtml(famTip)}" title="${_sfEscHtml(famTip)}">🧬 ${_sfEscHtml(m.family)}</span>`);
+                pills.push(`<span class="sf-mib-pill" title="${_sfEscHtml(famTip)}"><i class="fas fa-diagram-project"></i> ${_sfEscHtml(m.family)}</span>`);
             }
 
             if (m.context_length > 0) {
                 const kCtx = m.context_length >= 1024 ? `${Math.round(m.context_length / 1024)}k` : `${m.context_length}`;
                 const ctxTip = `Native maximum context window reported by Ollama: ${m.context_length} tokens.`;
-                pills.push(`<span class="sf-mib-pill" data-sf-tip="${_sfEscHtml(ctxTip)}" title="${_sfEscHtml(ctxTip)}">📐 ${_sfEscHtml(kCtx)} ctx</span>`);
+                pills.push(`<span class="sf-mib-pill" title="${_sfEscHtml(ctxTip)}"><i class="fas fa-arrows-left-right"></i> ${_sfEscHtml(kCtx)} ctx</span>`);
             }
 
             d.caps.forEach(c => {
-                const meta = _SF_CAP_META[c] || { icon: '•', label: c, title: c, desc: '' };
+                const meta = _SF_CAP_META[c] || { iconHtml: '<i class="fas fa-circle-dot"></i>', label: c, title: c, desc: '' };
                 const tip = `${meta.title}: ${meta.desc}`;
-                pills.push(`<span class="sf-mib-pill cap-${_sfEscHtml(c)}" data-sf-tip="${_sfEscHtml(tip)}" title="${_sfEscHtml(tip)}">${meta.icon} ${_sfEscHtml(meta.label)}</span>`);
+                pills.push(`<span class="sf-mib-pill cap-${_sfEscHtml(c)}" title="${_sfEscHtml(tip)}">${meta.iconHtml} ${_sfEscHtml(meta.label)}</span>`);
             });
 
             const descLine = m.description
@@ -1030,11 +1054,36 @@ function _sfGetSoulStats(s) {
         messageCount,
         useCount: messageCount,
         hasUsage,
-        usageCompact: `💬 ${chatCount} · ✉️ ${messageCount}`,
+        usageCompactHtml: `<i class="far fa-comment"></i> ${chatCount} · <i class="far fa-paper-plane"></i> ${messageCount}`,
         usageTooltip: `${chatCount} ${chatWord} · ${messageCount} ${msgWord}`,
         lastUsedAt,
         lastCompact: (hasUsage && lastUsedAt) ? _sfFormatPresetDate(lastUsedAt, 'last_short') : 'Never',
         lastFull: (hasUsage && lastUsedAt) ? _sfFormatPresetDate(lastUsedAt, 'full') : 'Never used',
+    };
+}
+
+function _sfBuildPresetRichTip(s, st, isGlobalDef) {
+    const sid = s?.meta?.id || '';
+    const name = s?.meta?.name || sid;
+    const metaRows = [];
+    if (s?.model?.model_name) {
+        metaRows.push({ icon: 'fas fa-microchip', label: 'Model', value: s.model.model_name });
+    }
+    if (s?.persona?.soul_file) {
+        metaRows.push({ icon: 'fas fa-masks-theater', label: 'Soul', value: String(s.persona.soul_file).replace(/\.yaml$/i, '') });
+    }
+    if (s?.voice?.tts_engine) {
+        metaRows.push({ icon: 'fas fa-microphone-lines', label: 'Voice', value: s.voice.tts_engine });
+    }
+    metaRows.push({ icon: 'far fa-calendar', label: 'Created', value: st.createdFull });
+    metaRows.push({ icon: 'far fa-comment', label: 'Usage', value: st.usageTooltip });
+    metaRows.push({ icon: 'far fa-clock', label: 'Last used', value: st.lastFull });
+    return {
+        title: name,
+        iconHtml: '<i class="fas fa-bolt"></i>',
+        badge: isGlobalDef ? 'Default' : (sid || 'Preset'),
+        body: s?.meta?.description || '',
+        metaRows
     };
 }
 
@@ -1045,8 +1094,8 @@ window.sfUpdateSoulHoverCard = function(s) {
         card.style.display = 'block';
         card.innerHTML = `
             <div class="sf-mhc-title">
-                <span>⚙️ Base Configuration (No Preset)</span>
-                <span style="font-size:10px; color:#94a3b8; font-weight:500;">System Fallback</span>
+                <span class="sf-mhc-title-main"><i class="fas fa-sliders sf-gp-icon-muted"></i><span>Base Configuration (No Preset)</span></span>
+                <span class="sf-mhc-subtag">System Fallback</span>
             </div>
             <div class="sf-mhc-specs">Uses Hecos system defaults without applying a Global Preset overlay.</div>
         `;
@@ -1057,20 +1106,22 @@ window.sfUpdateSoulHoverCard = function(s) {
     const sid = s.meta?.id || '';
     const isGlobalDef = sid && window.sfState?.globalDefaultSoulId === sid;
     const badgeBits = [];
-    if (s.model?.model_name) badgeBits.push(`<span class="sf-mib-pill">🤖 ${_sfEscHtml(s.model.model_name)}</span>`);
-    if (s.persona?.soul_file) badgeBits.push(`<span class="sf-mib-pill">👤 ${_sfEscHtml(s.persona.soul_file)}</span>`);
-    if (s.voice?.tts_engine) badgeBits.push(`<span class="sf-mib-pill">🔊 ${_sfEscHtml(s.voice.tts_engine)}</span>`);
-    if (s.inference?.preset_name) badgeBits.push(`<span class="sf-mib-pill">⚙️ ${_sfEscHtml(s.inference.preset_name)}</span>`);
+    if (s.model?.model_name) badgeBits.push(`<span class="sf-mib-pill"><i class="fas fa-microchip"></i> ${_sfEscHtml(s.model.model_name)}</span>`);
+    if (s.persona?.soul_file) badgeBits.push(`<span class="sf-mib-pill"><i class="fas fa-masks-theater"></i> ${_sfEscHtml(String(s.persona.soul_file).replace(/\.yaml$/i, ''))}</span>`);
+    if (s.voice?.tts_engine) badgeBits.push(`<span class="sf-mib-pill"><i class="fas fa-microphone-lines"></i> ${_sfEscHtml(s.voice.tts_engine)}</span>`);
+    if (s.inference?.preset_name) badgeBits.push(`<span class="sf-mib-pill"><i class="fas fa-gauge-high"></i> ${_sfEscHtml(s.inference.preset_name)}</span>`);
 
-    const rightTag = isGlobalDef ? '⭐ Global Default' : sid;
+    const rightTagHtml = isGlobalDef
+        ? '<span class="sf-gp-default-tag"><i class="fas fa-star"></i> Global Default</span>'
+        : `<span class="sf-mhc-subtag">${_sfEscHtml(sid)}</span>`;
     const descHtml = s.meta?.description
-        ? `<div class="sf-mhc-specs" style="margin-top:4px;margin-bottom:0;color:#cbd5e1;">${_sfEscHtml(s.meta.description)}</div>`
+        ? `<div class="sf-mhc-specs" style="margin-top:4px;margin-bottom:0;color:var(--text);opacity:0.85;">${_sfEscHtml(s.meta.description)}</div>`
         : '';
 
     card.innerHTML = `
         <div class="sf-mhc-title">
-            <span>${_sfEscHtml(s.meta?.icon || '⚡')} ${_sfEscHtml(s.meta?.name || sid)}</span>
-            <span style="font-size:10px; color:#94a3b8; font-weight:500;">${_sfEscHtml(rightTag)}</span>
+            <span class="sf-mhc-title-main"><i class="fas fa-bolt sf-gp-icon"></i><span>${_sfEscHtml(s.meta?.name || sid)}</span></span>
+            ${rightTagHtml}
         </div>
         <div class="sf-mhc-specs">Created: ${_sfEscHtml(st.createdFull)} · Chats: ${st.chatCount} · Messages: ${st.messageCount} · Last used: ${_sfEscHtml(st.lastFull)}</div>
         ${badgeBits.length ? `<div class="sf-mhc-caps">${badgeBits.join('')}</div>` : ''}
@@ -1127,7 +1178,7 @@ window.sfRenderSoulPickerList = function(filterText = '') {
         baseItem._sfSoulObj = null;
         baseItem.innerHTML = `
             <div class="sf-mp-item-left">
-                <span>⚙️</span>
+                <i class="fas fa-sliders sf-gp-icon-muted"></i>
                 <span class="sf-mp-item-name">-- Base Configuration (No Preset) --</span>
             </div>
             <div class="sf-mp-item-right">
@@ -1164,7 +1215,6 @@ window.sfRenderSoulPickerList = function(filterText = '') {
         const sid = s.meta?.id || '';
         const st = _sfGetSoulStats(s);
         const isGlobalDef = sid && window.sfState?.globalDefaultSoulId === sid;
-        const icon = s.meta?.icon || '⚡';
         const name = s.meta?.name || sid;
 
         const item = document.createElement('div');
@@ -1173,17 +1223,19 @@ window.sfRenderSoulPickerList = function(filterText = '') {
         item.setAttribute('aria-selected', sid === curVal ? 'true' : 'false');
         item.dataset.soulId = sid;
         item._sfSoulObj = s;
-        item.title = `${name} (${sid})\nCreated: ${st.createdFull}\nChats: ${st.chatCount} · Messages: ${st.messageCount}\nLast used: ${st.lastFull}`;
+        if (window.HecosTooltip && typeof window.HecosTooltip.setRichTip === 'function') {
+            window.HecosTooltip.setRichTip(item, _sfBuildPresetRichTip(s, st, isGlobalDef));
+        }
 
         item.innerHTML = `
             <div class="sf-mp-item-left">
-                <span>${_sfEscHtml(icon)}</span>
-                <span class="sf-mp-item-name">${_sfEscHtml(name)}${isGlobalDef ? ' ⭐' : ''}</span>
+                <i class="fas fa-bolt sf-gp-icon"></i>
+                <span class="sf-mp-item-name">${_sfEscHtml(name)}${isGlobalDef ? ' <i class="fas fa-star sf-gp-star" title="Global Default"></i>' : ''}</span>
             </div>
             <div class="sf-mp-item-right">
-                <span class="sf-mp-spec-tag sf-sp-stat-pill" title="Created: ${_sfEscHtml(st.createdFull)}">📅 ${_sfEscHtml(st.createdCompact)}</span>
-                <span class="sf-mp-spec-tag sf-sp-stat-pill${st.hasUsage ? ' uses-hot' : ''}" title="Used in ${_sfEscHtml(st.usageTooltip)}">${st.usageCompact}</span>
-                <span class="sf-mp-spec-tag sf-sp-stat-pill" title="Last used: ${_sfEscHtml(st.lastFull)}">🕒 ${_sfEscHtml(st.lastCompact)}</span>
+                <span class="sf-mp-spec-tag sf-sp-stat-pill" title="Created: ${_sfEscHtml(st.createdFull)}"><i class="far fa-calendar"></i> ${_sfEscHtml(st.createdCompact)}</span>
+                <span class="sf-mp-spec-tag sf-sp-stat-pill${st.hasUsage ? ' uses-hot' : ''}" title="Used in ${_sfEscHtml(st.usageTooltip)}">${st.usageCompactHtml}</span>
+                <span class="sf-mp-spec-tag sf-sp-stat-pill" title="Last used: ${_sfEscHtml(st.lastFull)}"><i class="far fa-clock"></i> ${_sfEscHtml(st.lastCompact)}</span>
             </div>
         `;
 
@@ -1267,7 +1319,10 @@ window.sfSyncSoulPickerUI = function() {
 
     const val = sel.value || '';
     if (!val) {
-        labelEl.textContent = '-- Base Configuration (No Preset) --';
+        labelEl.innerHTML = '<i class="fas fa-sliders sf-gp-icon-muted"></i><span>-- Base Configuration (No Preset) --</span>';
+        if (window.HecosTooltip && typeof window.HecosTooltip.setRichTip === 'function') {
+            window.HecosTooltip.setRichTip(labelEl, null);
+        }
         labelEl.title = 'System Base Configuration (No Preset)';
         if (metaEl) metaEl.innerHTML = '';
         return;
@@ -1276,18 +1331,23 @@ window.sfSyncSoulPickerUI = function() {
     const s = souls.find(item => item.meta?.id === val);
     if (s) {
         const st = _sfGetSoulStats(s);
-        const icon = s.meta?.icon || '⚡';
         const name = s.meta?.name || val;
-        labelEl.textContent = `${icon} ${name}`;
-        labelEl.title = `${name}\nCreated: ${st.createdFull}\nChats: ${st.chatCount} · Messages: ${st.messageCount}\nLast used: ${st.lastFull}`;
+        const isGlobalDef = val && window.sfState?.globalDefaultSoulId === val;
+        labelEl.innerHTML = `<i class="fas fa-bolt sf-gp-icon"></i><span>${_sfEscHtml(name)}</span>`;
+        if (window.HecosTooltip && typeof window.HecosTooltip.setRichTip === 'function') {
+            window.HecosTooltip.setRichTip(labelEl, _sfBuildPresetRichTip(s, st, isGlobalDef));
+        }
         if (metaEl) {
             metaEl.innerHTML =
-                `<span class="sf-mp-spec-tag sf-sp-stat-pill" title="Created: ${_sfEscHtml(st.createdFull)}">📅 ${_sfEscHtml(st.createdCompact)}</span>` +
-                `<span class="sf-mp-spec-tag sf-sp-stat-pill${st.hasUsage ? ' uses-hot' : ''}" title="Used in ${_sfEscHtml(st.usageTooltip)}">${st.usageCompact}</span>`;
+                `<span class="sf-mp-spec-tag sf-sp-stat-pill" title="Created: ${_sfEscHtml(st.createdFull)}"><i class="far fa-calendar"></i> ${_sfEscHtml(st.createdCompact)}</span>` +
+                `<span class="sf-mp-spec-tag sf-sp-stat-pill${st.hasUsage ? ' uses-hot' : ''}" title="Used in ${_sfEscHtml(st.usageTooltip)}">${st.usageCompactHtml}</span>`;
         }
     } else {
         const optTxt = sel.options[sel.selectedIndex]?.textContent || val;
         labelEl.textContent = optTxt;
+        if (window.HecosTooltip && typeof window.HecosTooltip.setRichTip === 'function') {
+            window.HecosTooltip.setRichTip(labelEl, null);
+        }
         labelEl.title = optTxt;
         if (metaEl) metaEl.innerHTML = '';
     }
@@ -1316,7 +1376,6 @@ window.sfUpdateModelsDropdown = function() {
         opt.value = m.id;
         const d = _sfBuildModelDisplay(m);
         opt.textContent = d.optionLabel;
-        opt.title = d.tooltipText;
         mSel.appendChild(opt);
     });
 
@@ -1666,48 +1725,61 @@ window.sfUpdateTooltip = function(soul, explicitSoulId) {
             ? soul.meta.name
             : (foundSoul?.meta?.name || soulId || 'Preset');
         const isModified = !!(window.sfState && window.sfState.isDirty);
-        let lines = [];
-        
-        if (isPreset) {
-            lines.push(`🎭 Global Preset: ${presetDisplayName}${isModified ? ' (modified)' : ''}`);
-        } else {
-            lines.push(`🎭 Active Configuration (${isModified ? 'Modified Draft' : 'Default'})`);
-        }
-        
+
         const modelName = soul.model?.model_name || 'System Default';
         const backendName = soul.model?.backend_type || 'unknown';
-        lines.push(`🤖 Model: ${modelName} (${backendName})`);
-        
-        const soulFile = soul.persona?.soul_file || window.sfSystemFallbacks?.persona || 'System Default';
-        lines.push(`👤 Soul: ${soulFile}`);
-        
+        const rawSoulFile = soul.persona?.soul_file || window.sfSystemFallbacks?.persona || 'System Default';
+        const cleanSoulFile = String(rawSoulFile).replace(/\.yaml$/i, '');
+
         const temp = soul.inference?.temperature ?? '?';
         const topP = soul.inference?.top_p ?? '?';
         const repPen = soul.inference?.repeat_penalty ?? '?';
-        lines.push(`⚙ Temp: ${temp} | Top P: ${topP} | Rep Pen: ${repPen}`);
-        
+
+        const metaRows = [
+            { icon: 'fas fa-microchip', label: 'Model', value: `${modelName} (${backendName})` },
+            { icon: 'fas fa-masks-theater', label: 'Soul', value: cleanSoulFile },
+            { icon: 'fas fa-gauge-high', label: 'Inference', value: `Temp ${temp} · Top P ${topP} · Rep ${repPen}` },
+        ];
+
         if (soul.voice?.tts_engine) {
-            lines.push(`🔊 TTS: ${soul.voice.tts_engine} / ${soul.voice.tts_voice || 'Default'}`);
+            metaRows.push({
+                icon: 'fas fa-microphone-lines',
+                label: 'Voice',
+                value: `${soul.voice.tts_engine} / ${soul.voice.tts_voice || 'Default'}`
+            });
         }
-        
+
         let shortcutKey = 'F3';
         if (window.HKS_BINDINGS && typeof window.HKS_BINDINGS.get === 'function') {
             const raw = window.HKS_BINDINGS.get('ui.global_defaults');
             if (raw) shortcutKey = raw.toUpperCase();
         }
-        lines.push(`\n⚡ Click to open Preset Manager (${shortcutKey})`);
-        
-        const titleText = lines.join('\n');
+
+        const richTip = {
+            title: isPreset ? presetDisplayName : 'Base Configuration',
+            iconHtml: isPreset ? '<i class="fas fa-bolt"></i>' : '<i class="fas fa-sliders"></i>',
+            badge: isModified ? 'Modified' : (isPreset ? 'Global Preset' : 'Default'),
+            metaRows,
+            footerText: 'Click to open Preset Manager',
+            footerKbd: shortcutKey
+        };
+
         const modSuffix = isModified ? ' ●' : '';
-        
+
         if (isPreset) {
-            sbGDLabel.innerHTML = '<i class="fas fa-cog"></i> Global Preset';
+            sbGDLabel.innerHTML = '<i class="fas fa-bolt" style="color:var(--accent);"></i> Global Preset';
             sbGD.textContent = presetDisplayName + modSuffix;
-            if (sbGDBtn) sbGDBtn.title = titleText;
         } else {
-            sbGDLabel.innerHTML = '<i class="fas fa-cog"></i> Preset Manager';
+            sbGDLabel.innerHTML = '<i class="fas fa-sliders"></i> Preset Manager';
             sbGD.textContent = 'Configure' + modSuffix;
-            if (sbGDBtn) sbGDBtn.title = titleText;
+        }
+
+        if (sbGDBtn) {
+            if (window.HecosTooltip && typeof window.HecosTooltip.setRichTip === 'function') {
+                window.HecosTooltip.setRichTip(sbGDBtn, richTip);
+            } else {
+                sbGDBtn.title = `${richTip.title} — Click to open Preset Manager [${shortcutKey}]`;
+            }
         }
     }
 };
@@ -2077,15 +2149,15 @@ window.sfOnToolsToggle = function(isChecked) {
                 type: 'action_confirm',
                 title: 'Payload Control',
                 text: isCustom
-                    ? '🎛️ Granular Tool Selection: Only selected modules/tools are exposed to the LLM in this chat/preset.'
-                    : '🛠️ Native Tool Calling Mode: Function schemas loaded into model payload.',
+                    ? 'Granular Tool Selection: Only selected modules/tools are exposed to the LLM in this chat/preset.'
+                    : 'Native Tool Calling Mode: Function schemas loaded into model payload.',
                 duration: 4000
             });
         } else {
             window.Presenter.notify({
                 type: 'action_confirm',
                 title: 'Payload Control',
-                text: '⚡ Direct Commands Mode: Tool schemas stripped for maximum speed (~8,000 tokens saved). Direct /img and /search active.',
+                text: 'Direct Commands Mode: Tool schemas stripped for maximum speed (~8,000 tokens saved). Direct /img and /search active.',
                 duration: 4000
             });
         }

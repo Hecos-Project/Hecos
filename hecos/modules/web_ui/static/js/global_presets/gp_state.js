@@ -335,7 +335,7 @@ window.sfSelectSessionSoul = async function(soulId) {
             if (msgEl) {
                 msgEl.textContent = soulId
                     ? "Preset applied to this chat."
-                    : "⚙️ Base Configuration (No Preset) active for this chat.";
+                    : "Base Configuration (No Preset) active for this chat.";
                 setTimeout(() => { if (msgEl) msgEl.textContent = ""; }, 3000);
             }
             if (!soulId) {
@@ -369,8 +369,8 @@ window.sfActivateSoul = async function(soulId, extraSoulPayload = null) {
             const msgEl = document.getElementById('sf-status-msg');
             if (msgEl) {
                 msgEl.textContent = soulId
-                    ? "⭐ Preset set as Global Default."
-                    : "⭐ Base Configuration saved as Global Default.";
+                    ? "Preset set as Global Default."
+                    : "Base Configuration saved as Global Default.";
                 setTimeout(() => { if (msgEl) msgEl.textContent = ""; }, 3500);
             }
             

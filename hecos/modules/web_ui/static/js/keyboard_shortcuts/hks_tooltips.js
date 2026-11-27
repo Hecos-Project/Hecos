@@ -78,7 +78,11 @@
 
         // Preset Manager status pills (no stable IDs, use selector)
         _setTitleAll('.status-pill.clickable:not(:has(#sb-global-defaults))', 'Open Preset Manager', 'ui.global_defaults');
-        if (window.sfUpdateTooltip && window.sfState && window.sfState.globalDefaultSoul) window.sfUpdateTooltip(window.sfState.globalDefaultSoul);
+        if (typeof window.sfSyncToTopbar === 'function' && window.sfState && window.sfState.baselineState) {
+            window.sfSyncToTopbar();
+        } else if (window.sfUpdateTooltip && window.sfState && window.sfState.globalDefaultSoul) {
+            window.sfUpdateTooltip(window.sfState.globalDefaultSoul);
+        }
 
         // -- CENTRAL HUB (config_panel & core_header) -------------------------
         _setTitle('hdr-nav-chat',      'Open Chat',             'nav.chat');

@@ -12,7 +12,8 @@
  *   2. Declarative rich tooltip:
  *      `data-hecos-tip-title="..."` + `data-hecos-tip="..."` + optional `data-hecos-tip-badge="..."`
  *   3. Programmatic API:
- *      `window.HecosTooltip.showRich(anchorEl, { title, iconHtml, badge, badgeColor, body, metaLines })`
+ *      `window.HecosTooltip.showRich(anchorEl, { title, iconHtml, badge, badgeColor, body, metaRows, metaLines, footerText, footerKbd })`
+ *      `window.HecosTooltip.setRichTip(anchorEl, richOpts)`
  *      `window.HecosTooltip.show(anchorEl, text)`
  *      `window.HecosTooltip.hide(immediate)`
  */
@@ -191,7 +192,10 @@
         const iconHtml = opts.iconHtml || '';
         const badge = opts.badge || '';
         const body = opts.body || '';
+        const metaRows = Array.isArray(opts.metaRows) ? opts.metaRows.filter(Boolean) : [];
         const metaLines = Array.isArray(opts.metaLines) ? opts.metaLines.filter(Boolean) : [];
+        const footerText = opts.footerText || '';
+        const footerKbd = opts.footerKbd || '';
 
         let badgeStyle = '';
         if (opts.badgeColor) {
@@ -209,11 +213,43 @@
             : '';
 
         const bodyHtml = body ? `<div class="hecos-tooltip-body">${_esc(body)}</div>` : '';
+
+        const rowsHtml = metaRows.length
+            ? `<div class="hecos-tooltip-rows">${metaRows.map(r => {
+                const ic = r.icon ? `<i class="${_esc(r.icon)}"></i>` : '';
+                const lbl = r.label ? `<span class="hecos-tooltip-row-label">${_esc(r.label)}</span>` : '';
+                const val = r.value !== undefined && r.value !== null ? `<span class="hecos-tooltip-row-val">${_esc(r.value)}</span>` : '';
+                return `<div class="hecos-tooltip-row">${ic}${lbl}${val}</div>`;
+            }).join('')}</div>`
+            : '';
+
         const metaHtml = metaLines.length
             ? `<div class="hecos-tooltip-meta">${metaLines.map(l => `<div>${_esc(l)}</div>`).join('')}</div>`
             : '';
 
-        return `${headHtml}${bodyHtml}${metaHtml}<div class="hecos-tooltip-arrow"></div>`;
+        const footerHtml = (footerText || footerKbd)
+            ? `<div class="hecos-tooltip-footer">` +
+              (footerText ? `<span>${_esc(footerText)}</span>` : '') +
+              (footerKbd ? `<kbd class="hecos-tooltip-kbd">${_esc(footerKbd)}</kbd>` : '') +
+              `</div>`
+            : '';
+
+        return `${headHtml}${bodyHtml}${rowsHtml}${metaHtml}${footerHtml}<div class="hecos-tooltip-arrow"></div>`;
+    }
+
+    function setRichTip(anchorEl, opts) {
+        if (!anchorEl) return;
+        if (!opts) {
+            delete anchorEl._hecosRichTip;
+            return;
+        }
+        anchorEl._hecosRichTip = opts;
+        anchorEl.removeAttribute('title');
+        anchorEl.removeAttribute('data-hecos-tip');
+        // Refresh live if this anchor's tooltip is currently displayed
+        if (_activeAnchor === anchorEl && _el && _el.classList.contains('visible')) {
+            showRich(anchorEl, opts);
+        }
     }
 
     function showRich(anchorEl, opts) {
@@ -289,7 +325,10 @@
             if (el.hasAttribute('data-mod-id') && el.closest && el.closest('#config-wall, #config-tabs-bar')) {
                 return null;
             }
-            // Model spec pills with custom CSS ::after tooltips don't have title, ignore them cleanly
+            // Programmatic structured rich tooltip attached via setRichTip()
+            if (el._hecosRichTip) {
+                return el;
+            }
             const nativeTitle = el.getAttribute('title');
             if (nativeTitle && nativeTitle.trim()) {
                 el.setAttribute('data-hecos-tip', nativeTitle);
@@ -315,6 +354,12 @@
                         hide(false);
                     }
                 }
+                return;
+            }
+            if (target._hecosRichTip) {
+                schedule(target, () => {
+                    if (target._hecosRichTip) showRich(target, target._hecosRichTip);
+                }, 220);
                 return;
             }
             const text = target.getAttribute('data-hecos-tip') || '';
@@ -348,6 +393,7 @@
         __initialized: true,
         show,
         showRich,
+        setRichTip,
         hide,
         schedule,
         _buildHtmlFromText,

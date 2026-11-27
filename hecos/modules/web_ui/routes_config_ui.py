@@ -45,10 +45,15 @@ _PANEL_MAP = {
 _PANELS_NEEDING_OPTIONS = {'backend', 'voice', 'ia', 'igen', 'media'}
 
 _HPM_PANEL_CACHE: dict = {}
+_CONFIG_UI_CACHE: dict = {}
 
 def clear_hpm_panel_cache():
     """Clears the HPM panel cache (called after a package install/uninstall)."""
     _HPM_PANEL_CACHE.clear()
+
+def clear_config_ui_cache():
+    """Clears the rendered /hecos/config/ui shell cache (called after config save/reload)."""
+    _CONFIG_UI_CACHE.clear()
 
 def _discover_hpm_panel(panel_id: str) -> str | None:
     """Auto-discovers a config panel HTML template for HPM-installed packages."""
@@ -110,8 +115,6 @@ def _discover_hpm_panel(panel_id: str) -> str | None:
 
 def register_config_ui_routes(app, cfg_mgr, get_sm=None):
     """Register frontend rendering endpoints for configuration."""
-    
-    _ui_cache: dict = {}
 
     @app.route("/hecos/config/ui")
     def config_ui():
@@ -125,7 +128,7 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
             cache_key = f"{lang}:{user_id}"
             now_ts   = time.monotonic()
 
-            cached = _ui_cache.get(cache_key)
+            cached = _CONFIG_UI_CACHE.get(cache_key)
             if cached and (now_ts - cached[0]) < 10.0:
                 return cached[1]
 
@@ -142,10 +145,10 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
                 version=ver_tag,
                 core_version=_get_version(),
             )
-            _ui_cache[cache_key] = (now_ts, rendered)
-            if len(_ui_cache) > 10:
-                oldest_key = min(_ui_cache, key=lambda k: _ui_cache[k][0])
-                _ui_cache.pop(oldest_key, None)
+            _CONFIG_UI_CACHE[cache_key] = (now_ts, rendered)
+            if len(_CONFIG_UI_CACHE) > 10:
+                oldest_key = min(_CONFIG_UI_CACHE, key=lambda k: _CONFIG_UI_CACHE[k][0])
+                _CONFIG_UI_CACHE.pop(oldest_key, None)
             resp = make_response(rendered)
             resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             resp.headers["Pragma"] = "no-cache"

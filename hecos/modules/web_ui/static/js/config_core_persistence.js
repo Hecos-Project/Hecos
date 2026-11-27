@@ -97,6 +97,15 @@ async function saveConfig(silent = false) {
       if (window.cfg.agent) window.cfg.agent = agentPayload.agent;
       if (window.cfg.vision) window.cfg.vision = visionPayload.vision;
 
+      if (typeof window.broadcastChatUiConfig === 'function' && payload?.plugins?.WEB_UI) {
+          window.broadcastChatUiConfig({
+              chatui_welcome_mode: payload.plugins.WEB_UI.chatui_welcome_mode,
+              dcc_new_first: payload.plugins.WEB_UI.dcc_new_first,
+              dcc_new_highlight_hours: payload.plugins.WEB_UI.dcc_new_highlight_hours,
+              persisted: true
+          });
+      }
+
       if (!silent) {
           setSaveMsg(I18N.msg_saved || 'Saved', 'ok');
 

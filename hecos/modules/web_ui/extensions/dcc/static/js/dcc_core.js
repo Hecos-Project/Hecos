@@ -16,30 +16,35 @@
 
     let _data = null;
     let _ready = false;
-    let _loading = false;
+    let _loadingPromise = null;
     let _mountedContainer = null;  // element where chips were last rendered
 
     /**
      * Fetch chips from the API.
      */
-    async function _fetchChips() {
-        if (_loading) return;
-        _loading = true;
-        try {
-            const res = await fetch('/api/dcc/chips', { credentials: 'same-origin' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            if (data.ok && Array.isArray(data.categories)) {
-                _data = data;
-                _ready = true;
-                console.log(`[DCC] Loaded ${data.categories.length} categories, ${data.featured?.length || 0} featured.`);
-            }
-        } catch (e) {
-            console.warn('[DCC] Failed to load chips:', e);
-            _ready = false;
-        } finally {
-            _loading = false;
+    async function _fetchChips(force = false) {
+        if (_loadingPromise) {
+            await _loadingPromise;
+            if (!force) return;
         }
+        _loadingPromise = (async () => {
+            try {
+                const res = await fetch('/api/dcc/chips', { credentials: 'same-origin', cache: 'no-store' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (data.ok && Array.isArray(data.categories)) {
+                    _data = data;
+                    _ready = true;
+                    console.log(`[DCC] Loaded ${data.categories.length} categories, ${data.featured?.length || 0} featured.`);
+                }
+            } catch (e) {
+                console.warn('[DCC] Failed to load chips:', e);
+                _ready = false;
+            } finally {
+                _loadingPromise = null;
+            }
+        })();
+        await _loadingPromise;
     }
 
     function isReady() { return _ready; }
@@ -66,12 +71,16 @@
      * Refresh: re-fetch from server and re-render if chips are mounted.
      */
     async function refresh() {
-        await _fetchChips();
-        if (_mountedContainer && _ready && window.DccRender) {
+        await _fetchChips(true);
+        const target = (_mountedContainer && _mountedContainer.isConnected)
+            ? _mountedContainer
+            : document.getElementById('welcome');
+        if (target && target.isConnected && _ready && window.DccRender) {
+            _mountedContainer = target;
             // Remove old chips wrapper and re-render
-            const old = _mountedContainer.querySelector('.dcc-nav-container');
+            const old = target.querySelector('.dcc-nav-container');
             if (old) old.remove();
-            window.DccRender.render(_mountedContainer, _data);
+            window.DccRender.render(target, _data);
         }
     }
 

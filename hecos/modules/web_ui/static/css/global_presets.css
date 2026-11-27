@@ -451,11 +451,19 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 .sf-lab-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 2px 7px;
     border-radius: 4px;
     color: var(--text);
+}
+.sf-lab-chip i {
+    font-size: 10px;
+    color: var(--accent, #6c8cff);
+    opacity: 0.85;
 }
 .sf-lab-thinking {
     font-size: 11px;
@@ -653,10 +661,65 @@
 .sf-mp-btn-main {
     flex: 1;
     min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     font-weight: 500;
+}
+.sf-mp-btn-main > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sf-inline-icon {
+    font-size: 11px;
+    color: var(--accent, #6c8cff);
+    margin-right: 4px;
+}
+.sf-inline-icon.is-muted {
+    color: var(--muted, #8b92a5);
+}
+.sf-gp-icon {
+    font-size: 11.5px;
+    color: var(--accent, #6c8cff);
+    flex-shrink: 0;
+    width: 13px;
+    text-align: center;
+}
+.sf-gp-icon-muted {
+    font-size: 11.5px;
+    color: var(--muted, #8b92a5);
+    flex-shrink: 0;
+    width: 13px;
+    text-align: center;
+}
+.sf-gp-star {
+    font-size: 10px;
+    color: var(--accent, #6c8cff);
+    margin-left: 5px;
+    opacity: 0.9;
+}
+.sf-gp-default-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent, #6c8cff);
+}
+.sf-mp-prov-icon {
+    font-size: 11px;
+    color: var(--muted, #94a3b8);
+    flex-shrink: 0;
+    width: 14px;
+    text-align: center;
+}
+.sf-mp-item.selected .sf-mp-prov-icon,
+.sf-mp-item:hover .sf-mp-prov-icon {
+    color: var(--accent, #6c8cff);
 }
 
 .sf-mp-btn-meta {
@@ -830,8 +893,22 @@
 .sf-mp-cap-icons {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
-    font-size: 12px;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--muted, #94a3b8);
+}
+.sf-mp-cap-badge {
+    display: inline-flex;
+    align-items: center;
+    color: var(--accent, #6c8cff);
+    opacity: 0.78;
+}
+.sf-mp-cap-badge:hover {
+    opacity: 1;
+}
+.sf-sp-stat-pill i {
+    font-size: 9.5px;
+    opacity: 0.75;
 }
 
 .sf-model-hover-card {
@@ -850,6 +927,18 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+}
+.sf-mhc-title-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+.sf-mhc-subtag {
+    font-size: 10px;
+    color: var(--muted, #94a3b8);
+    font-weight: 500;
+    flex-shrink: 0;
 }
 .sf-mhc-specs {
     color: var(--muted, #94a3b8);
@@ -883,7 +972,7 @@
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     padding: 2px 7px;
     border-radius: 5px;
     font-size: 11px;
@@ -894,14 +983,15 @@
     cursor: help;
     transition: border-color 0.15s ease;
 }
+.sf-mib-pill i {
+    font-size: 10px;
+    color: var(--accent, #6c8cff);
+    opacity: 0.82;
+}
 .sf-mib-pill:hover {
     border-color: rgba(var(--accent-rgb, 108, 140, 255), 0.48);
 }
-.sf-mib-pill.cap-thinking {
-    color: var(--yellow, #fbbf24);
-    background: rgba(var(--yellow-rgb, 251, 191, 36), 0.08);
-    border-color: rgba(var(--yellow-rgb, 251, 191, 36), 0.24);
-}
+.sf-mib-pill.cap-thinking,
 .sf-mib-pill.cap-tools {
     color: var(--accent, #6c8cff);
     background: rgba(var(--accent-rgb, 108, 140, 255), 0.09);
@@ -912,38 +1002,23 @@
     background: rgba(var(--accent2-rgb, 167, 139, 250), 0.09);
     border-color: rgba(var(--accent2-rgb, 167, 139, 250), 0.26);
 }
+.sf-mib-pill.cap-vision i {
+    color: var(--accent2, #a78bfa);
+}
 .sf-mib-pill.spec-disk,
 .sf-mib-pill.spec-param {
     color: var(--text, #cbd5e1);
     background: rgba(var(--bg3-rgb, 28, 32, 51), 0.8);
     border-color: var(--border, #252b46);
 }
+.sf-mib-pill.spec-disk i,
+.sf-mib-pill.spec-param i {
+    color: var(--muted, #94a3b8);
+}
 .sf-mib-desc {
     font-size: 11px;
     color: var(--muted, #94a3b8);
     line-height: 1.35;
-}
-
-/* Custom snappy CSS tooltip for model pills */
-.sf-mib-pill[data-sf-tip]:hover::after {
-    content: attr(data-sf-tip);
-    position: absolute;
-    left: 0;
-    bottom: calc(100% + 6px);
-    z-index: 120;
-    min-width: 190px;
-    max-width: 290px;
-    white-space: normal;
-    padding: 6px 9px;
-    border-radius: 7px;
-    background: rgba(var(--bg-rgb, 13, 15, 24), 0.97);
-    border: 1px solid rgba(var(--accent-rgb, 108, 140, 255), 0.36);
-    color: var(--text, #e2e8f0);
-    font-size: 11px;
-    font-weight: 500;
-    line-height: 1.35;
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.6);
-    pointer-events: none;
 }
 
 /* ── Mobile Adaptation (<= 768px) ────────────────────────────────── */

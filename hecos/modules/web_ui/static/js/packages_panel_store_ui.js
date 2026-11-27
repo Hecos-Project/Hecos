@@ -21,7 +21,7 @@ const TYPE_META = {
   extension:   { label: 'Extension',   icon: 'fa-puzzle-piece',      color: '#45a29e' },
   app:         { label: 'App',         icon: 'fa-th-large',          color: '#8b5cf6' },
   widget:      { label: 'Widget',      icon: 'fa-expand-arrows-alt', color: '#f59e0b' },
-  persona:     { label: 'Persona',     icon: 'fa-user-astronaut',    color: '#ec4899' },
+  persona:     { label: 'Persona',     icon: 'fa-masks-theater',     color: '#ec4899' },
   theme:       { label: 'Theme',       icon: 'fa-palette',           color: '#10b981' },
   skill_pack:  { label: 'Skill Pack',  icon: 'fa-graduation-cap',    color: '#f97316' },
   core_module: { label: 'Core',        icon: 'fa-microchip',         color: '#ff4444' },

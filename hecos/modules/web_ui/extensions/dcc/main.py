@@ -91,7 +91,7 @@ _TAG_META = {
     "HDCS":         {"label": "Commands",   "icon": "fas fa-terminal",      "action": "/help", "short": "Commands", "prompt": "Show me all available commands"},
     "EXECUTOR":     {"label": "Executor",   "icon": "fas fa-bolt",          "action": None, "short": "Run code",      "prompt": "Run this code snippet for me..."},
     "AGENT":        {"label": "Agent",      "icon": "fas fa-robot",         "action": None, "short": "Analyze",       "prompt": "Analyze my project and suggest improvements"},
-    "PERSONALITY":  {"label": "Persona",    "icon": "fas fa-user-astronaut","action": "/souls", "short": "Persona", "prompt": "Show me available personalities"},
+    "PERSONALITY":  {"label": "Persona",    "icon": "fas fa-masks-theater", "action": "/souls", "short": "Persona", "prompt": "Show me available personalities"},
 }
 
 
@@ -181,7 +181,7 @@ def _build_hierarchy(config: dict) -> list:
         cat_modules["INTELLIGENZA"].insert(0, {
             "id":     "persona",
             "label":  "Persona",
-            "icon":   "fas fa-user-astronaut",
+            "icon":   "fas fa-masks-theater",
             "short":  "Change Soul",
             "prompt": "Change your personality...",
             "action": "/souls"

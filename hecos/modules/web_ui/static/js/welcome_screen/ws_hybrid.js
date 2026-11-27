@@ -91,7 +91,13 @@
                 return;
             }
             // Toggle if clicking on an empty area of the chat background
-            if (e.target.closest('#chat-area') && !e.target.closest('.chip') && !e.target.closest('.dcc-view-header')) {
+            if (
+                e.target.closest('#chat-area') &&
+                !e.target.closest('.chip') &&
+                !e.target.closest('.dcc-view-header') &&
+                !e.target.closest('.dcc-carousel-arrow') &&
+                !e.target.closest('.dcc-back-btn')
+            ) {
                 handleTrigger(false);
             }
         };
@@ -124,6 +130,9 @@
         if (_transitionTimer) {
             clearTimeout(_transitionTimer);
             _transitionTimer = null;
+        }
+        if (window.HecosWelcome) {
+            window.HecosWelcome.triggerHybrid = null;
         }
         if (!_listeners) return;
         const { input, handleTrigger, onGlobalClick, onKeydown } = _listeners;

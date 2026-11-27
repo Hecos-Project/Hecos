@@ -294,6 +294,10 @@ window.initEvents = function() {
       if (ev.type !== 'widgets_refresh' && typeof window.sfRefreshToolsCatalog === 'function') {
         window.sfRefreshToolsCatalog(false);
       }
+    } else if (ev.type === 'chat_ui_config_updated') {
+      if (window.HecosWelcome && typeof window.HecosWelcome.applyConfigUpdate === 'function') {
+        window.HecosWelcome.applyConfigUpdate({ ...ev, persisted: true });
+      }
     }
   };
 };

@@ -509,6 +509,51 @@ input:checked + .slider:before { transform: translateX(20px); background: white;
   line-height: 1.35;
   color: var(--muted, #94a3b8);
 }
+.hecos-tooltip-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(var(--border-rgb, 37, 43, 70), 0.75);
+}
+.hecos-tooltip-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.hecos-tooltip-row i {
+  width: 13px;
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--accent, #6c8cff);
+  opacity: 0.78;
+  flex-shrink: 0;
+}
+.hecos-tooltip-row-label {
+  color: var(--muted, #94a3b8);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.hecos-tooltip-row-val {
+  color: var(--text, #e2e8f0);
+  font-weight: 500;
+  min-width: 0;
+  word-break: break-word;
+}
+.hecos-tooltip-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(var(--border-rgb, 37, 43, 70), 0.75);
+  font-size: 10.5px;
+  color: var(--muted, #94a3b8);
+}
 .hecos-tooltip-kbd {
   display: inline-flex;
   align-items: center;

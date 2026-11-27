@@ -32,7 +32,7 @@ window.HPM_TYPE_META = {
   system_app:  { label: window.hpm_ti('System App', 'App di Sistema', 'App de Sistema'),     icon: 'fa-layer-group',       color: '#66fcf1', order: 3 },
   widget:      { label: window.hpm_ti('Widgets', 'Widget', 'Widgets'),                       icon: 'fa-expand-arrows-alt', color: '#f59e0b', order: 4 },
   library:     { label: window.hpm_ti('Libraries', 'Librerie', 'Librerías'),                 icon: 'fa-book',              color: '#8b5cf6', order: 5 },
-  persona:     { label: window.hpm_ti('Personas', 'Persona', 'Personas'),                    icon: 'fa-user-astronaut',    color: '#ec4899', order: 6 },
+  persona:     { label: window.hpm_ti('Personas', 'Persona', 'Personas'),                    icon: 'fa-masks-theater',     color: '#ec4899', order: 6 },
   theme:       { label: window.hpm_ti('Themes', 'Temi', 'Temas'),                            icon: 'fa-palette',           color: '#10b981', order: 7 },
   extension:   { label: window.hpm_ti('Extensions', 'Estensioni', 'Extensiones'),            icon: 'fa-puzzle-piece',      color: '#45a29e', order: 8 },
   playbook:    { label: window.hpm_ti('Playbooks', 'Playbook', 'Playbooks'),                  icon: 'fa-book-open',         color: '#06b6d4', order: 8.5 },

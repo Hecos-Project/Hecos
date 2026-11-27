@@ -93,7 +93,7 @@ function buildPayload() {
 
         if (sysPart.plugins?.WEB_UI) {
             out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
-            out.plugins['WEB_UI'].https_enabled = sysPart.plugins.WEB_UI.https_enabled;
+            Object.assign(out.plugins['WEB_UI'], sysPart.plugins.WEB_UI);
         }
         if (sysPart.plugins?.DASHBOARD) {
             out.plugins['DASHBOARD'] = out.plugins['DASHBOARD'] || {};

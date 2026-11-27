@@ -37,7 +37,7 @@ if (!window.HPM_TYPE_META) {
         system_app:  { label: 'System App',   shortLabel: 'System',  icon: 'fa-layer-group',       color: '#66fcf1', order: 3 },
         widget:      { label: 'Widgets',      shortLabel: 'Widgets', icon: 'fa-expand-arrows-alt', color: '#f59e0b', order: 4 },
         library:     { label: 'Libraries',    shortLabel: 'Libs',    icon: 'fa-book',              color: '#8b5cf6', order: 5 },
-        persona:     { label: 'Personas',     shortLabel: 'Soul',    icon: 'fa-user-astronaut',    color: '#ec4899', order: 6 },
+        persona:     { label: 'Personas',     shortLabel: 'Soul',    icon: 'fa-masks-theater',     color: '#ec4899', order: 6 },
         theme:       { label: 'Themes',       shortLabel: 'Themes',  icon: 'fa-palette',           color: '#10b981', order: 7 },
         extension:   { label: 'Extensions',   shortLabel: 'Ext',     icon: 'fa-puzzle-piece',      color: '#45a29e', order: 8 },
         playbook:    { label: 'Playbooks',    shortLabel: 'Books',   icon: 'fa-book-open',         color: '#06b6d4', order: 8.5 },

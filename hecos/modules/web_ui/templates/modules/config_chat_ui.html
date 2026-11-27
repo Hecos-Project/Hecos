@@ -1,4 +1,8 @@
 <!-- CHAT UI PANEL -->
+{% set _wui_cfg = zconfig.get('plugins', {}).get('WEB_UI', {}) if zconfig else {} %}
+{% set _wui_wmode = (_wui_cfg.get('chatui_welcome_mode') or 'hybrid') %}
+{% set _wui_new_first = _wui_cfg.get('dcc_new_first', True) %}
+{% set _wui_hours = (_wui_cfg.get('dcc_new_highlight_hours') or 72) | int %}
 <div id="tab-chat_ui" class="panel">
   
   <div class="card">
@@ -10,12 +14,18 @@
     <div class="field">
       <label>Welcome Mode</label>
       <select id="chatui-welcome-mode">
-        <option value="classic">Classic (Only Chips & System Logo)</option>
-        <option value="avatar">Avatar (Only 3D Flipping Card)</option>
-        <option value="hybrid">Hybrid (Chips first, flips to Avatar on click/typing)</option>
+        <option value="classic" {% if _wui_wmode == 'classic' %}selected{% endif %}>Classic (Only Chips & System Logo)</option>
+        <option value="avatar" {% if _wui_wmode == 'avatar' %}selected{% endif %}>Avatar (Only 3D Flipping Card)</option>
+        <option value="hybrid" {% if _wui_wmode not in ('classic', 'avatar') %}selected{% endif %}>Hybrid (Chips first, flips to Avatar on click/typing)</option>
       </select>
-      <div style="font-size:12px; color:var(--muted); margin-top:5px;">
+      <div id="chatui-welcome-mode-desc" style="font-size:12px; color:var(--muted); margin-top:5px;">
+        {% if _wui_wmode == 'classic' %}
+        <strong>Classic Mode:</strong> Always shows the System Logo and the "Capability Chips" carousel without switching to the 3D Avatar card.
+        {% elif _wui_wmode == 'avatar' %}
+        <strong>Avatar Mode:</strong> Skips the capability chips and displays only the 3D flipping Avatar card for the active persona.
+        {% else %}
         <strong>Hybrid Mode:</strong> Shows the "Capability Chips" on startup. When you click the chat area or text input, they fade out to reveal the 3D Avatar card.
+        {% endif %}
       </div>
     </div>
   </div>
@@ -27,7 +37,7 @@
 
     <div class="field" style="margin-bottom: 12px;">
       <label class="checkbox-container">
-        <input type="checkbox" id="wui-dcc-new-first" checked>
+        <input type="checkbox" id="wui-dcc-new-first" {% if _wui_new_first %}checked{% endif %}>
         <span class="checkmark"></span>
         Show new capabilities on the first page
       </label>
@@ -36,11 +46,11 @@
     <div class="field">
       <label>Highlight Duration</label>
       <select id="wui-dcc-highlight-hours">
-        <option value="1">1 Hour</option>
-        <option value="24">24 Hours (1 Day)</option>
-        <option value="72">72 Hours (3 Days)</option>
-        <option value="168">168 Hours (1 Week)</option>
-        <option value="720">720 Hours (1 Month)</option>
+        <option value="1" {% if _wui_hours == 1 %}selected{% endif %}>1 Hour</option>
+        <option value="24" {% if _wui_hours == 24 %}selected{% endif %}>24 Hours (1 Day)</option>
+        <option value="72" {% if _wui_hours not in (1, 24, 168, 720) %}selected{% endif %}>72 Hours (3 Days)</option>
+        <option value="168" {% if _wui_hours == 168 %}selected{% endif %}>168 Hours (1 Week)</option>
+        <option value="720" {% if _wui_hours == 720 %}selected{% endif %}>720 Hours (1 Month)</option>
       </select>
       <div style="font-size:12px; color:var(--muted); margin-top:5px;">
         How long a newly installed module will be considered "New" before blending into the standard random rotation.

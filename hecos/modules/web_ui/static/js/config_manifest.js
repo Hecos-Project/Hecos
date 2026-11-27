@@ -19,7 +19,7 @@ window.CONFIG_HUB = {
         { id: 'backend',      label: 'hub_mod_backend',        descKey: 'hub_desc_backend',      icon: '<i class="fas fa-server"></i>',         cat: 'INTELLIGENZA', pluginTag: 'MODELS', isCore: true },
 
         { id: 'keymanager',   label: 'hub_mod_keymanager',     descKey: 'hub_desc_keymanager',   icon: '<i class="fas fa-key"></i>',            cat: 'INTELLIGENZA', isCore: true },
-        { id: 'ia',           label: 'hub_mod_persona',        descKey: 'hub_desc_persona',      icon: '<i class="fas fa-user-astronaut"></i>', cat: 'INTELLIGENZA', isCore: true },
+        { id: 'ia',           label: 'hub_mod_persona',        descKey: 'hub_desc_persona',      icon: '<i class="fas fa-masks-theater"></i>',  cat: 'INTELLIGENZA', isCore: true },
         { id: 'filters',      label: 'hub_mod_filters',        descKey: 'hub_desc_filters',      icon: '<i class="fas fa-filter"></i>',         cat: 'INTELLIGENZA', isCore: true },
         { id: 'memory',       label: 'hub_mod_memory',         descKey: 'hub_desc_memory',       icon: '<i class="fas fa-memory"></i>',         cat: 'INTELLIGENZA', pluginTag: 'MEMORY', isCore: true },
         { id: 'agent',        label: 'hub_mod_agent',          descKey: 'hub_desc_agent',        icon: '<i class="fas fa-robot"></i>',          cat: 'INTELLIGENZA', isCore: true },

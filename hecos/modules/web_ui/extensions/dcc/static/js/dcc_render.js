@@ -7,7 +7,7 @@
  * L2: Capabilities (Inspirational prompts based on installed modules)
  *
  * Featured chips are shuffled client-side on every render() call,
- * and paginated (5 per page).
+ * and paginated (4 per page on desktop, 3 on mobile).
  */
 (function () {
     'use strict';
@@ -25,9 +25,9 @@
 
     function _getResponsivePageSize() {
         if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-            return window.matchMedia('(max-width: 768px)').matches ? 3 : 5;
+            return window.matchMedia('(max-width: 768px)').matches ? 3 : 4;
         }
-        return 5;
+        return 4;
     }
 
     function _detachL1Listeners() {
@@ -106,10 +106,11 @@
 
         // --- FEATURED CAPABILITIES WITH PAGINATED CAROUSEL ---
         if (_data.featured && _data.featured.length > 0) {
-            // Separate new chips (keep in order) from the rest (shuffle for variety)
-            const newChips = _data.featured.filter(m => m.is_new);
-            const otherChips = _shuffle(_data.featured.filter(m => !m.is_new));
-            const ordered = [...newChips, ...otherChips];
+            // Respect dcc_new_first setting: keep NEW chips in front when enabled, else shuffle all
+            const newFirst = !_data.settings || _data.settings.new_first !== false;
+            const ordered = newFirst
+                ? [..._data.featured.filter(m => m.is_new), ..._shuffle(_data.featured.filter(m => !m.is_new))]
+                : _shuffle(_data.featured);
 
             let pageSize = _getResponsivePageSize();
             let totalPages = Math.max(1, Math.ceil(ordered.length / pageSize));
@@ -128,7 +129,7 @@
             arrowLeft.setAttribute('aria-label', 'Previous chips');
             carousel.appendChild(arrowLeft);
 
-            // Viewport (shows 5 compact chips on desktop, 3 on mobile)
+            // Viewport (shows 4 compact chips on desktop, 3 on mobile)
             const viewport = document.createElement('div');
             viewport.className = 'dcc-featured-viewport';
             carousel.appendChild(viewport);
@@ -313,7 +314,7 @@
 
             document.addEventListener('keydown', _onKeyDown);
 
-            // Responsive sync: recalculate 5 (desktop) vs 3 (mobile) if window crosses 768px
+            // Responsive sync: recalculate 4 (desktop) vs 3 (mobile) if window crosses 768px
             const mq = (typeof window !== 'undefined' && typeof window.matchMedia === 'function')
                 ? window.matchMedia('(max-width: 768px)')
                 : null;

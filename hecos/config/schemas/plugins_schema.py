@@ -44,6 +44,7 @@ class PluginSystem(BaseModel):
 
 
 class PluginWebUI(BaseModel):
+    model_config = ConfigDict(extra="allow")
     enabled: bool = True
     lazy_load: bool = False
     port: int = 7070
@@ -53,6 +54,26 @@ class PluginWebUI(BaseModel):
     force_login: bool = True
     cert_file: str = "certs/cert.pem"
     key_file: str = "certs/key.pem"
+    control_room_panel: bool = True
+    control_room_home: bool = True
+    chatui_welcome_mode: str = "hybrid"
+    dcc_new_first: bool = True
+    dcc_new_highlight_hours: int = 72
+
+    @field_validator("chatui_welcome_mode", mode="before")
+    @classmethod
+    def _validate_welcome_mode(cls, v):
+        val = str(v or "").strip().lower()
+        return val if val in ("classic", "avatar", "hybrid") else "hybrid"
+
+    @field_validator("dcc_new_highlight_hours", mode="before")
+    @classmethod
+    def _validate_dcc_hours(cls, v):
+        try:
+            hours = int(v)
+            return hours if hours > 0 else 72
+        except (TypeError, ValueError):
+            return 72
 
 
 DEFAULT_EXECUTOR_ANTI_HALLUCINATION_DIRECTIVE = (

@@ -65,6 +65,64 @@ window.rebootSystem       = rebootSystem;
 
 // ── Event Listeners ────────────────────────────────────────────────────────────
 
+// ── Chat Interface Live Sync (Instant Broadcast to Open Chat Tabs) ────────────
+function _updateWelcomeModeDesc(mode) {
+    const descEl = document.getElementById('chatui-welcome-mode-desc');
+    if (!descEl) return;
+    const val = mode || (document.getElementById('chatui-welcome-mode') || {}).value || 'hybrid';
+    if (val === 'classic') {
+        descEl.innerHTML = '<strong>Classic Mode:</strong> Always shows the System Logo and the "Capability Chips" carousel without switching to the 3D Avatar card.';
+    } else if (val === 'avatar') {
+        descEl.innerHTML = '<strong>Avatar Mode:</strong> Skips the capability chips and displays only the 3D flipping Avatar card for the active persona.';
+    } else {
+        descEl.innerHTML = '<strong>Hybrid Mode:</strong> Shows the "Capability Chips" on startup. When you click the chat area or text input, they fade out to reveal the 3D Avatar card.';
+    }
+}
+window._updateWelcomeModeDesc = _updateWelcomeModeDesc;
+
+function broadcastChatUiConfig(opts = {}) {
+    const wui = (window.cfg && window.cfg.plugins && window.cfg.plugins.WEB_UI) ? window.cfg.plugins.WEB_UI : {};
+    const modeEl = document.getElementById('chatui-welcome-mode');
+    const newFirstEl = document.getElementById('wui-dcc-new-first');
+    const hoursEl = document.getElementById('wui-dcc-highlight-hours');
+
+    const welcomeMode = opts.chatui_welcome_mode ?? (modeEl ? modeEl.value : (wui.chatui_welcome_mode || 'hybrid'));
+    const dccNewFirst = opts.dcc_new_first ?? (newFirstEl ? newFirstEl.checked : (wui.dcc_new_first ?? true));
+    const dccHours = opts.dcc_new_highlight_hours ?? (hoursEl ? (parseInt(hoursEl.value, 10) || 72) : (parseInt(wui.dcc_new_highlight_hours, 10) || 72));
+
+    // Keep in-memory window.cfg immediately synchronized so Phase 2 populateUI won't revert it
+    window.cfg = window.cfg || {};
+    window.cfg.plugins = window.cfg.plugins || {};
+    window.cfg.plugins.WEB_UI = Object.assign(window.cfg.plugins.WEB_UI || {}, {
+        chatui_welcome_mode: welcomeMode,
+        dcc_new_first: dccNewFirst,
+        dcc_new_highlight_hours: dccHours
+    });
+
+    const payload = {
+        type: 'chat_ui_config_updated',
+        chatui_welcome_mode: welcomeMode,
+        dcc_new_first: dccNewFirst,
+        dcc_new_highlight_hours: dccHours,
+        persisted: opts.persisted !== false,
+        ts: Date.now()
+    };
+
+    try {
+        if (typeof BroadcastChannel !== 'undefined') {
+            const ch = new BroadcastChannel('hecos_chat_ui');
+            ch.postMessage(payload);
+            ch.close();
+        }
+    } catch (_) {}
+    try {
+        localStorage.setItem('hecos_chat_ui_sync', JSON.stringify(payload));
+    } catch (_) {}
+
+    return payload;
+}
+window.broadcastChatUiConfig = broadcastChatUiConfig;
+
 // Universal auto-save on change (selects, checkboxes, inputs, textareas)
 document.addEventListener('change', (e) => {
   if (e.target.closest('.no-autosave') || e.target.closest('#tab-logs')) return;
@@ -93,6 +151,39 @@ document.addEventListener('change', (e) => {
     // Auto-stop voice if toggle is turned off
     if (e.target.id === 'sys-voice-status' && !e.target.checked) {
        if (typeof stopVoice === 'function') stopVoice();
+    }
+
+    // Instant live sync for Chat Interface settings (Welcome Mode & DCC highlights)
+    if (e.target.id === 'chatui-welcome-mode' || e.target.id === 'wui-dcc-new-first' || e.target.id === 'wui-dcc-highlight-hours') {
+        if (e.target.id === 'chatui-welcome-mode') {
+            _updateWelcomeModeDesc(e.target.value);
+        }
+        const snap = broadcastChatUiConfig({ persisted: false });
+        // If Phase 2 mappers aren't loaded yet, persist directly so the edit is never silently dropped
+        if (typeof buildPayload !== 'function') {
+            fetch('/hecos/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    plugins: {
+                        WEB_UI: {
+                            chatui_welcome_mode: snap.chatui_welcome_mode,
+                            dcc_new_first: snap.dcc_new_first,
+                            dcc_new_highlight_hours: snap.dcc_new_highlight_hours
+                        }
+                    }
+                })
+            }).then(r => r.json()).then(d => {
+                if (d && d.ok) {
+                    broadcastChatUiConfig({ persisted: true });
+                    if (typeof setSaveMsg === 'function') {
+                        const syncedMsg = (I18N.webui_conf_msg_synced || '✓ Changes auto-saved').replace('✅ ', '✓ ');
+                        setSaveMsg(syncedMsg, 'ok');
+                    }
+                }
+            }).catch(() => {});
+            return;
+        }
     }
 
     saveConfig(true);

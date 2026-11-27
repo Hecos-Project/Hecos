@@ -117,6 +117,11 @@ def register_config_api_routes(app, cfg_mgr, get_sm=None):
         try:
             cfg = cfg_mgr.reload()
             _invalidate_options_cache()
+            try:
+                from hecos.modules.web_ui.routes_config_ui import clear_config_ui_cache
+                clear_config_ui_cache()
+            except Exception:
+                pass
             logger.info("[Config] In-memory config reloaded from disk via API.")
             return jsonify({"ok": True, "message": "Config reloaded from disk."})
         except Exception as exc:
@@ -135,8 +140,31 @@ def register_config_api_routes(app, cfg_mgr, get_sm=None):
             if isinstance(data, dict) and "hpm" in data and isinstance(data["hpm"], dict):
                 data["hpm"].pop("github_token", None)
 
+            prev_wui = dict((cfg_mgr.config.get("plugins") or {}).get("WEB_UI") or {})
+
             success = cfg_mgr.update_from_webui(data)
             if success:
+                try:
+                    from hecos.modules.web_ui.routes_config_ui import clear_config_ui_cache
+                    clear_config_ui_cache()
+                except Exception:
+                    pass
+
+                # Live-push Chat Interface updates (Welcome Mode / DCC highlight settings) via SSE
+                try:
+                    new_wui = (cfg_mgr.config.get("plugins") or {}).get("WEB_UI") or {}
+                    chat_ui_keys = ("chatui_welcome_mode", "dcc_new_first", "dcc_new_highlight_hours")
+                    if any(prev_wui.get(k) != new_wui.get(k) for k in chat_ui_keys):
+                        sm_live = get_sm() if callable(get_sm) else get_sm
+                        if sm_live and hasattr(sm_live, "add_event"):
+                            sm_live.add_event("chat_ui_config_updated", {
+                                "chatui_welcome_mode": new_wui.get("chatui_welcome_mode", "hybrid"),
+                                "dcc_new_first": bool(new_wui.get("dcc_new_first", True)),
+                                "dcc_new_highlight_hours": int(new_wui.get("dcc_new_highlight_hours", 72)),
+                                "persisted": True,
+                            })
+                except Exception as _sse_e:
+                    logger.debug(f"[WebUI] chat_ui_config_updated SSE push error: {_sse_e}")
                 # Auto-fix: if binary_path is a directory, resolve the actual exe inside it
                 try:
                     import os as _os

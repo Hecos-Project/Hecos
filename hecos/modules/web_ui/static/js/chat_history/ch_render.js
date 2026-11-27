@@ -101,7 +101,10 @@ function renderSessionList() {
         group.sessions.forEach(s => {
             const isActive   = s.id === activeId;
             const normMode   = window.normalizePrivacyMode ? window.normalizePrivacyMode(s.privacy_mode) : (s.privacy_mode || 'normal');
-            const modeIcon   = normMode === 'incognito' ? '🕵️' : '';
+            const isIncognito = normMode === 'incognito';
+            const modeIconHtml = isIncognito
+                ? '<i class="fas fa-user-secret is-incognito"></i>'
+                : '<i class="far fa-comment-dots"></i>';
             const msgCount   = s.message_count || 0;
             const timeStr    = s.updated_at ? s.updated_at.slice(11, 16) : '';
             const title      = escapeHistoryHtml(s.title || 'Chat senza titolo');
@@ -111,26 +114,26 @@ function renderSessionList() {
             
             const editTitle = window.I18N?.webui_chat_rename_hint || 'Rename';
             const editFn    = `window.startRenameSession(event, '${s.id}')`;
-            actionsHtml += `<button class="history-action-btn" title="${editTitle}" onclick="${editFn}">✏️</button>`;
+            actionsHtml += `<button class="history-action-btn" title="${editTitle}" onclick="${editFn}"><i class="fas fa-pen"></i></button>`;
             
             if (isNormal) {
                 if (window.chatHistoryState.showArchived) {
                     const restoreTitle = window.I18N?.webui_chat_archive_restore || 'Restore';
                     const restoreFn    = `window.archiveChatSession(event, '${s.id}', false)`;
-                    actionsHtml += `<button class="history-action-btn" style="margin-left:2px;" title="${restoreTitle}" onclick="${restoreFn}">♻️</button>`;
+                    actionsHtml += `<button class="history-action-btn" style="margin-left:2px;" title="${restoreTitle}" onclick="${restoreFn}"><i class="fas fa-rotate-left"></i></button>`;
                     
                     const delTitle = window.I18N?.webui_chat_delete || 'Delete forever';
                     const delFn    = `window.deleteChatSession(event, '${s.id}')`;
-                    actionsHtml += `<button class="history-action-btn" style="margin-left:2px;" title="${delTitle}" onclick="${delFn}">🗑️</button>`;
+                    actionsHtml += `<button class="history-action-btn is-danger" style="margin-left:2px;" title="${delTitle}" onclick="${delFn}"><i class="fas fa-trash-can"></i></button>`;
                 } else {
                     const arcTitle = window.I18N?.webui_chat_archive_close || 'Archive';
                     const arcFn    = `window.archiveChatSession(event, '${s.id}', true)`;
-                    actionsHtml += `<button class="history-action-btn" style="margin-left:2px;" title="${arcTitle}" onclick="${arcFn}">✖️</button>`;
+                    actionsHtml += `<button class="history-action-btn" style="margin-left:2px;" title="${arcTitle}" onclick="${arcFn}"><i class="fas fa-box-archive"></i></button>`;
                 }
             } else {
                 const descTitle = window.I18N?.webui_chat_delete || 'Delete';
                 const descFn    = `window.deleteChatSession(event, '${s.id}')`;
-                actionsHtml += `<button class="history-action-btn" style="margin-left:2px;" title="${descTitle}" onclick="${descFn}">🗑️</button>`;
+                actionsHtml += `<button class="history-action-btn is-danger" style="margin-left:2px;" title="${descTitle}" onclick="${descFn}"><i class="fas fa-trash-can"></i></button>`;
             }
 
             const st = window.HecosChatStatus && typeof window.HecosChatStatus.getSessionState === 'function'
@@ -144,7 +147,7 @@ function renderSessionList() {
         <div class="history-item${isActive ? ' active' : ''}${statusCls}" data-id="${s.id}" onclick="window.activateChatSession('${s.id}')">
           <div class="history-item-main">
             <span class="chat-status-led is-${ledStatus}" data-session-led="${s.id}" title="${ledTitle}"></span>
-            <span class="history-icon">${modeIcon || '💬'}</span>
+            <span class="history-icon">${modeIconHtml}</span>
             <div class="history-item-info">
               <div class="history-title" title="${window.I18N?.webui_chat_rename_hint || 'Double click to rename'}" ondblclick="window.startRenameSession(event, '${s.id}')">${title}</div>
               <div class="history-meta">${timeStr} · ${msgCount} msg</div>

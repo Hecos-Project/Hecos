@@ -523,7 +523,7 @@ window.updateToolModeBadge = function(mode) {
     chip.classList.remove('tool-mode-native', 'tool-mode-direct', 'tool-mode-disabled');
     if (mode === 'direct' || mode === false) {
         chip.classList.add('tool-mode-direct');
-        icon.className = 'fas fa-bolt';
+        icon.className = 'fas fa-forward';
         label.textContent = 'Direct Commands';
         chip.title = 'Direct Commands Mode: Tool schemas stripped for maximum speed (~8k tokens saved). Lazy-loaded plugins (IMAGE_GEN, CALENDAR, etc.) cannot be auto-triggered — use /img for images. Direct /img and /search commands active. Open Preset Manager to configure.';
     } else if (mode === 'disabled') {

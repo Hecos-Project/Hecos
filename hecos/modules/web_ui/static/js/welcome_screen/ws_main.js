@@ -19,6 +19,8 @@
         let el = document.getElementById('welcome');
         if (el) {
             chatArea.appendChild(el);
+            el.style.transition = '';
+            el.style.opacity = '1';
             el.style.display = 'flex';
             // Destroy old chips and rebuild fresh (so shuffle randomizes)
             const oldNav = el.querySelector('.dcc-nav-container');
@@ -80,7 +82,11 @@
      */
     function show() {
         const el = document.getElementById('welcome');
-        if (el) el.style.display = 'flex';
+        if (el) {
+            el.style.transition = '';
+            el.style.opacity = '1';
+            el.style.display = 'flex';
+        }
     }
 
     window.WelcomeMain = { render, hide, show };

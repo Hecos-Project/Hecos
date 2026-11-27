@@ -39,7 +39,7 @@ window.sfSaveAsNewSoul = function() {
         }
         // Build a clean, system-agnostic SoulProfile (no overrides carried over from active UI state)
         const data = {
-            meta: { id: id, name: name, icon: "🧠", description: "" },
+            meta: { id: id, name: name, icon: "fa-bolt", description: "" },
             persona: {},
             model: {},
             inference: {},
@@ -181,7 +181,7 @@ window.sfSetAsGlobalDefault = function() {
                 await window.sfSaveInlineToActive();
             }
             await window.sfActivateSoul(soulId);
-            if (window.showToast) window.showToast(`⭐ "${pName}" set as Global Default!`, "success");
+            if (window.showToast) window.showToast(`"${pName}" set as Global Default!`, "success");
         });
     } else {
         if (!window.sfState.isDirty) {
@@ -189,7 +189,7 @@ window.sfSetAsGlobalDefault = function() {
                 "Set Base Configuration (No Preset — uses Central Hub system.yaml directly) as Global Default for all new chats?",
                 async function() {
                     await window.sfActivateSoul("", null);
-                    if (window.showToast) window.showToast("⭐ Base Configuration (No Preset) set as Global Default!", "success");
+                    if (window.showToast) window.showToast("Base Configuration (No Preset) set as Global Default!", "success");
                 }
             );
         } else {
@@ -197,9 +197,9 @@ window.sfSetAsGlobalDefault = function() {
                 "Save current configuration (Backend, Model, Soul, Inference, Payload, Voice) directly as System Global Default without using a preset?",
                 async function() {
                     const data = window.sfCollectUIState();
-                    data.meta = { id: "", name: "Base Defaults", icon: "⚙️" };
+                    data.meta = { id: "", name: "Base Defaults", icon: "fa-sliders" };
                     await window.sfActivateSoul("", data);
-                    if (window.showToast) window.showToast("⭐ Base Configuration saved as Global Default!", "success");
+                    if (window.showToast) window.showToast("Base Configuration saved as Global Default!", "success");
                 }
             );
         }
@@ -425,7 +425,7 @@ window.sfPreviewVoice = async function(customText) {
             const prog = JSON.parse(event.data);
             if (prog.status === 'not_found' || prog.status === 'error') {
                 window.sfStopVoicePreview();
-                if (window.showToast) window.showToast(`❌ ${prog.error || 'TTS Error'}`, "error");
+                if (window.showToast) window.showToast(`${prog.error || 'TTS Error'}`, "error");
                 return;
             }
             if (prog.total > 0 && btn) {
@@ -506,7 +506,7 @@ window.sfRunLabTest = async function() {
         });
         const data = await res.json();
         if (!data.ok) {
-            if (metricsEl) metricsEl.innerHTML = `<span class="sf-lab-chip" style="color:#f87171;">❌ Error: ${data.error || 'Test failed'}</span>`;
+            if (metricsEl) metricsEl.innerHTML = `<span class="sf-lab-chip" style="color:var(--red, #f87171);"><i class="fas fa-circle-exclamation" style="color:var(--red, #f87171);"></i> Error: ${data.error || 'Test failed'}</span>`;
             return;
         }
 
@@ -515,16 +515,16 @@ window.sfRunLabTest = async function() {
 
         if (metricsEl) {
             const toolsBadge = m.send_tools
-                ? `🛠️ ${m.tools_count || 0} tools`
-                : `🛠️ Tools OFF`;
-            const soulBadge = m.send_personality ? `🎭 Soul ON` : `🎭 Soul OFF`;
-            const memBadge = m.send_memory ? `🧠 Mem ON` : `🧠 Mem OFF`;
+                ? `<i class="fas fa-wrench"></i> ${m.tools_count || 0} tools`
+                : `<i class="fas fa-wrench"></i> Tools OFF`;
+            const soulBadge = `<i class="fas fa-masks-theater"></i> ${m.send_personality ? 'Soul ON' : 'Soul OFF'}`;
+            const memBadge = `<i class="fas fa-memory"></i> ${m.send_memory ? 'Mem ON' : 'Mem OFF'}`;
             metricsEl.innerHTML = [
-                `<span class="sf-lab-chip">⏱️ ${m.elapsed_sec ?? '?'}s</span>`,
-                `<span class="sf-lab-chip">⚡ ${m.tok_per_sec ?? '?'} tok/s</span>`,
-                `<span class="sf-lab-chip">🤖 ${m.model || '?'}</span>`,
-                `<span class="sf-lab-chip">🌡️ Temp ${m.temperature ?? '?'}</span>`,
-                `<span class="sf-lab-chip">📦 ~${m.prompt_tokens ?? 0} prompt tok</span>`,
+                `<span class="sf-lab-chip"><i class="fas fa-stopwatch"></i> ${m.elapsed_sec ?? '?'}s</span>`,
+                `<span class="sf-lab-chip"><i class="fas fa-gauge-high"></i> ${m.tok_per_sec ?? '?'} tok/s</span>`,
+                `<span class="sf-lab-chip"><i class="fas fa-microchip"></i> ${m.model || '?'}</span>`,
+                `<span class="sf-lab-chip"><i class="fas fa-temperature-half"></i> Temp ${m.temperature ?? '?'}</span>`,
+                `<span class="sf-lab-chip"><i class="fas fa-align-left"></i> ~${m.prompt_tokens ?? 0} prompt tok</span>`,
                 `<span class="sf-lab-chip">${toolsBadge}</span>`,
                 `<span class="sf-lab-chip">${soulBadge} · ${memBadge}</span>`
             ].join('');
@@ -556,7 +556,7 @@ window.sfRunLabTest = async function() {
             })
             .catch(() => {});
     } catch (e) {
-        if (metricsEl) metricsEl.innerHTML = `<span class="sf-lab-chip" style="color:#f87171;">❌ Network error: ${e.message}</span>`;
+        if (metricsEl) metricsEl.innerHTML = `<span class="sf-lab-chip" style="color:var(--red, #f87171);"><i class="fas fa-circle-exclamation" style="color:var(--red, #f87171);"></i> Network error: ${e.message}</span>`;
     } finally {
         if (runBtn) {
             runBtn.disabled = false;

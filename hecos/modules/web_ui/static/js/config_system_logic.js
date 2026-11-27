@@ -37,6 +37,9 @@ function populateSystemUI() {
     setCheck('wui-control-room-panel', webUiPlug.control_room_panel ?? true);
     setCheck('wui-control-room-home', webUiPlug.control_room_home ?? true);
     setVal('chatui-welcome-mode', webUiPlug.chatui_welcome_mode || 'hybrid');
+    if (typeof window._updateWelcomeModeDesc === 'function') {
+        window._updateWelcomeModeDesc(webUiPlug.chatui_welcome_mode || 'hybrid');
+    }
     setCheck('wui-dcc-new-first', webUiPlug.dcc_new_first ?? true);
     setVal('wui-dcc-highlight-hours', webUiPlug.dcc_new_highlight_hours || 72);
 
